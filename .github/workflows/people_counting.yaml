@@ -1,14 +1,26 @@
 name: people_counting
 
+defaults:
+  run:
+    working-directory: people-counting
+
 on:
   push:
     branches:
-      - master
+      - main
       - develop
+    paths:
+      - .github/**
+      - core/**
+      - people-counting/**
   pull_request:
     branches:
-      - master
+      - main
       - develop
+    paths:
+      - .github/**
+      - core/**
+      - people-counting/**
 
 env:
   PROJECT_ID: people-counting-363015
@@ -19,16 +31,16 @@ env:
 jobs:
   setup_stage:
     name: setup_stage
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       stage: ${{ steps.setup_stage.outputs.stage }}
     steps:
       - id: setup_stage
-        run: (${{ github.ref_name == 'master' }} && echo "::set-output name=stage::production") || (${{ github.ref_name == 'develop' }} && echo "::set-output name=stage::staging") || echo "::set-output name=stage::test"
+        run: (${{ github.ref_name == 'main' }} && echo "::set-output name=stage::production") || (${{ github.ref_name == 'develop' }} && echo "::set-output name=stage::staging") || echo "::set-output name=stage::test"
 
   tests:
     name: tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     container: python:3.8-buster
     env:
       STAGE: test
@@ -50,7 +62,7 @@ jobs:
     needs:
       - setup_stage
       - tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     container: hashicorp/terraform
     defaults:
       run:

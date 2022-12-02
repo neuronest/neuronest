@@ -1,19 +1,29 @@
 name: core
 
+defaults:
+  run:
+    working-directory: core
+
 on:
   push:
     branches:
-      - master
+      - main
       - develop
+    paths:
+      - .github/**
+      - core/**
   pull_request:
     branches:
-      - master
+      - main
       - develop
+    paths:
+      - .github/**
+      - core/**
 
 jobs:
   tests:
     name: tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     container: python:3.8-buster
     env:
       STAGE: test
