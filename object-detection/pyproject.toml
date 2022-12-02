@@ -1,0 +1,24 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0","pip>=20.0.0"]
+
+[tool.poetry]
+authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
+description = "People counting model"
+name = "people-counting-model"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+PyYAML = "^6.0"  # implicit torchhub ultralytics dependency
+imutils = "^0.5.4"
+ipython = "^8.5.0"  # implicit torchhub ultralytics dependency
+neuronest = "0.1.11"
+omegaconf = "^2.2.3"
+python = ">=3.8,<3.10"
+seaborn = "^0.12.1"  # implicit torchhub ultralytics dependency
+scipy = "^1.9.3"  # implicit torchhub ultralytics dependency
+torch = "^1.12.1"
+torch-model-archiver = "^0.6.0"
+torch-workflow-archiver = "^0.2.4"
+torchserve = "^0.6.0"
+torchvision = "^0.13.1"

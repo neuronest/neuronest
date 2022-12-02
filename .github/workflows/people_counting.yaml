@@ -1,0 +1,74 @@
+name: people_counting
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+env:
+  PROJECT_ID: people-counting-363015
+  PROJECT_NAME: people-counting
+  REGION: europe-west9
+  ZONE: europe-west9-a
+
+jobs:
+  setup_stage:
+    name: setup_stage
+    runs-on: ubuntu-latest
+    outputs:
+      stage: ${{ steps.setup_stage.outputs.stage }}
+    steps:
+      - id: setup_stage
+        run: (${{ github.ref_name == 'master' }} && echo "::set-output name=stage::production") || (${{ github.ref_name == 'develop' }} && echo "::set-output name=stage::staging") || echo "::set-output name=stage::test"
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    container: python:3.8-buster
+    env:
+      STAGE: test
+    steps:
+      - uses: actions/checkout@v3
+      - run: apt update && apt install -y cmake
+      - run: pip install --upgrade pip
+      - run: pip install poetry
+      - run: poetry check
+      - run: ./install.sh
+      - run: poetry run black --check .
+      - run: poetry run flake8 .
+      - run: poetry run isort --check-only --profile=black .
+      - run: poetry run pylint --rcfile .pylintrc people_counting model tests
+      - run: poetry run pytest -x -n auto tests -vv
+
+  deploy:
+    name: deploy
+    needs:
+      - setup_stage
+      - tests
+    runs-on: ubuntu-latest
+    container: hashicorp/terraform
+    defaults:
+      run:
+        working-directory: iac
+    env:
+      STAGE: ${{ needs.setup_stage.outputs.stage }}
+      TF_VAR_stage: ${{ needs.setup_stage.outputs.stage }}
+      TF_VAR_project_id: $PROJECT_ID
+      TF_VAR_project_name: $PROJECT_NAME
+      TF_VAR_region: $REGION
+      TF_VAR_zone: $ZONE
+    steps:
+      - uses: actions/checkout@v3
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.CI_GOOGLE_CREDENTIALS }}
+      - run: terraform init -input=false
+      - run: terraform validate
+      - run: terraform plan -input=false

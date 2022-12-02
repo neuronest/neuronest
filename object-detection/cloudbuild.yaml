@@ -1,0 +1,44 @@
+steps:
+- name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  entrypoint: "bash"
+  args:
+    - "-c"
+    - "if [ ${_TARGET} == 'serving' ]; then gsutil cp ${_REMOTE_MODEL_PATH} ${_LOCAL_MODEL_PATH} && gsutil cp ${_REMOTE_LABELS_PATH} ${_LOCAL_LABELS_PATH} ; fi"
+  id: download-artifacts
+- name: gcr.io/cloud-builders/docker
+  entrypoint: "bash"
+  args: ["-c", "docker pull eu.gcr.io/$PROJECT_ID/object-detection-${_TARGET}/${_STAGE}:latest || exit 0"]
+  id: pull
+- name: gcr.io/cloud-builders/docker
+  args:
+    - "build"
+    - "-t"
+    - "eu.gcr.io/$PROJECT_ID/object-detection-${_TARGET}/${_STAGE}:latest"
+    - "--target"
+    - "${_TARGET}"
+    - "--build-arg"
+    - STAGE=${_STAGE}
+    - "--build-arg"
+    - CI_JOB_TOKEN_NAME=${_CI_JOB_TOKEN_NAME}
+    - "--build-arg"
+    - CI_JOB_TOKEN=${_CI_JOB_TOKEN}
+    - "--build-arg"
+    - ANALYSIS_IMAGE_NAME=${_ANALYSIS_IMAGE_NAME}
+    - "--build-arg"
+    - MODEL_PATH=${_LOCAL_MODEL_PATH}
+    - "--build-arg"
+    - LABELS_PATH=${_LOCAL_LABELS_PATH}
+    - "--cache-from"
+    - "eu.gcr.io/$PROJECT_ID/object-detection-${_TARGET}/${_STAGE}:latest"
+    - "."
+  id: build-push
+substitutions:
+    _ARTIFACTS_PATH: ""
+    _REMOTE_MODEL_PATH: "${_ARTIFACTS_PATH}/model/model.pt"  # not used if _ARTIFACTS_PATH is not substituted
+    _LOCAL_MODEL_PATH: "model.pt"
+options:
+    substitution_option: 'ALLOW_LOOSE'
+    dynamic_substitutions: true
+images:
+  - eu.gcr.io/$PROJECT_ID/object-detection-${_TARGET}/${_STAGE}:latest
+timeout: 1800s

@@ -1,0 +1,31 @@
+name: core
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+      - develop
+
+jobs:
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    container: python:3.8-buster
+    env:
+      STAGE: test
+    steps:
+      - uses: actions/checkout@v3
+      - run: apt update && apt install -y cmake ffmpeg libsm6 libxext6
+      - run: pip install --upgrade pip
+      - run: pip install poetry
+      - run: poetry check
+      - run: ./install.sh
+      - run: poetry run black --check .
+      - run: poetry run flake8 .
+      - run: poetry run isort --check-only --profile=black .
+      - run: poetry run pylint --rcfile .pylintrc neuronest tests
+      - run: poetry run pytest -x -n auto tests -vv

@@ -1,0 +1,6 @@
+project_id: '${env:PROJECT_ID}'
+location: '${env:LOCATION}'
+model_name: "object_detection"
+inner_model_type: "ultralytics/yolov5"
+inner_model_name: "yolov5x6"
+image_width: 400
