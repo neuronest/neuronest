@@ -1,37 +1,25 @@
-name: core
-
-defaults:
-  run:
-    working-directory: core
+name: neuronest
 
 on:
   push:
     branches:
       - main
       - develop
-    paths:
-      - .github/**
-      - core/**
   pull_request:
     branches:
       - main
       - develop
-    paths:
-      - .github/**
-      - core/**
 
 jobs:
   tests:
     name: tests
     runs-on: self-hosted
     container: python:3.8-buster
-    env:
-      STAGE: test
     steps:
       - uses: actions/checkout@v3
-      - run: apt update && apt install -y cmake ffmpeg libsm6 libxext6
       - run: pip install --upgrade pip
       - run: pip install poetry==1.2.2
       - run: poetry check
-      - run: ./install.sh
-      - run: poetry run pytest -x -n auto tests -vv
+      - run: poetry pre-commit install
+      - run: poetry pre-commit install --hook-type commit-msg
+      - run: poetry run pre-commit run --all

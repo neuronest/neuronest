@@ -4,7 +4,6 @@ import tempfile
 import zipfile
 
 import gdown
-
 from people_counting.config import cfg
 
 if __name__ == "__main__":

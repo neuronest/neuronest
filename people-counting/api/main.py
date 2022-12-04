@@ -2,6 +2,7 @@ import json
 import logging
 import typing
 
+import api.route.counter
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.exception_handlers import (
     http_exception_handler,
@@ -9,8 +10,6 @@ from fastapi.exception_handlers import (
 )
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
-
-import api.route.counter
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)

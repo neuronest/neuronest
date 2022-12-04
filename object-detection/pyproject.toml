@@ -4,21 +4,34 @@ requires = ["poetry-core>=1.0.0","pip>=20.0.0"]
 
 [tool.poetry]
 authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
-description = "People counting model"
-name = "people-counting-model"
+description = "Object detection"
+name = "object-detection"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
 PyYAML = "^6.0"  # implicit torchhub ultralytics dependency
 imutils = "^0.5.4"
 ipython = "^8.5.0"  # implicit torchhub ultralytics dependency
-neuronest = "0.1.11"
+core = {path="../shared", develop = true}
 omegaconf = "^2.2.3"
-python = ">=3.8,<3.10"
-seaborn = "^0.12.1"  # implicit torchhub ultralytics dependency
+python = ">3.8.1,<3.10"
 scipy = "^1.9.3"  # implicit torchhub ultralytics dependency
+seaborn = "^0.12.1"  # implicit torchhub ultralytics dependency
 torch = "^1.12.1"
 torch-model-archiver = "^0.6.0"
 torch-workflow-archiver = "^0.2.4"
 torchserve = "^0.6.0"
 torchvision = "^0.13.1"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+black = "^22.10.0"
+flake8 = "^6.0.0"
+isort = "^5.10.1"
+pre-commit = "^2.20.0"
+pylint = "^2.15.7"
+pytest = "^7.1.3"
+pytest-xdist = "^2.5.0"
+toml-sort = "^0.20.1"

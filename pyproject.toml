@@ -1,0 +1,19 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.poetry]
+authors = ["Côme Arvis <come.arvis@neuronest.net>"]
+description = ""
+name = "neuronest"
+readme = "README.md"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+black = "^22.10.0"
+flake8 = "^6.0.0"
+isort = "^5.10.1"
+pre-commit = "^2.20.0"
+pylint = "^2.15.7"
+python = ">3.8.1,<4.0"
+toml-sort = "^0.20.1"

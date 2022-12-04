@@ -22,12 +22,6 @@ on:
       - core/**
       - people-counting/**
 
-env:
-  PROJECT_ID: people-counting-363015
-  PROJECT_NAME: people-counting
-  REGION: europe-west9
-  ZONE: europe-west9-a
-
 jobs:
   setup_stage:
     name: setup_stage
@@ -46,6 +40,8 @@ jobs:
       STAGE: test
     steps:
       - uses: actions/checkout@v3
+      - name: Set Environment Variables
+        uses: ./.github/actions/set_variables
       - run: apt update && apt install -y cmake
       - run: pip install --upgrade pip
       - run: pip install poetry
