@@ -1,9 +1,5 @@
 name: object_detection
 
-defaults:
-  run:
-    working-directory: object-detection
-
 on:
   push:
     branches:
@@ -25,26 +21,15 @@ env:
   DOCKERFILE_PATH: dockerfiles/object_detection.dockerfile
 
 jobs:
-  setup_stage:
-    name: setup_stage
-    runs-on: self-hosted
-    outputs:
-      stage: ${{ steps.setup_stage.outputs.stage }}
-    steps:
-      - id: setup_stage
-        run: (${{ github.ref_name == 'main' }} && echo "::set-output name=stage::production") || (${{ github.ref_name == 'develop' }} && echo "::set-output name=stage::staging") || echo "::set-output name=stage::test"
-
   build:
     name: build
-    needs:
-      - setup_stage
     runs-on: self-hosted
     container: docker
     env:
-      STAGE: ${{ needs.setup_stage.outputs.stage }}
+      TARGET: training
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
-        uses: ../.github/actions/set_variables
-      - run: docker build --build-arg STAGE=$STAGE -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:$GITHUB_RUN_ID -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:latest -f $DOCKERFILE_PATH --target training .
+        uses: ./.github/actions/set_variables
+      - run: docker build --build-arg STAGE=$STAGE -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:$GITHUB_RUN_ID -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:latest -f $DOCKERFILE_PATH --target $TARGET .
       - run: docker push $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY --all-tags
