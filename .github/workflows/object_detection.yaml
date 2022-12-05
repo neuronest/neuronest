@@ -17,6 +17,7 @@ on:
       - .github/**
       - core/**
       - object-detection/**
+  workflow_dispatch:
 
 env:
   IMAGE_REPOSITORY: object-detection
