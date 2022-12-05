@@ -41,7 +41,7 @@ def write_metrics(
 
 def main(
     model_directory: GSPath,
-    analysis_image_name: ImageNameWithTag,
+    image_name: ImageNameWithTag,
     config: DictConfig,
     args: argparse.Namespace,
 ):
@@ -60,7 +60,7 @@ def main(
         metrics={},
         parameters=OmegaConf.to_container(config),
         model_path=model_directory,
-        analysis_image_name=analysis_image_name,
+        image_name=image_name,
     )
 
     write_metrics(
@@ -85,16 +85,16 @@ if __name__ == "__main__":
             "are we in a Vertex AI environment?"
         )
 
-    package_image_name = os.getenv("PACKAGE_IMAGE_NAME")
+    image_name = os.getenv("IMAGE_NAME")
 
-    if package_image_name is None:
+    if image_name is None:
         raise EnvironmentError(
-            "The 'PACKAGE_IMAGE_NAME' environment variable is not defined"
+            "The 'IMAGE_NAME' environment variable is not defined"
         )
 
     main(
         model_directory=GSPath(model_dir),
-        analysis_image_name=ImageNameWithTag(package_image_name),
+        image_name=ImageNameWithTag(image_name),
         config=cfg,
         args=parsed_args,
     )

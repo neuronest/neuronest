@@ -14,6 +14,6 @@ class TrainingMetrics(BigQueryModel):
     metrics: dict
     parameters: dict
     model_path: GSPath
-    analysis_image_name: ImageNameWithTag
+    image_name: ImageNameWithTag
     global_metric_name: Optional[str] = None
     global_metric: Optional[float] = None

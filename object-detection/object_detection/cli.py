@@ -9,6 +9,7 @@ from google.cloud import aiplatform
 from omegaconf import DictConfig
 
 from object_detection.config import cfg
+from object_detection.environment_variables import IMAGE_NAME
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ def launch_training_job(
         accelerator_type=accelerator_type,
         accelerator_count=accelerator_count,
         base_output_dir=artifacts_path,
+        environment_variables={"IMAGE_NAME": IMAGE_NAME},
     )
 
     if will_produce_model is True:
