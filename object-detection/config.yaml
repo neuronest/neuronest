@@ -1,6 +1,22 @@
-project_id: '${env:PROJECT_ID}'
-location: '${env:LOCATION}'
-model_name: "object_detection"
-inner_model_type: "ultralytics/yolov5"
-inner_model_name: "yolov5x6"
-image_width: 400
+project_id: '${oc.env:PROJECT_ID}'
+region: '${oc.env:REGION}'
+name: 'object-detection'
+
+model:
+  name: "object_detection"
+  inner_model_type: "ultralytics/yolov5"
+  inner_model_name: "yolov5x6"
+  image_width: 400
+
+model_infra:
+  training_container_uri: "${oc.env:ARTIFACT_REGISTRY_PATH}/${name}:latest"
+  training_machine_type: "n1-standard-2"
+  training_accelerator_type: "ACCELERATOR_TYPE_UNSPECIFIED"
+  training_accelerator_count: 0
+  serving_accelerator_type: "NVIDIA_TESLA_K80"
+  serving_accelerator_count: 1
+  min_replica_count: 1
+  max_replica_count: 1
+
+storage:
+  models_bucket_name: '${name}-models'

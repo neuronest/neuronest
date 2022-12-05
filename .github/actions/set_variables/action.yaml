@@ -18,7 +18,7 @@ runs:
         done
       shell: sh
     - run: |
-        (${{ github.ref_name == 'main' }} && echo "stage=production" >> $GITHUB_ENV) || 
-        (${{ github.ref_name == 'develop' }} && echo "stage=staging" >> $GITHUB_ENV) || 
-        echo "stage=test" >> $GITHUB_ENV
+        (${{ github.ref_name == 'main' }} && echo "STAGE=production" >> $GITHUB_ENV) || 
+        (${{ github.ref_name == 'develop' }} && echo "STAGE=staging" >> $GITHUB_ENV) || 
+        echo "STAGE=test" >> $GITHUB_ENV
       shell: sh

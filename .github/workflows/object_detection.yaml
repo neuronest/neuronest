@@ -27,11 +27,33 @@ jobs:
     container: docker
     env:
       TARGET: training
-      ARTIFACT_REGISTRY_SERVICE_ACCOUNT: ${{ secrets.ARTIFACT_REGISTRY_SERVICE_ACCOUNT }}
+    outputs:
+      IMAGE_NAME: ${{ steps.output_step.outputs.IMAGE_NAME }}
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
         uses: ./.github/actions/set_variables
-      - run: echo $ARTIFACT_REGISTRY_SERVICE_ACCOUNT | docker login -u _json_key --password-stdin https://$REGION-docker.pkg.dev
+      - run: echo ${{ secrets.ARTIFACT_REGISTRY_SERVICE_ACCOUNT }} | base64 -d | docker login -u _json_key --password-stdin https://$REGION-docker.pkg.dev
       - run: docker build --build-arg STAGE=$STAGE -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:$GITHUB_RUN_ID -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:latest -f $DOCKERFILE_PATH --target $TARGET .
       - run: docker push $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY --all-tags
+      - id: output_step
+        run: echo "IMAGE_NAME=$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+
+  train:
+    name: train
+    needs:
+      - build
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: /app
+    container: ${{needs.build.outputs.IMAGE_NAME}}
+    env:
+      VERTEX_AI_SERVICE_ACCOUNT_NAME: vertex-ai
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set environment variables
+        uses: ./.github/actions/set_variables
+      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.VERTEX_AI_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
+      - run: gcloud auth activate-service-account $VERTEX_AI_SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --key-file=$GOOGLE_APPLICATION_CREDENTIALS --project=$PROJECT_ID
+      - run: python -m object_detection.cli

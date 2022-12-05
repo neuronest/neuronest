@@ -3,16 +3,17 @@ from __future__ import annotations
 import argparse
 import os
 
-from google.cloud import bigquery
-from model.config import cfg
-from modules.model import ObjectDetectionModel
-from omegaconf import DictConfig, OmegaConf
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.schemas.image_name import ImageNameWithTag
 from core.schemas.training_metrics.tables import TrainingMetrics
 from core.services.training_metrics_writer import MetricsWriter
 from core.utils import timeit
+from google.cloud import bigquery
+from omegaconf import DictConfig, OmegaConf
+
+from object_detection.config import cfg
+from object_detection.modules.model import ObjectDetectionModel
 
 
 @timeit

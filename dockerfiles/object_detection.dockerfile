@@ -24,6 +24,10 @@ ARG PROJECT_DIRECTORY="object-detection"
 
 ENV STAGE=$STAGE
 
+ENV CLOUDSDK_INSTALL_DIR /usr/local/gcloud
+RUN curl -sSL https://sdk.cloud.google.com | bash
+ENV PATH $PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
+
 ENV POETRY_VERSION=1.2.2
 ENV PYSETUP_PATH="/opt/pysetup"
 ENV POETRY_HOME="/opt/poetry"
@@ -45,14 +49,10 @@ COPY $PROJECT_DIRECTORY/pyproject.toml $PROJECT_DIRECTORY/poetry.lock ./
 RUN poetry config virtualenvs.in-project true
 RUN poetry install
 
-RUN mkdir -p /app/model
-WORKDIR /app/model
+RUN mkdir -p /app/object_detection
 
-COPY $PROJECT_DIRECTORY/config.yaml .
-COPY $PROJECT_DIRECTORY/__init__.py .
-COPY $PROJECT_DIRECTORY/object_detection/config.py .
-COPY $PROJECT_DIRECTORY/object_detection/train.py .
-COPY $PROJECT_DIRECTORY/object_detection/modules ./modules
+COPY $PROJECT_DIRECTORY/config.yaml /app
+COPY $PROJECT_DIRECTORY/object_detection /app/object_detection
 
 WORKDIR /app/
 

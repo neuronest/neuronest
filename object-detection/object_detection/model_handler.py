@@ -5,9 +5,9 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 import torch
-from imutils import resize
 from core.serialization.array import array_to_string
 from core.serialization.image import image_from_string
+from imutils import resize
 from ts.context import Context
 from ts.torch_handler.base_handler import BaseHandler
 
