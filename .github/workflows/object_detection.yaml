@@ -37,10 +37,10 @@ jobs:
       - name: Set environment variables
         uses: ./.github/actions/set_variables
       - run: echo ${{ secrets.ARTIFACT_REGISTRY_SERVICE_ACCOUNT }} | base64 -d | docker login -u _json_key --password-stdin https://$REGION-docker.pkg.dev
-      - run: docker build --build-arg STAGE=$STAGE -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY/$STAGE:$GITHUB_RUN_ID -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY/$STAGE:latest -f $DOCKERFILE_PATH --target $TARGET .
-      - run: docker push $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY/$STAGE --all-tags
+      - run: docker build --build-arg STAGE=$STAGE -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:$GITHUB_RUN_ID -t $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:latest -f $DOCKERFILE_PATH --target $TARGET .
+      - run: docker push $ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY --all-tags
       - id: output_step
-        run: echo "IMAGE_NAME=$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY/$STAGE:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+        run: echo "IMAGE_NAME=$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
   train:
     name: train
