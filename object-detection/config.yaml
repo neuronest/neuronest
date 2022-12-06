@@ -19,7 +19,7 @@ model_infra:
   max_replica_count: 1
 
 bigquery:
-  dataset: '${project_id}.${name}_training'
+  dataset: '${project_id}.${model.name}_training'
 
 storage:
   models_bucket_name: '${name}-models'
