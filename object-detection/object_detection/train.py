@@ -47,7 +47,8 @@ def main(
 ):
     # noinspection PyArgumentList
     training_duration, model = train_model(
-        model_type=config.inner_model_type, model_name=config.inner_model_name
+        model_type=config.model.inner_model_type,
+        model_name=config.model.inner_model_name
     )
 
     storage_client = StorageClient()
@@ -55,7 +56,7 @@ def main(
     model.save(storage_client=storage_client, directory_path=model_directory)
 
     training_metrics = TrainingMetrics(
-        model_name=config.model_name,
+        model_name=config.model.name,
         training_duration=training_duration,
         metrics={},
         parameters=OmegaConf.to_container(config),
@@ -65,8 +66,8 @@ def main(
 
     write_metrics(
         training_metrics=training_metrics,
-        project_id=config.gcp_project_id,
-        location=config.location,
+        project_id=config.project_id,
+        location=config.region,
         bigquery_dataset_name=config.bigquery.dataset,
     )
 
