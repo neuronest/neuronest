@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from typing import Tuple
-
-from core.schemas.environment import Environment
+from typing import Tuple, Union
 
 
 class StringWithValidation(ABC, str):
@@ -44,15 +42,35 @@ class Tag(PartImageName):
         return super().is_valid(name) and bool(re.fullmatch(regex, name))
 
 
+class BaseImageNameWithTag(StringWithValidation):
+    """
+    Example: 'people-counting:565726992'
+    """
+
+    @classmethod
+    def is_valid(cls, name: str) -> bool:
+        base_image_name, tag = cls.split_tag(name)
+
+        return BaseImageName.is_valid(base_image_name) and Tag.is_valid(tag)
+
+    @classmethod
+    def split_tag(cls, name: str) -> Tuple[BaseImageName, Tag]:
+        base_image_name, tag = name.split(":")
+
+        return BaseImageName(base_image_name), Tag(tag)
+
+
 class GenericImageName(StringWithValidation):
     REGISTRY_SUFFIX = "-docker.pkg.dev"
     REGISTRY_DOMAIN = "{region}{registry_suffix}"
 
     @classmethod
-    def _split(cls, image_name: str) -> Tuple[str, str, str, BaseImageName, str]:
+    def _split(
+        cls, image_name: str
+    ) -> Tuple[str, str, str, Union[BaseImageName, BaseImageNameWithTag]]:
         split_image_name = image_name.split("/")
 
-        if len(split_image_name) != 5:
+        if len(split_image_name) != 4:
             raise ValueError(f"Wrong image name: {image_name}")
 
         (
@@ -60,7 +78,6 @@ class GenericImageName(StringWithValidation):
             project_id,
             repository_id,
             base_image_name,
-            suffix,
         ) = split_image_name
 
         if not registry_domain.endswith(cls.REGISTRY_SUFFIX):
@@ -70,12 +87,17 @@ class GenericImageName(StringWithValidation):
                 f"got '{registry_domain}'"
             )
 
+        base_image_name = (
+            BaseImageName(base_image_name)
+            if BaseImageName.is_valid(base_image_name)
+            else BaseImageNameWithTag(base_image_name)
+        )
+
         return (
             registry_domain,
             project_id,
             repository_id,
-            BaseImageName(base_image_name),
-            suffix,
+            base_image_name,
         )
 
     @classmethod
@@ -100,33 +122,24 @@ class GenericImageName(StringWithValidation):
         region: str,
         repository_id: str,
         base_image_name: BaseImageName,
-        environment: Environment,
         **kwargs,
     ) -> ImageName:
         raise NotImplementedError
 
 
 class ImageName(GenericImageName):
-    TEMPLATE = (
-        "{registry_domain}/{project_id}/{repository_id}/"
-        "{base_image_name}/{environment}"
-    )
+    TEMPLATE = "{registry_domain}/{project_id}/{repository_id}/{base_image_name}"
 
     @classmethod
-    def _split(
-        cls, image_name: str
-    ) -> Tuple[str, str, str, BaseImageName, Environment]:
+    def _split(cls, image_name: str) -> Tuple[str, str, str, BaseImageName]:
         (
             registry_domain,
             project_id,
             repository_id,
             base_image_name,
-            suffix,
         ) = super()._split(image_name)
 
-        environment = Environment(suffix)
-
-        return registry_domain, project_id, repository_id, base_image_name, environment
+        return registry_domain, project_id, repository_id, base_image_name
 
     @classmethod
     def build(
@@ -135,7 +148,6 @@ class ImageName(GenericImageName):
         region: str,
         repository_id: str,
         base_image_name: BaseImageName,
-        environment: Environment,
         **kwargs,
     ) -> ImageName:
         return cls(
@@ -144,45 +156,29 @@ class ImageName(GenericImageName):
                 project_id=project_id,
                 repository_id=repository_id,
                 base_image_name=BaseImageName(base_image_name),
-                environment=Environment(environment),
             )
         )
 
-    def split_base_image_environment(
-        self,
-    ) -> Tuple[BaseImageName, Environment]:
-        _, _, _, base_image_name, environment = self._split(self)
-
-        return base_image_name, environment
-
 
 class ImageNameWithTag(GenericImageName):
-    TEMPLATE = (
-        "{registry_domain}/{project_id}/{repository_id}/"
-        "{base_image_name}/{environment}:{tag}"
-    )
+    TEMPLATE = "{registry_domain}/{project_id}/{repository_id}/{base_image_name}:{tag}"
 
     @classmethod
-    def _split(
-        cls, image_name: str
-    ) -> Tuple[str, str, str, BaseImageName, Environment, Tag]:
+    def _split(cls, image_name: str) -> Tuple[str, str, str, BaseImageName, Tag]:
         (
             registry_domain,
             project_id,
             repository_id,
-            base_image_name,
-            suffix,
+            base_image_name_with_tag,
         ) = super()._split(image_name)
 
-        environment, tag = suffix.split(":")
-        environment, tag = Environment(environment), Tag(tag)
+        base_image_name, tag = BaseImageNameWithTag.split_tag(base_image_name_with_tag)
 
         return (
             registry_domain,
             project_id,
             repository_id,
             base_image_name,
-            environment,
             tag,
         )
 
@@ -193,7 +189,6 @@ class ImageNameWithTag(GenericImageName):
         region: str,
         repository_id: str,
         base_image_name: BaseImageName,
-        environment: Environment,
         **kwargs,
     ) -> ImageNameWithTag:
         return cls(
@@ -202,14 +197,6 @@ class ImageNameWithTag(GenericImageName):
                 project_id=project_id,
                 repository_id=repository_id,
                 base_image_name=BaseImageName(base_image_name),
-                environment=Environment(environment),
                 tag=Tag(kwargs["tag"]),
             )
         )
-
-    def split_base_image_environment_and_tag(
-        self,
-    ) -> Tuple[BaseImageName, Environment, Tag]:
-        _, _, _, base_image_name, environment, tag = self._split(self)
-
-        return base_image_name, environment, tag

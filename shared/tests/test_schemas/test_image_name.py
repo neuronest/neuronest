@@ -1,12 +1,11 @@
 import pytest
 
-from core.schemas.environment import Environment
 from core.schemas.image_name import BaseImageName, ImageName, ImageNameWithTag, Tag
 
 
 @pytest.fixture(name="region")
 def fixture_region() -> str:
-    return "europe-west9"
+    return "europe-west1"
 
 
 @pytest.fixture(name="registry_domain")
@@ -22,11 +21,6 @@ def fixture_project_id() -> str:
 @pytest.fixture(name="repository_id")
 def fixture_repository_id() -> str:
     return "1234567654345"
-
-
-@pytest.fixture(name="environment")
-def fixture_environment() -> Environment:
-    return Environment("test")
 
 
 @pytest.fixture(name="base_image_name")
@@ -45,11 +39,9 @@ def test_image_name(
     region: str,
     repository_id: str,
     base_image_name: BaseImageName,
-    environment: Environment,
 ):
     image_name = ImageName(
-        f"{registry_domain}/{project_id}/{repository_id}/"
-        f"{base_image_name}/{environment}"
+        f"{registry_domain}/{project_id}/{repository_id}/" f"{base_image_name}"
     )
 
     assert image_name == ImageName.build(
@@ -57,10 +49,7 @@ def test_image_name(
         region=region,
         repository_id=repository_id,
         base_image_name=base_image_name,
-        environment=environment,
     )
-
-    assert image_name.split_base_image_environment() == (base_image_name, environment)
 
 
 def test_image_name_with_tag(
@@ -69,12 +58,10 @@ def test_image_name_with_tag(
     region: str,
     repository_id: str,
     base_image_name: BaseImageName,
-    environment: Environment,
     tag: Tag,
 ):
     image_name_with_tag = ImageNameWithTag(
-        f"{registry_domain}/{project_id}/{repository_id}/"
-        f"{base_image_name}/{environment}:{tag}"
+        f"{registry_domain}/{project_id}/{repository_id}/{base_image_name}:{tag}"
     )
 
     assert image_name_with_tag == ImageNameWithTag.build(
@@ -82,12 +69,5 @@ def test_image_name_with_tag(
         region=region,
         repository_id=repository_id,
         base_image_name=base_image_name,
-        environment=environment,
         tag=tag,
-    )
-
-    assert image_name_with_tag.split_base_image_environment_and_tag() == (
-        base_image_name,
-        environment,
-        tag,
     )
