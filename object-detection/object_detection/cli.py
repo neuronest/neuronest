@@ -16,9 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 def launch_training_job(
+    project_id: str,
     models_bucket_name: str,
     model_name: str,
-    location: str,
+    region: str,
     training_container_uri: str,
     training_machine_type: str,
     accelerator_type: str,
@@ -26,7 +27,7 @@ def launch_training_job(
     serving_container_uri: Optional[str] = None,
 ) -> Union[str, GSPath]:
     StorageClient().create_bucket(
-        bucket_name=models_bucket_name, location=location, exist_ok=True
+        bucket_name=models_bucket_name, location=region, exist_ok=True
     )
 
     will_produce_model = serving_container_uri is not None
@@ -40,7 +41,7 @@ def launch_training_job(
 
     job = aiplatform.CustomContainerTrainingJob(
         display_name=model_name,
-        location=location,
+        location=region,
         staging_bucket=models_bucket_name,
         container_uri=training_container_uri,
         model_serving_container_image_uri=serving_container_uri,
@@ -52,7 +53,11 @@ def launch_training_job(
         accelerator_type=accelerator_type,
         accelerator_count=accelerator_count,
         base_output_dir=artifacts_path,
-        environment_variables={"IMAGE_NAME": IMAGE_NAME},
+        environment_variables={
+            "IMAGE_NAME": IMAGE_NAME,
+            "PROJECT_ID": project_id,
+            "REGION": region,
+        },
     )
 
     if will_produce_model is True:
@@ -67,9 +72,10 @@ def main(
 ):
 
     artifacts_path = launch_training_job(
+        project_id=config.project_id,
         models_bucket_name=config.storage.models_bucket_name,
         model_name=config.model.name,
-        location=config.region,
+        region=config.region,
         training_container_uri=config.model_infra.training_container_uri,
         training_machine_type=config.model_infra.training_machine_type,
         accelerator_type=config.model_infra.training_accelerator_type,

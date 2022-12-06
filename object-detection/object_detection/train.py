@@ -48,7 +48,7 @@ def main(
     # noinspection PyArgumentList
     training_duration, model = train_model(
         model_type=config.model.inner_model_type,
-        model_name=config.model.inner_model_name
+        model_name=config.model.inner_model_name,
     )
 
     storage_client = StorageClient()
@@ -89,9 +89,7 @@ if __name__ == "__main__":
     image_name = os.getenv("IMAGE_NAME")
 
     if image_name is None:
-        raise EnvironmentError(
-            "The 'IMAGE_NAME' environment variable is not defined"
-        )
+        raise EnvironmentError("The 'IMAGE_NAME' environment variable is not defined")
 
     main(
         model_directory=GSPath(model_dir),
