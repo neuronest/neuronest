@@ -53,7 +53,7 @@ def main(
 
     storage_client = StorageClient()
 
-    model.save(storage_client=storage_client, directory_path=model_directory)
+    model.save_on_gcs(storage_client=storage_client, directory_path=model_directory)
 
     training_metrics = TrainingMetrics(
         model_name=config.model.name,
