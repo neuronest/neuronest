@@ -1,4 +1,4 @@
-name: 'Set environment variables'
+name: 'set_variables'
 description: 'Configures environment variables for a workflow'
 inputs:
   variables_file_path:

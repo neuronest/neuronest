@@ -9,13 +9,12 @@ from typing import Any, Iterator, List, Optional, Union
 
 import librosa
 import numpy as np
-from cv2 import cv2 as cv
-from moviepy.audio.io.AudioFileClip import AudioFileClip
-from pydantic import BaseModel, root_validator, validator
-
 from core.fixed_parameters import TIME_STEP
 from core.path import LocalPath
 from core.tools import extract_file_extension, get_chunks_from_iterable
+from cv2 import cv2 as cv
+from moviepy.audio.io.AudioFileClip import AudioFileClip
+from pydantic import BaseModel, root_validator, validator
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 VIDEO_EXTENSIONS = {".mp4", ".mov", ".mpg", ".mpeg", ".m4v", ".webm", ".avi"}

@@ -10,10 +10,9 @@ from core.schemas.training_metrics.tables import TrainingMetrics
 from core.services.training_metrics_writer import MetricsWriter
 from core.utils import timeit
 from google.cloud import bigquery
-from omegaconf import DictConfig, OmegaConf
-
 from object_detection.config import cfg
 from object_detection.modules.model import ObjectDetectionModel
+from omegaconf import DictConfig, OmegaConf
 
 
 @timeit
@@ -43,8 +42,8 @@ def main(
     model_directory: GSPath,
     image_name: ImageNameWithTag,
     config: DictConfig,
-    args: argparse.Namespace,
 ):
+    # pylint: disable=unpacking-non-sequence
     # noinspection PyArgumentList
     training_duration, model = train_model(
         model_type=config.model.inner_model_type,
@@ -86,14 +85,8 @@ if __name__ == "__main__":
             "are we in a Vertex AI environment?"
         )
 
-    image_name = os.getenv("IMAGE_NAME")
-
-    if image_name is None:
-        raise EnvironmentError("The 'IMAGE_NAME' environment variable is not defined")
-
     main(
         model_directory=GSPath(model_dir),
-        image_name=ImageNameWithTag(image_name),
+        image_name=ImageNameWithTag(os.environ["IMAGE_NAME"]),
         config=cfg,
-        args=parsed_args,
     )

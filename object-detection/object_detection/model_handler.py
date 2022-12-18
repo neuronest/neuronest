@@ -13,15 +13,19 @@ from ts.torch_handler.base_handler import BaseHandler
 
 # a relative import should be done here as this module is intended to be used with
 # torchserve
+# pylint: disable=import-error
 from config import cfg  # isort:skip
 from model import ObjectDetectionModel  # isort:skip
 from schemas import InputSchema, InputSampleSchema, OutputSchema  # isort:skip
+
+# pylint: enable=import-error
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 
 # See https://pytorch.org/serve/custom_service.html
+# pylint: disable=too-many-instance-attributes
 class ObjectDetectionModelHandler(BaseHandler):
     def __init__(
         self,
@@ -30,7 +34,7 @@ class ObjectDetectionModelHandler(BaseHandler):
         inner_model_name: Optional[str] = None,
         image_width: Optional[int] = None,
     ):
-        super(ObjectDetectionModelHandler, self).__init__()
+        super().__init__()
         self.device = device
         self.inner_model_type = inner_model_type or cfg.inner_model_type
         self.inner_model_name = inner_model_name or cfg.inner_model_name
@@ -129,8 +133,8 @@ class ObjectDetectionModelHandler(BaseHandler):
 
         return filtered_predictions
 
-    def postprocess(self, raw_predictions: List[pd.DataFrame]) -> List[Dict[str, str]]:
-        filtered_predictions = self._filter_predictions(raw_predictions)
+    def postprocess(self, data: List[pd.DataFrame]) -> List[Dict[str, str]]:
+        filtered_predictions = self._filter_predictions(data)
 
         return [
             OutputSchema(results=array_to_string(prediction.values)).dict()

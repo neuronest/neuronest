@@ -1,21 +1,34 @@
 import argparse
 import logging
-from datetime import datetime
-from typing import Optional, Union
+from enum import Enum
+from uuid import UUID
 
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from google.cloud import aiplatform
-from omegaconf import DictConfig
-
 from object_detection.config import cfg
 from object_detection.environment_variables import IMAGE_NAME
+from omegaconf import DictConfig
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 
+class Mode(Enum):
+    TRAINING = "training"
+    SERVING = "serving"
+
+
+def generate_artifacts_path(
+    run_id: UUID, models_bucket_name: str, model_name: str
+) -> GSPath:
+    return GSPath.from_bucket_and_blob_names(
+        models_bucket_name, "-".join([model_name, str(run_id)])
+    )
+
+
 def launch_training_job(
+    run_id: UUID,
     project_id: str,
     models_bucket_name: str,
     model_name: str,
@@ -24,31 +37,32 @@ def launch_training_job(
     training_machine_type: str,
     accelerator_type: str,
     accelerator_count: int,
-    serving_container_uri: Optional[str] = None,
-) -> Union[str, GSPath]:
+):
     StorageClient().create_bucket(
         bucket_name=models_bucket_name, location=region, exist_ok=True
     )
 
-    will_produce_model = serving_container_uri is not None
+    artifacts_path = generate_artifacts_path(
+        run_id=run_id, models_bucket_name=models_bucket_name, model_name=model_name
+    )
 
-    artifacts_path = None
-    if will_produce_model is False:
-        timestamp = datetime.now().isoformat(sep="-", timespec="milliseconds")
-        artifacts_path = GSPath.from_bucket_and_blob_names(
-            models_bucket_name, "-".join([model_name, timestamp])
-        )
+    # unspecified: it won't produce a Vertex Model because no
+    # model_serving_container_image_uri is specified (a custom one will be created)
+    model_display_name = None
+    replica_count = 1  # fixed to 1, we do not need distributing training
 
-    job = aiplatform.CustomContainerTrainingJob(
+    training_job = aiplatform.CustomContainerTrainingJob(
         display_name=model_name,
         location=region,
         staging_bucket=models_bucket_name,
         container_uri=training_container_uri,
-        model_serving_container_image_uri=serving_container_uri,
         command=["python3", "-m", f"{model_name}.train"],
-    ).run(
-        model_display_name=model_name if will_produce_model is True else None,
-        replica_count=1,  # fixed to 1, we absolutely do not need distributing training
+    )
+
+    # will raise a RuntimeError if the job itself crashed
+    training_job.run(
+        model_display_name=model_display_name,
+        replica_count=replica_count,
         machine_type=training_machine_type,
         accelerator_type=accelerator_type,
         accelerator_count=accelerator_count,
@@ -60,18 +74,10 @@ def launch_training_job(
         },
     )
 
-    if will_produce_model is True:
-        return job.name
 
-    return artifacts_path
-
-
-def main(
-    overwrite_endpoint: bool,
-    config: DictConfig,
-):
-
-    artifacts_path = launch_training_job(
+def train(config: DictConfig, run_id: UUID):
+    launch_training_job(
+        run_id=run_id,
         project_id=config.project_id,
         models_bucket_name=config.storage.models_bucket_name,
         model_name=config.model.name,
@@ -82,17 +88,23 @@ def main(
         accelerator_count=config.model_infra.training_accelerator_count,
     )
 
-    return artifacts_path
+
+def serve():
+    pass
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--run-id", dest="run_id", required=True)
     parser.add_argument(
         "--overwrite-endpoint",
         action="store_true",
         dest="overwrite_endpoint",
         default=True,
     )
+    parser.add_argument("--mode", dest="mode", choices=["training", "serving"])
 
     args = parser.parse_args()
-    main(overwrite_endpoint=args.overwrite_endpoint, config=cfg)
+
+    if args.mode == Mode.TRAINING:
+        train(config=cfg, run_id=UUID(args.run_id))

@@ -29,9 +29,11 @@ jobs:
       STAGE: test
     steps:
       - uses: actions/checkout@v3
+      - name: Set environment variables
+        uses: ./.github/actions/set_variables
       - run: apt update && apt install -y cmake ffmpeg libsm6 libxext6
       - run: pip install --upgrade pip
-      - run: pip install poetry==1.2.2
+      - run: pip install poetry==$POETRY_VERSION
       - run: poetry check
       - run: ./install.sh
       - run: poetry run pytest -x -n auto tests -vv

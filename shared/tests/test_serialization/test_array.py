@@ -2,7 +2,6 @@ from typing import List
 
 import numpy as np
 import pytest
-
 from core.serialization.array import (
     array_from_binary,
     array_from_string,

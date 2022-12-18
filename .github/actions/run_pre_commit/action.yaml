@@ -1,0 +1,15 @@
+name: 'run_pre-commit'
+description: 'Install base dependencies and execute pre-commit'
+inputs:
+  repository_path:
+    description: 'Path of the repository to run pre-commit on'
+    required: true
+runs:
+  using: "composite"
+  steps:
+      - run: poetry check
+      - run: poetry install
+      - run: poetry pre-commit install
+      - run: poetry pre-commit install --hook-type commit-msg
+      - run: poetry run pre-commit run --all
+      - run: git ls-files {{inputs.repository_path}} | xargs pre-commit run --files

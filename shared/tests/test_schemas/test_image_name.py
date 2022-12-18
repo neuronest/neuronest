@@ -1,5 +1,4 @@
 import pytest
-
 from core.schemas.image_name import BaseImageName, ImageName, ImageNameWithTag, Tag
 
 

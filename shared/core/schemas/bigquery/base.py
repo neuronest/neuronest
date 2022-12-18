@@ -4,11 +4,10 @@ from datetime import datetime
 from typing import List
 from uuid import uuid4
 
-from google.cloud import bigquery
-from pydantic import BaseModel, Field, root_validator
-
 from core.path import GSPath
 from core.schemas.environment import Environment
+from google.cloud import bigquery
+from pydantic import BaseModel, Field, root_validator
 
 BIG_QUERY_TYPES_MAPPING = {
     str: bigquery.enums.SqlTypeNames.STRING,

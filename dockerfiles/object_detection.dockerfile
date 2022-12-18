@@ -28,7 +28,6 @@ ENV CLOUDSDK_INSTALL_DIR /usr/local/gcloud
 RUN curl -sSL https://sdk.cloud.google.com | bash
 ENV PATH $PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 
-ENV POETRY_VERSION=1.2.2
 ENV PYSETUP_PATH="/opt/pysetup"
 ENV POETRY_HOME="/opt/poetry"
 # using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at

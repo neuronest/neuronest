@@ -31,11 +31,12 @@ class ObjectDetectionModel:
         # noinspection PyCallingNonCallable
         predictions = self._model(*args, **kwargs)
 
-        return [prediction for prediction in predictions.pandas().xyxy]
+        return list(predictions.pandas().xyxy)
 
     def _load_hub_pretrained_model(self):
         return torch.hub.load(self.model_type, self.model_name, pretrained=True)
 
+    # pylint: disable=invalid-name
     def to(self, device: str):
         self._model.to(device)
 

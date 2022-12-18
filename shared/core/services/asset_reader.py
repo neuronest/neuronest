@@ -3,8 +3,6 @@ from functools import partial
 from typing import Optional, Tuple, Union
 
 import numpy as np
-from cv2 import cv2 as cv
-
 from core.google.storage_client import StorageClient
 from core.path import build_path
 from core.schemas.asset import (
@@ -14,6 +12,7 @@ from core.schemas.asset import (
     VisualAssetContent,
 )
 from core.services.reader_common import infer_asset_type, retrieve_asset_locally
+from cv2 import cv2 as cv
 
 logger = logging.getLogger(__name__)
 

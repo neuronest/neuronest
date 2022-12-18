@@ -7,9 +7,6 @@ from shlex import quote
 from typing import Dict, List, Optional
 
 import ffmpeg
-from ffmpeg import Error as FfmpegError
-from pydantic import BaseModel, validator
-
 from core.google.storage_client import StorageClient
 from core.path import LocalPath, build_path
 from core.schemas.asset import (
@@ -19,6 +16,8 @@ from core.schemas.asset import (
     AudioExtension,
 )
 from core.services.reader_common import infer_asset_type, retrieve_asset_locally
+from ffmpeg import Error as FfmpegError
+from pydantic import BaseModel, validator
 
 logger = logging.getLogger(__name__)
 

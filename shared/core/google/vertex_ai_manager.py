@@ -2,10 +2,9 @@ import logging
 from dataclasses import dataclass
 from typing import List, Optional
 
-from google.cloud import aiplatform
+from google.cloud import aiplatform, aiplatform_v1
+from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
-
-from core.schemas.environment import Environment
 
 logger = logging.getLogger(__name__)
 
@@ -23,34 +22,51 @@ class ServingConfig:
 
 
 class VertexAIManager:
-    def __init__(self, key_path: str, environment: Environment, location: str):
+    def __init__(self, key_path: str, location: str):
         self.credentials = service_account.Credentials.from_service_account_file(
             key_path
         )
-        self.environment = Environment(environment)
         self.location = location
 
-    def get_display_name(self, name: str, environment: Optional[Environment] = None):
-        environment = environment or self.environment
-        return f"{environment}_{name}"
+        client_options = {"api_endpoint": f"{self.location}-aiplatform.googleapis.com"}
+        # noinspection PyTypeChecker
+        self.pipeline_service_client = aiplatform.gapic.PipelineServiceClient(
+            credentials=self.credentials, client_options=client_options
+        )
 
-    def get_all_models_by_name(
-        self, name: str, environment: Optional[Environment] = None
-    ) -> List[aiplatform.Model]:
+    def list_training_pipelines(self) -> List[training_pipeline.TrainingPipeline]:
+        parent = f"projects/{self.credentials.project_id}/locations/{self.location}"
+        request = aiplatform_v1.ListTrainingPipelinesRequest({"parent": parent})
+
+        return list(
+            self.pipeline_service_client.list_training_pipelines(request=request)
+        )
+
+    def get_training_pipeline_by_id(
+        self,
+        training_pipeline_id: str,
+    ) -> training_pipeline.TrainingPipeline:
+        name = self.pipeline_service_client.training_pipeline_path(
+            project=self.credentials.project_id,
+            location=self.location,
+            training_pipeline=training_pipeline_id,
+        )
+
+        return self.pipeline_service_client.get_training_pipeline(name=name)
+
+    def get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
         return aiplatform.models.Model.list(
             location=self.location,
             credentials=self.credentials,
-            filter=f"display_name={self.get_display_name(name, environment)}",
+            filter=f"display_name={name}",
             order_by="create_time desc",
         )
 
-    def get_all_endpoints_by_name(
-        self, name: str, environment: Optional[Environment] = None
-    ) -> List[aiplatform.Endpoint]:
+    def get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
             location=self.location,
             credentials=self.credentials,
-            filter=f"display_name={self.get_display_name(name, environment)}_endpoint",
+            filter=f"display_name={name}_endpoint",
             order_by="create_time desc",
         )
 
@@ -58,7 +74,7 @@ class VertexAIManager:
         self,
         name: str,
     ) -> Optional[aiplatform.Model]:
-        models = self.get_all_models_by_name(name, self.environment)
+        models = self.get_all_models_by_name(name)
 
         if len(models) == 0:
             return None
@@ -68,26 +84,10 @@ class VertexAIManager:
     def get_last_endpoint_by_name(
         self,
         name: str,
-        allow_higher_environments: bool = True,
-        environment: Optional[Environment] = None,
     ) -> Optional[aiplatform.Endpoint]:
-        environment = environment or self.environment
-
-        endpoints = self.get_all_endpoints_by_name(name, environment)
+        endpoints = self.get_all_endpoints_by_name(name)
 
         if len(endpoints) == 0:
-            higher_environment = environment.get_higher_environment()
-            if allow_higher_environments and higher_environment is not None:
-                logger.warning(
-                    f"No endpoint named '{name}' has been found, "
-                    f"retrying with a higher environment: {higher_environment}"
-                )
-                return self.get_last_endpoint_by_name(
-                    name=name,
-                    allow_higher_environments=allow_higher_environments,
-                    environment=higher_environment,
-                )
-
             logger.warning(f"No endpoint named '{name}' has been found")
             return None
 
@@ -99,7 +99,7 @@ class VertexAIManager:
         )
 
     def undeploy_all_models_by_endpoint_name(self, name: str):
-        endpoint = self.get_last_endpoint_by_name(name, allow_higher_environments=False)
+        endpoint = self.get_last_endpoint_by_name(name)
 
         if endpoint is not None:
             endpoint.undeploy_all()
@@ -116,11 +116,11 @@ class VertexAIManager:
         model: aiplatform.Model,
         serving_config: ServingConfig,
     ):
-        endpoint = self.get_last_endpoint_by_name(name, allow_higher_environments=False)
+        endpoint = self.get_last_endpoint_by_name(name)
 
         model.deploy(
             endpoint=endpoint,
-            deployed_model_display_name=self.get_display_name(name),
+            deployed_model_display_name=name,
             traffic_split={"0": 100},  # the new deployment receives 100% of the traffic
             machine_type=serving_config.machine_type,
             min_replica_count=serving_config.min_replica_count,
@@ -133,7 +133,7 @@ class VertexAIManager:
         serving_config: ServingConfig,
     ):
         model = aiplatform.Model.upload(
-            display_name=self.get_display_name(name),
+            display_name=name,
             location=self.location,
             credentials=self.credentials,
             serving_container_image_uri=serving_config.container_uri,
