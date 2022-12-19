@@ -7,9 +7,23 @@ inputs:
 runs:
   using: "composite"
   steps:
-      - run: poetry check
-      - run: poetry install
-      - run: poetry pre-commit install
-      - run: poetry pre-commit install --hook-type commit-msg
-      - run: poetry run pre-commit run --all
-      - run: git ls-files {{inputs.repository_path}} | xargs pre-commit run --files
+      - run: cp .flake8 .pylintrc .pre-commit-config.yaml ${{ inputs.repository_path }}
+        shell: bash
+      - working-directory: ${{ inputs.repository_path }}
+        run: poetry check && poetry install --with test
+        shell: bash
+      - working-directory: ${{ inputs.repository_path }}
+        run: poetry run black --check .
+        shell: bash
+      - working-directory: ${{ inputs.repository_path }}
+        run: poetry run flake8 --config=.flake8 .
+        shell: bash
+      - working-directory: ${{ inputs.repository_path }}
+        run: poetry run pylint --rcfile=.pylintrc -j 0 --reports=n --recursive=true .
+        shell: bash
+      - working-directory: ${{ inputs.repository_path }}
+        run: poetry run isort --check-only --profile=black .
+        shell: bash
+      - working-directory: ${{ inputs.repository_path }}
+        run: poetry run toml-sort --in-place -a pyproject.toml
+        shell: bash

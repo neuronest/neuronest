@@ -10,9 +10,10 @@ from core.schemas.training_metrics.tables import TrainingMetrics
 from core.services.training_metrics_writer import MetricsWriter
 from core.utils import timeit
 from google.cloud import bigquery
+from omegaconf import DictConfig, OmegaConf
+
 from object_detection.config import cfg
 from object_detection.modules.model import ObjectDetectionModel
-from omegaconf import DictConfig, OmegaConf
 
 
 @timeit

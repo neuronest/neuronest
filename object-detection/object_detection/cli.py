@@ -6,9 +6,10 @@ from uuid import UUID
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from google.cloud import aiplatform
+from omegaconf import DictConfig
+
 from object_detection.config import cfg
 from object_detection.environment_variables import IMAGE_NAME
-from omegaconf import DictConfig
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)

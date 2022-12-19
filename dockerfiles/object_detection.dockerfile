@@ -7,17 +7,19 @@ RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get -qqy update && apt-get install -qqy \
         build-essential \
         curl \
-        libssl-dev \
+        ffmpeg \
+        git \
         libffi-dev \
+        libsm6 \
+        libssl-dev \
+        libxext6 \
+        libxrender-dev \
+        python3-crcmod \
+        python3-pip \
         python3.8 \
         python3.8-dev \
-        python3-pip \
-        python3-crcmod \
-        ffmpeg \
-        x264 \
-        libsm6 \
-        libxext6 \
-        libxrender-dev
+        uuid-runtime \
+        x264
 
 ARG STAGE
 ARG PROJECT_DIRECTORY="object-detection"
