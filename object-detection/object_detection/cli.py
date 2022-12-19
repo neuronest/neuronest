@@ -15,7 +15,7 @@ logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 
-class Mode(Enum):
+class Mode(str, Enum):
     TRAINING = "training"
     SERVING = "serving"
 
