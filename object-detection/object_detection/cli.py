@@ -1,7 +1,6 @@
 import argparse
 import logging
 from enum import Enum
-from uuid import UUID
 
 from core.google.storage_client import StorageClient
 from core.path import GSPath
@@ -20,16 +19,8 @@ class Mode(str, Enum):
     SERVING = "serving"
 
 
-def generate_artifacts_path(
-    run_id: UUID, models_bucket_name: str, model_name: str
-) -> GSPath:
-    return GSPath.from_bucket_and_blob_names(
-        models_bucket_name, "-".join([model_name, str(run_id)])
-    )
-
-
 def launch_training_job(
-    run_id: UUID,
+    model_path: GSPath,
     project_id: str,
     models_bucket_name: str,
     model_name: str,
@@ -41,10 +32,6 @@ def launch_training_job(
 ):
     StorageClient().create_bucket(
         bucket_name=models_bucket_name, location=region, exist_ok=True
-    )
-
-    artifacts_path = generate_artifacts_path(
-        run_id=run_id, models_bucket_name=models_bucket_name, model_name=model_name
     )
 
     # unspecified: it won't produce a Vertex Model because no
@@ -67,7 +54,7 @@ def launch_training_job(
         machine_type=training_machine_type,
         accelerator_type=accelerator_type,
         accelerator_count=accelerator_count,
-        base_output_dir=artifacts_path,
+        base_output_dir=model_path,
         environment_variables={
             "IMAGE_NAME": IMAGE_NAME,
             "PROJECT_ID": project_id,
@@ -76,9 +63,9 @@ def launch_training_job(
     )
 
 
-def train(config: DictConfig, run_id: UUID):
+def train(config: DictConfig, model_path: GSPath):
     launch_training_job(
-        run_id=run_id,
+        model_path=model_path,
         project_id=config.project_id,
         models_bucket_name=config.storage.models_bucket_name,
         model_name=config.model.name,
@@ -96,7 +83,7 @@ def serve():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run-id", dest="run_id", required=True)
+    parser.add_argument("--model_path", dest="model_path", required=True)
     parser.add_argument(
         "--overwrite-endpoint",
         action="store_true",
@@ -108,4 +95,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.mode == Mode.TRAINING:
-        train(config=cfg, run_id=UUID(args.run_id))
+        train(config=cfg, model_path=GSPath(args.model_path))
