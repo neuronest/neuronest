@@ -77,14 +77,13 @@ jobs:
       credentials:
         username: _json_key_base64
         password: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
-    env:
-      RUN_ID: $(uuidgen)
-      MODEL_PATH: gs://$IMAGE_REPOSITORY-models/$PACKAGE_NAME-$RUN_ID
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
         uses: ./.github/actions/set_variables
       - run: echo "IMAGE_NAME"="${{ needs.build.outputs.IMAGE_NAME }}" >> $GITHUB_ENV
+      - run: echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
+      - run: echo "MODEL_PATH"="gs://$IMAGE_REPOSITORY-models/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
       - run: python -m object_detection.cli --model-path $MODEL_PATH --mode training

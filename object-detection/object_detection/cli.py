@@ -83,7 +83,7 @@ def serve():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_path", dest="model_path", required=True)
+    parser.add_argument("--model-path", dest="model_path", required=True)
     parser.add_argument(
         "--overwrite-endpoint",
         action="store_true",
