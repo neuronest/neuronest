@@ -11,16 +11,35 @@ from pydantic import BaseModel, validator
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ServingConfig:
+class VertexInfraConfig(ABC, BaseModel):
     machine_type: str
+    # the following fields are used for custom containers
+    container_uri: Optional[str] = None
+    accelerator_type: Optional[str] = None
+    accelerator_count: Optional[int] = None
+
+
+class TrainingConfig(VertexInfraConfig):
+    replica_count: int
+
+
+class ServingConfig(VertexInfraConfig):
     min_replica_count: int
     max_replica_count: int
     # the following fields are used for custom containers
-    container_uri: Optional[str] = None
     predict_route: Optional[str] = None
     health_route: Optional[str] = None
     ports: Optional[List[int]] = None
+
+    @validator("ports", pre=True)
+    # pylint: disable=no-self-argument
+    def validate_ports(
+        cls, ports: Optional[Union[ListConfig, List[int]]]
+    ) -> Optional[List[int]]:
+        if ports is None:
+            return None
+
+        return list(ports)
 
 
 class VertexAIManager:
@@ -35,6 +54,7 @@ class VertexAIManager:
         self.pipeline_service_client = aiplatform.gapic.PipelineServiceClient(
             credentials=self.credentials, client_options=client_options
         )
+        self.project_id = self.credentials.project_id
 
     def list_training_pipelines(self) -> List[training_pipeline.TrainingPipeline]:
         parent = f"projects/{self.credentials.project_id}/locations/{self.location}"
@@ -112,6 +132,29 @@ class VertexAIManager:
         for model in models:
             model.delete()
 
+    def upload_model(
+        self,
+        name: str,
+        serving_config: ServingConfig,
+    ) -> aiplatform.Model:
+        existing_model = self.get_last_model_by_name(name=name)
+
+        if existing_model is None:
+            parent_model = None
+        else:
+            parent_model = existing_model.resource_name
+
+        return aiplatform.Model.upload(
+            project=self.project_id,
+            parent_model=parent_model,
+            display_name=name,
+            location=self.location,
+            serving_container_image_uri=serving_config.container_uri,
+            serving_container_predict_route=serving_config.predict_route,
+            serving_container_health_route=serving_config.health_route,
+            serving_container_ports=serving_config.ports,
+        )
+
     def deploy_model(
         self,
         name: str,
@@ -134,15 +177,7 @@ class VertexAIManager:
         name: str,
         serving_config: ServingConfig,
     ):
-        model = aiplatform.Model.upload(
-            display_name=name,
-            location=self.location,
-            credentials=self.credentials,
-            serving_container_image_uri=serving_config.container_uri,
-            serving_container_predict_route=serving_config.predict_route,
-            serving_container_health_route=serving_config.health_route,
-            serving_container_ports=serving_config.ports,
-        )
+        model = self.upload_model(name=name, serving_config=serving_config)
 
         self.deploy_model(
             name=name,
