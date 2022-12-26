@@ -77,6 +77,9 @@ ENV LOCAL_MODEL_PATH="/model/model.pt"
 WORKDIR /app/model/
 
 COPY $PROJECT_DIRECTORY/object_detection/model_handler.py .
+COPY $PROJECT_DIRECTORY/object_detection/modules modules
+COPY $PROJECT_DIRECTORY/object_detection/config.py .
+COPY $PROJECT_DIRECTORY/config.yaml .
 
 COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
