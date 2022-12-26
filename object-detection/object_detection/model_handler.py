@@ -36,9 +36,9 @@ class ObjectDetectionModelHandler(BaseHandler):
     ):
         super().__init__()
         self.device = device
-        self.inner_model_type = inner_model_type or cfg.inner_model_type
-        self.inner_model_name = inner_model_name or cfg.inner_model_name
-        self.image_width = image_width or cfg.image_width
+        self.inner_model_type = inner_model_type or cfg.model.inner_model_type
+        self.inner_model_name = inner_model_name or cfg.model.inner_model_name
+        self.image_width = image_width or cfg.model.image_width
         self._context = None
         self.initialized = False
         self.model: Optional[ObjectDetectionModel] = None

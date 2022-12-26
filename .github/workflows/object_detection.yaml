@@ -120,3 +120,27 @@ jobs:
       - run: docker push $SERVING_IMAGE_NAME --all-tags
       - id: output_step
         run: echo "SERVING_IMAGE_NAME=$SERVING_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+
+  upload_model:
+    name: upload_model
+    needs:
+      - build_serving
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: /app
+    container:
+      image: ${{needs.build_training.outputs.TRAINING_IMAGE_NAME}}
+      credentials:
+        username: _json_key_base64
+        password: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set environment variables
+        uses: ./.github/actions/set_variables
+      - run: echo "SERVING_IMAGE_NAME"="${{ needs.build_serving.outputs.SERVING_IMAGE_NAME }}" >> $GITHUB_ENV
+      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
+      - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+      - run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --mode training
+      - id: output_step
+        run: echo "MODEL_GSPATH=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
