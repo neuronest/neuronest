@@ -91,7 +91,7 @@ jobs:
       - run: echo "MODEL_GSPATH"="gs://$IMAGE_REPOSITORY-models/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --mode training
+      - run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --modes train
       - id: output_step
         run: echo "MODEL_GSPATH=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
 
@@ -121,8 +121,8 @@ jobs:
       - id: output_step
         run: echo "SERVING_IMAGE_NAME=$SERVING_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
-  upload_model:
-    name: upload_model
+  serve:
+    name: serve
     needs:
       - build_serving
     runs-on: ubuntu-latest
@@ -141,6 +141,6 @@ jobs:
       - run: echo "SERVING_IMAGE_NAME"="${{ needs.build_serving.outputs.SERVING_IMAGE_NAME }}" >> $GITHUB_ENV
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --mode training
+      - run: python -m object_detection.cli --modes model_upload deploy undeploy
       - id: output_step
         run: echo "MODEL_GSPATH=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT

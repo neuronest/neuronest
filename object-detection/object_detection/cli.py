@@ -1,6 +1,7 @@
 import argparse
 import logging
 from enum import Enum
+from typing import List, Optional
 
 from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import ServingConfig, TrainingConfig, VertexAIManager
@@ -19,9 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class Mode(str, Enum):
-    TRAINING = "training"
-    MODEL_UPLOADING = "model_uploading"
-    SERVING = "serving"
+    TRAIN = "train"
+    MODEL_UPLOAD = "model_upload"
+    DEPLOY = "deploy"
+    UNDEPLOY = "undeploy"
 
 
 def launch_training_job(
@@ -95,7 +97,7 @@ def upload_model(
     )
 
 
-def serve(
+def deploy(
     serving_config: ServingConfig, vertex_ai_manager: VertexAIManager, model_name: str
 ):
     model = vertex_ai_manager.get_last_model_by_name(name=model_name)
@@ -108,57 +110,73 @@ def serve(
     )
 
 
-def main(config: DictConfig, parsed_args: argparse.Namespace):
+def undeploy(vertex_ai_manager: VertexAIManager, model_name: str):
+    return vertex_ai_manager.undeploy_all_models_by_endpoint_name(name=model_name)
+
+
+def main(config: DictConfig, model_gspath: Optional[GSPath], modes: List[Mode]):
     vertex_ai_manager = VertexAIManager(
         key_path=GOOGLE_APPLICATION_CREDENTIALS, location=config.region
     )
     model_name = config.model.name
 
-    if parsed_args.mode == Mode.TRAINING:
+    if len(modes) == 0:
+        raise ValueError("No mode received")
+
+    if Mode.TRAIN in modes:
         training_config = TrainingConfig(**config.training_spec)
 
-        if parsed_args.model_gspath is None:
+        if model_gspath is None:
             raise ValueError(
                 "model_gspath parameter should be specified in training mode"
             )
 
-        return train(
+        train(
             training_config=training_config,
             vertex_ai_manager=vertex_ai_manager,
             model_name=model_name,
-            model_gspath=GSPath(parsed_args.model_gspath),
+            model_gspath=model_gspath,
         )
 
     serving_config = ServingConfig(**config.serving_spec)
 
-    if parsed_args.mode == Mode.MODEL_UPLOADING:
-        return upload_model(
+    if Mode.MODEL_UPLOAD in modes:
+        upload_model(
             serving_config=serving_config,
             vertex_ai_manager=vertex_ai_manager,
             model_name=model_name,
         )
 
-    if parsed_args.mode == Mode.SERVING:
-        return serve(
+    if Mode.DEPLOY in modes:
+        deploy(
             serving_config=serving_config,
             vertex_ai_manager=vertex_ai_manager,
             model_name=model_name,
         )
 
-    raise ValueError(f"Unsupported mode: {parsed_args.mode}")
+    if Mode.UNDEPLOY in modes:
+        undeploy(
+            vertex_ai_manager=vertex_ai_manager,
+            model_name=model_name,
+        )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-gspath", dest="model_gspath")
     parser.add_argument(
-        "--overwrite-endpoint",
-        action="store_true",
-        dest="overwrite_endpoint",
-        default=True,
-    )
-    parser.add_argument(
-        "--mode", dest="mode", choices=["training", "model_uploading", "serving"]
+        "--modes",
+        dest="modes",
+        choices=["train", "model_upload", "deploy", "undeploy"],
+        nargs="+",
     )
 
-    main(config=cfg, parsed_args=parser.parse_args())
+    parsed_args = parser.parse_args()
+
+    main(
+        config=cfg,
+        model_gspath=None
+        if parsed_args.model_gspath is None
+        else GSPath(parsed_args.model_gspath),
+        modes=[Mode(mode) for mode in parsed_args.modes],
+    )
