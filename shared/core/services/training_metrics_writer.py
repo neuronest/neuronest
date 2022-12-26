@@ -1,7 +1,8 @@
 from typing import List
 
-from core.schemas.training_metrics.tables import TrainingMetrics
 from google.cloud import bigquery
+
+from core.schemas.training_metrics.tables import TrainingMetrics
 
 
 class MetricsWriter:

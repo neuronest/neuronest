@@ -8,14 +8,15 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from core.exceptions import DependencyError
-from core.path import GSPath
-from core.serialization.encoding import NumpyEncoder
 from cv2 import cv2 as cv
 from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import storage
 from google.cloud.storage import Bucket
 from tqdm import tqdm
+
+from core.exceptions import DependencyError
+from core.path import GSPath
+from core.serialization.encoding import NumpyEncoder
 
 logger = logging.getLogger(__name__)
 

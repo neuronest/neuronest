@@ -1,6 +1,8 @@
 from api.config import config as config_api
 from fastapi import Depends
-from google.cloud import firestore, storage  # pylint: disable=no-name-in-module
+from google.cloud import firestore  # pylint: disable=no-name-in-module
+from google.cloud import storage  # pylint: disable=no-name-in-module
+
 from people_counting.config import cfg as config_counting
 from people_counting.people_counter import PeopleCounter
 

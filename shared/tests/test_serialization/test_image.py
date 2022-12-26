@@ -3,13 +3,14 @@ from typing import List
 
 import numpy as np
 import pytest
+from cv2 import cv2 as cv
+
 from core.serialization.image import (
     image_from_binary,
     image_from_string,
     image_to_binary,
     image_to_string,
 )
-from cv2 import cv2 as cv
 
 
 @pytest.fixture(name="images_directory")

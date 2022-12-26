@@ -1,7 +1,8 @@
 from typing import List, Optional
 
-from people_counting.common import Direction, Statistics
 from pydantic import BaseModel
+
+from people_counting.common import Direction, Statistics
 
 
 class Detection(BaseModel):

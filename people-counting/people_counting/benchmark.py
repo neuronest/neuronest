@@ -4,6 +4,7 @@ import os
 from typing import List, Optional
 
 import pandas as pd
+
 from people_counting.common import VIDEOS_EXTENSIONS, init_logger
 from people_counting.config import cfg
 from people_counting.people_counter import PeopleCounter

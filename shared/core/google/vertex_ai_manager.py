@@ -1,10 +1,12 @@
 import logging
-from dataclasses import dataclass
-from typing import List, Optional
+from abc import ABC
+from typing import List, Optional, Union
 
 from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
+from omegaconf import ListConfig
+from pydantic import BaseModel, validator
 
 logger = logging.getLogger(__name__)
 
