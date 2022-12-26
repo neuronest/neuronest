@@ -21,10 +21,8 @@ RUN apt-get -qqy update && apt-get install -qqy \
         uuid-runtime \
         x264
 
-ARG STAGE
 ARG PROJECT_DIRECTORY="object-detection"
-
-ENV STAGE=$STAGE
+ENV PROJECT_DIRECTORY=$PROJECT_DIRECTORY
 
 ENV CLOUDSDK_INSTALL_DIR /usr/local/gcloud
 RUN curl -sSL https://sdk.cloud.google.com | bash

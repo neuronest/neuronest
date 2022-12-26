@@ -9,10 +9,11 @@ model:
   image_width: 400
 
 model_infra:
-  training_container_uri: "${oc.env:ARTIFACT_REGISTRY_PATH}/${name}:latest"
+  training_container_uri: "${oc.env:TRAINING_IMAGE_NAME}"
   training_machine_type: "e2-standard-4"
   training_accelerator_type: "ACCELERATOR_TYPE_UNSPECIFIED"
   training_accelerator_count: 0
+  serving_container_uri: "${oc.env:SERVING_IMAGE_NAME}"
   serving_accelerator_type: "NVIDIA_TESLA_K80"
   serving_accelerator_count: 1
   min_replica_count: 1

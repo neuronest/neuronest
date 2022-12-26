@@ -8,7 +8,7 @@ from google.cloud import aiplatform
 from omegaconf import DictConfig
 
 from object_detection.config import cfg
-from object_detection.environment_variables import IMAGE_NAME
+from object_detection.environment_variables import TRAINING_IMAGE_NAME
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class Mode(str, Enum):
 
 
 def launch_training_job(
-    model_path: GSPath,
+    model_gspath: GSPath,
     project_id: str,
     models_bucket_name: str,
     model_name: str,
@@ -54,18 +54,18 @@ def launch_training_job(
         machine_type=training_machine_type,
         accelerator_type=accelerator_type,
         accelerator_count=accelerator_count,
-        base_output_dir=model_path,
+        base_output_dir=model_gspath,
         environment_variables={
-            "IMAGE_NAME": IMAGE_NAME,
+            "IMAGE_NAME": TRAINING_IMAGE_NAME,
             "PROJECT_ID": project_id,
             "REGION": region,
         },
     )
 
 
-def train(config: DictConfig, model_path: GSPath):
+def train(config: DictConfig, model_gspath: GSPath):
     launch_training_job(
-        model_path=model_path,
+        model_gspath=model_gspath,
         project_id=config.project_id,
         models_bucket_name=config.storage.models_bucket_name,
         model_name=config.model.name,
@@ -83,7 +83,7 @@ def serve():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", dest="model_path", required=True)
+    parser.add_argument("--model-gspath", dest="model_gspath", required=True)
     parser.add_argument(
         "--overwrite-endpoint",
         action="store_true",
@@ -95,4 +95,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.mode == Mode.TRAINING:
-        train(config=cfg, model_path=GSPath(args.model_path))
+        train(config=cfg, model_gspath=GSPath(args.model_gspath))
