@@ -81,7 +81,7 @@ jobs:
     env:
       MODEL_WEIGHTS: model/model.pt
     outputs:
-      MODEL_PATH: ${{ steps.output_step.outputs.MODEL_PATH }}
+      MODEL_GSPATH: ${{ steps.output_step.outputs.MODEL_GSPATH }}
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
@@ -110,7 +110,7 @@ jobs:
       - name: Set environment variables
         uses: ./.github/actions/set_variables
       - run: echo "SERVING_IMAGE_NAME"="$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY-$TARGET" >> $GITHUB_ENV
-      - run: echo "MODEL_GSPATH"="${{ needs.train.outputs.MODEL_PATH }}" >> $GITHUB_ENV
+      - run: echo "MODEL_GSPATH"="${{ needs.train.outputs.MODEL_GSPATH }}" >> $GITHUB_ENV
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth configure-docker $REGION-docker.pkg.dev
