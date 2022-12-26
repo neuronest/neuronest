@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import argparse
 import logging
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import ServingConfig, TrainingConfig, VertexAIManager
@@ -24,6 +26,14 @@ class Mode(str, Enum):
     MODEL_UPLOAD = "model_upload"
     DEPLOY = "deploy"
     UNDEPLOY = "undeploy"
+
+    @property
+    def serving_modes(self) -> Tuple[Mode, ...]:
+        return self.MODEL_UPLOAD, self.DEPLOY, self.UNDEPLOY
+
+    @property
+    def is_serving_mode(self) -> bool:
+        return self in self.serving_modes
 
 
 def launch_training_job(
@@ -137,6 +147,9 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], modes: List[Mode]):
             model_name=model_name,
             model_gspath=model_gspath,
         )
+
+    if not any(mode.is_serving_mode for mode in modes):
+        return
 
     serving_config = ServingConfig(**config.serving_spec)
 
