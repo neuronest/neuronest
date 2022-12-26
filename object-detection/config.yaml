@@ -23,7 +23,7 @@ serving_spec:
   min_replica_count: 1
   max_replica_count: 1
   predict_route: "/predictions/${model.name}"
-  health_route: "/health"
+  health_route: "/ping"
   ports: [7080]
 
 bigquery:
