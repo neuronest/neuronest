@@ -1,6 +1,12 @@
+from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, validator
+
+
+class Device(str, Enum):
+    CPU = "cpu"
+    CUDA = "cuda"
 
 
 class InputSampleSchema(BaseModel):

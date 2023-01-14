@@ -1,6 +1,5 @@
 import logging
 import os
-from enum import Enum
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -17,17 +16,12 @@ from ts.torch_handler.base_handler import BaseHandler
 # pylint: disable=import-error
 from config import cfg  # isort:skip
 from model import ObjectDetectionModel  # isort:skip
-from schemas import InputSchema, InputSampleSchema, OutputSchema  # isort:skip
+from schemas import Device, InputSchema, InputSampleSchema, OutputSchema  # isort:skip
 
 # pylint: enable=import-error
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
-
-
-class Device(str, Enum):
-    CPU = "cpu"
-    CUDA = "cuda"
 
 
 # See https://pytorch.org/serve/custom_service.html
