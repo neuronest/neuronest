@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 as training
+FROM nvidia/cuda:12.0.0-runtime-ubuntu20.04 as training
 
 RUN apt-get -qqy update && apt-get install -qqy software-properties-common
 # to get latest python versions
