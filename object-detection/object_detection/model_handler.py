@@ -1,5 +1,6 @@
 import logging
 import os
+from enum import Enum
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -24,18 +25,23 @@ logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 
+class Device(str, Enum):
+    CPU = "cpu"
+    CUDA = "cuda"
+
+
 # See https://pytorch.org/serve/custom_service.html
 # pylint: disable=too-many-instance-attributes
 class ObjectDetectionModelHandler(BaseHandler):
     def __init__(
         self,
-        device: str = "cpu",
+        device: Device = Device.CUDA,
         inner_model_type: Optional[str] = None,
         inner_model_name: Optional[str] = None,
         image_width: Optional[int] = None,
     ):
         super().__init__()
-        self.device = device
+        self.device = device.value
         self.inner_model_type = inner_model_type or cfg.model.inner_model_type
         self.inner_model_name = inner_model_name or cfg.model.inner_model_name
         self.image_width = image_width or cfg.model.image_width
@@ -76,6 +82,9 @@ class ObjectDetectionModelHandler(BaseHandler):
 
         if not os.path.isfile(model_pt_path):
             raise RuntimeError("The model.pt file is missing")
+
+        if self.device == Device.CUDA and not torch.cuda.is_available():
+            raise RuntimeError("GPU not detected while the device is 'cuda'")
 
         self.model = ObjectDetectionModel(
             model_type=self.inner_model_type, model_name=self.inner_model_name

@@ -17,6 +17,7 @@ PyYAML = "^6.0"  # implicit torchhub ultralytics dependency
 core = {path="../shared", develop = true}
 imutils = "^0.5.4"
 ipython = "^8.5.0"  # implicit torchhub ultralytics dependency
+nvgpu = "^0.9.0"  # torchserve dependency
 python = ">3.8.1,<3.10"
 scipy = "^1.9.3"  # implicit torchhub ultralytics dependency
 seaborn = "^0.12.1"  # implicit torchhub ultralytics dependency
