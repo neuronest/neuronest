@@ -78,7 +78,8 @@ class ObjectDetectionModelHandler(BaseHandler):
             raise RuntimeError("The model.pt file is missing")
 
         if self.device == Device.CUDA and not torch.cuda.is_available():
-            raise RuntimeError("GPU not detected while the device is 'cuda'")
+            logger.warning(f"GPU not detected while the device is {self.device}")
+            self.device = Device.CPU.value
 
         self.model = ObjectDetectionModel(
             model_type=self.inner_model_type, model_name=self.inner_model_name
