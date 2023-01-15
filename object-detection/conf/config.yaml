@@ -8,20 +8,15 @@ model:
   inner_model_name: "yolov5x6"
   image_width: 400
 
-training_spec:
+training:
   container_uri: "${oc.env:TRAINING_IMAGE_NAME}"
   machine_type: "e2-standard-4"
   accelerator_type: "ACCELERATOR_TYPE_UNSPECIFIED"
   accelerator_count: 0
   replica_count: 1
 
-serving_spec:
+serving_model_upload:
   container_uri: "${oc.env:SERVING_IMAGE_NAME}"
-  machine_type: "e2-standard-4"
-  accelerator_type: "NVIDIA_TESLA_K80"
-  accelerator_count: 1
-  min_replica_count: 1
-  max_replica_count: 1
   predict_route: "/predictions/${model.name}"
   health_route: "/ping"
   ports: [7080]

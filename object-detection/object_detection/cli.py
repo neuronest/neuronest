@@ -6,8 +6,13 @@ from enum import Enum
 from typing import List, Optional, Tuple
 
 from core.google.storage_client import StorageClient
-from core.google.vertex_ai_manager import ServingConfig, TrainingConfig, VertexAIManager
+from core.google.vertex_ai_manager import VertexAIManager
 from core.path import GSPath
+from core.schemas.vertex_ai import (
+    ServingDeploymentConfig,
+    ServingModelUploadConfig,
+    TrainingConfig,
+)
 from google.cloud import aiplatform
 from omegaconf import DictConfig
 
@@ -93,22 +98,26 @@ def train(
         region=vertex_ai_manager.location,
         container_uri=training_config.container_uri,
         machine_type=training_config.machine_type,
+        replica_count=training_config.replica_count,
         accelerator_type=training_config.accelerator_type,
         accelerator_count=training_config.accelerator_count,
-        replica_count=training_config.replica_count,
     )
 
 
 def upload_model(
-    serving_config: ServingConfig, vertex_ai_manager: VertexAIManager, model_name: str
+    serving_model_upload_config: ServingModelUploadConfig,
+    vertex_ai_manager: VertexAIManager,
+    model_name: str,
 ) -> aiplatform.Model:
     return vertex_ai_manager.upload_model(
-        name=model_name, serving_config=serving_config
+        name=model_name, serving_model_upload_config=serving_model_upload_config
     )
 
 
 def deploy(
-    serving_config: ServingConfig, vertex_ai_manager: VertexAIManager, model_name: str
+    serving_deployment_config: ServingDeploymentConfig,
+    vertex_ai_manager: VertexAIManager,
+    model_name: str,
 ):
     model = vertex_ai_manager.get_last_model_by_name(name=model_name)
 
@@ -116,7 +125,9 @@ def deploy(
         raise ValueError(f"No model found with name: {model_name}")
 
     vertex_ai_manager.deploy_model(
-        name=model_name, model=model, serving_config=serving_config
+        name=model_name,
+        model=model,
+        serving_deployment_config=serving_deployment_config,
     )
 
 
@@ -134,7 +145,7 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], modes: List[Mode]):
         raise ValueError("No mode received")
 
     if Mode.TRAIN in modes:
-        training_config = TrainingConfig(**config.training_spec)
+        training_config = TrainingConfig(**config.training)
 
         if model_gspath is None:
             raise ValueError(
@@ -151,18 +162,21 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], modes: List[Mode]):
     if not any(mode.is_serving_mode for mode in modes):
         return
 
-    serving_config = ServingConfig(**config.serving_spec)
+    serving_model_upload_config = ServingModelUploadConfig(
+        **config.serving_model_upload
+    )
+    serving_deployment_config = ServingDeploymentConfig(**config.serving_deployment)
 
     if Mode.MODEL_UPLOAD in modes:
         upload_model(
-            serving_config=serving_config,
+            serving_model_upload_config=serving_model_upload_config,
             vertex_ai_manager=vertex_ai_manager,
             model_name=model_name,
         )
 
     if Mode.DEPLOY in modes:
         deploy(
-            serving_config=serving_config,
+            serving_deployment_config=serving_deployment_config,
             vertex_ai_manager=vertex_ai_manager,
             model_name=model_name,
         )
