@@ -2,7 +2,7 @@ name: core
 
 defaults:
   run:
-    working-directory: core
+    working-directory: shared
 
 on:
   push:
@@ -35,5 +35,5 @@ jobs:
       - run: pip install --upgrade pip
       - run: pip install poetry==$POETRY_VERSION
       - run: poetry check
-      - run: ./install.sh
+      - run: poetry install --with test
       - run: poetry run pytest -x -n auto tests -vv
