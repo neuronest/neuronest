@@ -165,7 +165,7 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], modes: List[Mode]):
     serving_model_upload_config = ServingModelUploadConfig(
         **config.serving_model_upload
     )
-    serving_deployment_config = ServingDeploymentConfig(**config.serving_deployment)
+    default_serving_deployment_config = ServingDeploymentConfig()
 
     if Mode.MODEL_UPLOAD in modes:
         upload_model(
@@ -176,7 +176,7 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], modes: List[Mode]):
 
     if Mode.DEPLOY in modes:
         deploy(
-            serving_deployment_config=serving_deployment_config,
+            serving_deployment_config=default_serving_deployment_config,
             vertex_ai_manager=vertex_ai_manager,
             model_name=model_name,
         )

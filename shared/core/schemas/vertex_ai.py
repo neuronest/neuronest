@@ -25,7 +25,7 @@ class ServingModelUploadConfig(BaseModel):
 
 
 class ServingDeploymentConfig(BaseModel):
-    machine_type: str
+    machine_type: str = "n1-standard-2"
     min_replica_count: int = 1
     max_replica_count: int = 1
     accelerator_type: Optional[str] = None
