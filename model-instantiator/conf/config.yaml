@@ -8,6 +8,7 @@ routes:
   instantiate: /instantiate
   uninstantiate: /uninstantiate
   uninstantiate_logs_conditioned: /uninstantiate_logs_conditioned
+  pubsub_uninstantiate_logs_conditioned: /pubsub_uninstantiate_logs_conditioned
 
 uninstantiate_time_delta: 1800  # in seconds
 

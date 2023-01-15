@@ -12,11 +12,23 @@ logger = logging.getLogger(__name__)
 
 
 class VertexAIManager:
-    def __init__(self, key_path: str, location: str):
-        self.credentials = service_account.Credentials.from_service_account_file(
-            key_path
-        )
+    def __init__(
+        self,
+        location: str,
+        key_path: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ):
         self.location = location
+
+        if key_path is None and project_id is None:
+            raise ValueError("Either key_path or project_id should be specified")
+
+        self.credentials = (
+            service_account.Credentials.from_service_account_file(key_path)
+            if key_path is not None
+            else None
+        )
+        self._project_id = project_id
 
         client_options = {"api_endpoint": f"{self.location}-aiplatform.googleapis.com"}
         # noinspection PyTypeChecker
@@ -26,7 +38,11 @@ class VertexAIManager:
 
     @property
     def project_id(self) -> str:
-        return self.credentials.project_id
+        return (
+            self.credentials.project_id
+            if self.credentials is not None
+            else self._project_id
+        )
 
     @staticmethod
     def _model_to_endpoint_name(model_name: str) -> str:
@@ -36,7 +52,7 @@ class VertexAIManager:
         return f"{model_name}_endpoint"
 
     def list_training_pipelines(self) -> List[training_pipeline.TrainingPipeline]:
-        parent = f"projects/{self.credentials.project_id}/locations/{self.location}"
+        parent = f"projects/{self.project_id}/locations/{self.location}"
         request = aiplatform_v1.ListTrainingPipelinesRequest({"parent": parent})
 
         return list(
