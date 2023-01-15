@@ -25,4 +25,4 @@ if __name__ == "__main__":
     # used for debugging purposes only
     import uvicorn  # isort:skip
 
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_config="conf/gunicorn_logging.conf")
+    uvicorn.run(app, host="0.0.0.0", port=8000)

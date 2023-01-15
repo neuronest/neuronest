@@ -48,9 +48,9 @@ COPY $PROJECT_DIRECTORY/pyproject.toml $PROJECT_DIRECTORY/poetry.lock ./
 RUN poetry config virtualenvs.in-project true
 RUN poetry install
 
-RUN mkdir -p /app/object_detection /app/conf
+RUN mkdir -p /app/object_detection
 
-COPY $PROJECT_DIRECTORY/conf /app/conf
+COPY $PROJECT_DIRECTORY/config.yaml /app
 COPY $PROJECT_DIRECTORY/object_detection /app/object_detection
 
 WORKDIR /app/
@@ -79,7 +79,7 @@ WORKDIR /app/model/
 COPY $PROJECT_DIRECTORY/object_detection/model_handler.py .
 COPY $PROJECT_DIRECTORY/object_detection/modules modules
 COPY $PROJECT_DIRECTORY/object_detection/config.py .
-COPY $PROJECT_DIRECTORY/conf/config.yaml .
+COPY $PROJECT_DIRECTORY/config.yaml .
 
 COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
