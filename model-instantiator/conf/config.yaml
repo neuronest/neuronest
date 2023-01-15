@@ -1,0 +1,20 @@
+name: 'model-instantiator'
+package_name: 'model_instantiator'
+project_id: '${oc.env:PROJECT_ID}'
+region: '${oc.env:REGION}'
+
+routes:
+  root: /${package_name}/api/v1
+  instantiate: /instantiate
+  uninstantiate: /uninstantiate
+  uninstantiate_logs_conditioned: /uninstantiate_logs_conditioned
+
+uninstantiate_time_delta: 1800  # in seconds
+
+serving_deployment:
+  object_detection:
+    machine_type: "n1-standard-2"
+    accelerator_type: "NVIDIA_TESLA_K80"
+    accelerator_count: 1
+    min_replica_count: 1
+    max_replica_count: 1
