@@ -68,9 +68,6 @@ jobs:
       - build
       - tests
     runs-on: self-hosted
-    defaults:
-      run:
-        working-directory: /app
     container: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
@@ -78,4 +75,4 @@ jobs:
         uses: ./.github/actions/set_variables
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: gcloud run deploy service-name --set-env-vars ENV=${ENV} --port 80 --cpu "1.0" --memory "100Mi" --image ${{needs.build_training.outputs.IMAGE_NAME}}
+      - run: gcloud run deploy service-name --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} --port 80 --cpu "1.0" --memory "100Mi" --image ${{needs.build.outputs.IMAGE_NAME}}
