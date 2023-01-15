@@ -10,7 +10,10 @@ from cv2 import cv2 as cv
 from omegaconf import DictConfig
 
 from object_detection.config import cfg
-from object_detection.environment_variables import GOOGLE_APPLICATION_CREDENTIALS
+from object_detection.environment_variables import (
+    GOOGLE_APPLICATION_CREDENTIALS,
+    PROJECT_ID,
+)
 from object_detection.modules.schemas import PREDICTION_COLUMNS, OutputSchema
 
 
@@ -32,7 +35,9 @@ def fixture_sample(image_directory: str) -> np.ndarray:
 @pytest.fixture(name="vertex_ai_manager")
 def fixture_vertex_ai_manager(config: DictConfig) -> VertexAIManager:
     return VertexAIManager(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, location=config.region
+        location=config.region,
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
+        project_id=PROJECT_ID,
     )
 
 

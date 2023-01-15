@@ -147,6 +147,6 @@ jobs:
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
       - run: python -m object_detection.cli --modes model_upload deploy
-      - run: poetry check && poetry install --with test && pytest -x tests/test_integration.py -vv
+      - run: poetry check && poetry install --with test && poetry run pytest -x tests/test_integration.py -vv
         working-directory: object-detection
       - run: python -m object_detection.cli --modes undeploy
