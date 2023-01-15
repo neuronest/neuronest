@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 
 from core.google.logging_client import LoggerName, LoggingClient
@@ -20,48 +21,54 @@ from model_instantiator.api.dependencies import (
 )
 from model_instantiator.config import cfg
 
+logging.basicConfig(level="INFO")
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
 
 
 def _correctly_undeployed_endpoint_response(
     response: Response, endpoint_id: str, model_name: str
 ) -> UninstantiateModelOutput:
-    response.status_code = status.HTTP_202_ACCEPTED
+    response.status_code = status.HTTP_201_CREATED
 
-    return UninstantiateModelOutput(
-        message=f"Endpoint '{endpoint_id}' undeployed for model_name: "
-        f"'{model_name}'"
-    )
+    message = f"Endpoint '{endpoint_id}' undeployed for model_name: '{model_name}'"
+    logger.info(message)
+
+    return UninstantiateModelOutput(message=message)
 
 
 def _no_endpoint_response(
     response: Response, model_name: str
 ) -> UninstantiateModelOutput:
-    response.status_code = status.HTTP_404_NOT_FOUND
+    response.status_code = status.HTTP_200_OK
 
-    return UninstantiateModelOutput(
-        message=f"No endpoint found for model_name: '{model_name}'"
-    )
+    message = f"No endpoint found for model_name: '{model_name}'"
+    logger.info(message)
+
+    return UninstantiateModelOutput(message=message)
 
 
 def _too_recently_updated_endpoint_response(
     response: Response, model_name: str
 ) -> UninstantiateModelOutput:
-    response.status_code = status.HTTP_400_BAD_REQUEST
+    response.status_code = status.HTTP_200_OK
 
-    return UninstantiateModelOutput(
-        message=f"Endpoint too recently updated for model_name: '{model_name}'"
-    )
+    message = f"Endpoint too recently updated for model_name: '{model_name}'"
+    logger.warning(message)
+
+    return UninstantiateModelOutput(message=message)
 
 
 def _too_recently_used_endpoint_response(
     response: Response, model_name: str
 ) -> UninstantiateModelOutput:
-    response.status_code = status.HTTP_400_BAD_REQUEST
+    response.status_code = status.HTTP_200_OK
 
-    return UninstantiateModelOutput(
-        message=f"Endpoint too recently used for model_name: '{model_name}'"
-    )
+    message = f"Endpoint too recently used for model_name: '{model_name}'"
+    logger.warning(message)
+
+    return UninstantiateModelOutput(message=message)
 
 
 @router.post(
