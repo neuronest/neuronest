@@ -53,6 +53,16 @@ def _too_recently_updated_endpoint_response(
     )
 
 
+def _too_recently_used_endpoint_response(
+    response: Response, model_name: str
+) -> UninstantiateModelOutput:
+    response.status_code = status.HTTP_400_BAD_REQUEST
+
+    return UninstantiateModelOutput(
+        message=f"Endpoint too recently used for model_name: '{model_name}'"
+    )
+
+
 @router.post(
     cfg.routes.uninstantiate,
     response_model=UninstantiateModelOutput,
@@ -112,11 +122,15 @@ def uninstantiate_model_logs_conditioned(
         messages=default_messages + (model_name,),
     )
 
-    if len(recent_prediction_logs) == 0:
-        endpoint.delete(force=True)
-
-        return _correctly_undeployed_endpoint_response(
-            response=response,
-            endpoint_id=endpoint.resource_name,
-            model_name=model_name,
+    if len(recent_prediction_logs) > 0:
+        return _too_recently_used_endpoint_response(
+            response=response, model_name=model_name
         )
+
+    endpoint.delete(force=True)
+
+    return _correctly_undeployed_endpoint_response(
+        response=response,
+        endpoint_id=endpoint.resource_name,
+        model_name=model_name,
+    )
