@@ -1,45 +1,14 @@
 import logging
-from abc import ABC
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
-from omegaconf import ListConfig
-from pydantic import BaseModel, validator
+
+from core.exceptions import AlreadyExistingError
+from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
-
-
-class VertexInfraConfig(ABC, BaseModel):
-    machine_type: str
-    # the following fields are used for custom containers
-    container_uri: Optional[str] = None
-    accelerator_type: Optional[str] = None
-    accelerator_count: Optional[int] = None
-
-
-class TrainingConfig(VertexInfraConfig):
-    replica_count: int
-
-
-class ServingConfig(VertexInfraConfig):
-    min_replica_count: int
-    max_replica_count: int
-    # the following fields are used for custom containers
-    predict_route: Optional[str] = None
-    health_route: Optional[str] = None
-    ports: Optional[List[int]] = None
-
-    @validator("ports", pre=True)
-    # pylint: disable=no-self-argument
-    def validate_ports(
-        cls, ports: Optional[Union[ListConfig, List[int]]]
-    ) -> Optional[List[int]]:
-        if ports is None:
-            return None
-
-        return list(ports)
 
 
 class VertexAIManager:
@@ -54,7 +23,17 @@ class VertexAIManager:
         self.pipeline_service_client = aiplatform.gapic.PipelineServiceClient(
             credentials=self.credentials, client_options=client_options
         )
-        self.project_id = self.credentials.project_id
+
+    @property
+    def project_id(self) -> str:
+        return self.credentials.project_id
+
+    @staticmethod
+    def _model_to_endpoint_name(model_name: str) -> str:
+        if model_name == "":
+            raise ValueError("Incorrect model_name")
+
+        return f"{model_name}_endpoint"
 
     def list_training_pipelines(self) -> List[training_pipeline.TrainingPipeline]:
         parent = f"projects/{self.credentials.project_id}/locations/{self.location}"
@@ -69,7 +48,7 @@ class VertexAIManager:
         training_pipeline_id: str,
     ) -> training_pipeline.TrainingPipeline:
         name = self.pipeline_service_client.training_pipeline_path(
-            project=self.credentials.project_id,
+            project=self.project_id,
             location=self.location,
             training_pipeline=training_pipeline_id,
         )
@@ -80,6 +59,7 @@ class VertexAIManager:
         return aiplatform.models.Model.list(
             location=self.location,
             credentials=self.credentials,
+            project=self.project_id,
             filter=f"display_name={name}",
             order_by="create_time desc",
         )
@@ -88,7 +68,8 @@ class VertexAIManager:
         return aiplatform.Endpoint.list(
             location=self.location,
             credentials=self.credentials,
-            filter=f"display_name={name}_endpoint",
+            project=self.project_id,
+            filter=f"display_name={self._model_to_endpoint_name(name)}",
             order_by="create_time desc",
         )
 
@@ -110,7 +91,6 @@ class VertexAIManager:
         endpoints = self.get_all_endpoints_by_name(name)
 
         if len(endpoints) == 0:
-            logger.warning(f"No endpoint named '{name}' has been found")
             return None
 
         return endpoints[0]
@@ -122,6 +102,9 @@ class VertexAIManager:
 
     def undeploy_all_models_by_endpoint_name(self, name: str):
         endpoint = self.get_last_endpoint_by_name(name)
+
+        if endpoint is None:
+            logger.warning(f"No endpoint named '{name}' has been found")
 
         if endpoint is not None:
             endpoint.undeploy_all()
@@ -135,7 +118,7 @@ class VertexAIManager:
     def upload_model(
         self,
         name: str,
-        serving_config: ServingConfig,
+        serving_model_upload_config: ServingModelUploadConfig,
     ) -> aiplatform.Model:
         existing_model = self.get_last_model_by_name(name=name)
 
@@ -149,38 +132,35 @@ class VertexAIManager:
             parent_model=parent_model,
             display_name=name,
             location=self.location,
-            serving_container_image_uri=serving_config.container_uri,
-            serving_container_predict_route=serving_config.predict_route,
-            serving_container_health_route=serving_config.health_route,
-            serving_container_ports=serving_config.ports,
+            serving_container_image_uri=serving_model_upload_config.container_uri,
+            serving_container_predict_route=serving_model_upload_config.predict_route,
+            serving_container_health_route=serving_model_upload_config.health_route,
+            serving_container_ports=serving_model_upload_config.ports,
         )
 
     def deploy_model(
         self,
         name: str,
         model: aiplatform.Model,
-        serving_config: ServingConfig,
-    ):
+        serving_deployment_config: ServingDeploymentConfig,
+        sync: bool = True,
+    ) -> aiplatform.Endpoint:
         endpoint = self.get_last_endpoint_by_name(name)
 
-        model.deploy(
+        if endpoint is not None:
+            raise AlreadyExistingError(
+                f"The model '{name}' is already deployed on endpoint "
+                f"{endpoint.resource_name}"
+            )
+
+        return model.deploy(
             endpoint=endpoint,
             deployed_model_display_name=name,
             traffic_split={"0": 100},  # the new deployment receives 100% of the traffic
-            machine_type=serving_config.machine_type,
-            min_replica_count=serving_config.min_replica_count,
-            max_replica_count=serving_config.max_replica_count,
-        )
-
-    def upload_and_deploy_model(
-        self,
-        name: str,
-        serving_config: ServingConfig,
-    ):
-        model = self.upload_model(name=name, serving_config=serving_config)
-
-        self.deploy_model(
-            name=name,
-            model=model,
-            serving_config=serving_config,
+            machine_type=serving_deployment_config.machine_type,
+            min_replica_count=serving_deployment_config.min_replica_count,
+            max_replica_count=serving_deployment_config.max_replica_count,
+            accelerator_type=serving_deployment_config.accelerator_type,
+            accelerator_count=serving_deployment_config.accelerator_count,
+            sync=sync,
         )

@@ -25,7 +25,7 @@ class StorageClient:
     def __init__(self, key_path: Optional[str] = None):
         self.client = (
             storage.Client()
-            if not key_path
+            if key_path is None
             else storage.Client.from_service_account_json(key_path)
         )
 
