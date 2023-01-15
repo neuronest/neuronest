@@ -9,7 +9,7 @@ from core.schemas.model_instantiator import (
     UninstantiateModelLogsConditionedInput,
     UninstantiateModelOutput,
 )
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Body, Depends, Response
 from omegaconf import DictConfig
 from starlette import status
 
@@ -159,14 +159,14 @@ def uninstantiate_model_logs_conditioned(
     status_code=status.HTTP_202_ACCEPTED,
 )
 def pubsub_uninstantiate_model_logs_conditioned(
-    pubsub_message: PubSubUninstantiateModelLogsConditioned,
     response: Response,
+    message: PubSubUninstantiateModelLogsConditioned = Body(..., embed=True),
     config: DictConfig = Depends(use_config),
     vertex_ai_manager: VertexAIManager = Depends(use_vertex_ai_manager),
     logging_client: LoggingClient = Depends(use_logging_client),
 ) -> UninstantiateModelOutput:
     return _uninstantiate_model_logs_conditioned(
-        uninstantiate_model_input=pubsub_message.data,
+        uninstantiate_model_input=message.data,
         response=response,
         vertex_ai_manager=vertex_ai_manager,
         logging_client=logging_client,
