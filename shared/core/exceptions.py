@@ -4,3 +4,7 @@ class BaseError(Exception):
 
 class DependencyError(BaseError):
     pass
+
+
+class AlreadyExistingError(BaseError):
+    pass
