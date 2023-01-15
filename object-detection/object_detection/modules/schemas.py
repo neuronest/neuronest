@@ -3,6 +3,16 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, validator
 
+PREDICTION_COLUMNS = [
+    "x_min",
+    "y_min",
+    "x_max",
+    "y_max",
+    "score",
+    "class_id",
+    "class_name",
+]
+
 
 class Device(str, Enum):
     CPU = "cpu"

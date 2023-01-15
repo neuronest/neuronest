@@ -125,8 +125,8 @@ jobs:
       - id: output_step
         run: echo "SERVING_IMAGE_NAME=$SERVING_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
-  serve:
-    name: serve
+  test_serving:
+    name: test_serving
     needs:
       - build_training
       - build_serving
@@ -146,6 +146,7 @@ jobs:
       - run: echo "SERVING_IMAGE_NAME"="${{ needs.build_serving.outputs.SERVING_IMAGE_NAME }}" >> $GITHUB_ENV
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: python -m object_detection.cli --modes model_upload deploy undeploy
-      - id: output_step
-        run: echo "MODEL_GSPATH=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
+      - run: python -m object_detection.cli --modes model_upload deploy
+      - run: poetry check && poetry install --with test && pytest -x tests/test_integration.py -vv
+        working-directory: object-detection
+      - run: python -m object_detection.cli --modes undeploy
