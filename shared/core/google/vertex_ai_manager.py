@@ -131,6 +131,14 @@ class VertexAIManager:
         for model in models:
             model.delete()
 
+    def delete_endpoint(self, name: str, remove_models: bool = False):
+        endpoint = self.get_last_endpoint_by_name(name)
+
+        if endpoint is None:
+            logger.warning(f"No endpoint named '{name}' has been found")
+
+        endpoint.delete(force=remove_models)
+
     def upload_model(
         self,
         name: str,
@@ -160,6 +168,7 @@ class VertexAIManager:
         model: aiplatform.Model,
         serving_deployment_config: ServingDeploymentConfig,
         sync: bool = True,
+        timeout: float = 1800,
     ) -> aiplatform.Endpoint:
         endpoint = self.get_last_endpoint_by_name(name)
 
@@ -179,4 +188,5 @@ class VertexAIManager:
             accelerator_type=serving_deployment_config.accelerator_type,
             accelerator_count=serving_deployment_config.accelerator_count,
             sync=sync,
+            deploy_request_timeout=timeout,
         )
