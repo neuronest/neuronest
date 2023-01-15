@@ -77,4 +77,4 @@ jobs:
         uses: ./.github/actions/set_variables
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: gcloud run deploy service-name --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} --port 80 --cpu "1.0" --memory "128Mi" --image ${{needs.build.outputs.IMAGE_NAME}} --project ${PROJECT_ID} --region ${REGION}
+      - run: gcloud run deploy model-instantiator --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} --port 80 --cpu "1.0" --memory "1Gi" --image ${{needs.build.outputs.IMAGE_NAME}} --service-account $IMAGE_REPOSITORY@$PROJECT_ID.iam.gserviceaccount.com
