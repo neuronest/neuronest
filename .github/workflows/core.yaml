@@ -10,15 +10,15 @@ on:
       - main
       - develop
     paths:
-      - .github/**
-      - core/**
+      - .github/workflows/core.yaml
+      - shared/**
   pull_request:
     branches:
       - main
       - develop
     paths:
-      - .github/**
-      - core/**
+      - .github/workflows/core.yaml
+      - shared/**
 
 jobs:
   tests:
