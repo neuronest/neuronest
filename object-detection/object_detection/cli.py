@@ -132,7 +132,7 @@ def deploy(
 
 
 def undeploy(vertex_ai_manager: VertexAIManager, model_name: str):
-    return vertex_ai_manager.undeploy_all_models_by_endpoint_name(name=model_name)
+    return vertex_ai_manager.delete_endpoint(name=model_name, undeploy_models=True)
 
 
 def main(config: DictConfig, model_gspath: Optional[GSPath], modes: List[Mode]):
