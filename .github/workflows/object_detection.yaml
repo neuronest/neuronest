@@ -45,7 +45,7 @@ jobs:
       - run: echo "TRAINING_IMAGE_NAME"="$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY-$TARGET" >> $GITHUB_ENV
       - run: docker pull $TRAINING_IMAGE_NAME:latest || true
       - run: docker build --cache-from $TRAINING_IMAGE_NAME:latest -t $TRAINING_IMAGE_NAME:$GITHUB_RUN_ID -t $TRAINING_IMAGE_NAME:latest -f $DOCKERFILE_PATH --target $TARGET .
-      - run: docker push $TRAINING_IMAGE_NAME --all-tags
+      - run: docker push $TRAINING_IMAGE_NAME:$GITHUB_RUN_ID && docker push $TRAINING_IMAGE_NAME:latest
       - id: output_step
         run: echo "TRAINING_IMAGE_NAME=$TRAINING_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
@@ -121,7 +121,7 @@ jobs:
       - run: gsutil cp $MODEL_GSPATH $MODEL_PATH
       - run: docker pull $SERVING_IMAGE_NAME:latest || true
       - run: docker build --cache-from $SERVING_IMAGE_NAME:latest --build-arg MODEL_PATH=$MODEL_PATH -t $SERVING_IMAGE_NAME:$GITHUB_RUN_ID -t $SERVING_IMAGE_NAME:latest -f $DOCKERFILE_PATH --target $TARGET .
-      - run: docker push $SERVING_IMAGE_NAME --all-tags
+      - run: docker push $SERVING_IMAGE_NAME:$GITHUB_RUN_ID && docker push $SERVING_IMAGE_NAME:latest
       - id: output_step
         run: echo "SERVING_IMAGE_NAME=$SERVING_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 

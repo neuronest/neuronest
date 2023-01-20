@@ -43,7 +43,7 @@ jobs:
       - run: echo "IMAGE_NAME"="$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY" >> $GITHUB_ENV
       - run: docker pull $IMAGE_NAME:latest || true
       - run: docker build --cache-from $IMAGE_NAME:latest -t $IMAGE_NAME:$GITHUB_RUN_ID -t $IMAGE_NAME:latest -f $DOCKERFILE_PATH .
-      - run: docker push $IMAGE_NAME --all-tags
+      - run: docker push $IMAGE_NAME:$GITHUB_RUN_ID && docker push $IMAGE_NAME:latest
       - id: output_step
         run: echo "IMAGE_NAME=$IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
