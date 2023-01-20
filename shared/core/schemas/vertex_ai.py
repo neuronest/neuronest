@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from omegaconf import ListConfig
 from pydantic import BaseModel, validator
@@ -30,3 +30,6 @@ class ServingDeploymentConfig(BaseModel):
     max_replica_count: int = 1
     accelerator_type: Optional[str] = None
     accelerator_count: int = 0
+
+    def string_dict(self) -> Dict[str, str]:
+        return {str(key): str(value) for key, value in self.dict()}
