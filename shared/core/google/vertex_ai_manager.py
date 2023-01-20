@@ -1,11 +1,10 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
 
-from core.exceptions import AlreadyExistingError
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
@@ -51,6 +50,24 @@ class VertexAIManager:
 
         return f"{model_name}_endpoint"
 
+    def _get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
+        return aiplatform.models.Model.list(
+            location=self.location,
+            credentials=self.credentials,
+            project=self.project_id,
+            filter=f"display_name={name}",
+            order_by="create_time desc",
+        )
+
+    def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
+        return aiplatform.Endpoint.list(
+            location=self.location,
+            credentials=self.credentials,
+            project=self.project_id,
+            filter=f"display_name={self._model_to_endpoint_name(name)}",
+            order_by="create_time desc",
+        )
+
     def list_training_pipelines(self) -> List[training_pipeline.TrainingPipeline]:
         parent = f"projects/{self.project_id}/locations/{self.location}"
         request = aiplatform_v1.ListTrainingPipelinesRequest({"parent": parent})
@@ -71,53 +88,55 @@ class VertexAIManager:
 
         return self.pipeline_service_client.get_training_pipeline(name=name)
 
-    def get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
-        return aiplatform.models.Model.list(
-            location=self.location,
-            credentials=self.credentials,
-            project=self.project_id,
-            filter=f"display_name={name}",
-            order_by="create_time desc",
-        )
-
-    def get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
-        return aiplatform.Endpoint.list(
-            location=self.location,
-            credentials=self.credentials,
-            project=self.project_id,
-            filter=f"display_name={self._model_to_endpoint_name(name)}",
-            order_by="create_time desc",
-        )
-
-    def get_last_model_by_name(
-        self,
-        name: str,
-    ) -> Optional[aiplatform.Model]:
-        models = self.get_all_models_by_name(name)
-
-        if len(models) == 0:
-            return None
-
-        return models[0]
-
-    def get_last_endpoint_by_name(
-        self,
-        name: str,
-    ) -> Optional[aiplatform.Endpoint]:
-        endpoints = self.get_all_endpoints_by_name(name)
-
-        if len(endpoints) == 0:
-            return None
-
-        return endpoints[0]
-
     def get_model_by_id(self, model_id: str) -> Optional[aiplatform.Model]:
         return aiplatform.models.Model(
             location=self.location, credentials=self.credentials, model_name=model_id
         )
 
+    def get_model_by_name(
+        self, name: str, version_aliases: Tuple[str, ...] = ("default",)
+    ) -> Optional[aiplatform.Model]:
+        models = [
+            model
+            for model in self._get_all_models_by_name(name)
+            if tuple(model.version_aliases) == version_aliases
+        ]
+
+        if len(models) == 0:
+            return None
+
+        if len(models) == 1:
+            return models[0]
+
+        raise ValueError(f"Multiple models found with the same name: {name}")
+
+    def get_endpoint_by_name(
+        self,
+        name: str,
+    ) -> Optional[aiplatform.Endpoint]:
+        endpoints = self._get_all_endpoints_by_name(name)
+
+        if len(endpoints) == 0:
+            return None
+
+        if len(endpoints) == 1:
+            return endpoints[0]
+
+        raise ValueError(f"Multiple endpoints found with the same name: {name}")
+
+    def undeploy_models_without_traffic_by_endpoint_name(self, name: str):
+        endpoint = self.get_endpoint_by_name(name)
+
+        if endpoint is None:
+            logger.warning(f"No endpoint named '{name}' has been found")
+            return
+
+        for deployed_model in endpoint.gca_resource.deployed_models:
+            if endpoint.traffic_split.get(deployed_model.id, 0) == 0:
+                endpoint.undeploy(deployed_model_id=deployed_model.id)
+
     def undeploy_all_models_by_endpoint_name(self, name: str):
-        endpoint = self.get_last_endpoint_by_name(name)
+        endpoint = self.get_endpoint_by_name(name)
 
         if endpoint is None:
             logger.warning(f"No endpoint named '{name}' has been found")
@@ -125,14 +144,16 @@ class VertexAIManager:
         if endpoint is not None:
             endpoint.undeploy_all()
 
-    def delete_all_models_by_name(self, name: str):
-        models = self.get_all_models_by_name(name)
+    def delete_model_by_name(self, name: str):
+        model = self.get_model_by_name(name)
 
-        for model in models:
-            model.delete()
+        if model is None:
+            logger.warning(f"No model named '{name}' has been found")
+
+        model.delete()
 
     def delete_endpoint(self, name: str, undeploy_models: bool = False):
-        endpoint = self.get_last_endpoint_by_name(name)
+        endpoint = self.get_endpoint_by_name(name)
 
         if endpoint is None:
             logger.warning(f"No endpoint named '{name}' has been found")
@@ -143,8 +164,9 @@ class VertexAIManager:
         self,
         name: str,
         serving_model_upload_config: ServingModelUploadConfig,
+        serving_deployment_config: ServingDeploymentConfig,
     ) -> aiplatform.Model:
-        existing_model = self.get_last_model_by_name(name=name)
+        existing_model = self.get_model_by_name(name=name)
 
         if existing_model is None:
             parent_model = None
@@ -160,6 +182,7 @@ class VertexAIManager:
             serving_container_predict_route=serving_model_upload_config.predict_route,
             serving_container_health_route=serving_model_upload_config.health_route,
             serving_container_ports=serving_model_upload_config.ports,
+            labels=serving_deployment_config.dict(),
         )
 
     def deploy_model(
@@ -168,17 +191,12 @@ class VertexAIManager:
         model: aiplatform.Model,
         serving_deployment_config: ServingDeploymentConfig,
         sync: bool = True,
+        undeploy_previous_model: bool = True,
         timeout: float = 1800,
     ) -> aiplatform.Endpoint:
-        endpoint = self.get_last_endpoint_by_name(name)
+        endpoint = self.get_endpoint_by_name(name)
 
-        if endpoint is not None:
-            raise AlreadyExistingError(
-                f"The model '{name}' is already deployed on endpoint "
-                f"{endpoint.resource_name}"
-            )
-
-        return model.deploy(
+        endpoint = model.deploy(
             endpoint=endpoint,
             deployed_model_display_name=name,
             traffic_split={"0": 100},  # the new deployment receives 100% of the traffic
@@ -190,3 +208,8 @@ class VertexAIManager:
             sync=sync,
             deploy_request_timeout=timeout,
         )
+
+        if undeploy_previous_model:
+            self.undeploy_models_without_traffic_by_endpoint_name(name)
+
+        return endpoint

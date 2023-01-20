@@ -21,6 +21,13 @@ serving_model_upload:
   health_route: "/ping"
   ports: [7080]
 
+serving_deployment:
+  machine_type: "n1-standard-2"
+  accelerator_type: "NVIDIA_TESLA_K80"
+  accelerator_count: 1
+  min_replica_count: 1
+  max_replica_count: 1
+
 bigquery:
   dataset: '${project_id}.${model.name}_training'
 

@@ -25,7 +25,9 @@ class LoggingClient:
         query_elements = []
 
         if date is not None:
-            query_elements.append(f"timestamp>={date.strftime('%Y-%m-%d')}")
+            query_elements.append(
+                f"timestamp>=\"{date.strftime('%Y-%m-%dT%H:%M:%SZ')}\""
+            )
 
         for message in messages:
             query_elements.append(f"jsonPayload.message:{message}")
@@ -51,6 +53,10 @@ class LoggingClient:
     ):
         logger = self.client.logger(logger_name)
 
+        date_utc = date.astimezone(datetime.timezone.utc)
+
         return list(
-            logger.list_entries(filter_=self._build_query(date=date, messages=messages))
+            logger.list_entries(
+                filter_=self._build_query(date=date_utc, messages=messages)
+            )
         )

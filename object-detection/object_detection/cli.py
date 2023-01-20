@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import VertexAIManager
@@ -29,16 +29,25 @@ logger = logging.getLogger(__name__)
 class Mode(str, Enum):
     TRAIN = "train"
     MODEL_UPLOAD = "model_upload"
+    REMOVE_LAST_MODEL_VERSION = "remove_last_model_version"
     DEPLOY = "deploy"
     UNDEPLOY = "undeploy"
 
+    @classmethod
+    def training_modes(cls) -> List[Mode]:
+        return [cls.TRAIN]
+
+    @classmethod
+    def serving_modes(cls) -> List[Mode]:
+        return [mode for mode in map(cls, Mode) if not mode.is_training_mode]
+
     @property
-    def serving_modes(self) -> Tuple[Mode, ...]:
-        return self.MODEL_UPLOAD, self.DEPLOY, self.UNDEPLOY
+    def is_training_mode(self) -> bool:
+        return self in self.training_modes()
 
     @property
     def is_serving_mode(self) -> bool:
-        return self in self.serving_modes
+        return self in self.serving_modes()
 
 
 def launch_training_job(
@@ -106,29 +115,75 @@ def train(
 
 def upload_model(
     serving_model_upload_config: ServingModelUploadConfig,
+    serving_deployment_config: ServingDeploymentConfig,
     vertex_ai_manager: VertexAIManager,
     model_name: str,
 ) -> aiplatform.Model:
     return vertex_ai_manager.upload_model(
-        name=model_name, serving_model_upload_config=serving_model_upload_config
+        name=model_name,
+        serving_model_upload_config=serving_model_upload_config,
+        serving_deployment_config=serving_deployment_config,
     )
 
 
 def deploy(
-    serving_deployment_config: ServingDeploymentConfig,
     vertex_ai_manager: VertexAIManager,
     model_name: str,
 ):
-    model = vertex_ai_manager.get_last_model_by_name(name=model_name)
+    model = vertex_ai_manager.get_model_by_name(name=model_name)
 
     if model is None:
         raise ValueError(f"No model found with name: {model_name}")
+
+    model_labels = model.labels
+
+    if model_labels is None:
+        raise ValueError(f"No labels found in the model with name: {model_name}")
+
+    serving_deployment_config = ServingDeploymentConfig.parse_obj(model_labels)
 
     vertex_ai_manager.deploy_model(
         name=model_name,
         model=model,
         serving_deployment_config=serving_deployment_config,
+        undeploy_previous_model=True,
     )
+
+
+def remove_last_model_version(vertex_ai_manager: VertexAIManager, model_name: str):
+    model = vertex_ai_manager.get_model_by_name(name=model_name)
+
+    if model is None:
+        return
+
+    model_registry = model.versioning_registry
+
+    all_model_versions = model_registry.list_versions()
+
+    if len(all_model_versions) == 0:
+        return
+
+    if len(all_model_versions) == 1:
+        vertex_ai_manager.delete_model_by_name(name=model_name)
+
+    sorted_model_versions = sorted(
+        all_model_versions,
+        key=lambda version: version.version_create_time,
+        reverse=True,
+    )
+    last_model_version, before_last_model_version = sorted_model_versions[:2]
+
+    if model.version_id != last_model_version.version_id:
+        raise ValueError(
+            f"Recovered default model and last model don't have the same version "
+            f"({model.version_id} != {last_model_version})"
+        )
+
+    version_aliases = list(model.version_aliases)
+    model_registry.add_version_aliases(
+        version=before_last_model_version.version_id, new_aliases=version_aliases
+    )
+    model_registry.delete_version(last_model_version.version_id)
 
 
 def undeploy(vertex_ai_manager: VertexAIManager, model_name: str):
@@ -162,21 +217,21 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], modes: List[Mode]):
     if not any(mode.is_serving_mode for mode in modes):
         return
 
-    serving_model_upload_config = ServingModelUploadConfig(
-        **config.serving_model_upload
-    )
-    default_serving_deployment_config = ServingDeploymentConfig()
-
     if Mode.MODEL_UPLOAD in modes:
+        serving_model_upload_config = ServingModelUploadConfig(
+            **config.serving_model_upload
+        )
+        serving_deployment_config = ServingDeploymentConfig(**config.serving_deployment)
+
         upload_model(
             serving_model_upload_config=serving_model_upload_config,
+            serving_deployment_config=serving_deployment_config,
             vertex_ai_manager=vertex_ai_manager,
             model_name=model_name,
         )
 
     if Mode.DEPLOY in modes:
         deploy(
-            serving_deployment_config=default_serving_deployment_config,
             vertex_ai_manager=vertex_ai_manager,
             model_name=model_name,
         )
@@ -187,6 +242,11 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], modes: List[Mode]):
             model_name=model_name,
         )
 
+    if Mode.REMOVE_LAST_MODEL_VERSION in modes:
+        remove_last_model_version(
+            vertex_ai_manager=vertex_ai_manager, model_name=model_name
+        )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -194,7 +254,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--modes",
         dest="modes",
-        choices=["train", "model_upload", "deploy", "undeploy"],
+        choices=list(Mode),
         nargs="+",
     )
 
