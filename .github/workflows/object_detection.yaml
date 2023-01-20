@@ -93,7 +93,7 @@ jobs:
       - run: echo "MODEL_GSPATH"="gs://$IMAGE_REPOSITORY-models/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --modes train
+      - run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
       - id: output_step
         run: echo "MODEL_GSPATH=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
 
@@ -146,7 +146,7 @@ jobs:
       - run: echo "SERVING_IMAGE_NAME"="${{ needs.build_serving.outputs.SERVING_IMAGE_NAME }}" >> $GITHUB_ENV
       - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: python -m object_detection.cli --modes model_upload
-      - run: python -m object_detection.cli --modes deploy || python -m object_detection.cli --modes remove_last_model_version
+      - run: python -m object_detection.cli --actions model_upload
+      - run: python -m object_detection.cli --actions deploy || python -m object_detection.cli --actions remove_last_model_version
       - run: poetry check && poetry install --with test
-      - run: poetry run pytest -x tests/test_integration.py -vv || python -m object_detection.cli --modes undeploy remove_last_model_version deploy
+      - run: poetry run pytest -x tests/test_integration.py -vv || python -m object_detection.cli --actions undeploy remove_last_model_version deploy

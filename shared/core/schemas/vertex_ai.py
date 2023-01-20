@@ -32,4 +32,4 @@ class ServingDeploymentConfig(BaseModel):
     accelerator_count: int = 0
 
     def string_dict(self) -> Dict[str, str]:
-        return {str(key): str(value) for key, value in self.dict()}
+        return {str(key): str(value) for key, value in self.dict().items()}

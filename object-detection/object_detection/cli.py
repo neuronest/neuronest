@@ -38,7 +38,7 @@ class Action(str, Enum):
 
 
 class RunnableAction(abc.ABC):
-    action: Action
+    action: Optional[Action] = None
     kwargs: Tuple[str, ...] = tuple()
 
     @staticmethod
