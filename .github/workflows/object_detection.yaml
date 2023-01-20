@@ -149,4 +149,4 @@ jobs:
       - run: python -m object_detection.cli --modes model_upload
       - run: python -m object_detection.cli --modes deploy || python -m object_detection.cli --modes remove_last_model_version
       - run: poetry check && poetry install --with test
-      - run: poetry run pytest -x tests/test_integration.py -vv || python -m object_detection.cli --modes undeploy remove_last_model_version
+      - run: poetry run pytest -x tests/test_integration.py -vv || python -m object_detection.cli --modes undeploy remove_last_model_version deploy
