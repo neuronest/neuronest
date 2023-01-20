@@ -9,7 +9,7 @@ from core.schemas.vertex_ai import ServingDeploymentConfig
 from fastapi import APIRouter, Depends, Response
 from starlette import status
 
-from model_instantiator.api.dependencies import use_config, use_vertex_ai_manager
+from model_instantiator.api.dependencies import use_vertex_ai_manager
 from model_instantiator.config import cfg
 
 router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
