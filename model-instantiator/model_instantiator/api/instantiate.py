@@ -46,7 +46,7 @@ def instantiate_model(
     if model is None:
         return _no_model_response(response=response, model_name=model_name)
 
-    serving_deployment_config = ServingDeploymentConfig.parse_obj(model.labels)
+    serving_deployment_config = ServingDeploymentConfig.from_labels(model.labels)
 
     vertex_ai_manager.deploy_model(
         name=model_name,

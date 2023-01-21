@@ -182,7 +182,7 @@ class VertexAIManager:
             serving_container_predict_route=serving_model_upload_config.predict_route,
             serving_container_health_route=serving_model_upload_config.health_route,
             serving_container_ports=serving_model_upload_config.ports,
-            labels=serving_deployment_config.string_dict(),
+            labels=serving_deployment_config.as_labels(),
         )
 
     def deploy_model(

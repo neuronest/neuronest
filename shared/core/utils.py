@@ -14,3 +14,11 @@ def timeit(func: Callable[[Any], Any]) -> Callable[[Any], Union[float, Any]]:
         return total_time, result
 
     return timeit_wrapper
+
+
+def underscore_to_hyphen(string: str):
+    return string.replace("_", "-")
+
+
+def hyphen_to_underscore(string: str):
+    return string.replace("-", "_")

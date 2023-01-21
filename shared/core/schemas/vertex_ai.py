@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from typing import Dict, List, Optional, Union
 
 from omegaconf import ListConfig
 from pydantic import BaseModel, validator
+
+from core.utils import hyphen_to_underscore, underscore_to_hyphen
 
 
 class TrainingConfig(BaseModel):
@@ -31,5 +35,22 @@ class ServingDeploymentConfig(BaseModel):
     accelerator_type: Optional[str] = None
     accelerator_count: int = 0
 
-    def string_dict(self) -> Dict[str, str]:
-        return {str(key): str(value) for key, value in self.dict().items()}
+    @classmethod
+    def from_labels(cls, config_as_labels: Dict[str, str]) -> ServingDeploymentConfig:
+        config_as_labels = {
+            hyphen_to_underscore(key): value if value != "None" else None
+            for key, value in config_as_labels.items()
+        }
+
+        config_as_labels["accelerator_type"] = hyphen_to_underscore(
+            config_as_labels["accelerator_type"]
+        ).upper()
+
+        return cls(**config_as_labels)
+
+    def as_labels(self) -> Dict[str, str]:
+        # see https://goo.gl/xmQnxf for compatibility rules
+        return {
+            underscore_to_hyphen(key): underscore_to_hyphen(str(value)).lower()
+            for key, value in self.dict().items()
+        }
