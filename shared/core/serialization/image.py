@@ -1,7 +1,7 @@
 import base64
 
+import cv2 as cv
 import numpy as np
-from cv2 import cv2 as cv
 
 
 def image_to_binary(frame: np.ndarray, extension: str = ".png") -> bytes:

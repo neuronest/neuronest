@@ -1,12 +1,12 @@
 import os
 
+import cv2 as cv
 import numpy as np
 import pandas as pd
 import pytest
 from core.google.vertex_ai_manager import VertexAIManager
 from core.serialization.array import array_from_string
 from core.serialization.image import image_to_string
-from cv2 import cv2 as cv
 from omegaconf import DictConfig
 
 from object_detection.config import cfg

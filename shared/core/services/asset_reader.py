@@ -2,8 +2,8 @@ import logging
 from functools import partial
 from typing import Optional, Tuple, Union
 
+import cv2 as cv
 import numpy as np
-from cv2 import cv2 as cv
 
 from core.google.storage_client import StorageClient
 from core.path import build_path

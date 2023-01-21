@@ -6,9 +6,9 @@ import tempfile
 import time
 from typing import Dict, List, Optional, Tuple, Union
 
+import cv2 as cv
 import numpy as np
 import pandas as pd
-from cv2 import cv2 as cv
 from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import storage
 from google.cloud.storage import Bucket

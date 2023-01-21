@@ -7,9 +7,9 @@ from abc import ABC
 from enum import Enum
 from typing import Any, Iterator, List, Optional, Union
 
+import cv2 as cv
 import librosa
 import numpy as np
-from cv2 import cv2 as cv
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from pydantic import BaseModel, root_validator, validator
 

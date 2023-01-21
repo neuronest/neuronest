@@ -1,9 +1,9 @@
 import os
 from typing import List
 
+import cv2 as cv
 import numpy as np
 import pytest
-from cv2 import cv2 as cv
 
 from core.serialization.image import (
     image_from_binary,
