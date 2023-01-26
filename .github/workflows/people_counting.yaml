@@ -3,8 +3,9 @@ name: people_counting
 on:
   push:
     branches:
-      - main
-      - develop
+      - '*'
+#      - main
+#      - develop
     paths:
       - .github/workflows/people_counting.yaml
       - shared/**
@@ -60,7 +61,7 @@ jobs:
     name: test_pre_commits
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-python@v2
         with:
           python-version: 3.8.14
