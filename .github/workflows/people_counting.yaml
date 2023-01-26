@@ -12,9 +12,9 @@ on:
       - people-counting/**
   pull_request:
     branches:
-      - '**'
-#      - main
-#      - develop
+#      - '**'
+      - main
+      - develop
     paths:
       - .github/workflows/people_counting.yaml
       - shared/**
@@ -62,7 +62,7 @@ jobs:
     name: test_pre_commits
     runs-on: self-hosted
     container:
-      image: ubuntu:18.04
+      image: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v2
