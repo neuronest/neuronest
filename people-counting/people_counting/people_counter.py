@@ -5,12 +5,11 @@ from typing import Dict, List, Optional
 import cv2 as cv
 import dlib
 import pandas as pd
-from model.modules.model import Model
 from omegaconf import DictConfig
-
 from people_counting.centroid_tracker import CentroidTracker
 from people_counting.common import BoundingBox, Statistics, Status, timed
 from people_counting.config import cfg
+from people_counting.model import Model
 from people_counting.trackable_object import TrackableObject
 from people_counting.video_handler import VideoRenderer, read_video_as_frames
 

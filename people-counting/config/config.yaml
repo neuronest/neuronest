@@ -30,3 +30,10 @@ algorithm:
   centroid_tracker:
     max_disappeared: 5
     max_distance_height_ratio: 0.2
+
+# todo: to be removed when we start connecting the predictions
+# to the object detector service
+model:
+  model_type: "ultralytics/yolov5"
+  model_name: "yolov5x6"
+  confidence_threshold: 0.15

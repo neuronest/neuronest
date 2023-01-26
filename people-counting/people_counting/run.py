@@ -33,7 +33,6 @@ if __name__ == "__main__":
         enable_video_writing=cfg.general.enable_video_writing,
         enable_video_showing=cfg.general.enable_video_showing,
     )
-
     if people_counter.run_duration is not None:
         logger.info(f"Elapsed time: {people_counter.run_duration['run']}s")
 

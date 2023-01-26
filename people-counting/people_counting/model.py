@@ -2,12 +2,11 @@ from typing import List
 
 import numpy as np
 import torch
-
 from people_counting.common import BoundingBox
 
 
 # pylint: disable=too-few-public-methods
-class ObjectDetectionModel:
+class Model:
     def __init__(self, model_type: str, model_name: str, confidence_threshold: float):
         self.model_type = model_type
         self.model_name = model_name
@@ -17,7 +16,9 @@ class ObjectDetectionModel:
     def _load_hub_pretrained_model(self) -> torch.nn.Module:
         return torch.hub.load(self.model_type, self.model_name, pretrained=True)
 
-    def predict(self, image: np.ndarray, class_name: str) -> List[BoundingBox]:
+    def predict(
+        self, image: np.ndarray, class_name: str = "person"
+    ) -> List[BoundingBox]:
         results = self.model(image).pandas().xyxy[0]
         filtered_results = results[
             (results.confidence >= self.confidence_threshold)
