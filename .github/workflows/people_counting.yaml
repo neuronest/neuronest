@@ -12,8 +12,9 @@ on:
       - people-counting/**
   pull_request:
     branches:
-      - main
-      - develop
+      - '*'
+#      - main
+#      - develop
     paths:
       - .github/workflows/people_counting.yaml
       - shared/**
