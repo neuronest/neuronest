@@ -62,12 +62,12 @@ jobs:
     name: test_pre_commits
     runs-on: self-hosted
     container:
-      image: google/cloud-sdk
+      image: python:3.8.14-buster
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.8.14
+#      - uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.8.14
       - name: Run pre-commits
         working-directory: people-counting
         run: |
