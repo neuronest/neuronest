@@ -8,7 +8,6 @@ from api.model.video_message import VideoMessage
 from fastapi import APIRouter, Body, Depends
 from google.cloud import firestore  # pylint: disable=no-name-in-module
 from google.cloud import storage
-
 from people_counting.people_counter import PeopleCounter
 
 router = APIRouter()

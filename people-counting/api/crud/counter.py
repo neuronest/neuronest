@@ -1,7 +1,6 @@
 from typing import Tuple
 
 from api.model.result import PeopleCounting
-
 from people_counting.people_counter import PeopleCounter
 
 
