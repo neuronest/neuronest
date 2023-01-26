@@ -3,7 +3,7 @@ name: people_counting
 on:
   push:
     branches:
-      - '*'
+      - '**'
 #      - main
 #      - develop
     paths:
@@ -12,7 +12,7 @@ on:
       - people-counting/**
   pull_request:
     branches:
-      - '*'
+      - '**'
 #      - main
 #      - develop
     paths:
