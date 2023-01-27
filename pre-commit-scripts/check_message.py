@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     header_regex = re.compile(
         r"^\((?:feat|fix|hotfix|update|refactor|clean|test|config|doc|wip|merge)\)\s"
-        r"\[[-a-z]{3,20}\]\s[A-Z].{1,100}$"
+        r"(?:\[[-\s,a-z]{3,50}\]\s)?[A-Z].{1,100}$"
     )
 
     if not bool(header_regex.fullmatch(first_line)):

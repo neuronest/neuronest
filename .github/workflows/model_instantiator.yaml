@@ -24,11 +24,10 @@ on:
 env:
   IMAGE_REPOSITORY: model-instantiator
   PACKAGE_NAME: model_instantiator
-  DOCKERFILE_PATH: dockerfiles/model_instantiator.dockerfile
 
 jobs:
-  build:
-    name: build
+  build_test:
+    name: build_test
     runs-on: self-hosted
     container: google/cloud-sdk
     outputs:
@@ -42,33 +41,21 @@ jobs:
       - run: gcloud auth configure-docker $REGION-docker.pkg.dev
       - run: echo "IMAGE_NAME"="$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY" >> $GITHUB_ENV
       - run: docker pull $IMAGE_NAME:latest || true
-      - run: docker build --cache-from $IMAGE_NAME:latest -t $IMAGE_NAME:$GITHUB_RUN_ID -t $IMAGE_NAME:latest -f $DOCKERFILE_PATH .
+      - run: cp $IMAGE_REPOSITORY/Dockerfile $IMAGE_REPOSITORY/.dockerignore .
+      - run: docker build --cache-from $IMAGE_NAME:latest -t $IMAGE_NAME:$GITHUB_RUN_ID -t $IMAGE_NAME:latest .
+      - name: Run pre-commit
+        uses: ./.github/actions/run_linters
+        with:
+          image_name: ${{ env.IMAGE_NAME }}:${{ github.run_id }}
+          repository_path: ${{ env.IMAGE_REPOSITORY }}
       - run: docker push $IMAGE_NAME:$GITHUB_RUN_ID && docker push $IMAGE_NAME:latest
       - id: output_step
         run: echo "IMAGE_NAME=$IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
 
-  tests:
-    name: tests
-    needs:
-      - build
-    runs-on: self-hosted
-    container:
-      image: ${{needs.build.outputs.IMAGE_NAME}}
-      credentials:
-        username: _json_key_base64
-        password: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run pre-commit
-        uses: ./.github/actions/run_pre_commit
-        with:
-          repository_path: model-instantiator
-
   run:
     name: run
     needs:
-      - build
-      - tests
+      - build_test
     runs-on: self-hosted
     container: google/cloud-sdk
     steps:

@@ -16,9 +16,9 @@ runs:
             export $variable_name=$variable_value
             echo "$variable_name"="$variable_value" >> $GITHUB_ENV
         done
-      shell: sh
+      shell: bash
     - run: |
         (${{ github.ref_name == 'main' }} && echo "STAGE=production" >> $GITHUB_ENV) || 
         (${{ github.ref_name == 'develop' }} && echo "STAGE=staging" >> $GITHUB_ENV) || 
         echo "STAGE=test" >> $GITHUB_ENV
-      shell: sh
+      shell: bash
