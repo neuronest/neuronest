@@ -8,19 +8,6 @@ YELLOW = "\033[1;33m"
 BLUE = "\033[1;34m"
 
 COMMIT_MESSAGE = ".git/COMMIT_EDITMSG"
-HEADER_WORDS = (
-    "(feat) ",
-    "(fix) ",
-    "(hotfix) ",
-    "(update) ",
-    "(refactor) ",
-    "(clean) ",
-    "(test) ",
-    "(config) ",
-    "(doc) ",
-    "(wip) ",
-    "(merge) ",
-)
 
 
 # pylint: disable=W1401
@@ -55,15 +42,10 @@ if __name__ == "__main__":
 
     first_line = data.split("\n", 1)[0]
 
-    if not first_line.startswith(HEADER_WORDS):
-        specific_failed_message = (
-            f"{YELLOW}Commit message must begin with one of "
-            f"the following:{HEADER_WORDS}"
-        )
-        print_failed_message(first_line, specific_failed_message)
-        sys.exit(1)
-
-    header_regex = re.compile(r"\([a-z]{3,8}\)\s[A-Z].{1,100}")
+    header_regex = re.compile(
+        r"^\((?:feat|fix|hotfix|update|refactor|clean|test|config|doc|wip|merge)\)\s"
+        r"\[[-a-z]{3,20}\]\s[A-Z].{1,100}$"
+    )
 
     if not bool(header_regex.fullmatch(first_line)):
         specific_failed_message = f"{YELLOW}Commit message is invalid!"

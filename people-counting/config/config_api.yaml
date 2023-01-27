@@ -1,7 +1,0 @@
-general:
-  project: "people-counting-363015"
-firestore:
-  results_collection: "countings"
-storage:
-  videos_to_count_bucket: "videos-to-count"
-  counted_videos_bucket: "counted-videos"
