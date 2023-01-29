@@ -1,34 +1,29 @@
 name: 'run_linters'
 description: 'Install base dependencies and execute the linters'
 inputs:
-  image_name:
-    description: 'Docker image name in which to run the linters'
-    required: true
-  repository_path:
-    description: 'Path of the repository to run the linters on'
+  repository_name:
+    description: 'Repository name'
     required: true
 runs:
   using: "composite"
   steps:
-      - run: pwd
+      - run: cp .flake8 .pylintrc .pre-commit-config.yaml ${{ inputs.repository_name }}
         shell: bash
-      - run: ls
+      - working-directory: ${{ inputs.repository_name }}
+        run: poetry check && poetry install --with test
         shell: bash
-      - run: ls ${{ inputs.repository_path }}
+      - working-directory: ${{ inputs.repository_name }}
+        run: poetry run black --check .
         shell: bash
-      - run: |
-          docker run \
-            -v "$(pwd)":/tmp \
-            ${{ inputs.image_name }} \
-            /bin/bash -c "
-              ls /tmp \
-              && ls /tmp/${{ inputs.repository_path }} \
-              && cd /tmp/${{ inputs.repository_path }} \
-              && poetry check && poetry install --with dev \
-              && poetry run black --check . \
-              && poetry run flake8 --config=.flake8 . \
-              && poetry run pylint --rcfile=.pylintrc -j 0 --reports=n --recursive=true . \
-              && poetry run isort --check-only --profile=black . \
-              && poetry run toml-sort --in-place -a pyproject.toml \
-            "
+      - working-directory: ${{ inputs.repository_name }}
+        run: poetry run flake8 --config=.flake8 .
+        shell: bash
+      - working-directory: ${{ inputs.repository_name }}
+        run: poetry run pylint --rcfile=.pylintrc -j 0 --reports=n --recursive=true .
+        shell: bash
+      - working-directory: ${{ inputs.repository_name }}
+        run: poetry run isort --check-only --profile=black .
+        shell: bash
+      - working-directory: ${{ inputs.repository_name }}
+        run: poetry run toml-sort --in-place -a pyproject.toml
         shell: bash

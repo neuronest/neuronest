@@ -1,0 +1,64 @@
+name: 'build_push'
+description: 'Build and push docker image'
+inputs:
+  repository_name:
+    description: 'Repository name'
+    default: true
+  region:
+    description: 'Geographical region to be used for the GCP artifact registry'
+    required: true
+  artifact_registry_path:
+    description: 'Artifact registry path'
+    required: true
+  ci_service_account:
+    description: 'Base64 encoded service account to be used inside the CI'
+    required: true
+  docker_target:
+    description: >
+      Docker target in case of a multi-stage build
+      (e.g.: "--target train")
+  docker_build_arguments:
+    description: >
+      Docker build arguments 
+      (e.g.: "--build-arg MODEL_PATH=model.pt --build-arg ARTIFACTS_PATH=artifacts")
+  google_application_credentials:
+    description: 'Local path of the service account that will be stored'
+    default: keys/service_account.json
+  shared_repository_name:
+    description: 'Shared repository name'
+    default: shared
+outputs:
+  image_name:
+    description: 'Built and pushed image name'
+    value: ${{ steps.output_step.outputs.image_name }}
+runs:
+  using: "composite"
+  steps:
+    - run: echo "IMAGE_NAME"="${{ inputs.artifact_registry_path }}/${{ inputs.repository_name }}" >> $GITHUB_ENV
+      shell: bash
+    - run: mkdir -p $(dirname ${{ inputs.google_application_credentials }}) && echo ${{ inputs.ci_service_account }} | base64 -d > ${{ inputs.google_application_credentials }}
+      shell: bash
+    - run: gcloud auth activate-service-account --key-file=${{ inputs.google_application_credentials }}
+      shell: bash
+    - run: gcloud auth configure-docker ${{ inputs.region }}-docker.pkg.dev
+      shell: bash
+    - run: docker pull $IMAGE_NAME:latest || true
+      shell: bash
+    - run: touch ${{ inputs.repository_name }}/.dockerignore
+      shell: bash
+    - run: |
+        for to_include_line in '**/*' '!${{ inputs.repository_name }}' '!${{ inputs.shared_repository_name }}'
+        do
+          grep -qxF $to_include_line ${{ inputs.repository_name }}/.dockerignore || \
+          echo $to_include_line >> ${{ inputs.repository_name }}/.dockerignore
+        done
+      shell: bash
+    - run: cp ${{ inputs.repository_name }}/Dockerfile ${{ inputs.repository_name }}/.dockerignore .
+      shell: bash
+    - run: docker build --cache-from $IMAGE_NAME:latest -t $IMAGE_NAME:$GITHUB_RUN_ID -t $IMAGE_NAME:latest ${{ inputs.docker_target }} ${{ inputs.docker_build_arguments }} .
+      shell: bash
+    - run: docker push $IMAGE_NAME:$GITHUB_RUN_ID && docker push $IMAGE_NAME:latest
+      shell: bash
+    - id: output_step
+      run: echo "image_name=$IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+      shell: bash
