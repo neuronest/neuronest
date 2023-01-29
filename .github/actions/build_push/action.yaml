@@ -3,27 +3,18 @@ description: 'Build and push docker image'
 inputs:
   repository_name:
     description: 'Repository name'
-    default: true
-  region:
-    description: 'Geographical region to be used for the GCP artifact registry'
     required: true
   artifact_registry_path:
     description: 'Artifact registry path'
     required: true
-  ci_service_account:
-    description: 'Base64 encoded service account to be used inside the CI'
-    required: true
-  docker_target:
+  target:
     description: >
       Docker target in case of a multi-stage build
-      (e.g.: "--target train")
-  docker_build_arguments:
+      (e.g.: "train")
+  build_arguments:
     description: >
       Docker build arguments 
       (e.g.: "--build-arg MODEL_PATH=model.pt --build-arg ARTIFACTS_PATH=artifacts")
-  google_application_credentials:
-    description: 'Local path of the service account that will be stored'
-    default: keys/service_account.json
   shared_repository_name:
     description: 'Shared repository name'
     default: shared
@@ -34,13 +25,11 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - run: echo "IMAGE_NAME"="${{ inputs.artifact_registry_path }}/${{ inputs.repository_name }}" >> $GITHUB_ENV
+    - run: echo "IMAGE_NAME_SUFFIX"="$([[ ! -z '${{ inputs.target }}' ]] && echo '-${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
       shell: bash
-    - run: mkdir -p $(dirname ${{ inputs.google_application_credentials }}) && echo ${{ inputs.ci_service_account }} | base64 -d > ${{ inputs.google_application_credentials }}
+    - run: echo "IMAGE_NAME"="${{ inputs.artifact_registry_path }}/${{ inputs.repository_name }}$IMAGE_NAME_SUFFIX" >> $GITHUB_ENV
       shell: bash
-    - run: gcloud auth activate-service-account --key-file=${{ inputs.google_application_credentials }}
-      shell: bash
-    - run: gcloud auth configure-docker ${{ inputs.region }}-docker.pkg.dev
+    - run: echo "TARGET_ARGUMENTS"="$([[ ! -z '${{ inputs.target }}' ]] && echo '--target ${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
       shell: bash
     - run: docker pull $IMAGE_NAME:latest || true
       shell: bash
@@ -49,13 +38,13 @@ runs:
     - run: |
         for to_include_line in '**/*' '!${{ inputs.repository_name }}' '!${{ inputs.shared_repository_name }}'
         do
-          grep -qxF $to_include_line ${{ inputs.repository_name }}/.dockerignore || \
-          echo $to_include_line >> ${{ inputs.repository_name }}/.dockerignore
+          grep -qxF "$to_include_line" ${{ inputs.repository_name }}/.dockerignore || \
+          echo "$to_include_line" >> ${{ inputs.repository_name }}/.dockerignore
         done
       shell: bash
     - run: cp ${{ inputs.repository_name }}/Dockerfile ${{ inputs.repository_name }}/.dockerignore .
       shell: bash
-    - run: docker build --cache-from $IMAGE_NAME:latest -t $IMAGE_NAME:$GITHUB_RUN_ID -t $IMAGE_NAME:latest ${{ inputs.docker_target }} ${{ inputs.docker_build_arguments }} .
+    - run: docker build --cache-from $IMAGE_NAME:latest -t $IMAGE_NAME:$GITHUB_RUN_ID -t $IMAGE_NAME:latest $TARGET_ARGUMENTS ${{ inputs.build_arguments }} .
       shell: bash
     - run: docker push $IMAGE_NAME:$GITHUB_RUN_ID && docker push $IMAGE_NAME:latest
       shell: bash

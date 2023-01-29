@@ -22,32 +22,35 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_REPOSITORY: object-detection
+  REPOSITORY_NAME: object-detection
   PACKAGE_NAME: object_detection
-  DOCKERFILE_PATH: dockerfiles/object_detection.dockerfile
 
 jobs:
   build_training:
     name: build_training
     runs-on: self-hosted
     container: google/cloud-sdk
-    env:
-      TARGET: training
     outputs:
-      TRAINING_IMAGE_NAME: ${{ steps.output_step.outputs.TRAINING_IMAGE_NAME }}
+      TRAINING_IMAGE_NAME: ${{ steps.build_push.outputs.image_name }}
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
         uses: ./.github/actions/set_variables
-      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
-      - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: gcloud auth configure-docker $REGION-docker.pkg.dev
-      - run: echo "TRAINING_IMAGE_NAME"="$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY-$TARGET" >> $GITHUB_ENV
-      - run: docker pull $TRAINING_IMAGE_NAME:latest || true
-      - run: docker build --cache-from $TRAINING_IMAGE_NAME:latest -t $TRAINING_IMAGE_NAME:$GITHUB_RUN_ID -t $TRAINING_IMAGE_NAME:latest -f $DOCKERFILE_PATH --target $TARGET .
-      - run: docker push $TRAINING_IMAGE_NAME:$GITHUB_RUN_ID && docker push $TRAINING_IMAGE_NAME:latest
-      - id: output_step
-        run: echo "TRAINING_IMAGE_NAME=$TRAINING_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+      - id: gcloud_auth
+        name: GCP authentication
+        uses: ./.github/actions/gcloud_auth
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          region: ${{ env.REGION }}
+          ci_service_account: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+          google_application_credentials: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+      - id: build_push
+        name: Build push
+        uses: ./.github/actions/build_push
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          artifact_registry_path: ${{ env.ARTIFACT_REGISTRY_PATH }}
+          target: training
 
   tests:
     name: tests
@@ -61,10 +64,10 @@ jobs:
         password: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
     steps:
       - uses: actions/checkout@v3
-      - name: Run pre-commit
-        uses: ./.github/actions/run_pre_commit
+      - name: Run linters
+        uses: ./.github/actions/run_linters
         with:
-          repository_path: object-detection
+          repository_name: ${{ env.REPOSITORY_NAME }}
 
   train:
     name: train
@@ -74,7 +77,7 @@ jobs:
     runs-on: self-hosted
     defaults:
       run:
-        working-directory: object-detection
+        working-directory: ${{ env.REPOSITORY_NAME }}
     container:
       image: ${{needs.build_training.outputs.TRAINING_IMAGE_NAME}}
       credentials:
@@ -90,9 +93,17 @@ jobs:
         uses: ./.github/actions/set_variables
       - run: echo "TRAINING_IMAGE_NAME"="${{ needs.build_training.outputs.TRAINING_IMAGE_NAME }}" >> $GITHUB_ENV
       - run: echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
-      - run: echo "MODEL_GSPATH"="gs://$IMAGE_REPOSITORY-models/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
-      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
-      - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+      - run: echo "MODEL_GSPATH"="gs://$REPOSITORY_NAME-models/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
+      - id: gcloud_auth
+        name: GCP authentication
+        uses: ./.github/actions/gcloud_auth
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          region: ${{ env.REGION }}
+          ci_service_account: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+          google_application_credentials: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+      - run: ls
+      - run: ls keys
       - run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
       - id: output_step
         run: echo "MODEL_GSPATH=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
@@ -105,25 +116,31 @@ jobs:
     runs-on: self-hosted
     container: google/cloud-sdk
     env:
-      TARGET: serving
       MODEL_PATH: model.pt
     outputs:
-      SERVING_IMAGE_NAME: ${{ steps.output_step.outputs.SERVING_IMAGE_NAME }}
+      SERVING_IMAGE_NAME: ${{ steps.build_push.outputs.image_name }}
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
         uses: ./.github/actions/set_variables
-      - run: echo "SERVING_IMAGE_NAME"="$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY-$TARGET" >> $GITHUB_ENV
       - run: echo "MODEL_GSPATH"="${{ needs.train.outputs.MODEL_GSPATH }}" >> $GITHUB_ENV
-      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
-      - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: gcloud auth configure-docker $REGION-docker.pkg.dev
-      - run: gsutil cp $MODEL_GSPATH $MODEL_PATH
-      - run: docker pull $SERVING_IMAGE_NAME:latest || true
-      - run: docker build --cache-from $SERVING_IMAGE_NAME:latest --build-arg MODEL_PATH=$MODEL_PATH -t $SERVING_IMAGE_NAME:$GITHUB_RUN_ID -t $SERVING_IMAGE_NAME:latest -f $DOCKERFILE_PATH --target $TARGET .
-      - run: docker push $SERVING_IMAGE_NAME:$GITHUB_RUN_ID && docker push $SERVING_IMAGE_NAME:latest
-      - id: output_step
-        run: echo "SERVING_IMAGE_NAME=$SERVING_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+      - id: gcloud_auth
+        name: GCP authentication
+        uses: ./.github/actions/gcloud_auth
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          region: ${{ env.REGION }}
+          ci_service_account: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+          google_application_credentials: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+      - run: gsutil cp $MODEL_GSPATH ${{ env.REPOSITORY_NAME }}/$MODEL_PATH
+      - id: build_push
+        name: Build push
+        uses: ./.github/actions/build_push
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          artifact_registry_path: ${{ env.ARTIFACT_REGISTRY_PATH }}
+          target: serving
+          build_arguments: --build-arg MODEL_PATH=${{ env.REPOSITORY_NAME }}/${{ env.MODEL_PATH }}
 
   test_serving:
     name: test_serving
@@ -133,7 +150,7 @@ jobs:
     runs-on: self-hosted
     defaults:
       run:
-        working-directory: object-detection
+        working-directory: ${{ env.REPOSITORY_NAME }}
     container:
       image: ${{needs.build_training.outputs.TRAINING_IMAGE_NAME}}
       credentials:
@@ -144,8 +161,14 @@ jobs:
       - name: Set environment variables
         uses: ./.github/actions/set_variables
       - run: echo "SERVING_IMAGE_NAME"="${{ needs.build_serving.outputs.SERVING_IMAGE_NAME }}" >> $GITHUB_ENV
-      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
-      - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+      - id: gcloud_auth
+        name: GCP authentication
+        uses: ./.github/actions/gcloud_auth
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          region: ${{ env.REGION }}
+          ci_service_account: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+          google_application_credentials: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
       - run: python -m object_detection.cli --actions model_upload
       - run: python -m object_detection.cli --actions deploy || python -m object_detection.cli --actions remove_last_model_version
       - run: poetry check && poetry install --with test
