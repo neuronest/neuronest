@@ -46,7 +46,7 @@ def test_endpoint_inference(
 ):
     model_name = config.model.name
 
-    endpoint = vertex_ai_manager.get_last_endpoint_by_name(model_name)
+    endpoint = vertex_ai_manager.get_endpoint_by_name(model_name)
     raw_predictions = endpoint.predict([{"data": image_to_string(image)}])
     predictions = array_from_string(
         OutputSchema.parse_obj(raw_predictions.predictions[0]).results
