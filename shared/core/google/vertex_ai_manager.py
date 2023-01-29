@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List, Optional, Tuple
 
 from google.cloud import aiplatform, aiplatform_v1
@@ -185,16 +186,59 @@ class VertexAIManager:
             labels=serving_deployment_config.as_labels(),
         )
 
+    def is_model_deployed(self, name: str, model: aiplatform.Model) -> bool:
+        endpoint = self.get_endpoint_by_name(name)
+
+        for deployed_model in endpoint.gca_resource.deployed_models:
+            if (
+                endpoint.traffic_split.get(deployed_model.id) == 100
+                and deployed_model.model_version_id == model.version_id
+            ):
+                return True
+
+        return False
+
+    def wait_for_model_deployed(
+        self,
+        name: str,
+        model: aiplatform.Model,
+        timeout: float = 1800,
+        check_frequency: float = 30,
+        current_time: float = 0,
+    ):
+        if current_time >= timeout:
+            return False
+
+        if self.is_model_deployed(name=name, model=model):
+            return True
+
+        time.sleep(check_frequency)
+
+        return self.wait_for_model_deployed(
+            name=name,
+            model=model,
+            timeout=timeout,
+            current_time=current_time + check_frequency,
+        )
+
     def deploy_model(
         self,
         name: str,
         model: aiplatform.Model,
         serving_deployment_config: ServingDeploymentConfig,
-        sync: bool = True,
         undeploy_previous_model: bool = True,
         timeout: float = 1800,
     ) -> aiplatform.Endpoint:
         endpoint = self.get_endpoint_by_name(name)
+
+        for deployed_model in endpoint.gca_resource.deployed_models:
+            if (
+                endpoint.traffic_split.get(deployed_model.id) == 100
+                and deployed_model.model_version_id == model.version_id
+            ):
+                # for a given model version,
+                # there should be only one deployed model with 100% traffic
+                return endpoint
 
         endpoint = model.deploy(
             endpoint=endpoint,
@@ -205,9 +249,14 @@ class VertexAIManager:
             max_replica_count=serving_deployment_config.max_replica_count,
             accelerator_type=serving_deployment_config.accelerator_type,
             accelerator_count=serving_deployment_config.accelerator_count,
-            sync=sync,
+            sync=False,
             deploy_request_timeout=timeout,
         )
+
+        if not self.wait_for_model_deployed(name=name, model=model, timeout=timeout):
+            raise TimeoutError(
+                f"Model '{name}' could not been deployed after {timeout} seconds"
+            )
 
         if undeploy_previous_model:
             self.undeploy_models_without_traffic_by_endpoint_name(name)

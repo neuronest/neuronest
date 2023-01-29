@@ -52,7 +52,6 @@ def instantiate_model(
         name=model_name,
         model=model,
         serving_deployment_config=serving_deployment_config,
-        sync=False,
         undeploy_previous_model=True,
     )
 
