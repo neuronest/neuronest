@@ -38,7 +38,7 @@ jobs:
       - run: apt update && apt install -y cmake ffmpeg libsm6 libxext6
       - run: pip install --upgrade pip
       - run: pip install poetry==$POETRY_VERSION
-      - run: poetry check && poetry install -E
+      - run: poetry check && poetry install -E dev
       - name: Run linters
         uses: ./.github/actions/run_linters
         with:
