@@ -19,6 +19,10 @@ on:
     paths:
       - .github/workflows/core.yaml
       - shared/**
+  workflow_dispatch:
+
+env:
+  REPOSITORY_NAME: shared
 
 jobs:
   tests:
