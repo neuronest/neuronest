@@ -10,9 +10,6 @@ runs:
       - run: cp .flake8 .pylintrc .pre-commit-config.yaml ${{ inputs.repository_name }}
         shell: bash
       - working-directory: ${{ inputs.repository_name }}
-        run: poetry check && poetry install --with test
-        shell: bash
-      - working-directory: ${{ inputs.repository_name }}
         run: poetry run black --check .
         shell: bash
       - working-directory: ${{ inputs.repository_name }}
