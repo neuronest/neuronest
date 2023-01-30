@@ -227,7 +227,7 @@ class VertexAIManager:
         model: aiplatform.Model,
         serving_deployment_config: ServingDeploymentConfig,
         undeploy_previous_model: bool = True,
-        timeout: float = 1800,
+        timeout: float = 3600,
     ) -> aiplatform.Endpoint:
         endpoint = self.get_endpoint_by_name(name)
 
