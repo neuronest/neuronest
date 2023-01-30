@@ -171,7 +171,17 @@ jobs:
           region: ${{ env.REGION }}
           ci_service_account: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
           google_application_credentials: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
-      - run: python -m object_detection.cli --actions model_upload
-      - run: python -m object_detection.cli --actions deploy || (python -m object_detection.cli --actions remove_last_model_version && exit 1)
-      - run: poetry check && poetry install --with test
-      - run: poetry run pytest -x tests/test_integration.py -vv || (python -m object_detection.cli --actions undeploy remove_last_model_version deploy && exit 1)
+      - id: model_upload
+        run: python -m object_detection.cli --actions model_upload
+      - id: deploy
+        run: python -m object_detection.cli --actions deploy
+      - id: remove_last_model_version
+        if: steps.deploy.conclusion == 'failure'
+        run: python -m object_detection.cli --actions remove_last_model_version
+      - id: poetry_install_with_test
+        run: poetry check && poetry install --with test
+      - id: test_integration
+        run: poetry run pytest -x tests/test_integration.py -vv
+      - id: undeploy_and_remove_last_model_version
+        if: steps.test_integration.conclusion == 'failure'
+        run: python -m object_detection.cli --actions undeploy remove_last_model_version deploy
