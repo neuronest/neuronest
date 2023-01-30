@@ -186,9 +186,10 @@ class VertexAIManager:
             labels=serving_deployment_config.as_labels(),
         )
 
-    def is_model_deployed(self, name: str, model: aiplatform.Model) -> bool:
-        endpoint = self.get_endpoint_by_name(name)
-
+    @staticmethod
+    def is_model_deployed(
+        endpoint: aiplatform.Endpoint, model: aiplatform.Model
+    ) -> bool:
         for deployed_model in endpoint.gca_resource.deployed_models:
             if (
                 endpoint.traffic_split.get(deployed_model.id) == 100
@@ -198,9 +199,10 @@ class VertexAIManager:
 
         return False
 
+    @classmethod
     def wait_for_model_deployed(
-        self,
-        name: str,
+        cls,
+        endpoint: aiplatform.Endpoint,
         model: aiplatform.Model,
         timeout: float = 1800,
         check_frequency: float = 30,
@@ -209,13 +211,13 @@ class VertexAIManager:
         if current_time >= timeout:
             return False
 
-        if self.is_model_deployed(name=name, model=model):
+        if cls.is_model_deployed(endpoint=endpoint, model=model):
             return True
 
         time.sleep(check_frequency)
 
-        return self.wait_for_model_deployed(
-            name=name,
+        return cls.wait_for_model_deployed(
+            endpoint=endpoint,
             model=model,
             timeout=timeout,
             current_time=current_time + check_frequency,
@@ -231,14 +233,15 @@ class VertexAIManager:
     ) -> aiplatform.Endpoint:
         endpoint = self.get_endpoint_by_name(name)
 
-        for deployed_model in endpoint.gca_resource.deployed_models:
-            if (
-                endpoint.traffic_split.get(deployed_model.id) == 100
-                and deployed_model.model_version_id == model.version_id
-            ):
-                # for a given model version,
-                # there should be only one deployed model with 100% traffic
-                return endpoint
+        if endpoint is not None:
+            for deployed_model in endpoint.gca_resource.deployed_models:
+                if (
+                    endpoint.traffic_split.get(deployed_model.id) == 100
+                    and deployed_model.model_version_id == model.version_id
+                ):
+                    # for a given model version,
+                    # there should be only one deployed model with 100% traffic
+                    return endpoint
 
         endpoint = model.deploy(
             endpoint=endpoint,
@@ -255,7 +258,9 @@ class VertexAIManager:
             sync=False,
         )
 
-        if not self.wait_for_model_deployed(name=name, model=model, timeout=timeout):
+        if not self.wait_for_model_deployed(
+            endpoint=endpoint, model=model, timeout=timeout
+        ):
             raise TimeoutError(
                 f"Model '{name}' could not been deployed after {timeout} seconds"
             )
