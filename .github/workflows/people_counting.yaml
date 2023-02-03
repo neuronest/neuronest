@@ -1,0 +1,123 @@
+name: people_counting
+
+on:
+  push:
+    branches:
+      - '**'
+      - main
+      - develop
+    paths:
+      - .github/workflows/people_counting.yaml
+      - .github/actions/run_pre_commits/**
+      - .pre-commit-config.yaml
+      - shared/**
+      - people-counting/**
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/people_counting.yaml
+      - shared/**
+      - people-counting/**
+
+env:
+  PROJECT_ID: people-counting-363015
+  PROJECT_NAME: people-counting
+  LOCATION_APP_ENGINE: europe-west3
+  REGISTRY_LOCATION: europe-west1-docker.pkg.dev
+  REGION: europe-west1
+  ZONE: europe-west9-a
+  ARTIFACT_REGISTRY_REPOSITORY: people-counting-ar
+  API_IMAGE: api
+  FIRESTORE_RESULTS_COLLECTION: countings
+  ORGANIZATION_ID: 385885390984
+
+
+jobs:
+  setup_composed_env_variables:
+    name: setup_composed_env_variables
+    runs-on: self-hosted
+    outputs:
+      DESTINATION_API_IMAGE: ${{ steps.setup_DESTINATION_API_IMAGE.outputs.DESTINATION_API_IMAGE }}
+      VIDEOS_TO_COUNT_BUCKET: ${{ steps.setup_VIDEOS_TO_COUNT_BUCKET.outputs.VIDEOS_TO_COUNT_BUCKET }}
+      COUNTED_VIDEOS_BUCKET: ${{ steps.setup_COUNTED_VIDEOS_BUCKET.outputs.COUNTED_VIDEOS_BUCKET }}
+    steps:
+      - id: setup_DESTINATION_API_IMAGE
+        run: echo "DESTINATION_API_IMAGE=${{ env.REGISTRY_LOCATION }}/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPOSITORY }}/${{ env.API_IMAGE }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+      - id: setup_VIDEOS_TO_COUNT_BUCKET
+        run: echo "VIDEOS_TO_COUNT_BUCKET=${{ env.PROJECT_ID }}-videos-to-count" >> $GITHUB_OUTPUT
+      - id: setup_COUNTED_VIDEOS_BUCKET
+        run: echo "COUNTED_VIDEOS_BUCKET=${{ env.PROJECT_ID }}-counted-videos" >> $GITHUB_OUTPUT
+
+  setup_stage:
+    name: setup_stage
+    runs-on: self-hosted
+    outputs:
+      stage: ${{ steps.setup_stage.outputs.stage }}
+    steps:
+      - id: setup_stage
+        run: (${{ github.ref_name == 'master' }} && echo "::set-output name=stage::production") || (${{ github.ref_name == 'develop' }} && echo "::set-output name=stage::staging") || echo "::set-output name=stage::test"
+
+  build_test_deploy:
+    name: build_test_deploy
+    runs-on: self-hosted
+    container:
+      image: google/cloud-sdk
+    needs: [setup_stage, setup_composed_env_variables]
+    env:
+      STAGE: ${{ needs.setup_stage.outputs.stage }}
+      DESTINATION_API_IMAGE: ${{ needs.setup_composed_env_variables.outputs.DESTINATION_API_IMAGE }}
+      VIDEOS_TO_COUNT_BUCKET: ${{ needs.setup_composed_env_variables.outputs.VIDEOS_TO_COUNT_BUCKET }}
+      COUNTED_VIDEOS_BUCKET: ${{ needs.setup_composed_env_variables.outputs.COUNTED_VIDEOS_BUCKET }}
+    steps:
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          service_account_key: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
+          export_default_credentials: true
+
+      - uses: actions/checkout@v3
+
+      - name: Build and push image
+        run: |
+          cp people-counting/Dockerfile people-counting/.dockerignore ./
+          docker build . -t ${{ env.DESTINATION_API_IMAGE }}
+          gcloud auth configure-docker -q ${{ env.REGISTRY_LOCATION }}
+          docker push ${{ env.DESTINATION_API_IMAGE }}
+
+      - uses: ./.github/actions/run_pre_commits
+        with:
+          image_name: ${{ env.DESTINATION_API_IMAGE }}
+          repository_path: people-counting
+          pre_commit_run_files: people-counting/**/* shared/**/*
+
+      - name: Run tests
+        run: |
+          docker run \
+          -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/dummy_file_name.json \
+          -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/keys/dummy_file_name.json:ro \
+          ${{ env.DESTINATION_API_IMAGE }} pytest -x -n auto tests -vv
+
+      - uses: ./.github/actions/set_up_terraform
+        with:
+          google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
+
+      - name: Build infrastructure
+        working-directory: people-counting/iac
+        run:  |
+          terraform init -input=false -backend-config="bucket=${{ env.TF_VAR_state_bucket }}"
+          terraform apply -input=false -auto-approve
+        env:
+          TF_VAR_organization_id: ${{ env.ORGANIZATION_ID }}
+          TF_VAR_state_bucket: ${{ env.PROJECT_ID }}-bucket-tfstate
+          TF_VAR_project_id: ${{ env.PROJECT_ID }}
+          TF_VAR_project_name: ${{ env.PROJECT_NAME }}
+          TF_VAR_location_app_engine: ${{ env.LOCATION_APP_ENGINE }}
+          TF_VAR_region: ${{ env.REGION }}
+          TF_VAR_zone: ${{ env.ZONE }}
+          TF_VAR_artifact_registry_repository: ${{ env.ARTIFACT_REGISTRY_REPOSITORY }}
+          TF_VAR_webapp_image: ${{ env.DESTINATION_API_IMAGE }}
+          TF_VAR_firestore_results_collection: ${{ env.FIRESTORE_RESULTS_COLLECTION }}
+          TF_VAR_videos_to_count_bucket: ${{ env.VIDEOS_TO_COUNT_BUCKET }}
+          TF_VAR_counted_videos_bucket: ${{ env.COUNTED_VIDEOS_BUCKET }}

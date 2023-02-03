@@ -1,0 +1,41 @@
+name: 'run_pre_commits'
+description: 'description'
+inputs:
+  image_name:
+    description: 'Docker image name in which to run the pre-commits'
+    required: true
+  repository_path:
+    description: 'Path of the repository to run the pre-commits on'
+    required: true
+  pre_commit_run_files:
+    description: 'The files on which to run the pre-commits'
+    required: false
+    default: '**/*'
+runs:
+  using: "composite"
+  steps:
+      - name: run pre-commits
+        run: |
+          container_id=$(docker run -dit ${{ env.DESTINATION_API_IMAGE }} bash)
+          neuronest_repository_path=/neuronest_repository
+          repository_path=${{ inputs.repository_path }}
+          docker cp ./. $container_id:$neuronest_repository_path
+          docker exec \
+            --workdir $neuronest_repository_path \
+            $container_id \
+            /bin/bash -c "
+              cd $repository_path \
+              && poetry export \
+                --without-hashes \
+                --with dev -f requirements.txt \
+                --output requirements.txt \
+              && pip install -r requirements.txt \
+              && cd $neuronest_repository_path \
+              && pre-commit install \
+              && pre-commit run \
+                --show-diff-on-failure \
+                --files ${{ inputs.pre_commit_run_files }}
+          "
+          docker rm -f $container_id
+        shell: bash
+

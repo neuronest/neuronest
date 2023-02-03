@@ -1,0 +1,39 @@
+name: core
+
+defaults:
+  run:
+    working-directory: shared
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/core.yaml
+      - shared/**
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/core.yaml
+      - shared/**
+
+jobs:
+  tests:
+    name: tests
+    runs-on: self-hosted
+    container: python:3.8-buster
+    env:
+      STAGE: test
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set environment variables
+        uses: ./.github/actions/set_variables
+      - run: apt update && apt install -y cmake ffmpeg libsm6 libxext6
+      - run: pip install --upgrade pip
+      - run: pip install poetry==$POETRY_VERSION
+      - run: poetry check
+      - run: poetry install --with test
+      - run: poetry run pytest -x -n auto tests -vv

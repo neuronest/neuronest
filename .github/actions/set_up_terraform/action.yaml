@@ -1,0 +1,22 @@
+name: 'set_up_terraform'
+description: 'Installs utilities that terraform needs that we might not have in a given docker image'
+inputs:
+    google_github_actions_auth_credentials_json:
+      description: 'The Google Cloud JSON service account key to use for authentication'
+      required: true
+runs:
+  using: "composite"
+  steps:
+      - name: Install terraform setup utilities
+        run: |
+          apt-get -y install zip
+        shell: bash
+      - name: Install node for terraform
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - uses: hashicorp/setup-terraform@v1
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json : ${{ inputs.google_github_actions_auth_credentials_json }}
+

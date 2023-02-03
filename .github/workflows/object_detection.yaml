@@ -1,0 +1,152 @@
+name: object_detection
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/object_detection.yaml
+      - dockerfiles/object_detection.dockerfile
+      - shared/**
+      - object-detection/**
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/object_detection.yaml
+      - dockerfiles/object_detection.dockerfile
+      - shared/**
+      - object-detection/**
+  workflow_dispatch:
+
+env:
+  IMAGE_REPOSITORY: object-detection
+  PACKAGE_NAME: object_detection
+  DOCKERFILE_PATH: dockerfiles/object_detection.dockerfile
+
+jobs:
+  build_training:
+    name: build_training
+    runs-on: self-hosted
+    container: google/cloud-sdk
+    env:
+      TARGET: training
+    outputs:
+      TRAINING_IMAGE_NAME: ${{ steps.output_step.outputs.TRAINING_IMAGE_NAME }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set environment variables
+        uses: ./.github/actions/set_variables
+      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
+      - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+      - run: gcloud auth configure-docker $REGION-docker.pkg.dev
+      - run: echo "TRAINING_IMAGE_NAME"="$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY-$TARGET" >> $GITHUB_ENV
+      - run: docker pull $TRAINING_IMAGE_NAME:latest || true
+      - run: docker build --cache-from $TRAINING_IMAGE_NAME:latest -t $TRAINING_IMAGE_NAME:$GITHUB_RUN_ID -t $TRAINING_IMAGE_NAME:latest -f $DOCKERFILE_PATH --target $TARGET .
+      - run: docker push $TRAINING_IMAGE_NAME:$GITHUB_RUN_ID && docker push $TRAINING_IMAGE_NAME:latest
+      - id: output_step
+        run: echo "TRAINING_IMAGE_NAME=$TRAINING_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+
+  tests:
+    name: tests
+    needs:
+      - build_training
+    runs-on: self-hosted
+    container:
+      image: ${{needs.build_training.outputs.TRAINING_IMAGE_NAME}}
+      credentials:
+        username: _json_key_base64
+        password: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run pre-commit
+        uses: ./.github/actions/run_pre_commit
+        with:
+          repository_path: object-detection
+
+  train:
+    name: train
+    needs:
+      - tests
+      - build_training
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: object-detection
+    container:
+      image: ${{needs.build_training.outputs.TRAINING_IMAGE_NAME}}
+      credentials:
+        username: _json_key_base64
+        password: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+    env:
+      MODEL_WEIGHTS: model/model.pt
+    outputs:
+      MODEL_GSPATH: ${{ steps.output_step.outputs.MODEL_GSPATH }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set environment variables
+        uses: ./.github/actions/set_variables
+      - run: echo "TRAINING_IMAGE_NAME"="${{ needs.build_training.outputs.TRAINING_IMAGE_NAME }}" >> $GITHUB_ENV
+      - run: echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
+      - run: echo "MODEL_GSPATH"="gs://$IMAGE_REPOSITORY-models/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
+      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
+      - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+      - run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
+      - id: output_step
+        run: echo "MODEL_GSPATH=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
+
+  build_serving:
+    name: build_serving
+    needs:
+      - build_training
+      - train
+    runs-on: self-hosted
+    container: google/cloud-sdk
+    env:
+      TARGET: serving
+      MODEL_PATH: model.pt
+    outputs:
+      SERVING_IMAGE_NAME: ${{ steps.output_step.outputs.SERVING_IMAGE_NAME }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set environment variables
+        uses: ./.github/actions/set_variables
+      - run: echo "SERVING_IMAGE_NAME"="$ARTIFACT_REGISTRY_PATH/$IMAGE_REPOSITORY-$TARGET" >> $GITHUB_ENV
+      - run: echo "MODEL_GSPATH"="${{ needs.train.outputs.MODEL_GSPATH }}" >> $GITHUB_ENV
+      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
+      - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+      - run: gcloud auth configure-docker $REGION-docker.pkg.dev
+      - run: gsutil cp $MODEL_GSPATH $MODEL_PATH
+      - run: docker pull $SERVING_IMAGE_NAME:latest || true
+      - run: docker build --cache-from $SERVING_IMAGE_NAME:latest --build-arg MODEL_PATH=$MODEL_PATH -t $SERVING_IMAGE_NAME:$GITHUB_RUN_ID -t $SERVING_IMAGE_NAME:latest -f $DOCKERFILE_PATH --target $TARGET .
+      - run: docker push $SERVING_IMAGE_NAME:$GITHUB_RUN_ID && docker push $SERVING_IMAGE_NAME:latest
+      - id: output_step
+        run: echo "SERVING_IMAGE_NAME=$SERVING_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+
+  test_serving:
+    name: test_serving
+    needs:
+      - build_training
+      - build_serving
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: object-detection
+    container:
+      image: ${{needs.build_training.outputs.TRAINING_IMAGE_NAME}}
+      credentials:
+        username: _json_key_base64
+        password: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set environment variables
+        uses: ./.github/actions/set_variables
+      - run: echo "SERVING_IMAGE_NAME"="${{ needs.build_serving.outputs.SERVING_IMAGE_NAME }}" >> $GITHUB_ENV
+      - run: mkdir -p $SERVICE_ACCOUNT_DIRECTORY && echo ${{ secrets.OBJECT_DETECTION_SERVICE_ACCOUNT }} | base64 -d > $GOOGLE_APPLICATION_CREDENTIALS
+      - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+      - run: python -m object_detection.cli --actions model_upload
+      - run: python -m object_detection.cli --actions deploy || python -m object_detection.cli --actions remove_last_model_version
+      - run: poetry check && poetry install --with test
+      - run: poetry run pytest -x tests/test_integration.py -vv || python -m object_detection.cli --actions undeploy remove_last_model_version deploy

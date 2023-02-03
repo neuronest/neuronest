@@ -1,0 +1,12 @@
+name: 'model-instantiator'
+package_name: 'model_instantiator'
+project_id: '${oc.env:PROJECT_ID}'
+region: '${oc.env:REGION}'
+
+routes:
+  root: /${package_name}/api/v1
+  instantiate: /instantiate
+  uninstantiate: /uninstantiate
+  uninstantiate_logs_conditioned: /uninstantiate_logs_conditioned
+
+uninstantiate_time_delta: 1800  # in seconds

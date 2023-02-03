@@ -1,0 +1,24 @@
+name: 'set_variables'
+description: 'Configures environment variables for a workflow'
+inputs:
+  variables_file_path:
+    description: 'File path to variable file or directory. Defaults to ./.github/variables/* if none specified and runs against each file in that directory.'
+    required: false
+    default: ./.github/variables/variables.env
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        for variable_row in $(cat ${{ inputs.variables_file_path }}); do
+            variable_name=$(echo $variable_row | cut -d "=" -f1)
+            variable_value=$(echo $variable_row | cut -d "=" -f2)
+            eval variable_value=$variable_value  # variable resolution
+            export $variable_name=$variable_value
+            echo "$variable_name"="$variable_value" >> $GITHUB_ENV
+        done
+      shell: bash
+    - run: |
+        (${{ github.ref_name == 'main' }} && echo "STAGE=production" >> $GITHUB_ENV) || 
+        (${{ github.ref_name == 'develop' }} && echo "STAGE=staging" >> $GITHUB_ENV) || 
+        echo "STAGE=test" >> $GITHUB_ENV
+      shell: bash

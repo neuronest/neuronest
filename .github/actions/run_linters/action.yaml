@@ -1,0 +1,28 @@
+name: 'run_linters'
+description: 'Install base dependencies and execute the linters'
+inputs:
+  image_name:
+    description: 'Docker image name in which to run the linters'
+    required: true
+  repository_path:
+    description: 'Path of the repository to run the linters on'
+    required: true
+runs:
+  using: "composite"
+  steps:
+      - run: |
+          docker run
+            -v "$(pwd)"/${{ inputs.repository_path }}:/tmp/${{ inputs.repository_path }} \
+            -v "$(pwd)"/.flake8:/tmp/${{ inputs.repository_path }}/.flake8 \
+            -v "$(pwd)"/.pylintrc:/tmp/${{ inputs.repository_path }}/.pylintrc \
+            ${{ inputs.image_name }} \
+            /bin/bash -c "
+              cd /tmp/${{ inputs.repository_path }} \
+              & poetry check && poetry install --with dev \
+              & poetry run black --check . \
+              & poetry run flake8 --config=.flake8 . \
+              & poetry run pylint --rcfile=.pylintrc -j 0 --reports=n --recursive=true . \
+              & poetry run isort --check-only --profile=black . \
+              & poetry run toml-sort --in-place -a pyproject.toml \
+            "
+        shell: bash
