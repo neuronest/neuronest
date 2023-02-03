@@ -46,6 +46,11 @@ runs:
       shell: bash
     - run: docker build --cache-from $IMAGE_NAME:latest -t $IMAGE_NAME:$GITHUB_RUN_ID -t $IMAGE_NAME:latest $TARGET_ARGUMENTS ${{ inputs.build_arguments }} .
       shell: bash
+    - name: Run linters and tests
+      uses: ./.github/actions/run_linters_tests
+      with:
+        repository_name: ${{ inputs.repository_name }}
+        image_name: $IMAGE_NAME:$GITHUB_RUN_ID
     - run: docker push $IMAGE_NAME:$GITHUB_RUN_ID && docker push $IMAGE_NAME:latest
       shell: bash
     - id: output_step

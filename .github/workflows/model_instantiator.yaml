@@ -26,55 +26,33 @@ env:
   PACKAGE_NAME: model_instantiator
 
 jobs:
-  build:
-    name: build
+  build-test-push:
+    name: build-test-push
     runs-on: self-hosted
     container: google/cloud-sdk
     outputs:
-      image_name: ${{ steps.build_push.outputs.image_name }}
+      image_name: ${{ steps.build_test_push.outputs.image_name }}
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
         uses: ./.github/actions/set_variables
       - id: gcloud_auth
         name: GCP authentication
-        uses: ./.github/actions/gcloud_auth
+        uses: google-github-actions/auth@v1
         with:
-          repository_name: ${{ env.REPOSITORY_NAME }}
-          region: ${{ env.REGION }}
-          ci_service_account: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
-          google_application_credentials: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
-      - id: build_push
-        name: Build push
-        uses: ./.github/actions/build_push
+          project_id: ${{ env.PROJECT_ID }}
+          credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
+      - id: build_test_push
+        name: Build test push
+        uses: ./.github/actions/build_test_push
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
           artifact_registry_path: ${{ env.ARTIFACT_REGISTRY_PATH }}
 
-  tests:
-    name: tests
-    needs:
-      - build
-    runs-on: self-hosted
-    container:
-      image: ${{ needs.build.outputs.image_name }}
-      credentials:
-        username: _json_key_base64
-        password: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
-    steps:
-      - uses: actions/checkout@v3
-      - run: poetry check && poetry install --with test
-        working-directory: ${{ env.REPOSITORY_NAME }}
-      - name: Run linters
-        uses: ./.github/actions/run_linters
-        with:
-          repository_name: ${{ env.REPOSITORY_NAME }}
-
   run:
     name: run
     needs:
-      - build
-      - tests
+      - build-test-push
     runs-on: self-hosted
     container: google/cloud-sdk
     steps:
@@ -83,10 +61,8 @@ jobs:
         uses: ./.github/actions/set_variables
       - id: gcloud_auth
         name: GCP authentication
-        uses: ./.github/actions/gcloud_auth
+        uses: google-github-actions/auth@v1
         with:
-          repository_name: ${{ env.REPOSITORY_NAME }}
-          region: ${{ env.REGION }}
-          ci_service_account: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
-          google_application_credentials: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
-      - run: gcloud run deploy model-instantiator --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} --port 80 --cpu "1.0" --memory "1Gi" --image ${{needs.build.outputs.image_name }} --service-account $REPOSITORY_NAME@$PROJECT_ID.iam.gserviceaccount.com --project ${PROJECT_ID} --region ${REGION}
+          project_id: ${{ env.PROJECT_ID }}
+          credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
+      - run: gcloud run deploy model-instantiator --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} --port 80 --cpu "1.0" --memory "1Gi" --image ${{needs.build-test-push.outputs.image_name }} --service-account $REPOSITORY_NAME@$PROJECT_ID.iam.gserviceaccount.com --project ${PROJECT_ID} --region ${REGION}

@@ -1,0 +1,40 @@
+name: 'run_linters_tests'
+description: 'Install dev dependencies, execute linters and tests'
+inputs:
+  repository_name:
+    description: 'Repository name'
+    required: true
+  image_name:
+    description: 'Image name'
+    required: true
+runs:
+  using: "composite"
+  steps:
+      - run: |
+          CONTAINER_ID=$(docker run -dit ${{ inputs.image_name }} bash)
+          echo "CONTAINER_ID"="$CONTAINER_ID" >> $GITHUB_ENV
+          echo "MONO_REPOSITORY_PATH"="/mono_repository" >> $GITHUB_ENV
+          echo "REPOSITORY_PATH"="${{ inputs.repository_name }}" >> $GITHUB_ENV
+        shell: bash
+      - run: docker cp ./. $CONTAINER_ID:$MONO_REPOSITORY_PATH
+        shell: bash
+      - run: docker exec --workdir $MONO_REPOSITORY_PATH $CONTAINER_ID /bin/bash -c "ls"
+        shell: bash
+      - run: |
+            docker exec \
+            --workdir $MONO_REPOSITORY_PATH \
+            $CONTAINER_ID \
+            /bin/bash -c "
+              cd $REPOSITORY_PATH \
+              && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
+              && pip install -r requirements.txt \
+              && cd $MONO_REPOSITORY_PATH \
+              && pre-commit install \
+              && pre-commit run \
+                --show-diff-on-failure \
+                --files ${{ inputs.repository_name }}/**/* \
+              && pytest -x -n auto ${{ inputs.repository_name }}/tests -vv
+            "
+        shell: bash
+      - run: docker rm -f $CONTAINER_ID
+        shell: bash
