@@ -3,10 +3,13 @@ name: people_counting
 on:
   push:
     branches:
+      - '**'
       - main
       - develop
     paths:
       - .github/workflows/people_counting.yaml
+      - .github/actions/run_pre_commits/**
+      - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
   pull_request:
@@ -29,6 +32,9 @@ env:
   API_IMAGE: api
   FIRESTORE_RESULTS_COLLECTION: countings
   ORGANIZATION_ID: 385885390984
+  REPOSITORY_NAME: people-counting
+  ARTIFACT_REGISTRY_NAME: people-counting-ar
+  DOCKER_REPOSITORY_NAME: neuronest
 
 
 jobs:
@@ -56,62 +62,59 @@ jobs:
       - id: setup_stage
         run: (${{ github.ref_name == 'master' }} && echo "::set-output name=stage::production") || (${{ github.ref_name == 'develop' }} && echo "::set-output name=stage::staging") || echo "::set-output name=stage::test"
 
-  test_pre_commits:
-    name: test_pre_commits
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.8.14
-      - name: Run pre-commits
-        working-directory: people-counting
-        run: |
-          apt update && apt install -y cmake
-          pip install --upgrade pip && pip cache purge && pip install poetry
-          poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt
-          pip install -r requirements.txt
-          cd ..
-          pre-commit run -a --show-diff-on-failure
-
   build_test_deploy:
     name: build_test_deploy
     runs-on: self-hosted
-    needs: [setup_stage, setup_composed_env_variables, test_pre_commits]
+    container:
+      image: google/cloud-sdk
+    needs: [setup_stage, setup_composed_env_variables]
     env:
       STAGE: ${{ needs.setup_stage.outputs.stage }}
       DESTINATION_API_IMAGE: ${{ needs.setup_composed_env_variables.outputs.DESTINATION_API_IMAGE }}
       VIDEOS_TO_COUNT_BUCKET: ${{ needs.setup_composed_env_variables.outputs.VIDEOS_TO_COUNT_BUCKET }}
       COUNTED_VIDEOS_BUCKET: ${{ needs.setup_composed_env_variables.outputs.COUNTED_VIDEOS_BUCKET }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: google-github-actions/auth@v0
-        with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
       - uses: google-github-actions/setup-gcloud@v0.2.0
         with:
           project_id: ${{ env.PROJECT_ID }}
           service_account_key: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
           export_default_credentials: true
 
-      - name: Build image
-        run:  |
-          cp people-counting/Dockerfile people-counting/.dockerignore ./
-          docker build . -t ${{ env.DESTINATION_API_IMAGE }}
+      - uses: actions/checkout@v3
 
-      - name: Run tests
-        run: |
-          docker run \
-          -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/dummy_file_name.json \
-          -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/keys/dummy_file_name.json:ro \
-          ${{ env.DESTINATION_API_IMAGE }} pytest -x -n auto tests -vv
+      - name: Build image, test code, push image
+        uses: ./.github/actions/build_test_push
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          region: ${{ env.REGION }}
+          artifact_registry_name: ${{ env.ARTIFACT_REGISTRY_NAME }}
+          docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
+          dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
+          dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
 
-      - name: Push image
-        run: |
-          gcloud auth configure-docker -q ${{ env.REGISTRY_LOCATION }}
-          docker push ${{ env.DESTINATION_API_IMAGE }}
+#      - name: Build and push image
+#        run: |
+#          cp people-counting/Dockerfile people-counting/.dockerignore ./
+#          docker build . -t ${{ env.DESTINATION_API_IMAGE }}
+#          gcloud auth configure-docker -q ${{ env.REGISTRY_LOCATION }}
+#          docker push ${{ env.DESTINATION_API_IMAGE }}
+#
+#      - uses: ./.github/actions/run_pre_commits
+#        with:
+#          image_name: ${{ env.DESTINATION_API_IMAGE }}
+#          repository_path: people-counting
+#          pre_commit_run_files: people-counting/**/* shared/**/*
 
-      - uses: hashicorp/setup-terraform@v1
+#      - name: Run tests
+#        run: |
+#          docker run \
+#          -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/dummy_file_name.json \
+#          -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/keys/dummy_file_name.json:ro \
+#          ${{ env.DESTINATION_API_IMAGE }} pytest -x -n auto tests -vv
+
+      - uses: ./.github/actions/set_up_terraform
+        with:
+          google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
 
       - name: Build infrastructure
         working-directory: people-counting/iac
@@ -131,5 +134,3 @@ jobs:
           TF_VAR_firestore_results_collection: ${{ env.FIRESTORE_RESULTS_COLLECTION }}
           TF_VAR_videos_to_count_bucket: ${{ env.VIDEOS_TO_COUNT_BUCKET }}
           TF_VAR_counted_videos_bucket: ${{ env.COUNTED_VIDEOS_BUCKET }}
-
-
