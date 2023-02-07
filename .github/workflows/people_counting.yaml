@@ -74,16 +74,13 @@ jobs:
       VIDEOS_TO_COUNT_BUCKET: ${{ needs.setup_composed_env_variables.outputs.VIDEOS_TO_COUNT_BUCKET }}
       COUNTED_VIDEOS_BUCKET: ${{ needs.setup_composed_env_variables.outputs.COUNTED_VIDEOS_BUCKET }}
     steps:
-      - uses: google-github-actions/setup-gcloud@v0.2.0
-        with:
-          project_id: ${{ env.PROJECT_ID }}
-          service_account_key: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
-          export_default_credentials: true
-
       - uses: actions/checkout@v3
 
-      - name: Build image, test code, push image
-        uses: ./.github/actions/build_test_push
+      - uses: google-github-actions/auth@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
+      - uses: ./.github/actions/build_test_push
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
           region: ${{ env.REGION }}
