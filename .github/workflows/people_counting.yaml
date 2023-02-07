@@ -40,7 +40,7 @@ env:
 jobs:
   setup_composed_env_variables:
     name: setup_composed_env_variables
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       DESTINATION_API_IMAGE: ${{ steps.setup_DESTINATION_API_IMAGE.outputs.DESTINATION_API_IMAGE }}
       VIDEOS_TO_COUNT_BUCKET: ${{ steps.setup_VIDEOS_TO_COUNT_BUCKET.outputs.VIDEOS_TO_COUNT_BUCKET }}
@@ -55,7 +55,7 @@ jobs:
 
   setup_stage:
     name: setup_stage
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       stage: ${{ steps.setup_stage.outputs.stage }}
     steps:
@@ -64,7 +64,7 @@ jobs:
 
   build_test_deploy:
     name: build_test_deploy
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container:
       image: google/cloud-sdk
     needs: [setup_stage, setup_composed_env_variables]
