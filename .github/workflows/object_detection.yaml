@@ -182,6 +182,6 @@ jobs:
         run: poetry check && poetry install --with test
       - id: test_integration
         run: poetry run pytest -x tests/test_integration.py -vv
-      - id: undeploy_and_remove_last_model_version
+      - id: undeploy_and_remove_last_model_version_and_redeploy
         if: steps.test_integration.conclusion == 'failure'
         run: python -m object_detection.cli --actions undeploy remove_last_model_version deploy

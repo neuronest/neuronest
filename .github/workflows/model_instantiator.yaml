@@ -28,10 +28,11 @@ env:
 jobs:
   build-test-push:
     name: build-test-push
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      image_name: ${{ steps.build_test_push.outputs.image_name }}
+      dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
+      gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
@@ -47,13 +48,17 @@ jobs:
         uses: ./.github/actions/build_test_push
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
-          artifact_registry_path: ${{ env.ARTIFACT_REGISTRY_PATH }}
+          region: ${{ env.REGION }}
+          artifact_registry_name: ${{ env.ARTIFACT_REGISTRY_NAME }}
+          docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
+          dockerhub_username: ${{ env.DOCKERHUB_USERNAME }}
+          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   run:
     name: run
     needs:
       - build-test-push
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
@@ -65,4 +70,4 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
-      - run: gcloud run deploy model-instantiator --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} --port 80 --cpu "1.0" --memory "1Gi" --image ${{needs.build-test-push.outputs.image_name }} --service-account $REPOSITORY_NAME@$PROJECT_ID.iam.gserviceaccount.com --project ${PROJECT_ID} --region ${REGION}
+      - run: gcloud run deploy model-instantiator --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} --port 80 --cpu "1.0" --memory "1Gi" --image ${{needs.build-test-push.outputs.gcp_image_name }} --service-account $REPOSITORY_NAME@$PROJECT_ID.iam.gserviceaccount.com --project ${PROJECT_ID} --region ${REGION}

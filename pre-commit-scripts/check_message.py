@@ -43,7 +43,7 @@ if __name__ == "__main__":
     first_line = data.split("\n", 1)[0]
 
     header_regex = re.compile(
-        r"^\((?:feat|fix|hotfix|update|refactor|clean|test|config|doc|wip|merge)\)\s"
+        r"^\((?:feat|fix|hotfix|update|refactor|clean|test|config|ci|doc|wip|merge)\)\s"
         r"(?:\[[-\s,a-z]{3,50}\]\s)?[A-Z].{1,100}$"
     )
 
