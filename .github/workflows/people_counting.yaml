@@ -80,7 +80,9 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
-      - uses: ./.github/actions/build_test_push
+
+      - id: build_test_push
+        uses: ./.github/actions/build_test_push
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
           region: ${{ env.REGION }}
