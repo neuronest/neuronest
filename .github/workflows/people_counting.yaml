@@ -33,7 +33,7 @@ env:
   FIRESTORE_RESULTS_COLLECTION: countings
   ORGANIZATION_ID: 385885390984
   REPOSITORY_NAME: people-counting
-  ARTIFACT_REGISTRY_NAME: people-counting-ar
+  ARTIFACT_REGISTRY_NAME: europe-west1-docker.pkg.dev/people-counting-363015/people-counting-ar
   DOCKER_REPOSITORY_NAME: neuronest
 
 
