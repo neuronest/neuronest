@@ -1,17 +1,14 @@
-name: 'build_push'
-description: 'Build and push docker image'
+name: 'build_test_push'
+description: 'Build, test, and push docker image'
 inputs:
   repository_name:
     description: 'Repository name'
     required: true
-  region:
-    description: 'Artifact registry region'
-    required: true
-  artifact_registry_name:
-    description: 'Artifact registry name'
-    required: true
   docker_repository_name:
     description: 'Docker repository name'
+    required: true
+  gcp_registry_name:
+    description: 'GCP registry name'
     required: true
   dockerhub_username:
     description: 'Docker repository password'
@@ -42,16 +39,20 @@ runs:
   steps:
     - run: echo "IMAGE_NAME_SUFFIX"="$([[ ! -z '${{ inputs.target }}' ]] && echo '-${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
       shell: bash
-    - run: echo "DOCKERHUB_IMAGE_NAME"="${{ inputs.docker_repository_name }}/${{ inputs.repository_name }}$IMAGE_NAME_SUFFIX" >> $GITHUB_ENV
+    - run: echo "IMAGE_NAME"="${{ inputs.repository_name }}$IMAGE_NAME_SUFFIX" >> $GITHUB_ENV
       shell: bash
-    - run: echo "GCP_IMAGE_NAME"="${{ inputs.artifact_registry_name }}/${{ inputs.repository_name }}$IMAGE_NAME_SUFFIX" >> $GITHUB_ENV
+    - run: echo "DOCKERHUB_IMAGE_NAME"="${{ inputs.docker_repository_name }}/$IMAGE_NAME" >> $GITHUB_ENV
+      shell: bash
+    - run: echo "GCP_IMAGE_NAME"="${{ inputs.gcp_registry_name }}/${{ inputs.repository_name }}/$IMAGE_NAME" >> $GITHUB_ENV
+      shell: bash
+    - run: echo "GCP_REGISTRY"="$(echo ${{ inputs.gcp_registry_name }} | cut -d "/" -f1)" >> $GITHUB_ENV
       shell: bash
     - run: echo "TARGET_ARGUMENTS"="$([[ ! -z '${{ inputs.target }}' ]] && echo '--target ${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
       shell: bash
 
     - run: echo ${{ inputs.dockerhub_password }} | docker login -u ${{ inputs.dockerhub_username }} --password-stdin
       shell: bash
-    - run: gcloud auth configure-docker ${{ inputs.region }}-docker.pkg.dev
+    - run: gcloud auth configure-docker $GCP_REGISTRY
       shell: bash
 
     - run: docker pull $DOCKERHUB_IMAGE_NAME:latest || true
