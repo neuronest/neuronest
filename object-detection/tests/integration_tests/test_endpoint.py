@@ -24,7 +24,9 @@ def fixture_config() -> DictConfig:
 
 @pytest.fixture(name="image_directory")
 def fixture_image_directory() -> str:
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+    return os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"
+    )
 
 
 @pytest.fixture(name="image")

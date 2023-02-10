@@ -16,7 +16,8 @@ from core.serialization.image import (
 @pytest.fixture(name="images_directory")
 def fixture_images_directory() -> str:
     return os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "data",
     )
 
 

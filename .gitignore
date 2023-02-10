@@ -1,6 +1,7 @@
 # Project
 .DS_Store
 keys/*
+**/keys/*
 
 # IntelliJ
 *.idea/
