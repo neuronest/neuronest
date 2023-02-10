@@ -31,7 +31,7 @@ repos:
     types: [python]
     args:
       - --profile=black
-
+      - --resolve-all-configs
   - id: toml-sort
     name: toml-sort
     entry: toml-sort
