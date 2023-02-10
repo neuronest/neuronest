@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Tuple, Union
+
+
+class RegistryDomain(str, Enum):
+    ARTIFACT_REGISTRY_DOMAIN = "{region}-docker.pkg.dev"
+    CONTAINER_REGISTRY_DOMAIN = "eu.gcr.io"
 
 
 class StringWithValidation(ABC, str):
@@ -61,9 +67,6 @@ class BaseImageNameWithTag(StringWithValidation):
 
 
 class GenericImageName(StringWithValidation):
-    REGISTRY_SUFFIX = "-docker.pkg.dev"
-    REGISTRY_DOMAIN = "{region}{registry_suffix}"
-
     @classmethod
     def _split(
         cls, image_name: str
@@ -79,13 +82,6 @@ class GenericImageName(StringWithValidation):
             repository_id,
             base_image_name,
         ) = split_image_name
-
-        if not registry_domain.endswith(cls.REGISTRY_SUFFIX):
-            raise ValueError(
-                f"Incorrect format for the inferred registry domain: "
-                f"expected it to end with '{cls.REGISTRY_SUFFIX}', "
-                f"got '{registry_domain}'"
-            )
 
         base_image_name = (
             BaseImageName(base_image_name)
@@ -110,14 +106,15 @@ class GenericImageName(StringWithValidation):
         return True
 
     @classmethod
-    def build_registry_domain(cls, region: str) -> str:
-        return cls.REGISTRY_DOMAIN.format(
-            region=region, registry_suffix=cls.REGISTRY_SUFFIX
-        )
+    def build_registry_domain(
+        cls, registry_domain: Union[RegistryDomain, str], region: str
+    ) -> RegistryDomain:
+        return RegistryDomain(registry_domain).format(region=region)
 
     @classmethod
     def build(
         cls,
+        registry_domain: RegistryDomain,
         project_id: str,
         region: str,
         repository_id: str,
@@ -144,6 +141,7 @@ class ImageName(GenericImageName):
     @classmethod
     def build(
         cls,
+        registry_domain: RegistryDomain,
         project_id: str,
         region: str,
         repository_id: str,
@@ -152,7 +150,9 @@ class ImageName(GenericImageName):
     ) -> ImageName:
         return cls(
             cls.TEMPLATE.format(
-                registry_domain=cls.build_registry_domain(region),
+                registry_domain=cls.build_registry_domain(
+                    registry_domain=registry_domain, region=region
+                ),
                 project_id=project_id,
                 repository_id=repository_id,
                 base_image_name=BaseImageName(base_image_name),
@@ -185,6 +185,7 @@ class ImageNameWithTag(GenericImageName):
     @classmethod
     def build(
         cls,
+        registry_domain: RegistryDomain,
         project_id: str,
         region: str,
         repository_id: str,
@@ -193,7 +194,9 @@ class ImageNameWithTag(GenericImageName):
     ) -> ImageNameWithTag:
         return cls(
             cls.TEMPLATE.format(
-                registry_domain=cls.build_registry_domain(region),
+                registry_domain=cls.build_registry_domain(
+                    registry_domain=registry_domain, region=region
+                ),
                 project_id=project_id,
                 repository_id=repository_id,
                 base_image_name=BaseImageName(base_image_name),

@@ -1,6 +1,17 @@
 import pytest
 
-from core.schemas.image_name import BaseImageName, ImageName, ImageNameWithTag, Tag
+from core.schemas.image_name import (
+    BaseImageName,
+    ImageName,
+    ImageNameWithTag,
+    RegistryDomain,
+    Tag,
+)
+
+
+@pytest.fixture(name="base_registry_domain")
+def fixture_base_registry_domain() -> RegistryDomain:
+    return RegistryDomain.CONTAINER_REGISTRY_DOMAIN
 
 
 @pytest.fixture(name="region")
@@ -9,8 +20,10 @@ def fixture_region() -> str:
 
 
 @pytest.fixture(name="registry_domain")
-def fixture_registry_domain(region: str) -> str:
-    return ImageName.build_registry_domain(region)
+def fixture_registry_domain(region: str, base_registry_domain: RegistryDomain) -> str:
+    return ImageName.build_registry_domain(
+        region=region, registry_domain=base_registry_domain
+    )
 
 
 @pytest.fixture(name="project_id")
@@ -34,17 +47,18 @@ def fixture_tag() -> Tag:
 
 
 def test_image_name(
-    registry_domain: str,
+    registry_domain: RegistryDomain,
     project_id: str,
     region: str,
     repository_id: str,
     base_image_name: BaseImageName,
 ):
     image_name = ImageName(
-        f"{registry_domain}/{project_id}/{repository_id}/" f"{base_image_name}"
+        f"{registry_domain}/{project_id}/{repository_id}/{base_image_name}"
     )
 
     assert image_name == ImageName.build(
+        registry_domain=registry_domain,
         project_id=project_id,
         region=region,
         repository_id=repository_id,
@@ -53,7 +67,7 @@ def test_image_name(
 
 
 def test_image_name_with_tag(
-    registry_domain: str,
+    registry_domain: RegistryDomain,
     project_id: str,
     region: str,
     repository_id: str,
@@ -65,6 +79,7 @@ def test_image_name_with_tag(
     )
 
     assert image_name_with_tag == ImageNameWithTag.build(
+        registry_domain=registry_domain,
         project_id=project_id,
         region=region,
         repository_id=repository_id,
