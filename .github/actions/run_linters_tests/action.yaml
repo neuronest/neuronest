@@ -33,7 +33,7 @@ runs:
               && pre-commit run \
                 --show-diff-on-failure \
                 --files ${{ inputs.repository_name }}/**/* \
-              && pytest -x -n auto ${{ inputs.repository_name }}/tests -vv
+              && pytest -x -n auto ${{ inputs.repository_name }}/tests/unit_tests -vv
             "
         shell: bash
       - run: docker rm -f $CONTAINER_ID
