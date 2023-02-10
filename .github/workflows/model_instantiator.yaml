@@ -7,7 +7,8 @@ on:
       - develop
     paths:
       - .github/workflows/model_instantiator.yaml
-      - dockerfiles/model_instantiator.dockerfile
+      - .github/actions/run_pre_commits/**
+      - .pre-commit-config.yaml
       - shared/**
       - model-instantiator/**
   pull_request:
@@ -16,7 +17,8 @@ on:
       - develop
     paths:
       - .github/workflows/model_instantiator.yaml
-      - dockerfiles/model_instantiator.dockerfile
+      - .github/actions/run_pre_commits/**
+      - .pre-commit-config.yaml
       - shared/**
       - model-instantiator/**
   workflow_dispatch:
