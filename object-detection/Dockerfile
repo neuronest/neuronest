@@ -1,121 +1,115 @@
 FROM nvidia/cuda:12.0.0-runtime-ubuntu20.04 as training
 
-RUN apt-get -qqy update && apt-get install -qqy software-properties-common
-# to get latest python versions
-RUN add-apt-repository ppa:deadsnakes/ppa
-
-RUN apt-get -qqy update && apt-get install -qqy \
+RUN apt -qqy update && apt install -qqy \
         build-essential \
         curl \
         ffmpeg \
         git \
         libffi-dev \
         libsm6 \
+        libsndfile1 \
+        libsndfile1-dev \
         libssl-dev \
         libxext6 \
         libxrender-dev \
+        openjdk-11-jdk \
         python3-crcmod \
         python3-pip \
         python3.8 \
         python3.8-dev \
+        software-properties-common \
         uuid-runtime \
-        x264
+        wget \
+        x264 \
+        zip
 
-ARG PROJECT_DIRECTORY="object-detection"
-ENV PROJECT_DIRECTORY=$PROJECT_DIRECTORY
+ARG ROOT_DIRECTORY="/app"
+ARG REPOSITORY_NAME="object-detection"
+ARG PACKAGE_NAME="object_detection"
+ARG SHARED_REPOSITORY_NAME="shared"
+
+ENV PIP_ROOT_USER_ACTION=ignore
+ENV ROOT_DIRECTORY=$ROOT_DIRECTORY
+ENV REPOSITORY_NAME=$REPOSITORY_NAME
+ENV PACKAGE_NAME=$PACKAGE_NAME
+ENV SHARED_REPOSITORY_NAME=$SHARED_REPOSITORY_NAME
 
 ENV CLOUDSDK_INSTALL_DIR /usr/local/gcloud
 RUN curl -sSL https://sdk.cloud.google.com | bash
 ENV PATH $PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 
-ENV PYSETUP_PATH="/opt/pysetup"
-ENV POETRY_HOME="/opt/poetry"
-# using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at
-# the root of the project
-ENV VENV_PATH="$PYSETUP_PATH/.venv"
-ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
-ENV PYTHONPATH="${PYTHONPATH}:app"
+COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
+WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
-ENV SHARED_PATH="/opt/shared"
+COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
+RUN pip install --upgrade pip \
+  && pip install poetry \
+  && poetry export --without-hashes -f requirements.txt --output requirements.txt \
+  && pip install -r requirements.txt
 
-# install poetry - respects $POETRY_VERSION & $POETRY_HOME
-RUN curl -sSL https://install.python-poetry.org | python3
+COPY $REPOSITORY_NAME/config.yaml .
+COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
-COPY shared $SHARED_PATH
-
-WORKDIR $PYSETUP_PATH
-COPY $PROJECT_DIRECTORY/pyproject.toml $PROJECT_DIRECTORY/poetry.lock ./
-RUN poetry config virtualenvs.in-project true
-RUN poetry install
-
-RUN mkdir -p /app/object_detection
-
-COPY $PROJECT_DIRECTORY/config.yaml /app
-COPY $PROJECT_DIRECTORY/object_detection /app/object_detection
-
-WORKDIR /app/
 
 FROM training as serving
 # inspired of https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/community-content/pytorch_text_classification_using_vertex_sdk_and_gcloud/pytorch-text-classification-vertex-ai-train-tune-deploy.ipynb
 
-COPY --from=ultralytics/yolov5:latest /usr/src/app/models /app/model/models
-COPY --from=ultralytics/yolov5:latest /usr/src/app/utils /app/model/utils
-
-RUN apt-get -qqy update && apt-get install -qqy \
-        wget \
-        libsndfile1 \
-        libsndfile1-dev \
-        zip
-
-RUN apt-get install -y openjdk-11-jdk
-
 ARG MODEL_PATH
+ARG LOCAL_MODEL_PATH="/model/model.pt"
+ARG MODEL_STORE_NAME="model_store"
+ARG MODEL_PACKAGE_NAME="model"
+ARG MODEL_PACKAGE_PATH=$ROOT_DIRECTORY/$REPOSITORY_NAME/$MODEL_PACKAGE_NAME
 
-RUN mkdir /model
-ENV LOCAL_MODEL_PATH="/model/model.pt"
+ENV LOCAL_MODEL_PATH=$LOCAL_MODEL_PATH
+ENV MODEL_STORE_NAME=$MODEL_STORE_NAME
+ENV MODEL_PACKAGE_NAME$MODEL_PACKAGE_NAME
+ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
-WORKDIR /app/model/
+COPY --from=ultralytics/yolov5:latest /usr/src/app/models $MODEL_PACKAGE_NAME/models
+COPY --from=ultralytics/yolov5:latest /usr/src/app/utils $MODEL_PACKAGE_NAME/utils
 
-COPY $PROJECT_DIRECTORY/object_detection/model_handler.py .
-COPY $PROJECT_DIRECTORY/object_detection/modules modules
-COPY $PROJECT_DIRECTORY/object_detection/config.py .
-COPY $PROJECT_DIRECTORY/config.yaml .
+RUN cp -r \
+    $PACKAGE_NAME/model_handler.py  \
+    $PACKAGE_NAME/modules  \
+    $PACKAGE_NAME/config.py \
+    config.yaml \
+    $MODEL_PACKAGE_NAME
 
 COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
-RUN curl -sSL https://raw.githubusercontent.com/pytorch/serve/master/docker/dockerd-entrypoint.sh > ./dockerd-entrypoint.sh
+WORKDIR $MODEL_PACKAGE_PATH
+
+RUN curl -sSL https://raw.githubusercontent.com/pytorch/serve/master/docker/dockerd-entrypoint.sh > dockerd-entrypoint.sh
 RUN chmod +x dockerd-entrypoint.sh
 
 # create torchserve configuration file
-RUN printf "\nservice_envelope=json" >> ./config.properties
-RUN printf "\ninference_address=http://0.0.0.0:7080" >> ./config.properties
-RUN printf "\nmanagement_address=http://0.0.0.0:7081" >> ./config.properties
+RUN printf "\nservice_envelope=json" >> config.properties
+RUN printf "\ninference_address=http://0.0.0.0:7080" >> config.properties
+RUN printf "\nmanagement_address=http://0.0.0.0:7081" >> config.properties
 
 # expose health and prediction listener ports from the image
 EXPOSE 7080
 EXPOSE 7081
 
-RUN mkdir -p model_store
+RUN mkdir -p $MODEL_STORE_NAME
 
 # create model archive file packaging model artifacts and dependencies
 RUN torch-model-archiver -f \
-  --model-name=object_detection \
+  --model-name=$PACKAGE_NAME \
   --version=1.0 \
   --serialized-file=$LOCAL_MODEL_PATH \
   --handler=model_handler.py \
   --extra-files=modules,config.py,config.yaml \
-  --export-path=model_store
+  --export-path=$MODEL_STORE_NAME
 
-RUN zip -ur model_store/object_detection.mar models
-RUN zip -ur model_store/object_detection.mar utils
+RUN zip -ur $MODEL_STORE_NAME/$PACKAGE_NAME.mar models \
+  && zip -ur $MODEL_STORE_NAME/$PACKAGE_NAME.mar utils
 
-ENTRYPOINT ["./dockerd-entrypoint.sh"]
+ENTRYPOINT dockerd-entrypoint.sh
 
 # run Torchserve HTTP serve to respond to prediction requests
-CMD ["torchserve", \
-     "--start", \
-     "--ts-config=config.properties", \
-     "--models", \
-     "object_detection=object_detection.mar", \
-     "--model-store", \
-     "model_store"]
+CMD torchserve \
+    --start \
+    --ts-config=config.properties \
+    --models $PACKAGE_NAME=$PACKAGE_NAME.mar \
+    --model-store $MODEL_STORE_NAME
