@@ -1,33 +1,42 @@
 FROM python:3.8.14-buster
 
-RUN apt update && apt install -y cmake
+RUN apt -qqy update && apt install -qqy cmake
 
 ARG ROOT_DIRECTORY="/app"
-ARG PROJECT_DIRECTORY="model-instantiator"
-ARG SHARED_DIRECTORY="shared"
+ARG REPOSITORY_NAME="model-instantiator"
+ARG PACKAGE_NAME="model_instantiator"
+ARG SHARED_REPOSITORY_NAME="shared"
+ARG PORT=80
+ARG WORKERS=4
+ARG TIMEOUT=300
 
 ENV PIP_ROOT_USER_ACTION=ignore
 ENV ROOT_DIRECTORY=$ROOT_DIRECTORY
-ENV PROJECT_DIRECTORY=$PROJECT_DIRECTORY
-ENV SHARED_DIRECTORY=$SHARED_DIRECTORY
+ENV REPOSITORY_NAME=$REPOSITORY_NAME
+ENV PACKAGE_NAME=$PACKAGE_NAME
+ENV SHARED_REPOSITORY_NAME=$SHARED_REPOSITORY_NAME
+ENV PORT=$PORT
+ENV WORKERS=$WORKERS
+ENV TIMEOUT=$TIMEOUT
 
-COPY shared $ROOT_DIRECTORY/$SHARED_DIRECTORY
-WORKDIR $ROOT_DIRECTORY/$PROJECT_DIRECTORY
+COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
+WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
-COPY $PROJECT_DIRECTORY/pyproject.toml $PROJECT_DIRECTORY/poetry.lock ./
+COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 RUN pip install --upgrade pip \
   && pip install poetry \
   && poetry export --without-hashes -f requirements.txt --output requirements.txt \
   && pip install -r requirements.txt
 
-COPY $PROJECT_DIRECTORY/conf/ conf
-COPY $PROJECT_DIRECTORY/model_instantiator model_instantiator
+COPY $REPOSITORY_NAME/conf/ conf
+COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
-EXPOSE 80
+EXPOSE $PORT
 
-CMD ["gunicorn", "--workers", "4", \
-                 "--timeout", "300", \
-                 "--access-logfile", "-", \
-                 "--worker-class", "uvicorn.workers.UvicornWorker", \
-                 "--bind", "0.0.0.0:80", \
-                 "model_instantiator.api.main:app"]
+CMD gunicorn \
+    --workers $WORKERS \
+    --timeout $TIMEOUT \
+    --access-logfile - \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:$PORT \
+    $PACKAGE_NAME.api.main:app
