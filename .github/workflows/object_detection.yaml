@@ -99,7 +99,7 @@ jobs:
       - build_test_push_training
       - train
     runs-on: ubuntu-latest
-    container: google/cloud-sdk
+#    container: google/cloud-sdk
     env:
       MODEL_PATH: model.pt
     outputs:
@@ -110,12 +110,21 @@ jobs:
       - name: Set environment variables
         uses: ./.github/actions/set_variables
       - run: echo "MODEL_GSPATH"="${{ needs.train.outputs.model_gspath }}" >> $GITHUB_ENV
+
       - id: gcloud_auth
-        name: GCP authentication
         uses: google-github-actions/auth@v1
         with:
-          project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+#      - id: gcloud_auth
+#        name: GCP authentication
+#        uses: google-github-actions/auth@v1
+#        with:
+#          project_id: ${{ env.PROJECT_ID }}
+#          credentials_json: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
       - run: gsutil cp $MODEL_GSPATH ${{ env.REPOSITORY_NAME }}/$MODEL_PATH
       - id: build_test_push
         name: Build test push
