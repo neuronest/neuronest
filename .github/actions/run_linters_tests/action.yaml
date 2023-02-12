@@ -21,7 +21,6 @@ runs:
       - run: |
             docker exec \
             --workdir $MONO_REPOSITORY_PATH \
-            --entrypoint /bin/bash \
             $CONTAINER_ID \
             -c "
               # to handle detected dubious ownership git issue
