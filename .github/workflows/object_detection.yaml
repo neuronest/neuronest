@@ -31,7 +31,7 @@ jobs:
   build_test_push_training:
     name: build_test_push_training
     runs-on: ubuntu-latest
-    container: google/cloud-sdk
+#    container: google/cloud-sdk
     outputs:
       dockerhub_training_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_training_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
@@ -39,14 +39,24 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set environment variables
         uses: ./.github/actions/set_variables
+
       - id: gcloud_auth
-        name: GCP authentication
         uses: google-github-actions/auth@v1
         with:
-          project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
-      - run: gcloud auth list
-      - run: gcloud auth login --cred-file=$GOOGLE_APPLICATION_CREDENTIALS
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+
+#      - id: gcloud_auth
+#        name: GCP authentication
+#        uses: google-github-actions/auth@v1
+#        with:
+#          project_id: ${{ env.PROJECT_ID }}
+#          credentials_json: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+#      - run: gcloud auth list
+#      - run: gcloud auth login --cred-file=$GOOGLE_APPLICATION_CREDENTIALS
       - run: gcloud auth list
       - id: build_test_push
         name: Build test push
