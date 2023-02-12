@@ -53,21 +53,12 @@ jobs:
       - id: setup_COUNTED_VIDEOS_BUCKET
         run: echo "COUNTED_VIDEOS_BUCKET=${{ env.PROJECT_ID }}-counted-videos" >> $GITHUB_OUTPUT
 
-  setup_stage:
-    name: setup_stage
-    runs-on: ubuntu-latest
-    outputs:
-      stage: ${{ steps.setup_stage.outputs.stage }}
-    steps:
-      - id: setup_stage
-        run: (${{ github.ref_name == 'master' }} && echo "::set-output name=stage::production") || (${{ github.ref_name == 'develop' }} && echo "::set-output name=stage::staging") || echo "::set-output name=stage::test"
-
   build_test_deploy:
     name: build_test_deploy
     runs-on: ubuntu-latest
     container:
       image: google/cloud-sdk
-    needs: [setup_stage, setup_composed_env_variables]
+    needs: [setup_composed_env_variables]
     env:
       STAGE: ${{ needs.setup_stage.outputs.stage }}
       DESTINATION_API_IMAGE: ${{ needs.setup_composed_env_variables.outputs.DESTINATION_API_IMAGE }}
@@ -90,26 +81,6 @@ jobs:
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
           dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
-
-#      - name: Build and push image
-#        run: |
-#          cp people-counting/Dockerfile people-counting/.dockerignore ./
-#          docker build . -t ${{ env.DESTINATION_API_IMAGE }}
-#          gcloud auth configure-docker -q ${{ env.REGISTRY_LOCATION }}
-#          docker push ${{ env.DESTINATION_API_IMAGE }}
-#
-#      - uses: ./.github/actions/run_pre_commits
-#        with:
-#          image_name: ${{ env.DESTINATION_API_IMAGE }}
-#          repository_path: people-counting
-#          pre_commit_run_files: people-counting/**/* shared/**/*
-
-#      - name: Run tests
-#        run: |
-#          docker run \
-#          -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/dummy_file_name.json \
-#          -v $GOOGLE_APPLICATION_CREDENTIALS:/tmp/keys/dummy_file_name.json:ro \
-#          ${{ env.DESTINATION_API_IMAGE }} pytest -x -n auto tests -vv
 
       - uses: ./.github/actions/set_up_terraform
         with:
