@@ -52,7 +52,7 @@ jobs:
           repository_name: ${{ env.REPOSITORY_NAME }}
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ env.DOCKERHUB_USERNAME }}
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   run:

@@ -52,7 +52,7 @@ jobs:
           repository_name: ${{ env.REPOSITORY_NAME }}
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ env.DOCKERHUB_USERNAME }}
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: training
 
@@ -67,8 +67,8 @@ jobs:
     container:
       image: ${{needs.build_test_push_training.outputs.dockerhub_training_image_name}}
       credentials:
-        username: _json_key_base64
-        password: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
     env:
       MODEL_WEIGHTS: model/model.pt
     outputs:
@@ -77,7 +77,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Set environment variables
         uses: ./.github/actions/set_variables
-      - run: echo "TRAINING_IMAGE_NAME"="${{ needs.build_test_push_training.outputs.dockerhub_training_image_name }}" >> $GITHUB_ENV
+      - run: echo "TRAINING_IMAGE_NAME"="${{ needs.build_test_push_training.outputs.gcp_training_image_name }}" >> $GITHUB_ENV
       - run: echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
       - run: echo "MODEL_GSPATH"="gs://$REPOSITORY_NAME-models/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
       - id: gcloud_auth
@@ -100,7 +100,8 @@ jobs:
     env:
       MODEL_PATH: model.pt
     outputs:
-      serving_image_name: ${{ steps.build_test_push.outputs.image_name }}
+      dockerhub_serving_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
+      gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
@@ -120,7 +121,7 @@ jobs:
           repository_name: ${{ env.REPOSITORY_NAME }}
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ env.DOCKERHUB_USERNAME }}
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: serving
           build_arguments: --build-arg MODEL_PATH=${{ env.REPOSITORY_NAME }}/${{ env.MODEL_PATH }}
@@ -135,15 +136,15 @@ jobs:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.build_test_push_training.outputs.TRAINING_IMAGE_NAME}}
+      image: ${{needs.build_test_push_training.outputs.dockerhub_training_image_name}}
       credentials:
-        username: _json_key_base64
-        password: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
         uses: ./.github/actions/set_variables
-      - run: echo "SERVING_IMAGE_NAME"="${{ needs.build_test_push_serving.outputs.serving_image_name }}" >> $GITHUB_ENV
+      - run: echo "SERVING_IMAGE_NAME"="${{ needs.build_test_push_serving.outputs.gcp_serving_image_name }}" >> $GITHUB_ENV
       - id: gcloud_auth
         name: GCP authentication
         uses: google-github-actions/auth@v1
