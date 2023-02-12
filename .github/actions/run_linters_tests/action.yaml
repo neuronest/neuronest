@@ -21,8 +21,9 @@ runs:
       - run: |
             docker exec \
             --workdir $MONO_REPOSITORY_PATH \
+            --entrypoint /bin/bash \
             $CONTAINER_ID \
-            --entrypoint /bin/bash -c "
+            -c "
               # to handle detected dubious ownership git issue
               git config --global --add safe.directory $MONO_REPOSITORY_PATH \
               && cd $REPOSITORY_PATH \
