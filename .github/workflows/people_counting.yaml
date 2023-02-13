@@ -102,7 +102,7 @@ jobs:
           TF_VAR_location_app_engine: ${{ env.LOCATION_APP_ENGINE }}
           TF_VAR_region: ${{ env.REGION }}
           TF_VAR_zone: ${{ env.ZONE }}
-          TF_VAR_artifact_registry_repository: ${{ env.ARTIFACT_REGISTRY_REPOSITORY }}
+          TF_VAR_artifact_registry_repository: ${{ env.REPOSITORY_NAME }}
           TF_VAR_webapp_image: ${{ steps.build_test_push.outputs.gcp_image_name }}
           TF_VAR_firestore_results_collection: ${{ env.FIRESTORE_RESULTS_COLLECTION }}
           TF_VAR_videos_to_count_bucket: ${{ env.VIDEOS_TO_COUNT_BUCKET }}

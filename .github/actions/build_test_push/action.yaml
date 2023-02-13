@@ -83,14 +83,15 @@ runs:
           .
       shell: bash
 
+    - run: docker push $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID && docker push $DOCKERHUB_IMAGE_NAME:latest
+      shell: bash
+
     - name: Run linters and tests
       uses: ./.github/actions/run_linters_tests
       with:
         repository_name: ${{ inputs.repository_name }}
         image_name: $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID
 
-    - run: docker push $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID && docker push $DOCKERHUB_IMAGE_NAME:latest
-      shell: bash
     - run: docker push $GCP_IMAGE_NAME:$GITHUB_RUN_ID && docker push $GCP_IMAGE_NAME:latest
       shell: bash
 
