@@ -22,62 +22,62 @@ on:
       - people-counting/**
 
 env:
-  PROJECT_ID: people-counting-363015
-  PROJECT_NAME: people-counting
-  LOCATION_APP_ENGINE: europe-west3
-  REGISTRY_LOCATION: europe-west1-docker.pkg.dev
-  REGION: europe-west1
-  ZONE: europe-west9-a
-  ARTIFACT_REGISTRY_REPOSITORY: people-counting-ar
-  API_IMAGE: api
-  FIRESTORE_RESULTS_COLLECTION: countings
-  ORGANIZATION_ID: 385885390984
   REPOSITORY_NAME: people-counting
-  ARTIFACT_REGISTRY_NAME: europe-west1-docker.pkg.dev/people-counting-363015/people-counting-ar
-  DOCKER_REPOSITORY_NAME: neuronest
+#  PROJECT_ID: people-counting-363015
+#  PROJECT_NAME: people-counting
+#  LOCATION_APP_ENGINE: europe-west3
+#  REGISTRY_LOCATION: europe-west1-docker.pkg.dev
+#  REGION: europe-west1
+#  ZONE: europe-west9-a
+#  ARTIFACT_REGISTRY_REPOSITORY: people-counting-ar
+#  API_IMAGE: api
+#  FIRESTORE_RESULTS_COLLECTION: countings
+#  ORGANIZATION_ID: 385885390984
+#  ARTIFACT_REGISTRY_NAME: europe-west1-docker.pkg.dev/people-counting-363015/people-counting-ar
+#  DOCKER_REPOSITORY_NAME: neuronest
 
 
 jobs:
-  setup_composed_env_variables:
-    name: setup_composed_env_variables
-    runs-on: ubuntu-latest
-    outputs:
-      DESTINATION_API_IMAGE: ${{ steps.setup_DESTINATION_API_IMAGE.outputs.DESTINATION_API_IMAGE }}
-      VIDEOS_TO_COUNT_BUCKET: ${{ steps.setup_VIDEOS_TO_COUNT_BUCKET.outputs.VIDEOS_TO_COUNT_BUCKET }}
-      COUNTED_VIDEOS_BUCKET: ${{ steps.setup_COUNTED_VIDEOS_BUCKET.outputs.COUNTED_VIDEOS_BUCKET }}
-    steps:
-      - id: setup_DESTINATION_API_IMAGE
-        run: echo "DESTINATION_API_IMAGE=${{ env.REGISTRY_LOCATION }}/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPOSITORY }}/${{ env.API_IMAGE }}:${{ github.sha }}" >> $GITHUB_OUTPUT
-      - id: setup_VIDEOS_TO_COUNT_BUCKET
-        run: echo "VIDEOS_TO_COUNT_BUCKET=${{ env.PROJECT_ID }}-videos-to-count" >> $GITHUB_OUTPUT
-      - id: setup_COUNTED_VIDEOS_BUCKET
-        run: echo "COUNTED_VIDEOS_BUCKET=${{ env.PROJECT_ID }}-counted-videos" >> $GITHUB_OUTPUT
+#  setup_composed_env_variables:
+#    name: setup_composed_env_variables
+#    runs-on: ubuntu-latest
+#    outputs:
+#      DESTINATION_API_IMAGE: ${{ steps.setup_DESTINATION_API_IMAGE.outputs.DESTINATION_API_IMAGE }}
+#      VIDEOS_TO_COUNT_BUCKET: ${{ steps.setup_VIDEOS_TO_COUNT_BUCKET.outputs.VIDEOS_TO_COUNT_BUCKET }}
+#      COUNTED_VIDEOS_BUCKET: ${{ steps.setup_COUNTED_VIDEOS_BUCKET.outputs.COUNTED_VIDEOS_BUCKET }}
+#    steps:
+#      - id: setup_DESTINATION_API_IMAGE
+#        run: echo "DESTINATION_API_IMAGE=${{ env.REGISTRY_LOCATION }}/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPOSITORY }}/${{ env.API_IMAGE }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+#      - id: setup_VIDEOS_TO_COUNT_BUCKET
+#        run: echo "VIDEOS_TO_COUNT_BUCKET=${{ env.PROJECT_ID }}-videos-to-count" >> $GITHUB_OUTPUT
+#      - id: setup_COUNTED_VIDEOS_BUCKET
+#        run: echo "COUNTED_VIDEOS_BUCKET=${{ env.PROJECT_ID }}-counted-videos" >> $GITHUB_OUTPUT
 
   build_test_deploy:
     name: build_test_deploy
     runs-on: ubuntu-latest
     container:
       image: google/cloud-sdk
-    needs: [setup_composed_env_variables]
-    env:
-      STAGE: ${{ needs.setup_stage.outputs.stage }}
-      DESTINATION_API_IMAGE: ${{ needs.setup_composed_env_variables.outputs.DESTINATION_API_IMAGE }}
-      VIDEOS_TO_COUNT_BUCKET: ${{ needs.setup_composed_env_variables.outputs.VIDEOS_TO_COUNT_BUCKET }}
-      COUNTED_VIDEOS_BUCKET: ${{ needs.setup_composed_env_variables.outputs.COUNTED_VIDEOS_BUCKET }}
+#    needs: [setup_composed_env_variables]
+#    env:
+#      STAGE: ${{ needs.setup_stage.outputs.stage }}
+#      DESTINATION_API_IMAGE: ${{ needs.setup_composed_env_variables.outputs.DESTINATION_API_IMAGE }}
+#      VIDEOS_TO_COUNT_BUCKET: ${{ needs.setup_composed_env_variables.outputs.VIDEOS_TO_COUNT_BUCKET }}
+#      COUNTED_VIDEOS_BUCKET: ${{ needs.setup_composed_env_variables.outputs.COUNTED_VIDEOS_BUCKET }}
     steps:
       - uses: actions/checkout@v3
 
-      - uses: google-github-actions/auth@v1
+      - uses: google-github-actions/auth@v0
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
 
+      uses: ./.github/actions/set_variables
+        -
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
-          region: ${{ env.REGION }}
-          artifact_registry_name: ${{ env.ARTIFACT_REGISTRY_NAME }}
+          gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
           dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}

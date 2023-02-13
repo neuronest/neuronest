@@ -6,7 +6,8 @@ inputs:
     required: true
   docker_repository_name:
     description: 'Docker repository name'
-    required: true
+    required: false
+    default: neuronest
   gcp_registry_name:
     description: 'GCP registry name'
     required: true
