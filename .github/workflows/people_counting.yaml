@@ -53,17 +53,17 @@ jobs:
 #      - id: setup_COUNTED_VIDEOS_BUCKET
 #        run: echo "COUNTED_VIDEOS_BUCKET=${{ env.PROJECT_ID }}-counted-videos" >> $GITHUB_OUTPUT
 
-  build_test_deploy:
-    name: build_test_deploy
-    runs-on: ubuntu-latest
-    container:
-      image: google/cloud-sdk
 #    needs: [setup_composed_env_variables]
 #    env:
 #      STAGE: ${{ needs.setup_stage.outputs.stage }}
 #      DESTINATION_API_IMAGE: ${{ needs.setup_composed_env_variables.outputs.DESTINATION_API_IMAGE }}
 #      VIDEOS_TO_COUNT_BUCKET: ${{ needs.setup_composed_env_variables.outputs.VIDEOS_TO_COUNT_BUCKET }}
 #      COUNTED_VIDEOS_BUCKET: ${{ needs.setup_composed_env_variables.outputs.COUNTED_VIDEOS_BUCKET }}
+  build_test_deploy:
+    name: build_test_deploy
+    runs-on: ubuntu-latest
+    container:
+      image: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
 
