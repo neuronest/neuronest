@@ -75,6 +75,7 @@ jobs:
         with:
           repository_static_variables_file_path: people-counting/iac/static_variables.env
           repository_dynamic_variables_file_path: people-counting/iac/dynamic_variables.env
+          set_up_terraform_variables: true
 
       - id: build_test_push
         uses: ./.github/actions/build_test_push
@@ -94,16 +95,16 @@ jobs:
         run:  |
           terraform init -input=false -backend-config="bucket=${{ env.TF_VAR_state_bucket }}"
           terraform apply -input=false -auto-approve
-        env:
-          TF_VAR_organization_id: ${{ env.ORGANIZATION_ID }}
-          TF_VAR_state_bucket: ${{ env.PROJECT_ID }}-bucket-tfstate
-          TF_VAR_project_id: ${{ env.PROJECT_ID }}
-          TF_VAR_project_name: ${{ env.PROJECT_NAME }}
-          TF_VAR_location_app_engine: ${{ env.LOCATION_APP_ENGINE }}
-          TF_VAR_region: ${{ env.REGION }}
-          TF_VAR_zone: ${{ env.ZONE }}
-          TF_VAR_artifact_registry_repository: ${{ env.REPOSITORY_NAME }}
-          TF_VAR_webapp_image: ${{ steps.build_test_push.outputs.gcp_image_name }}
-          TF_VAR_firestore_results_collection: ${{ env.FIRESTORE_RESULTS_COLLECTION }}
-          TF_VAR_videos_to_count_bucket: ${{ env.VIDEOS_TO_COUNT_BUCKET }}
-          TF_VAR_counted_videos_bucket: ${{ env.COUNTED_VIDEOS_BUCKET }}
+#        env:
+#          TF_VAR_organization_id: ${{ env.ORGANIZATION_ID }}
+#          TF_VAR_state_bucket: ${{ env.PROJECT_ID }}-bucket-tfstate
+#          TF_VAR_project_id: ${{ env.PROJECT_ID }}
+#          TF_VAR_project_name: ${{ env.PROJECT_NAME }}
+#          TF_VAR_location_app_engine: ${{ env.LOCATION_APP_ENGINE }}
+#          TF_VAR_region: ${{ env.REGION }}
+#          TF_VAR_zone: ${{ env.ZONE }}
+#          TF_VAR_artifact_registry_repository: ${{ env.REPOSITORY_NAME }}
+#          TF_VAR_webapp_image: ${{ steps.build_test_push.outputs.gcp_image_name }}
+#          TF_VAR_firestore_results_collection: ${{ env.FIRESTORE_RESULTS_COLLECTION }}
+#          TF_VAR_videos_to_count_bucket: ${{ env.VIDEOS_TO_COUNT_BUCKET }}
+#          TF_VAR_counted_videos_bucket: ${{ env.COUNTED_VIDEOS_BUCKET }}
