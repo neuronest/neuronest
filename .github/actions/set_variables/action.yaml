@@ -38,8 +38,8 @@ runs:
               echo "$variable_name"="$variable_value" >> $GITHUB_ENV
         
               if [ ${{ inputs.set_up_terraform_variables }} == 'true' ]; then
-                export TF_VAR_${variable_name}=$variable_value
-                echo "TF_VAR_${variable_name}"="$variable_value" >> $GITHUB_ENV
+                export TF_VAR_${variable_name,,}=$variable_value
+                echo "TF_VAR_${variable_name,,}"="$variable_value" >> $GITHUB_ENV
               fi
           done
         done
