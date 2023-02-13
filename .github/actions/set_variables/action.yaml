@@ -13,8 +13,8 @@ runs:
   using: "composite"
   steps:
     - run: |
-        shared_static_variables_file_path = .github/variables/static_variables.env
-        shared_dynamic_variables_file_path = .github/variables/dynamic_variables.env
+        shared_static_variables_file_path=.github/variables/static_variables.env
+        shared_dynamic_variables_file_path=.github/variables/dynamic_variables.env
         variables_files_path=( $shared_static_variables_file_path
                         ${{ inputs.repository_static_variables_file_path }}
                         $shared_dynamic_variables_file_path

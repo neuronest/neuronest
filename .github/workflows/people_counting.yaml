@@ -72,6 +72,9 @@ jobs:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
 
       - uses: ./.github/actions/set_variables
+        with:
+          repository_static_variables_file_path: people-counting/iac/static_variables.env
+          repository_dynamic_variables_file_path: people-counting/iac/dynamic_variables.env
 
       - id: build_test_push
         uses: ./.github/actions/build_test_push
