@@ -71,8 +71,8 @@ jobs:
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
 
-      uses: ./.github/actions/set_variables
-        -
+      - uses: ./.github/actions/set_variables
+
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
