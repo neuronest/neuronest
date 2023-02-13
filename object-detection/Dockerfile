@@ -6,6 +6,7 @@ RUN apt -qqy update  \
         curl \
         ffmpeg \
         git \
+        libarchive-tools \
         libffi-dev \
         libsm6 \
         libsndfile1 \
@@ -74,8 +75,13 @@ ENV MODEL_STORE_NAME=$MODEL_STORE_NAME
 ENV MODEL_PACKAGE_NAME=$MODEL_PACKAGE_NAME
 ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
-COPY --from=ultralytics/yolov5:latest /usr/src/app/models $MODEL_PACKAGE_NAME/models
-COPY --from=ultralytics/yolov5:latest /usr/src/app/utils $MODEL_PACKAGE_NAME/utils
+RUN mkdir $MODEL_PACKAGE_NAME
+
+RUN mkdir tmp \
+    && wget -O master.zip https://github.com/ultralytics/yolov5/zipball/master \
+    && bsdtar --strip-components=1 -xvf master.zip -C tmp \
+    && mv tmp/models tmp/utils $MODEL_PACKAGE_NAME \
+    && rm -r master.zip tmp
 
 RUN cp -r \
     $PACKAGE_NAME/model_handler.py  \
