@@ -2,6 +2,7 @@ import logging
 import time
 from typing import List, Optional, Tuple
 
+import proto
 from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
@@ -190,7 +191,12 @@ class VertexAIManager:
     def is_model_deployed(
         endpoint: aiplatform.Endpoint, model: aiplatform.Model
     ) -> bool:
-        for deployed_model in endpoint.gca_resource.deployed_models:
+        try:
+            endpoint_gca_resource: proto.Message = endpoint.gca_resource
+        except RuntimeError:
+            return False
+
+        for deployed_model in endpoint_gca_resource.deployed_models:
             if (
                 endpoint.traffic_split.get(deployed_model.id) == 100
                 and deployed_model.model_version_id == model.version_id
