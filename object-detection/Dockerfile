@@ -1,6 +1,7 @@
 FROM nvidia/cuda:12.0.0-runtime-ubuntu20.04 as training
 
-RUN apt -qqy update && apt install -qqy \
+RUN apt -qqy update  \
+    && DEBIAN_FRONTEND=noninteractive apt install -qqy \
         build-essential \
         curl \
         ffmpeg \
@@ -27,25 +28,33 @@ ARG ROOT_DIRECTORY="/app"
 ARG REPOSITORY_NAME="object-detection"
 ARG PACKAGE_NAME="object_detection"
 ARG SHARED_REPOSITORY_NAME="shared"
+ARG POETRY_VERSION="1.3.2"
 
 ENV PIP_ROOT_USER_ACTION=ignore
 ENV ROOT_DIRECTORY=$ROOT_DIRECTORY
 ENV REPOSITORY_NAME=$REPOSITORY_NAME
 ENV PACKAGE_NAME=$PACKAGE_NAME
 ENV SHARED_REPOSITORY_NAME=$SHARED_REPOSITORY_NAME
+ENV POETRY_VERSION=$POETRY_VERSION
 
-ENV CLOUDSDK_INSTALL_DIR /usr/local/gcloud
+ENV POETRY_HOME="/opt/poetry"
+ENV PATH="$POETRY_HOME/bin:$ROOT_DIRECTORY/$REPOSITORY_NAME/.venv/bin:$PATH"
+
+ENV CLOUDSDK_INSTALL_DIR=/usr/local/gcloud
 RUN curl -sSL https://sdk.cloud.google.com | bash
-ENV PATH $PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
+ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 
 COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
-RUN pip install --upgrade pip \
-  && pip install poetry \
-  && poetry export --without-hashes -f requirements.txt --output requirements.txt \
-  && pip install -r requirements.txt
+# using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at
+# the root of the project
+RUN curl -sSL https://install.python-poetry.org | python3
+RUN poetry config virtualenvs.in-project true \
+    && poetry config virtualenvs.create true \
+    && poetry check  \
+    && poetry install
 
 COPY $REPOSITORY_NAME/config.yaml .
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
@@ -62,7 +71,7 @@ ARG MODEL_PACKAGE_PATH=$ROOT_DIRECTORY/$REPOSITORY_NAME/$MODEL_PACKAGE_NAME
 
 ENV LOCAL_MODEL_PATH=$LOCAL_MODEL_PATH
 ENV MODEL_STORE_NAME=$MODEL_STORE_NAME
-ENV MODEL_PACKAGE_NAME$MODEL_PACKAGE_NAME
+ENV MODEL_PACKAGE_NAME=$MODEL_PACKAGE_NAME
 ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
 COPY --from=ultralytics/yolov5:latest /usr/src/app/models $MODEL_PACKAGE_NAME/models
@@ -78,9 +87,6 @@ RUN cp -r \
 COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
 WORKDIR $MODEL_PACKAGE_PATH
-
-RUN curl -sSL https://raw.githubusercontent.com/pytorch/serve/master/docker/dockerd-entrypoint.sh > dockerd-entrypoint.sh
-RUN chmod +x dockerd-entrypoint.sh
 
 # create torchserve configuration file
 RUN printf "\nservice_envelope=json" >> config.properties
@@ -105,11 +111,10 @@ RUN torch-model-archiver -f \
 RUN zip -ur $MODEL_STORE_NAME/$PACKAGE_NAME.mar models \
   && zip -ur $MODEL_STORE_NAME/$PACKAGE_NAME.mar utils
 
-ENTRYPOINT dockerd-entrypoint.sh
-
 # run Torchserve HTTP serve to respond to prediction requests
-CMD torchserve \
+ENTRYPOINT torchserve \
     --start \
     --ts-config=config.properties \
     --models $PACKAGE_NAME=$PACKAGE_NAME.mar \
-    --model-store $MODEL_STORE_NAME
+    --model-store $MODEL_STORE_NAME \
+    && tail -f /dev/null  # to prevent docker exit, as torchserve runs in background

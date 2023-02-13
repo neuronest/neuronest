@@ -1,0 +1,22 @@
+name: 'gcloud_auth'
+description: 'GCP authentication'
+inputs:
+  project_id:
+    description: 'GCP project id'
+    required: true
+  credentials_json:
+    description: 'Base64 encoded service account to be used inside the CI'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - id: gcloud_auth
+      name: GCP authentication
+      uses: google-github-actions/auth@v1
+      with:
+        project_id: ${{ inputs.project_id }}
+        credentials_json: ${{ inputs.credentials_json }}
+    - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+      shell: bash
+    - run: gcloud auth list
+      shell: bash

@@ -41,7 +41,7 @@ jobs:
         uses: ./.github/actions/set_variables
       - id: gcloud_auth
         name: GCP authentication
-        uses: google-github-actions/auth@v1
+        uses: ./.github/actions/gcloud_auth
         with:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
@@ -52,7 +52,7 @@ jobs:
           repository_name: ${{ env.REPOSITORY_NAME }}
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ env.DOCKERHUB_USERNAME }}
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   run:
@@ -67,7 +67,7 @@ jobs:
         uses: ./.github/actions/set_variables
       - id: gcloud_auth
         name: GCP authentication
-        uses: google-github-actions/auth@v1
+        uses: ./.github/actions/gcloud_auth
         with:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
