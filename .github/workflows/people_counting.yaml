@@ -21,44 +21,7 @@ on:
       - shared/**
       - people-counting/**
 
-env:
-  REPOSITORY_NAME: people-counting
-#  PROJECT_ID: people-counting-363015
-#  PROJECT_NAME: people-counting
-#  LOCATION_APP_ENGINE: europe-west3
-#  REGISTRY_LOCATION: europe-west1-docker.pkg.dev
-#  REGION: europe-west1
-#  ZONE: europe-west9-a
-#  ARTIFACT_REGISTRY_REPOSITORY: people-counting-ar
-#  API_IMAGE: api
-#  FIRESTORE_RESULTS_COLLECTION: countings
-#  ORGANIZATION_ID: 385885390984
-#  ARTIFACT_REGISTRY_NAME: europe-west1-docker.pkg.dev/people-counting-363015/people-counting-ar
-#  DOCKER_REPOSITORY_NAME: neuronest
-
-
 jobs:
-#  setup_composed_env_variables:
-#    name: setup_composed_env_variables
-#    runs-on: ubuntu-latest
-#    outputs:
-#      DESTINATION_API_IMAGE: ${{ steps.setup_DESTINATION_API_IMAGE.outputs.DESTINATION_API_IMAGE }}
-#      VIDEOS_TO_COUNT_BUCKET: ${{ steps.setup_VIDEOS_TO_COUNT_BUCKET.outputs.VIDEOS_TO_COUNT_BUCKET }}
-#      COUNTED_VIDEOS_BUCKET: ${{ steps.setup_COUNTED_VIDEOS_BUCKET.outputs.COUNTED_VIDEOS_BUCKET }}
-#    steps:
-#      - id: setup_DESTINATION_API_IMAGE
-#        run: echo "DESTINATION_API_IMAGE=${{ env.REGISTRY_LOCATION }}/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPOSITORY }}/${{ env.API_IMAGE }}:${{ github.sha }}" >> $GITHUB_OUTPUT
-#      - id: setup_VIDEOS_TO_COUNT_BUCKET
-#        run: echo "VIDEOS_TO_COUNT_BUCKET=${{ env.PROJECT_ID }}-videos-to-count" >> $GITHUB_OUTPUT
-#      - id: setup_COUNTED_VIDEOS_BUCKET
-#        run: echo "COUNTED_VIDEOS_BUCKET=${{ env.PROJECT_ID }}-counted-videos" >> $GITHUB_OUTPUT
-
-#    needs: [setup_composed_env_variables]
-#    env:
-#      STAGE: ${{ needs.setup_stage.outputs.stage }}
-#      DESTINATION_API_IMAGE: ${{ needs.setup_composed_env_variables.outputs.DESTINATION_API_IMAGE }}
-#      VIDEOS_TO_COUNT_BUCKET: ${{ needs.setup_composed_env_variables.outputs.VIDEOS_TO_COUNT_BUCKET }}
-#      COUNTED_VIDEOS_BUCKET: ${{ needs.setup_composed_env_variables.outputs.COUNTED_VIDEOS_BUCKET }}
   build_test_deploy:
     name: build_test_deploy
     runs-on: ubuntu-latest
@@ -77,7 +40,7 @@ jobs:
           repository_dynamic_variables_file_path: people-counting/iac/dynamic_variables.env
           set_up_terraform_variables: true
 
-      - id: build_test_push_api_image
+      - id: build_test_push_webapp_image
         uses: ./.github/actions/build_test_push
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
@@ -96,15 +59,4 @@ jobs:
           terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET }}"
           terraform apply -input=false -auto-approve
         env:
-           TF_VAR_webapp_image: ${{ steps.build_test_push_api_image.outputs.gcp_image_name }}
-#          TF_VAR_artifact_registry_repository: ${{ env.REPOSITORY_NAME }}
-#          TF_VAR_state_bucket: ${{ env.PROJECT_ID }}-bucket-tfstate
-#          TF_VAR_organization_id: ${{ env.ORGANIZATION_ID }}
-#          TF_VAR_project_id: ${{ env.PROJECT_ID }}
-#          TF_VAR_project_name: ${{ env.PROJECT_NAME }}
-#          TF_VAR_location_app_engine: ${{ env.LOCATION_APP_ENGINE }}
-#          TF_VAR_region: ${{ env.REGION }}
-#          TF_VAR_zone: ${{ env.ZONE }}
-#          TF_VAR_firestore_results_collection: ${{ env.FIRESTORE_RESULTS_COLLECTION }}
-#          TF_VAR_videos_to_count_bucket: ${{ env.VIDEOS_TO_COUNT_BUCKET }}
-#          TF_VAR_counted_videos_bucket: ${{ env.COUNTED_VIDEOS_BUCKET }}
+           TF_VAR_webapp_image: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}
