@@ -17,6 +17,7 @@ runs:
   using: "composite"
   steps:
     - run: |
+        # link to shared variables files which can only be in one place in the repo
         shared_static_variables_file_path=.github/variables/static_variables.env
         shared_dynamic_variables_file_path=.github/variables/dynamic_variables.env
         
