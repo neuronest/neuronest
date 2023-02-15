@@ -3,11 +3,7 @@ import logging
 import typing
 
 import api.route.counter
-from fastapi import APIRouter, FastAPI, HTTPException
-from fastapi.exception_handlers import (
-    http_exception_handler,
-    request_validation_exception_handler,
-)
+from fastapi import APIRouter, FastAPI, HTTPException, exception_handlers
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 
@@ -46,7 +42,7 @@ async def log_info_to_reproduce_http_exception(request, exc):
         f"{exc} error for request method: {request.method} "
         f"url: {request.url} and body: {request.scope.get('body')}"
     )
-    return await http_exception_handler(request, exc)
+    return await exception_handlers.http_exception_handler(request, exc)
 
 
 @app.exception_handler(Exception)
@@ -64,4 +60,4 @@ async def log_info_to_reproduce_validation_exception(request, exc):
         f"{exc} error for request method: {request.method} "
         f"url: {request.url} and body: {request.scope.get('body')}"
     )
-    return await request_validation_exception_handler(request, exc)
+    return await exception_handlers.request_validation_exception_handler(request, exc)

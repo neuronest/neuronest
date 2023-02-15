@@ -35,15 +35,11 @@ module "people_counting" {
   source = "./modules/services/people-counting"
   project_id = var.project_id
   project_name = var.project_name
-  organization_id = var.organization_id
   region = var.region
-  zone = var.zone
   artifact_registry_repository = var.artifact_registry_repository
   webapp_image = var.webapp_image
   firestore_results_collection = var.firestore_results_collection
   videos_to_count_bucket = var.videos_to_count_bucket
   counted_videos_bucket = var.counted_videos_bucket
   location_app_engine = var.location_app_engine
-  state_bucket = var.state_bucket
 }
-

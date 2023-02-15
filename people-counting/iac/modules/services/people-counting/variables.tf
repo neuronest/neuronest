@@ -4,13 +4,7 @@ variable "project_id" {
 variable "project_name" {
   type        = string
 }
-variable "organization_id" {
-  type        = string
-}
 variable "region" {
-  type        = string
-}
-variable "zone" {
   type        = string
 }
 variable "artifact_registry_repository" {
@@ -29,8 +23,5 @@ variable "counted_videos_bucket" {
   type        = string
 }
 variable "location_app_engine" {
-  type        = string
-}
-variable "state_bucket" {
   type        = string
 }

@@ -1,20 +1,49 @@
 name: 'set_variables'
 description: 'Configures environment variables for a workflow'
 inputs:
-  variables_file_path:
+  repository_static_variables_file_path:
     description: 'File path to variable file or directory. Defaults to ./.github/variables/* if none specified and runs against each file in that directory.'
     required: false
-    default: ./.github/variables/variables.env
+    default: ''
+  repository_dynamic_variables_file_path:
+    description: 'File path to variable file or directory. Defaults to ./.github/variables/* if none specified and runs against each file in that directory.'
+    required: false
+    default: ''
+  set_up_terraform_variables:
+    description: 'File path to variable file or directory. Defaults to ./.github/variables/* if none specified and runs against each file in that directory.'
+    required: false
+    default: 'false'
 runs:
   using: "composite"
   steps:
     - run: |
-        for variable_row in $(cat ${{ inputs.variables_file_path }}); do
-            variable_name=$(echo $variable_row | cut -d "=" -f1)
-            variable_value=$(echo $variable_row | cut -d "=" -f2)
-            eval variable_value=$variable_value  # variable resolution
-            export $variable_name=$variable_value
-            echo "$variable_name"="$variable_value" >> $GITHUB_ENV
+        # link to shared variables files which can only be in one place in the repo
+        shared_static_variables_file_path=.github/variables/static_variables.env
+        shared_dynamic_variables_file_path=.github/variables/dynamic_variables.env
+        
+        variables_files_path=( $shared_static_variables_file_path
+                        ${{ inputs.repository_static_variables_file_path }}
+                        $shared_dynamic_variables_file_path
+                        ${{ inputs.repository_dynamic_variables_file_path }}
+        )
+        for variables_file_path in "${variables_files_path[@]}"; do
+          # if path is not provided go to next path
+          if [ -z "${variables_file_path}" ]; then
+            continue
+          fi
+          for variable_row in $(cat $variables_file_path); do
+              variable_name=$(echo $variable_row | cut -d "=" -f1)
+              variable_value=$(echo $variable_row | cut -d "=" -f2)
+              eval variable_value=$variable_value  # variable resolution
+        
+              export $variable_name=$variable_value
+              echo "$variable_name"="$variable_value" >> $GITHUB_ENV
+        
+              if [ ${{ inputs.set_up_terraform_variables }} == 'true' ]; then
+                export TF_VAR_${variable_name,,}=$variable_value
+                echo "TF_VAR_${variable_name,,}"="$variable_value" >> $GITHUB_ENV
+              fi
+          done
         done
       shell: bash
     - run: |
