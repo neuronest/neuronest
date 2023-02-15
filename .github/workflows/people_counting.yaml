@@ -8,7 +8,10 @@ on:
       - develop
     paths:
       - .github/workflows/people_counting.yaml
-      - .github/actions/run_pre_commits/**
+      - .github/actions/variables/**
+      - .github/actions/build_test_push/**
+      - .github/actions/set_up_terraform/**
+      - .github/actions/gcloud_auth/**
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
@@ -30,15 +33,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: google-github-actions/auth@v0
-        with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
-
       - uses: ./.github/actions/set_variables
         with:
           repository_static_variables_file_path: people-counting/iac/static_variables.env
           repository_dynamic_variables_file_path: people-counting/iac/dynamic_variables.env
           set_up_terraform_variables: true
+
+      - uses: ./.github/actions/gcloud_auth
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
 
       - id: build_test_push_webapp_image
         uses: ./.github/actions/build_test_push
