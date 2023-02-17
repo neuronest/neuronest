@@ -1,9 +1,5 @@
 name: core
 
-defaults:
-  run:
-    working-directory: shared
-
 on:
   push:
     branches:
@@ -11,6 +7,8 @@ on:
       - develop
     paths:
       - .github/workflows/core.yaml
+      - .github/actions/**
+      - .pre-commit-config.yaml
       - shared/**
   pull_request:
     branches:
@@ -18,29 +16,35 @@ on:
       - develop
     paths:
       - .github/workflows/core.yaml
+      - .github/actions/**
+      - .pre-commit-config.yaml
       - shared/**
   workflow_dispatch:
 
 env:
   REPOSITORY_NAME: shared
+  PYTHONPATH: shared
 
 jobs:
   tests:
     name: tests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container: python:3.8-buster
-    env:
-      STAGE: test
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
         uses: ./.github/actions/set_variables
-      - run: apt update && apt install -y cmake ffmpeg libsm6 libxext6
+      - run: apt update && apt install -y cmake ffmpeg git libsm6 libxext6
       - run: pip install --upgrade pip
       - run: pip install poetry==$POETRY_VERSION
-      - run: poetry check && poetry install -E dev
-      - name: Run linters
-        uses: ./.github/actions/run_linters
-        with:
-          repository_name: ${{ env.REPOSITORY_NAME }}
-      - run: poetry run pytest -x -n auto tests -vv
+      - run: |
+          cd $REPOSITORY_NAME \
+          && poetry check \
+          && poetry export --without-hashes -E dev -f requirements.txt --output requirements.txt \
+          && pip install -r requirements.txt \
+          && cd ..
+      - run: |
+          git config --global --add safe.directory $(pwd) \
+          && pre-commit install \
+          && pre-commit run --show-diff-on-failure --files $REPOSITORY_NAME/**/*
+      - run: pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv
