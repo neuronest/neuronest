@@ -1,5 +1,6 @@
 import os
 
+from core.exceptions import AlreadyExistingError
 from core.google.vertex_ai_manager import VertexAIManager
 from core.schemas.model_instantiator import (
     InstantiateModelInput,
@@ -13,6 +14,16 @@ from model_instantiator.api.dependencies import use_vertex_ai_manager
 from model_instantiator.config import cfg
 
 router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
+
+
+def _already_deployed_endpoint_response(
+    response: Response, model_name: str
+) -> InstantiateModelOutput:
+    response.status_code = status.HTTP_200_OK
+
+    return InstantiateModelOutput(
+        message=f"Endpoint already deployed for model_name: '{model_name}'"
+    )
 
 
 def _correctly_deployed_endpoint_response(
@@ -48,12 +59,18 @@ def instantiate_model(
 
     serving_deployment_config = ServingDeploymentConfig.from_labels(model.labels)
 
-    vertex_ai_manager.deploy_model(
-        name=model_name,
-        model=model,
-        serving_deployment_config=serving_deployment_config,
-        undeploy_previous_model=True,
-    )
+    try:
+        vertex_ai_manager.deploy_model(
+            name=model_name,
+            model=model,
+            serving_deployment_config=serving_deployment_config,
+            undeploy_previous_model=True,
+            is_last_model_already_deployed_ok=False,
+        )
+    except AlreadyExistingError:
+        return _already_deployed_endpoint_response(
+            response=response, model_name=model_name
+        )
 
     return _correctly_deployed_endpoint_response(
         response=response, model_name=model_name

@@ -7,6 +7,7 @@ from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
 
+from core.exceptions import AlreadyExistingError
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
@@ -213,7 +214,7 @@ class VertexAIManager:
         timeout: float = 1800,
         check_frequency: float = 30,
         current_time: float = 0,
-    ):
+    ) -> bool:
         if current_time >= timeout:
             return False
 
@@ -235,6 +236,7 @@ class VertexAIManager:
         model: aiplatform.Model,
         serving_deployment_config: ServingDeploymentConfig,
         undeploy_previous_model: bool = True,
+        is_last_model_already_deployed_ok: bool = True,
         timeout: float = 3600,
     ) -> aiplatform.Endpoint:
         endpoint = self.get_endpoint_by_name(name)
@@ -247,7 +249,12 @@ class VertexAIManager:
                 ):
                     # for a given model version,
                     # there should be only one deployed model with 100% traffic
-                    return endpoint
+                    if is_last_model_already_deployed_ok:
+                        return endpoint
+
+                    raise AlreadyExistingError(
+                        "The last model version has already been deployed"
+                    )
 
         endpoint = model.deploy(
             endpoint=endpoint,
