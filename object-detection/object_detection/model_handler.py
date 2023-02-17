@@ -5,6 +5,12 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 import torch
+from core.schemas.object_detection import (
+    Device,
+    InputSampleSchema,
+    InputSchema,
+    OutputSchema,
+)
 from core.serialization.array import array_to_string
 from core.serialization.image import image_from_string
 from imutils import resize
@@ -16,7 +22,6 @@ from ts.torch_handler.base_handler import BaseHandler
 # pylint: disable=import-error
 from config import cfg  # isort:skip
 from model import ObjectDetectionModel  # isort:skip
-from schemas import Device, InputSchema, InputSampleSchema, OutputSchema  # isort:skip
 
 # pylint: enable=import-error
 
