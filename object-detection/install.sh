@@ -81,7 +81,7 @@ delete_poetry_env
 
 poetry env use $PATH_TO_PYTHON
 poetry run pip install --upgrade pip
-poetry install --with test
+poetry install --with dev
 
 ENV=$(poetry env info -p)
 ENV_BIN=$ENV/bin

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from core.google.vertex_ai_manager import VertexAIManager
+from core.schemas.object_detection import PREDICTION_COLUMNS, OutputSchema
 from core.serialization.array import array_from_string
 from core.serialization.image import image_to_string
 from omegaconf import DictConfig
@@ -14,7 +15,6 @@ from object_detection.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     PROJECT_ID,
 )
-from object_detection.modules.schemas import PREDICTION_COLUMNS, OutputSchema
 
 
 @pytest.fixture(name="config")
