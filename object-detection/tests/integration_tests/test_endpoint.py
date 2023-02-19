@@ -2,12 +2,9 @@ import os
 
 import cv2 as cv
 import numpy as np
-import pandas as pd
 import pytest
+from core.client.object_detection import ObjectDetectionClient
 from core.google.vertex_ai_manager import VertexAIManager
-from core.schemas.object_detection import PREDICTION_COLUMNS, OutputSchema
-from core.serialization.array import array_from_string
-from core.serialization.image import image_to_string
 from omegaconf import DictConfig
 
 from object_detection.config import cfg
@@ -15,6 +12,7 @@ from object_detection.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     PROJECT_ID,
 )
+from tests.injection.fake_model_instantiator_client import FakeModelInstantiatorClient
 
 
 @pytest.fixture(name="config")
@@ -48,14 +46,22 @@ def test_endpoint_inference(
 ):
     model_name = config.model.name
 
-    endpoint = vertex_ai_manager.get_endpoint_by_name(model_name)
-    raw_predictions = endpoint.predict([{"data": image_to_string(image)}])
-    predictions = array_from_string(
-        OutputSchema.parse_obj(raw_predictions.predictions[0]).results
+    fake_model_instantiator_client = FakeModelInstantiatorClient(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS, host="fake_model_instantiator_host"
+    )
+    vertex_ai_manager = VertexAIManager(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS, location=cfg.region
+    )
+    object_detection_client = ObjectDetectionClient(
+        vertex_ai_manager=vertex_ai_manager,
+        model_instantiator_client=fake_model_instantiator_client,
+        model_name=model_name,
     )
 
-    assert isinstance(predictions, np.ndarray)
+    single_prediction_df = object_detection_client.predict_single(image)
+    assert set(single_prediction_df.class_name) == {"dog", "bicycle", "truck"}
 
-    predictions_df = pd.DataFrame(predictions, columns=PREDICTION_COLUMNS)
-
-    assert set(predictions_df.class_name) == {"dog", "bicycle", "truck"}
+    batch_predictions_df = object_detection_client.predict_batch([image, image])
+    assert set(
+        batch_prediction_df.class_name for batch_prediction_df in batch_predictions_df
+    ) == {"dog", "bicycle", "truck"}

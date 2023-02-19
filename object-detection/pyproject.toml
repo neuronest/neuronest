@@ -3,7 +3,7 @@ build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core>=1.0.0","pip>=20.0.0"]
 
 [tool.isort]
-known_first_party = ["object_detection"]
+known_first_party = ["object_detection", "tests"]
 profile = "black"
 
 [tool.poetry]
