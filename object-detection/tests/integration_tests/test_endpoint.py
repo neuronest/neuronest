@@ -63,5 +63,7 @@ def test_endpoint_inference(
 
     batch_predictions_df = object_detection_client.predict_batch([image])
     assert set(
-        batch_prediction_df.class_name for batch_prediction_df in batch_predictions_df
+        class_name
+        for batch_prediction_df in batch_predictions_df
+        for class_name in batch_prediction_df.class_name
     ) == {"dog", "bicycle", "truck"}
