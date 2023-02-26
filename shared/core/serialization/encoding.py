@@ -1,4 +1,6 @@
+import datetime
 import json
+from typing import Any, Dict
 from uuid import UUID
 
 import numpy as np
@@ -29,3 +31,14 @@ class SetEncoder(NumpyEncoder):
         if isinstance(o, set):
             return list(o)
         return super().default(o)
+
+
+class DatetimeEncoder(SetEncoder):
+    def default(self, o):
+        if isinstance(o, (datetime.date, datetime.datetime)):
+            return o.isoformat()
+        return super().default(o)
+
+
+def json_encodable_dict(dict_to_encode: Dict[Any, Any]) -> Dict[Any, Any]:
+    return json.loads(json.dumps(dict_to_encode, cls=DatetimeEncoder))

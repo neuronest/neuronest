@@ -188,15 +188,29 @@ class VertexAIManager:
             labels=serving_deployment_config.as_labels(),
         )
 
-    @staticmethod
     def is_model_deployed(
-        endpoint: aiplatform.Endpoint, model: aiplatform.Model
+        self,
+        model: aiplatform.Model,
+        name: Optional[str] = None,
+        endpoint: Optional[aiplatform.Endpoint] = None,
     ) -> bool:
+        if endpoint is None:
+            if name is None:
+                raise ValueError(
+                    "The endpoint name should be specified if no endpoint is given"
+                )
+            endpoint = self.get_endpoint_by_name(name)
+
+        if endpoint is None:
+            return False
+
         try:
             endpoint_gca_resource: proto.Message = endpoint.gca_resource
         except RuntimeError:
             return False
 
+        # for a given model version,
+        # there should be only one deployed model with 100% traffic
         for deployed_model in endpoint_gca_resource.deployed_models:
             if (
                 endpoint.traffic_split.get(deployed_model.id) == 100
@@ -206,9 +220,8 @@ class VertexAIManager:
 
         return False
 
-    @classmethod
     def wait_for_model_deployed(
-        cls,
+        self,
         endpoint: aiplatform.Endpoint,
         model: aiplatform.Model,
         timeout: float = 1800,
@@ -218,12 +231,12 @@ class VertexAIManager:
         if current_time >= timeout:
             return False
 
-        if cls.is_model_deployed(endpoint=endpoint, model=model):
+        if self.is_model_deployed(endpoint=endpoint, model=model):
             return True
 
         time.sleep(check_frequency)
 
-        return cls.wait_for_model_deployed(
+        return self.wait_for_model_deployed(
             endpoint=endpoint,
             model=model,
             timeout=timeout,
@@ -241,20 +254,13 @@ class VertexAIManager:
     ) -> aiplatform.Endpoint:
         endpoint = self.get_endpoint_by_name(name)
 
-        if endpoint is not None:
-            for deployed_model in endpoint.gca_resource.deployed_models:
-                if (
-                    endpoint.traffic_split.get(deployed_model.id) == 100
-                    and deployed_model.model_version_id == model.version_id
-                ):
-                    # for a given model version,
-                    # there should be only one deployed model with 100% traffic
-                    if is_last_model_already_deployed_ok:
-                        return endpoint
+        if self.is_model_deployed(name=name, model=model):
+            if is_last_model_already_deployed_ok:
+                return endpoint
 
-                    raise AlreadyExistingError(
-                        "The last model version has already been deployed"
-                    )
+            raise AlreadyExistingError(
+                "The last model version has already been deployed"
+            )
 
         endpoint = model.deploy(
             endpoint=endpoint,

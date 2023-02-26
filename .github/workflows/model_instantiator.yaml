@@ -71,4 +71,14 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
-      - run: gcloud run deploy model-instantiator --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} --port 80 --cpu "1.0" --memory "1Gi" --image ${{needs.build_test_push.outputs.gcp_image_name }} --service-account $REPOSITORY_NAME@$PROJECT_ID.iam.gserviceaccount.com --project ${PROJECT_ID} --region ${REGION}
+      - run: |
+          gcloud run deploy model-instantiator \
+          --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} \
+          --port 80 \
+          --cpu "1.0" \ 
+          --memory "1Gi" \
+          --image ${{needs.build_test_push.outputs.gcp_image_name }} \
+          --service-account $REPOSITORY_NAME@$PROJECT_ID.iam.gserviceaccount.com \
+          --project ${PROJECT_ID} \
+          --region ${REGION} \
+          --no-cpu-throttling
