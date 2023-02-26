@@ -22,7 +22,7 @@ class ObjectDetectionClient:
         model_instantiator_client: ModelInstantiatorClient,
         model_name: str,
         endpoint_retry_wait_time: int = 30,
-        endpoint_retry_timeout: int = 1800,
+        endpoint_retry_timeout: int = 2700,
     ):
         self.vertex_ai_manager = vertex_ai_manager
         self.model_instantiator_client = model_instantiator_client
@@ -34,25 +34,26 @@ class ObjectDetectionClient:
         return self.model_instantiator_client.instantiate(self.model_name)
 
     @ttl_cache(ttl=600)
-    def _try_get_endpoint(self, attempt_iteration: int = 0) -> aiplatform.Endpoint:
-        endpoint = self.vertex_ai_manager.get_endpoint_by_name(self.model_name)
+    def _try_get_endpoint(self) -> aiplatform.Endpoint:
+        total_waited_time = 0
 
-        if endpoint is not None:
-            return endpoint
+        while total_waited_time < self.endpoint_retry_timeout:
+            model = self.vertex_ai_manager.get_model_by_name(self.model_name)
+            endpoint = self.vertex_ai_manager.get_endpoint_by_name(self.model_name)
 
-        if (
-            attempt_iteration
-            > self.endpoint_retry_timeout // self.endpoint_retry_wait_time
-        ):
-            raise DependencyError(
-                f"Failed to deploy an endpoint for model_name={self.model_name}, "
-                f"giving up after {self.endpoint_retry_timeout // 60} minutes of trying"
-            )
+            if endpoint is not None and self.vertex_ai_manager.is_model_deployed(
+                model=model, endpoint=endpoint
+            ):
+                return endpoint
 
-        self._create_endpoint()
-        time.sleep(self.endpoint_retry_wait_time)
+            self._create_endpoint()
+            time.sleep(self.endpoint_retry_wait_time)
+            total_waited_time += self.endpoint_retry_wait_time
 
-        return self._try_get_endpoint(attempt_iteration=attempt_iteration + 1)
+        raise DependencyError(
+            f"Failed to deploy an endpoint for model_name={self.model_name}, "
+            f"giving up after {self.endpoint_retry_timeout // 60} minutes of trying"
+        )
 
     def predict_batch(self, images: List[np.ndarray]) -> List[pd.DataFrame]:
         endpoint = self._try_get_endpoint()
