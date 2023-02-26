@@ -12,5 +12,5 @@ routes:
 firestore:
   deployment_status_collection_name: deployment_status
 
-max_deploying_age: 1800  # in seconds
+max_deploying_age: 2700  # in seconds
 uninstantiate_time_delta: 1800  # in seconds

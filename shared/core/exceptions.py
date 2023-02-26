@@ -8,3 +8,7 @@ class DependencyError(BaseError):
 
 class AlreadyExistingError(BaseError):
     pass
+
+
+class AlreadyProcessingError(BaseError):
+    pass

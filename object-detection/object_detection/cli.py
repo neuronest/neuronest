@@ -8,6 +8,7 @@ import sys
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Type
 
+from core.client.model_instantiator import ModelInstantiatorClient
 from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import VertexAIManager
 from core.path import GSPath
@@ -19,9 +20,9 @@ from core.schemas.vertex_ai import (
 from google.cloud import aiplatform
 from omegaconf import DictConfig
 
-from object_detection.config import cfg
 from object_detection.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
+    MODEL_INSTANTIATOR_HOST,
     TRAINING_IMAGE_NAME,
 )
 
@@ -153,29 +154,17 @@ class UploadModelAction(RunnableAction):
 
 class DeployAction(RunnableAction):
     action = Action.DEPLOY
-    kwargs = ("vertex_ai_manager", "model_name")
+    kwargs = ("model_instantiator_client", "model_name")
 
     @classmethod
     # pylint: disable=arguments-differ
-    def run(cls, vertex_ai_manager: VertexAIManager, model_name: str, **kwargs):
-        model = vertex_ai_manager.get_model_by_name(name=model_name)
-
-        if model is None:
-            raise ValueError(f"No model found with name: {model_name}")
-
-        model_labels = model.labels
-
-        if model_labels is None:
-            raise ValueError(f"No labels found in the model with name: {model_name}")
-
-        serving_deployment_config = ServingDeploymentConfig.parse_obj(model_labels)
-
-        vertex_ai_manager.deploy_model(
-            name=model_name,
-            model=model,
-            serving_deployment_config=serving_deployment_config,
-            undeploy_previous_model=True,
-        )
+    def run(
+        cls,
+        model_instantiator_client: ModelInstantiatorClient,
+        model_name: str,
+        **kwargs,
+    ):
+        model_instantiator_client.instantiate(model_name)
 
 
 class RemoveLastModelVersionAction(RunnableAction):
@@ -222,12 +211,17 @@ class RemoveLastModelVersionAction(RunnableAction):
 
 class UndeployAction(RunnableAction):
     action = Action.UNDEPLOY
-    kwargs = ("vertex_ai_manager", "model_name")
+    kwargs = ("model_instantiator_client", "model_name")
 
     @classmethod
     # pylint: disable=arguments-differ
-    def run(cls, vertex_ai_manager: VertexAIManager, model_name: str, **kwargs):
-        return vertex_ai_manager.delete_endpoint(name=model_name, undeploy_models=True)
+    def run(
+        cls,
+        model_instantiator_client: ModelInstantiatorClient,
+        model_name: str,
+        **kwargs,
+    ):
+        model_instantiator_client.uninstantiate(model_name)
 
 
 class ActionFactory:
@@ -251,11 +245,15 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], actions: List[Actio
     vertex_ai_manager = VertexAIManager(
         key_path=GOOGLE_APPLICATION_CREDENTIALS, location=config.region
     )
+    model_instantiator_client = ModelInstantiatorClient(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS, host=MODEL_INSTANTIATOR_HOST
+    )
     model_name = config.model.name
 
     parameters = {
         "config": config,
         "vertex_ai_manager": vertex_ai_manager,
+        "model_instantiator_client": model_instantiator_client,
         "model_name": model_name,
         "model_gspath": model_gspath,
     }

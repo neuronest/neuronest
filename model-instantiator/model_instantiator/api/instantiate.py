@@ -76,6 +76,7 @@ def deploy_model(
         serving_deployment_config=serving_deployment_config,
         undeploy_previous_model=undeploy_previous_model,
         is_last_model_already_deployed_ok=is_last_model_already_deployed_ok,
+        timeout=deployment_status_manager.max_deploying_age,
     )
 
     if vertex_ai_manager.is_model_deployed(endpoint=endpoint, model=model):

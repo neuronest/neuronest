@@ -9,12 +9,17 @@ from core.schemas.model_instantiator import (
     UninstantiateModelLogsConditionedInput,
     UninstantiateModelOutput,
 )
+from core.services.deployment_status_manager import (
+    DeploymentStatus,
+    DeploymentStatusManager,
+)
 from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
 from starlette import status
 
 from model_instantiator.api.dependencies import (
     use_config,
+    use_deployment_status_manager,
     use_logging_client,
     use_vertex_ai_manager,
 )
@@ -79,6 +84,9 @@ def uninstantiate_model(
     uninstantiate_model_input: UninstantiateModelInput,
     response: Response,
     vertex_ai_manager: VertexAIManager = Depends(use_vertex_ai_manager),
+    deployment_status_manager: DeploymentStatusManager = Depends(
+        use_deployment_status_manager
+    ),
 ):
     model_name = uninstantiate_model_input.model_name
 
@@ -87,6 +95,9 @@ def uninstantiate_model(
         return _no_endpoint_response(response=response, model_name=model_name)
 
     endpoint.delete(force=True)
+    deployment_status_manager.maybe_set_status(
+        deployment_status=DeploymentStatus.UNDEPLOYED, deployment_name=model_name
+    )
 
     return _correctly_undeployed_endpoint_response(
         response=response, endpoint_id=endpoint.resource_name, model_name=model_name
@@ -103,6 +114,9 @@ def uninstantiate_model_logs_conditioned(
     response: Response,
     config: DictConfig = Depends(use_config),
     vertex_ai_manager: VertexAIManager = Depends(use_vertex_ai_manager),
+    deployment_status_manager: DeploymentStatusManager = Depends(
+        use_deployment_status_manager
+    ),
     logging_client: LoggingClient = Depends(use_logging_client),
 ) -> UninstantiateModelOutput:
     model_name = uninstantiate_model_input.model_name
@@ -135,6 +149,9 @@ def uninstantiate_model_logs_conditioned(
         )
 
     endpoint.delete(force=True)
+    deployment_status_manager.maybe_set_status(
+        deployment_status=DeploymentStatus.UNDEPLOYED, deployment_name=model_name
+    )
 
     return _correctly_undeployed_endpoint_response(
         response=response,
