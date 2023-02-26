@@ -10,7 +10,7 @@ routes:
   uninstantiate_logs_conditioned: /uninstantiate_logs_conditioned
 
 firestore:
-  deployment_status_collection_name: deployment_status
+  deployment_status_collection_name: deployment-status
 
 max_deploying_age: 2700  # in seconds
 uninstantiate_time_delta: 1800  # in seconds
