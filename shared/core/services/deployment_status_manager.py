@@ -22,7 +22,7 @@ class DeploymentStatus(str, Enum):
 
 class DeploymentStatusDocument(BaseModel):
     deployment_status: DeploymentStatus
-    created_date: datetime.datetime = datetime.datetime.now()
+    created_date: datetime.datetime = datetime.datetime.now(tz=datetime.timezone.utc)
 
 
 class DeploymentStatusManager:
@@ -75,7 +75,8 @@ class DeploymentStatusManager:
         )
         if (
             deployment_status_snapshot.deployment_status == DeploymentStatus.DEPLOYING
-            and datetime.datetime.now() - datetime.timedelta(seconds=max_deploying_age)
+            and datetime.datetime.now(tz=deployment_status_snapshot.created_date.tzinfo)
+            - datetime.timedelta(seconds=max_deploying_age)
             < deployment_status_snapshot.created_date
         ):
             return None
