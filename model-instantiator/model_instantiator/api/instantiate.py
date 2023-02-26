@@ -113,6 +113,10 @@ def instantiate_model(
     serving_deployment_config = ServingDeploymentConfig.from_labels(model.labels)
 
     if vertex_ai_manager.is_model_deployed(name=model_name, model=model):
+        deployment_status_manager.maybe_set_status(
+            deployment_status=DeploymentStatus.DEPLOYED, deployment_name=model_name
+        )
+
         return _already_deployed_endpoint_response(
             response=response, model_name=model_name
         )
