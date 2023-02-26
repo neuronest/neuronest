@@ -56,10 +56,23 @@ class DeploymentStatusManager:
         deployment_status: DeploymentStatus,
         max_deploying_age: int,
     ) -> Optional[DeploymentStatusDocument]:
-        deployment_status_snapshot = DeploymentStatusDocument.parse_obj(
-            document_reference.get(transaction=transaction).to_dict()
+        raw_deployment_status_snapshot = document_reference.get(
+            transaction=transaction
+        ).to_dict()
+        new_deployment_status_document = DeploymentStatusDocument(
+            deployment_status=deployment_status
         )
 
+        if raw_deployment_status_snapshot is None:
+            transaction.create(
+                document_reference,
+                json_encodable_dict(new_deployment_status_document.dict()),
+            )
+            return new_deployment_status_document
+
+        deployment_status_snapshot = DeploymentStatusDocument.parse_obj(
+            raw_deployment_status_snapshot
+        )
         if (
             deployment_status_snapshot.deployment_status == DeploymentStatus.DEPLOYING
             and datetime.datetime.now() - datetime.timedelta(seconds=max_deploying_age)
@@ -67,9 +80,6 @@ class DeploymentStatusManager:
         ):
             return None
 
-        new_deployment_status_document = DeploymentStatusDocument(
-            deployment_status=deployment_status
-        )
         transaction.update(
             document_reference,
             json_encodable_dict(new_deployment_status_document.dict()),
