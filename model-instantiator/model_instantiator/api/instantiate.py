@@ -80,13 +80,13 @@ def deploy_model(
     )
 
     if vertex_ai_manager.is_model_deployed(endpoint=endpoint, model=model):
-        deployment_status_manager.maybe_set_status(
+        deployment_status_manager.set_status(
             deployment_status=DeploymentStatus.DEPLOYED, deployment_name=model_name
         )
 
         return endpoint
 
-    deployment_status_manager.maybe_set_status(
+    deployment_status_manager.set_status(
         deployment_status=DeploymentStatus.FAILED, deployment_name=model_name
     )
 

@@ -149,7 +149,7 @@ def uninstantiate_model_logs_conditioned(
         )
 
     endpoint.delete(force=True)
-    deployment_status_manager.maybe_set_status(
+    deployment_status_manager.set_status(
         deployment_status=DeploymentStatus.UNDEPLOYED, deployment_name=model_name
     )
 

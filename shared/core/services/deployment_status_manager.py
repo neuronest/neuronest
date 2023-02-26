@@ -106,15 +106,33 @@ class DeploymentStatusManager:
 
         return deployment_status_document
 
+    def set_status(
+        self,
+        deployment_status: Union[DeploymentStatus, str],
+        deployment_name: Optional[str] = None,
+    ) -> DeploymentStatusDocument:
+        new_deployment_status_document = DeploymentStatusDocument(
+            deployment_status=deployment_status
+        )
+
+        self.firestore_client.upload_document(
+            collection_name=self.collection_name,
+            document_id=self._infer_deployment_name(deployment_name),
+            content=new_deployment_status_document.dict(),
+        )
+
+        return new_deployment_status_document
+
     def get_status(
         self, missing_ok: bool = True, deployment_name: Optional[str] = None
     ) -> DeploymentStatusDocument:
         deployment_status = self.firestore_client.get_document(
-            self.collection_name, self._infer_deployment_name(deployment_name)
+            collection_name=self.collection_name,
+            document_id=self._infer_deployment_name(deployment_name),
         )
 
         if deployment_status is None and missing_ok:
-            deployment_status_document = self.maybe_set_status(
+            deployment_status_document = self.set_status(
                 deployment_status=DeploymentStatus.UNDEPLOYED,
                 deployment_name=deployment_name,
             )
