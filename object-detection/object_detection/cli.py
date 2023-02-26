@@ -20,6 +20,7 @@ from core.schemas.vertex_ai import (
 from google.cloud import aiplatform
 from omegaconf import DictConfig
 
+from object_detection.config import cfg
 from object_detection.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
