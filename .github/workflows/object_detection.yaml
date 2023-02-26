@@ -46,9 +46,6 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
-      - run: gcloud auth list
-      - run: gcloud auth login --cred-file=$GOOGLE_APPLICATION_CREDENTIALS
-      - run: gcloud auth list
       - id: build_test_push
         name: Build test push
         uses: ./.github/actions/build_test_push
