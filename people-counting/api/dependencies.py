@@ -3,8 +3,7 @@ import os
 from fastapi import Depends
 from google.cloud import firestore  # pylint: disable=no-name-in-module
 from google.cloud import storage
-from people_counting.config import cfg as config_counting
-from people_counting.people_counter import PeopleCounter
+from people_counting.dependencies import get_people_counter_with_package_config
 
 
 def get_storage_client():
@@ -24,12 +23,7 @@ def get_bucket_of_counted_videos(
 
 
 def get_people_counter():
-    return PeopleCounter(
-        model_config=config_counting.model,
-        algorithm_config=config_counting.algorithm,
-        image_width=config_counting.preprocessing.image_width,
-        video_outputs_directory=config_counting.paths.outputs_directory,
-    )
+    return get_people_counter_with_package_config()
 
 
 def get_firestore_results_collection():

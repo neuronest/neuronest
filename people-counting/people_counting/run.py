@@ -4,7 +4,7 @@ import os
 
 from people_counting.common import init_logger
 from people_counting.config import cfg
-from people_counting.people_counter import PeopleCounter
+from people_counting.dependencies import get_people_counter_with_package_config
 
 init_logger(logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,12 +22,7 @@ if __name__ == "__main__":
             f"The video path specified does not exist: '{args.input_video}'"
         )
 
-    people_counter = PeopleCounter(
-        model_config=cfg.model,
-        algorithm_config=cfg.algorithm,
-        image_width=cfg.preprocessing.image_width,
-        video_outputs_directory=cfg.paths.outputs_directory,
-    )
+    people_counter = get_people_counter_with_package_config()
     prediction, _ = people_counter.run(
         args.input_video,
         enable_video_writing=cfg.general.enable_video_writing,

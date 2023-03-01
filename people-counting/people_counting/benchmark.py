@@ -6,7 +6,7 @@ from typing import List, Optional
 import pandas as pd
 from people_counting.common import VIDEOS_EXTENSIONS, init_logger
 from people_counting.config import cfg
-from people_counting.people_counter import PeopleCounter
+from people_counting.dependencies import get_people_counter_with_package_config
 
 init_logger(logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,12 +16,7 @@ def predict_all(
     videos_directory: str, output_file: Optional[str] = None
 ) -> pd.DataFrame:
     # pylint: disable=duplicate-code
-    people_counter = PeopleCounter(
-        model_config=cfg.model,
-        algorithm_config=cfg.algorithm,
-        image_width=cfg.preprocessing.image_width,
-        video_outputs_directory=cfg.paths.outputs_directory,
-    )
+    people_counter = get_people_counter_with_package_config()
     predictions: List[pd.DataFrame] = []
 
     for video_file in filter(

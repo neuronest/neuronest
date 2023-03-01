@@ -1,35 +1,36 @@
 from typing import List
 
 import numpy as np
-import torch
+from core.client.object_detection import ObjectDetectionClient
 from people_counting.common import BoundingBox
 
 
 # pylint: disable=too-few-public-methods
 class Model:
-    def __init__(self, model_type: str, model_name: str, confidence_threshold: float):
-        self.model_type = model_type
-        self.model_name = model_name
+    def __init__(
+        self,
+        object_detection_client: ObjectDetectionClient,
+        confidence_threshold: float,
+    ):
+        self.object_detection_client = object_detection_client
         self.confidence_threshold = confidence_threshold
-        self.model: torch.nn.Module = self._load_hub_pretrained_model()
-
-    def _load_hub_pretrained_model(self) -> torch.nn.Module:
-        return torch.hub.load(self.model_type, self.model_name, pretrained=True)
 
     def predict(
-        self, image: np.ndarray, class_name: str = "person"
+        self,
+        image: np.ndarray,
+        class_name: str = "person",
     ) -> List[BoundingBox]:
-        results = self.model(image).pandas().xyxy[0]
+        results = self.object_detection_client.predict_single(image)
         filtered_results = results[
-            (results.confidence >= self.confidence_threshold)
-            & (results.name == class_name)
+            (results.score >= self.confidence_threshold)
+            & (results.class_name == class_name)
         ]
         return [
             BoundingBox(
-                x_min=int(row.xmin),
-                y_min=int(row.ymin),
-                x_max=int(row.xmax),
-                y_max=int(row.ymax),
+                x_min=int(row.x_min),
+                y_min=int(row.y_min),
+                x_max=int(row.x_max),
+                y_max=int(row.y_max),
             )
             for row in filtered_results.itertuples()
         ]
