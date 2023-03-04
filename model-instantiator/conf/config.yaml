@@ -12,5 +12,10 @@ routes:
 firestore:
   deployment_status_collection_name: deployment-status
 
+job:
+  container_uri: '${oc.env:IMAGE_NAME}'
+  cpu: '1.0'
+  memory: '1Gi'
+
 max_deploying_age: 2700  # in seconds
 uninstantiate_time_delta: 1800  # in seconds

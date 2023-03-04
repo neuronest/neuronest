@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.firestore_client import FirestoreClient
 from core.google.logging_client import LoggingClient
 from core.google.vertex_ai_manager import VertexAIManager
@@ -25,6 +26,17 @@ def use_vertex_ai_manager(config: DictConfig = Depends(use_config)) -> VertexAIM
         location=config.region,
         key_path=GOOGLE_APPLICATION_CREDENTIALS,
         project_id=PROJECT_ID,
+    )
+
+
+@lru_cache
+def use_cloud_run_job_manager(
+    config: DictConfig = Depends(use_config),
+) -> CloudRunJobManager:
+    return CloudRunJobManager(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
+        project_id=PROJECT_ID,
+        location=config.region,
     )
 
 
