@@ -79,6 +79,7 @@ jobs:
           --max-retries "1" \
           --task-timeout "2700s" \
           --image ${{ needs.build_test_push.outputs.gcp_image_name }} \
+          --region ${REGION} \
           --command "python" \
           --args "-m ${{ env.PACKAGE_NAME }}.jobs.deploy_model"
       - run: |
