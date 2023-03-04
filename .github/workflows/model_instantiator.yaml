@@ -77,7 +77,7 @@ jobs:
           --cpu "1.0" \
           --memory "1Gi" \
           --max-retries "1" \
-          --timeout "2700s" \
+          --task-timeout "2700s" \
           --image ${{ needs.build_test_push.outputs.gcp_image_name }} \
           --command "python" \
           --args "-m ${{ env.PACKAGE_NAME }}.jobs.deploy_model"
