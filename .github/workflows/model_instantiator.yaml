@@ -72,6 +72,16 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
       - run: |
+          gcloud beta run jobs create instantiate-model \
+          --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION} \
+          --cpu "1.0" \
+          --memory "1Gi" \
+          --max-retries "1" \
+          --timeout "2700s" \
+          --image ${{ needs.build_test_push.outputs.gcp_image_name }} \
+          --command "python" \
+          --args "-m ${{ env.PACKAGE_NAME }}.jobs.deploy_model"
+      - run: |
           gcloud run deploy model-instantiator \
           --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION},IMAGE_NAME=${{ needs.build_test_push.outputs.gcp_image_name }} \
           --port 80 \
