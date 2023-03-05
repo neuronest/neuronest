@@ -53,6 +53,17 @@ def _no_endpoint_response(
     return UninstantiateModelOutput(message=message)
 
 
+def _no_traffic_response(
+    response: Response, model_name: str
+) -> UninstantiateModelOutput:
+    response.status_code = status.HTTP_200_OK
+
+    message = f"No traffic found for model_name: '{model_name}'"
+    logger.info(message)
+
+    return UninstantiateModelOutput(message=message)
+
+
 def _too_recently_updated_endpoint_response(
     response: Response, model_name: str
 ) -> UninstantiateModelOutput:
@@ -93,6 +104,10 @@ def uninstantiate_model(
     endpoint = vertex_ai_manager.get_endpoint_by_name(model_name)
     if endpoint is None:
         return _no_endpoint_response(response=response, model_name=model_name)
+
+    model = vertex_ai_manager.get_model_by_name(model_name)
+    if not vertex_ai_manager.is_model_deployed(endpoint=endpoint, model=model):
+        return _no_traffic_response(response=response, model_name=model_name)
 
     endpoint.delete(force=True)
     deployment_status_manager.maybe_set_status(

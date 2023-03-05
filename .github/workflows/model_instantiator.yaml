@@ -80,4 +80,4 @@ jobs:
           --image ${{ needs.build_test_push.outputs.gcp_image_name }} \
           --service-account $REPOSITORY_NAME@$PROJECT_ID.iam.gserviceaccount.com \
           --project ${PROJECT_ID} \
-          --region ${REGION} \
+          --region ${REGION}
