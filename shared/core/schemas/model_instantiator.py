@@ -13,6 +13,10 @@ class UninstantiateModelInput(BaseModel):
     model_name: str
 
 
+class UpdateStatusInput(BaseModel):
+    model_name: str
+
+
 class UninstantiateModelLogsConditionedInput(UninstantiateModelInput):
     default_messages: Tuple[str, ...] = ("received inference",)
     time_delta_override: Optional[int] = None  # in seconds

@@ -12,12 +12,6 @@ def _get_id_token_credentials(
     )
 
 
-def _get_credentials(
-    key_path: str, auth_scope: str = "https://www.googleapis.com/auth/cloud-platform"
-) -> Credentials:
-    return Credentials.from_service_account_file(key_path, scopes=[auth_scope])
-
-
 def _generate_token_from_credentials(
     credentials: Union[Credentials, IDTokenCredentials]
 ) -> str:
@@ -27,6 +21,12 @@ def _generate_token_from_credentials(
         raise ValueError("Could not get valid token")
 
     return credentials.token
+
+
+def get_credentials(
+    key_path: str, auth_scope: str = "https://www.googleapis.com/auth/cloud-platform"
+) -> Credentials:
+    return Credentials.from_service_account_file(key_path, scopes=[auth_scope])
 
 
 def generate_identity_token(key_path: str, target_audience: str) -> str:
@@ -39,5 +39,5 @@ def generate_identity_token(key_path: str, target_audience: str) -> str:
 
 def generate_access_token(key_path: str) -> str:
     return _generate_token_from_credentials(
-        credentials=_get_credentials(key_path=key_path)
+        credentials=get_credentials(key_path=key_path)
     )
