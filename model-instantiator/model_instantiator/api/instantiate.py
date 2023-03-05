@@ -11,6 +11,7 @@ from core.services.deployment_status_manager import (
     DeploymentStatus,
     DeploymentStatusManager,
 )
+from core.utils import underscore_to_hyphen
 from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
 from starlette import status
@@ -37,6 +38,16 @@ def _already_deployed_endpoint_response(
 
     return InstantiateModelOutput(
         message=f"Endpoint already deployed for model_name: '{model_name}'"
+    )
+
+
+def _already_running_job_response(
+    response: Response, model_name: str
+) -> InstantiateModelOutput:
+    response.status_code = status.HTTP_200_OK
+
+    return InstantiateModelOutput(
+        message=f"A deployment job is already running for model_name: '{model_name}'"
     )
 
 
@@ -86,7 +97,12 @@ def instantiate_model(
             response=response, model_name=model_name
         )
 
-    job_name = f"deploy_{instantiate_model_input.model_name}"
+    job_name = underscore_to_hyphen(instantiate_model_input.model_name)
+    execution = cloud_run_job_manager.list_executions(job_name, exclude_terminated=True)
+
+    if len(execution) > 0:
+        return _already_running_job_response(response=response, model_name=model_name)
+
     cloud_run_job_manager.create_job(
         job_name=job_name,
         job_config=JobConfig(
@@ -100,6 +116,7 @@ def instantiate_model(
                 "PROJECT_ID": PROJECT_ID,
             },
         ),
+        override_if_existing=True,
     )
     cloud_run_job_manager.run_job(job_name=job_name)
 

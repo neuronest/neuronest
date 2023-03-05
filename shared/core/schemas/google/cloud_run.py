@@ -15,6 +15,8 @@ class JobConfig(BaseModel):
     memory: str
     max_retries: int = 0
     timeout: str = "2700s"
+    task_count: int = 1
+    parallelism: int = 1
     command: List[str] = Field(default_factory=list)
     command_args: List[str] = Field(default_factory=list)
     environment_variables: Dict[str, str] = Field(default_factory=dict)
@@ -45,3 +47,14 @@ class JobSchema(BaseModel):
     uid: str
     create_time: datetime
     update_time: datetime
+
+
+class ExecutionSchema(BaseModel):
+    name: str
+    uid: str
+    create_time: datetime
+    update_time: datetime
+    failed_count: int
+    retried_count: int
+    running_count: int
+    succeeded_count: int
