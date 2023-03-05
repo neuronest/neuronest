@@ -5,7 +5,7 @@ from typing import List, Optional
 
 import pandas as pd
 from people_counting.common import VIDEOS_EXTENSIONS, init_logger
-from people_counting.config import cfg
+from people_counting.config import config
 from people_counting.dependencies import get_people_counter_with_package_config
 
 init_logger(logging.INFO)
@@ -23,11 +23,11 @@ def predict_all(
         lambda file: any(file.endswith(extension) for extension in VIDEOS_EXTENSIONS),
         os.listdir(videos_directory),
     ):
-        input_video = os.path.join(cfg.paths.videos_directory, video_file)
+        input_video = os.path.join(config.paths.videos_directory, video_file)
         prediction, _ = people_counter.run(
             input_video,
-            enable_video_writing=cfg.general.enable_video_writing,
-            enable_video_showing=cfg.general.enable_video_showing,
+            enable_video_writing=config.general.enable_video_writing,
+            enable_video_showing=config.general.enable_video_showing,
         )
         prediction = prediction.to_df()
         predictions.append(
@@ -95,19 +95,21 @@ def benchmark():
     argument_parser.add_argument("--skip-predictions-computing", action="store_true")
     args = argument_parser.parse_args()
 
-    labels = pd.read_csv(cfg.paths.labels)
+    labels = pd.read_csv(config.paths.labels)
 
     if args.skip_predictions_computing is True:
-        if not os.path.exists(cfg.paths.benchmark):
-            raise FileNotFoundError(f"Predictions not found at {cfg.paths.benchmark}")
+        if not os.path.exists(config.paths.benchmark):
+            raise FileNotFoundError(
+                f"Predictions not found at {config.paths.benchmark}"
+            )
 
-        predictions = pd.read_csv(cfg.paths.benchmark)
+        predictions = pd.read_csv(config.paths.benchmark)
     else:
         predictions = predict_all(
-            cfg.paths.videos_directory, output_file=cfg.paths.benchmark
+            config.paths.videos_directory, output_file=config.paths.benchmark
         )
 
-    scores = compute_score(labels, predictions, output_file=cfg.paths.scores)
+    scores = compute_score(labels, predictions, output_file=config.paths.scores)
     logger.info(f"Average MAE: {round(scores.score.values.mean(), 4)}")
 
 

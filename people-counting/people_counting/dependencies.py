@@ -2,7 +2,7 @@ from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.object_detection import ObjectDetectionClient
 from core.google.vertex_ai_manager import VertexAIManager
 from people_counting import environ
-from people_counting.config import cfg as config
+from people_counting.config import config
 from people_counting.people_counter import PeopleCounter
 
 

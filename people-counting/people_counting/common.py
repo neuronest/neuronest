@@ -7,6 +7,8 @@ from typing import Callable, Tuple
 
 import pandas as pd
 
+from shared.core.schemas.people_counting import Direction
+
 VIDEOS_EXTENSIONS = [".avi", ".mp4"]
 
 
@@ -46,11 +48,6 @@ def timed(
         return result
 
     return wrapper
-
-
-class Direction(str, Enum):
-    UP = "UP"
-    DOWN = "DOWN"
 
 
 class Statistics:
