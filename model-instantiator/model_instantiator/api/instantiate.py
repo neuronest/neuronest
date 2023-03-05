@@ -7,10 +7,6 @@ from core.schemas.model_instantiator import (
     InstantiateModelInput,
     InstantiateModelOutput,
 )
-from core.services.deployment_status_manager import (
-    DeploymentStatus,
-    DeploymentStatusManager,
-)
 from core.utils import underscore_to_hyphen
 from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
@@ -19,11 +15,10 @@ from starlette import status
 from model_instantiator.api.dependencies import (
     use_cloud_run_job_manager,
     use_config,
-    use_deployment_status_manager,
     use_vertex_ai_manager,
 )
 from model_instantiator.config import cfg
-from model_instantiator.environment_variables import PROJECT_ID
+from model_instantiator.environment_variables import PROJECT_ID, REGION
 
 router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
 
@@ -72,9 +67,6 @@ def instantiate_model(
     instantiate_model_input: InstantiateModelInput,
     response: Response,
     config: DictConfig = Depends(use_config),
-    deployment_status_manager: DeploymentStatusManager = Depends(
-        use_deployment_status_manager
-    ),
     vertex_ai_manager: VertexAIManager = Depends(use_vertex_ai_manager),
     cloud_run_job_manager: CloudRunJobManager = Depends(use_cloud_run_job_manager),
 ):
@@ -86,10 +78,6 @@ def instantiate_model(
         return _no_model_response(response=response, model_name=model_name)
 
     if vertex_ai_manager.is_model_deployed(name=model_name, model=model):
-        deployment_status_manager.maybe_set_status(
-            deployment_status=DeploymentStatus.DEPLOYED, deployment_name=model_name
-        )
-
         return _already_deployed_endpoint_response(
             response=response, model_name=model_name
         )
@@ -110,10 +98,11 @@ def instantiate_model(
             command_args=[
                 "-m",
                 "model_instantiator.jobs.deploy_model",
-                f"--model-name {model_name}",
             ],
             environment_variables={
                 "PROJECT_ID": PROJECT_ID,
+                "REGION": REGION,
+                "MODEL_NAME": model_name,
             },
         ),
         override_if_existing=True,

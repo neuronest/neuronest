@@ -1,4 +1,3 @@
-import argparse
 from typing import Optional
 
 from core.google.vertex_ai_manager import VertexAIManager
@@ -14,6 +13,11 @@ from model_instantiator.api.dependencies import (
     use_deployment_status_manager,
     use_firestore_client,
     use_vertex_ai_manager,
+)
+from model_instantiator.jobs.environment_variables import (
+    IS_LAST_MODEL_ALREADY_DEPLOYED_OK,
+    MODEL_NAME,
+    UNDEPLOY_PREVIOUS_MODEL,
 )
 
 
@@ -59,32 +63,15 @@ def deploy_model(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model-name", dest="model_name", required=True)
-    parser.add_argument(
-        "--undeploy-previous-model",
-        dest="undeploy_previous_model",
-        action="store_true",
-        default=True,
-    )
-    parser.add_argument(
-        "--is-last-model-already-deployed-ok",
-        dest="is_last_model_already_deployed_ok",
-        action="store_true",
-        default=True,
-    )
-
-    parsed_args = parser.parse_args()
-
     config = use_config()
     firestore_client = use_firestore_client()
 
     deploy_model(
-        model_name=parsed_args.model_name,
+        model_name=MODEL_NAME,
         deployment_status_manager=use_deployment_status_manager(
             config=config, firestore_client=firestore_client
         ),
         vertex_ai_manager=use_vertex_ai_manager(config=config),
-        undeploy_previous_model=parsed_args.undeploy_previous_model,
-        is_last_model_already_deployed_ok=parsed_args.is_last_model_already_deployed_ok,
+        undeploy_previous_model=UNDEPLOY_PREVIOUS_MODEL,
+        is_last_model_already_deployed_ok=IS_LAST_MODEL_ALREADY_DEPLOYED_OK,
     )

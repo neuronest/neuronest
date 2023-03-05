@@ -73,7 +73,7 @@ jobs:
           credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
       - run: |
           gcloud run deploy model-instantiator \
-          --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION},GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS},IMAGE_NAME=${{ needs.build_test_push.outputs.gcp_image_name }} \
+          --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION},IMAGE_NAME=${{ needs.build_test_push.outputs.gcp_image_name }} \
           --port 80 \
           --cpu "1.0" \
           --memory "1Gi" \
@@ -81,4 +81,3 @@ jobs:
           --service-account $REPOSITORY_NAME@$PROJECT_ID.iam.gserviceaccount.com \
           --project ${PROJECT_ID} \
           --region ${REGION} \
-          --no-cpu-throttling

@@ -22,14 +22,15 @@ from core.utils import hyphen_to_underscore
 
 
 class CloudRunJobManager:
-    def __init__(self, key_path: str, project_id: str, location: str):
-        self.jobs_client = JobsClient(credentials=get_credentials(key_path=key_path))
-        self.executions_client = ExecutionsClient(
-            credentials=get_credentials(key_path=key_path)
+    def __init__(self, project_id: str, location: str, key_path: Optional[str] = None):
+        self._credentials = (
+            get_credentials(key_path=key_path) if key_path is not None else None
         )
+        self._parent = f"projects/{project_id}/locations/{location}"
+        self.jobs_client = JobsClient(credentials=self._credentials)
+        self.executions_client = ExecutionsClient(credentials=self._credentials)
         self.project_id = project_id
         self.location = location
-        self._parent = f"projects/{self.project_id}/locations/{self.location}"
 
     @staticmethod
     def _ensure_unicity(jobs: List[JobSchema]) -> Optional[JobSchema]:
