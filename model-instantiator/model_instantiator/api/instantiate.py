@@ -110,7 +110,11 @@ def instantiate_model(
             cpu=config.job.cpu,
             memory=config.job.memory,
             command=["python"],
-            command_args=["-m", "model_instantiator.jobs.deploy_model"],
+            command_args=[
+                "-m",
+                "model_instantiator.jobs.deploy_model",
+                f"--model-name {model_name}",
+            ],
             environment_variables={
                 "GOOGLE_APPLICATION_CREDENTIALS": GOOGLE_APPLICATION_CREDENTIALS,
                 "PROJECT_ID": PROJECT_ID,
