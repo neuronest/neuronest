@@ -23,10 +23,7 @@ from model_instantiator.api.dependencies import (
     use_vertex_ai_manager,
 )
 from model_instantiator.config import cfg
-from model_instantiator.environment_variables import (
-    GOOGLE_APPLICATION_CREDENTIALS,
-    PROJECT_ID,
-)
+from model_instantiator.environment_variables import PROJECT_ID
 
 router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
 
@@ -116,7 +113,6 @@ def instantiate_model(
                 f"--model-name {model_name}",
             ],
             environment_variables={
-                "GOOGLE_APPLICATION_CREDENTIALS": GOOGLE_APPLICATION_CREDENTIALS,
                 "PROJECT_ID": PROJECT_ID,
             },
         ),
