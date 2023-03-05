@@ -2,14 +2,13 @@ import logging
 import os
 from typing import Tuple
 
-from people_counting.api import dependencies
+from core.schemas import people_counting as people_counting_schemas
 from fastapi import APIRouter, Body, Depends
 from google.cloud import firestore  # pylint: disable=no-name-in-module
 from google.cloud import storage
+from people_counting.api import dependencies
 from people_counting.common import Statistics
-
 from people_counting.people_counter import PeopleCounter
-from core.schemas import people_counting as people_counting_schemas
 
 router = APIRouter()
 

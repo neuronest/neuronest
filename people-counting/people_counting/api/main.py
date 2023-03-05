@@ -2,9 +2,9 @@ import json
 import logging
 import typing
 
-from people_counting.api.routers import people_counter
 from fastapi import APIRouter, FastAPI, HTTPException, exception_handlers
 from fastapi.exceptions import RequestValidationError
+from people_counting.api.routers import people_counter
 from starlette.requests import Request
 
 logging.basicConfig()
