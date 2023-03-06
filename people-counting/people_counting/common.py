@@ -6,8 +6,7 @@ from time import time
 from typing import Callable, Tuple
 
 import pandas as pd
-
-from shared.core.schemas.people_counting import Direction
+from core.schemas.people_counting import Direction
 
 VIDEOS_EXTENSIONS = [".avi", ".mp4"]
 
