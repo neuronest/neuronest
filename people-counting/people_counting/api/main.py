@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def get_application() -> FastAPI:
     application = FastAPI()
     resources_router = APIRouter()
-    resources_router.include_router(people_counter.router, prefix="/counter")
+    resources_router.include_router(people_counter.people_counter_router)
     application.include_router(resources_router)
     return application
 
