@@ -5,10 +5,11 @@ from typing import Dict, List, Optional
 import cv2 as cv
 import dlib
 import pandas as pd
+from core.client.object_detection import ObjectDetectionClient
 from omegaconf import DictConfig
 from people_counting.centroid_tracker import CentroidTracker
 from people_counting.common import BoundingBox, Statistics, Status, timed
-from people_counting.config import cfg
+from people_counting.config import config
 from people_counting.model import Model
 from people_counting.trackable_object import TrackableObject
 from people_counting.video_handler import VideoRenderer, read_video_as_frames
@@ -19,18 +20,18 @@ logger = logging.getLogger(__name__)
 class PeopleCounter:
     def __init__(
         self,
-        model_config: DictConfig,
+        object_detection_client: ObjectDetectionClient,
         algorithm_config: DictConfig,
         image_width: int,
+        confidence_threshold: float,
         video_outputs_directory: Optional[str] = None,
     ):
         self.image_width = image_width
         self.video_outputs_directory = video_outputs_directory
         self.algorithm_config = algorithm_config
         self.model = Model(
-            model_type=model_config.model_type,
-            model_name=model_config.model_name,
-            confidence_threshold=model_config.confidence_threshold,
+            object_detection_client=object_detection_client,
+            confidence_threshold=confidence_threshold,
         )
 
         if self.video_outputs_directory is not None:
@@ -120,7 +121,7 @@ class PeopleCounter:
                         )
 
             line_vertical_position = int(
-                cfg.algorithm.line_placement_ratio * frame.shape[0]
+                config.algorithm.line_placement_ratio * frame.shape[0]
             )
 
             objects = centroid_tracker.update(bounding_boxes)

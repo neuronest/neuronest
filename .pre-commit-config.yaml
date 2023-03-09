@@ -1,3 +1,4 @@
+fail_fast: true
 repos:
 - repo: local
   hooks:
@@ -14,16 +15,6 @@ repos:
     exclude: ^migrations/
     args:
       - --config=.flake8
-  - id: pylint
-    name: pylint
-    entry: pylint
-    language: system
-    types: [python]
-    exclude: ^migrations/
-    args:
-      - --rcfile=.pylintrc
-      - -j 0
-      - --reports=n
   - id: isort
     name: isort
     entry: isort
@@ -47,3 +38,13 @@ repos:
     language: python
     verbose: true
     stages: [commit-msg]
+  - id: pylint
+    name: pylint
+    entry: pylint
+    language: system
+    types: [python]
+    exclude: ^migrations/
+    args:
+      - --rcfile=.pylintrc
+      - -j 0
+      - --reports=n

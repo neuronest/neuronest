@@ -2,9 +2,9 @@ import json
 import logging
 import typing
 
-import api.route.counter
 from fastapi import APIRouter, FastAPI, HTTPException, exception_handlers
 from fastapi.exceptions import RequestValidationError
+from people_counting.api.routers import people_counter
 from starlette.requests import Request
 
 logging.basicConfig()
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def get_application() -> FastAPI:
     application = FastAPI()
     resources_router = APIRouter()
-    resources_router.include_router(api.route.counter.router, prefix="/counter")
+    resources_router.include_router(people_counter.people_counter_router)
     application.include_router(resources_router)
     return application
 

@@ -25,4 +25,4 @@ COPY $PEOPLE_COUNTING_REPOSITORY /$APP_DIRECTORY/$PEOPLE_COUNTING_REPOSITORY
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True
 
-CMD exec uvicorn api.main:app --host 0.0.0.0 --port 8080 --log-level info --reload
+CMD exec uvicorn people_counting.api.main:app --host 0.0.0.0 --port 8080 --log-level info --reload

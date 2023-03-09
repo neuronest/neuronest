@@ -16,6 +16,8 @@ from core.serialization.image import image_to_string
 
 
 class ObjectDetectionClient:
+    PREPROCESSING_IMAGE_TYPE = "JPEG"
+
     def __init__(
         self,
         vertex_ai_manager: VertexAIManager,
@@ -55,12 +57,18 @@ class ObjectDetectionClient:
             f"giving up after {self.endpoint_retry_timeout // 60} minutes of trying"
         )
 
-    def predict_batch(self, images: List[np.ndarray]) -> List[pd.DataFrame]:
+    def predict_batch(self, rgb_images: List[np.ndarray]) -> List[pd.DataFrame]:
+        preprocessed_image_binaries = [
+            {
+                "data": image_to_string(
+                    rgb_image,
+                    extension=f".{self.PREPROCESSING_IMAGE_TYPE}",
+                )
+            }
+            for rgb_image in rgb_images
+        ]
         endpoint = self._try_get_endpoint()
-
-        raw_predictions = endpoint.predict(
-            [{"data": image_to_string(image)} for image in images]
-        ).predictions
+        raw_predictions = endpoint.predict(preprocessed_image_binaries).predictions
         predictions = [
             array_from_string(OutputSchema.parse_obj(raw_prediction).results)
             for raw_prediction in raw_predictions
@@ -71,5 +79,5 @@ class ObjectDetectionClient:
             for prediction in predictions
         ]
 
-    def predict_single(self, image: np.ndarray) -> pd.DataFrame:
-        return self.predict_batch([image])[0]
+    def predict_single(self, rgb_image: np.ndarray) -> pd.DataFrame:
+        return self.predict_batch([rgb_image])[0]
