@@ -4,6 +4,9 @@ inputs:
   repository_name:
     description: 'Repository name'
     required: true
+  repository_region:
+    description: 'Repository region'
+    required: true
   docker_repository_name:
     description: 'Docker repository name'
     required: true
@@ -72,14 +75,14 @@ runs:
 
     - run: |
         docker build \
-          --cache-from $DOCKERHUB_IMAGE_NAME:latest \
-          -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
-          -t $DOCKERHUB_IMAGE_NAME:latest \
-          -t $GCP_IMAGE_NAME:$GITHUB_RUN_ID \
-          -t $GCP_IMAGE_NAME:latest \
-          $TARGET_ARGUMENTS \
-          ${{ inputs.build_arguments }} \
-          .
+        --cache-from $DOCKERHUB_IMAGE_NAME:latest \
+        -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
+        -t $DOCKERHUB_IMAGE_NAME:latest \
+        -t $GCP_IMAGE_NAME:$GITHUB_RUN_ID \
+        -t $GCP_IMAGE_NAME:latest \
+        $TARGET_ARGUMENTS \
+        ${{ inputs.build_arguments }} \
+        .
       shell: bash
 
     - run: docker push $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID && docker push $DOCKERHUB_IMAGE_NAME:latest
@@ -91,6 +94,10 @@ runs:
         repository_name: ${{ inputs.repository_name }}
         image_name: $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID
 
+    - run: |
+        gcloud artifacts repositories create ${{ inputs.repository_name }} \
+        --repository-format=docker \
+        --location=${{ inputs.repository_region }}
     - run: docker push $GCP_IMAGE_NAME:$GITHUB_RUN_ID && docker push $GCP_IMAGE_NAME:latest
       shell: bash
 

@@ -53,6 +53,7 @@ jobs:
         uses: ./.github/actions/build_test_push
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
+          repository_region: ${{ env.REGION }}
           gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
