@@ -97,7 +97,9 @@ runs:
     - run: |
         gcloud artifacts repositories create ${{ inputs.repository_name }} \
         --repository-format=docker \
-        --location=${{ inputs.repository_region }}
+        --location=${{ inputs.repository_region }} \
+        || true
+      shell: bash
     - run: docker push $GCP_IMAGE_NAME:$GITHUB_RUN_ID && docker push $GCP_IMAGE_NAME:latest
       shell: bash
 
