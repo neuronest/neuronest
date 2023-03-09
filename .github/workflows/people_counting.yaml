@@ -27,6 +27,7 @@ on:
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
+  workflow_dispatch:
 
 jobs:
   build_test_deploy:
