@@ -24,7 +24,6 @@ from model_instantiator.api.dependencies import (
     use_logging_client,
     use_vertex_ai_manager,
 )
-from model_instantiator.config import cfg
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -121,7 +120,7 @@ def uninstantiate_model(
 
 
 @router.post(
-    cfg.routes.uninstantiate_logs_conditioned,
+    route.uninstantiate_logs_conditioned,
     response_model=UninstantiateModelOutput,
     status_code=status.HTTP_202_ACCEPTED,
 )
