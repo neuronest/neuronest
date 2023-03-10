@@ -23,7 +23,7 @@ serving_model_upload:
 
 serving_deployment:
   machine_type: "n1-standard-2"
-  accelerator_type: "NVIDIA_TESLA_K80"
+  accelerator_type: "NVIDIA_TESLA_T4"
   accelerator_count: 1
   min_replica_count: 1
   max_replica_count: 1
