@@ -1,20 +1,51 @@
+from __future__ import annotations
+
 import abc
 import json
+from enum import Enum
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 import requests
 
 from core.auth import generate_identity_token
 
 
+class Protocol(str, Enum):
+    HTTP = "http"
+    HTTPS = "https"
+
+    @classmethod
+    def from_ssl(cls, ssl: bool) -> Protocol:
+        if ssl is True:
+            return cls.HTTPS
+
+        return cls.HTTP
+
+
 class APIClient(abc.ABC):
-    def __init__(
-        self, key_path: str, host: str, ssl: bool = True, prefix: str = "api/v1"
-    ):
+    def __init__(self, key_path: str, host: str, root: str, ssl: bool = True):
         self.key_path = key_path
-        protocol = "https" if ssl is True else "http"
-        self.protocol_with_host = f"{protocol}://{host}"
-        self.endpoint = f"{self.protocol_with_host}/{prefix}"
+        self.host = host
+        self.root = root
+        self.protocol_with_host = self._build_host_with_protocol(host=host, ssl=ssl)
+        self.endpoint = f"{self.protocol_with_host}{root}"
+
+    @staticmethod
+    def _build_host_with_protocol(host: str, ssl: bool) -> str:
+        parsed_host = urlparse(host)
+        constructed_protocol = Protocol.from_ssl(ssl=ssl)
+
+        if parsed_host.scheme == "":
+            return f"{constructed_protocol}://{host}"
+
+        if parsed_host.scheme != constructed_protocol:
+            raise ValueError(
+                f"Expected protocol to be '{constructed_protocol}' from ssl={ssl}, "
+                f"could not deduce it from host: {host}"
+            )
+
+        return host
 
     def auth_headers(self) -> Dict[str, str]:
         identity_token = generate_identity_token(
@@ -39,7 +70,7 @@ class APIClient(abc.ABC):
 
         return requests.Request(
             method=method,
-            url=f"{self.endpoint}/{resource}",
+            url=f"{self.endpoint}{resource}",
             headers={**content_type, **self.auth_headers()},
             params={**self.auth_params(), **(params or {})},
             data=json.dumps(payload or {}),

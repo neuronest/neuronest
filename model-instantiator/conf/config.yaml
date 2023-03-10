@@ -3,12 +3,6 @@ package_name: 'model_instantiator'
 project_id: '${oc.env:PROJECT_ID}'
 region: '${oc.env:REGION}'
 
-routes:
-  root: /${package_name}/api/v1
-  instantiate: /instantiate
-  uninstantiate: /uninstantiate
-  uninstantiate_logs_conditioned: /uninstantiate_logs_conditioned
-
 firestore:
   deployment_status_collection_name: deployment-status
 

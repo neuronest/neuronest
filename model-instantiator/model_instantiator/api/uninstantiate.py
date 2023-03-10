@@ -4,6 +4,7 @@ import os
 
 from core.google.logging_client import LoggerName, LoggingClient
 from core.google.vertex_ai_manager import VertexAIManager
+from core.routes.model_instantiator import route
 from core.schemas.model_instantiator import (
     UninstantiateModelInput,
     UninstantiateModelLogsConditionedInput,
@@ -87,7 +88,7 @@ def _too_recently_used_endpoint_response(
 
 
 @router.post(
-    cfg.routes.uninstantiate,
+    route.uninstantiate,
     response_model=UninstantiateModelOutput,
     status_code=status.HTTP_202_ACCEPTED,
 )

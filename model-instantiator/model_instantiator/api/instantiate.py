@@ -2,6 +2,7 @@ import os
 
 from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.vertex_ai_manager import VertexAIManager
+from core.routes.model_instantiator import route
 from core.schemas.google.cloud_run import JobConfig
 from core.schemas.model_instantiator import (
     InstantiateModelInput,
@@ -17,7 +18,6 @@ from model_instantiator.api.dependencies import (
     use_config,
     use_vertex_ai_manager,
 )
-from model_instantiator.config import cfg
 from model_instantiator.environment_variables import PROJECT_ID, REGION
 
 router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
@@ -62,7 +62,7 @@ def _no_model_response(response: Response, model_name: str) -> InstantiateModelO
     )
 
 
-@router.post(cfg.routes.instantiate, status_code=status.HTTP_201_CREATED)
+@router.post(route.instantiate, status_code=status.HTTP_201_CREATED)
 def instantiate_model(
     instantiate_model_input: InstantiateModelInput,
     response: Response,

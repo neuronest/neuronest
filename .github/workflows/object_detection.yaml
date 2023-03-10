@@ -26,7 +26,7 @@ on:
 env:
   REPOSITORY_NAME: object-detection
   PACKAGE_NAME: object_detection
-  MODEL_INSTANTIATOR_HOST: model-instantiator-bnuahhbzua-ew.a.run.app/model_instantiator
+  MODEL_INSTANTIATOR_HOST: model-instantiator-bnuahhbzua-ew.a.run.app
 
 jobs:
   build_test_push_training:
