@@ -1,14 +1,3 @@
-terraform {
-  required_providers {
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "4.25.0"
-    }
-  }
-   backend "gcs" {
-   prefix  = "terraform/state"
- }
-}
 # Give people_counting_api_sa datastore owner role
 resource "google_project_iam_member" "people-counting-api-sa-uses-firestore" {
   project = var.project_id

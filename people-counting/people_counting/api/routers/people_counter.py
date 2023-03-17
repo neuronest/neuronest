@@ -6,6 +6,7 @@ from core.schemas import people_counting as schemas
 from fastapi import APIRouter, Body, Depends
 from google.cloud import firestore  # pylint: disable=no-name-in-module
 from google.cloud import storage
+
 from people_counting.api import dependencies
 from people_counting.common import Statistics
 from people_counting.config import config

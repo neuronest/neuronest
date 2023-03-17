@@ -4,6 +4,7 @@ from typing import Iterator, Optional, Tuple
 import cv2 as cv
 import numpy as np
 from imutils import resize
+
 from people_counting.common import BoundingBox, Statistics, Status
 
 

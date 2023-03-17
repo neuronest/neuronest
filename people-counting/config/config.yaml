@@ -1,3 +1,7 @@
+project_id: '${oc.env:PROJECT_ID}'
+region: '${oc.env:REGION}'
+name: '${oc.env:REPOSITORY_NAME}'
+
 general:
   verbosity: True
   enable_video_writing: False

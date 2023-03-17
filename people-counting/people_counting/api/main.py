@@ -4,8 +4,9 @@ import typing
 
 from fastapi import APIRouter, FastAPI, HTTPException, exception_handlers
 from fastapi.exceptions import RequestValidationError
-from people_counting.api.routers import people_counter
 from starlette.requests import Request
+
+from people_counting.api.routers import people_counter
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)

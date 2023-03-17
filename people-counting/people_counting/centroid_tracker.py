@@ -2,8 +2,9 @@ from collections import OrderedDict
 from typing import Dict, List
 
 import numpy as np
-from people_counting.common import BoundingBox
 from scipy.spatial import distance as dist
+
+from people_counting.common import BoundingBox
 
 
 class CentroidTracker:

@@ -19,4 +19,3 @@ runs:
       - uses: google-github-actions/auth@v1
         with:
           credentials_json : ${{ inputs.google_github_actions_auth_credentials_json }}
-
