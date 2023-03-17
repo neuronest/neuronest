@@ -66,6 +66,7 @@ jobs:
       - name: Build infrastructure
         working-directory: people-counting/iac
         run:  |
+          gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://${{ env.STATE_BUCKET }} 2>/dev/null >/dev/null
           terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET }}"
           terraform plan -input=false -out=tfplan
           terraform apply -input=false -auto-approve tfplan

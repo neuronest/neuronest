@@ -19,17 +19,7 @@ resource "google_project" "project" {
   project_id = var.project_id
   org_id     = var.organization_id
 }
-# Create the bucket where the terraform state is stored
-resource "google_storage_bucket" "tfstate_bucket" {
-  name          = var.state_bucket
-  project       = var.project_id
-  force_destroy = true
-  location      = var.region
-  storage_class = "STANDARD"
-  versioning {
-    enabled = true
-  }
-}
+
 module "people_counting" {
   source                       = "./modules/services/people-counting"
   project_id                   = var.project_id
