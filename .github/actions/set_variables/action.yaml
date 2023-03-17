@@ -33,11 +33,11 @@ runs:
             continue
           fi
 
-          for variable_row in $(cat $variables_file_path); do
-            if [[ $variable_row = "#*" ]]; then
+          while IFS= read -r variable_row; do
+            if [[ -z $variable_row || $variable_row = \#* ]]; then
               continue
             fi
-        
+
             variable_name=$(echo $variable_row | cut -d "=" -f1)
             variable_value=$(echo $variable_row | cut -d "=" -f2)
             eval variable_value=$variable_value  # variable resolution
@@ -49,6 +49,6 @@ runs:
               export TF_VAR_${variable_name,,}=$variable_value
               echo "TF_VAR_${variable_name,,}"="$variable_value" >> $GITHUB_ENV
             fi
-          done
+          done < "$variables_file_path"
         done
       shell: bash
