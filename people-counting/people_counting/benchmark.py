@@ -4,6 +4,8 @@ import os
 from typing import List, Optional
 
 import pandas as pd
+from core.schemas.people_counting import Direction
+
 from people_counting.common import VIDEOS_EXTENSIONS, init_logger
 from people_counting.config import config
 from people_counting.dependencies import get_people_counter_with_package_config
@@ -64,7 +66,9 @@ def compute_score(
     labels: pd.DataFrame, predictions: pd.DataFrame, output_file: Optional[str] = None
 ) -> pd.DataFrame:
     scores = {}
-    predictions["count"] = predictions["count"].astype(int)
+    predictions["count"] = predictions["count"].map(
+        lambda x: 1 if x == Direction.DOWN else -1 if x == Direction.UP else None
+    )
     labels["in"], labels["out"] = labels["in"].astype(int), labels["out"].astype(int)
 
     for video_file in set(labels["video"]):
