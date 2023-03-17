@@ -1,20 +1,17 @@
-import logging
 import os
 from typing import Tuple
 
+from core.routes.people_counting import route
 from core.schemas import people_counting as schemas
 from fastapi import APIRouter, Body, Depends
-from google.cloud import firestore  # pylint: disable=no-name-in-module
-from google.cloud import storage
+from google.cloud import firestore, storage
+from starlette import status
 
 from people_counting.api import dependencies
 from people_counting.common import Statistics
-from people_counting.config import config
 from people_counting.people_counter import PeopleCounter
 
-people_counter_router = APIRouter(prefix=config.api_routers.people_counter.prefix)
-
-logger = logging.getLogger(__name__)
+router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
 
 
 def count_people_and_make_video_from_local_path(
@@ -24,12 +21,11 @@ def count_people_and_make_video_from_local_path(
         video_path, enable_video_writing=write_video, enable_video_showing=False
     )
     counted_video_path = video_renderer.output_path if write_video else None
+
     return counting_statistics, counted_video_path
 
 
-@people_counter_router.post(
-    config.api_routers.people_counter.count_people_and_make_video
-)
+@router.post(route.count_people_and_make_video, status_code=status.HTTP_201_CREATED)
 def count_people_and_make_video(
     *,
     input_of_people_counter: schemas.PeopleCounterInput = Body(..., embed=False),
@@ -78,4 +74,5 @@ def count_people_and_make_video(
     collection_of_people_counter_output.document(
         input_of_people_counter.data.job_id
     ).set(people_counter_output.dict())
+
     return people_counter_output
