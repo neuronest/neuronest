@@ -32,7 +32,7 @@ inputs:
     default: shared
   maximum_number_images_to_keep:
     description: 'Maximum number of most recent docker images to keep in the registry'
-    default: 3
+    default: 2
 outputs:
   dockerhub_image_name:
     description: 'Built and pushed image name to DockerHub'
@@ -114,6 +114,7 @@ runs:
         args: >-
           -token=${{ env.ACCESS_TOKEN }}
           -repo=${{ env.GCP_IMAGE_NAME }}
+          -tag-filter-all="\d+"
           -keep=${{ inputs.maximum_number_images_to_keep }}
 
     - id: dockerhub_output_step
