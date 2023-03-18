@@ -13,6 +13,9 @@ variable "region" {
 variable "zone" {
   type = string
 }
+variable "firestore_region" {
+  type = string
+}
 variable "state_bucket" {
   type = string
 }

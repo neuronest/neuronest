@@ -25,6 +25,7 @@ module "people_counting" {
   project_id                   = var.project_id
   project_name                 = var.project_name
   region                       = var.region
+  firestore_region             = var.firestore_region
   repository_name              = var.repository_name
   webapp_image                 = var.webapp_image
   firestore_results_collection = var.firestore_results_collection

@@ -37,8 +37,3 @@ algorithm:
 
 model:
   confidence_threshold: 0.15
-
-api_routers:
-  people_counter:
-    prefix: "people_counter"
-    count_people_and_make_video: "/count_people_and_make_video"
