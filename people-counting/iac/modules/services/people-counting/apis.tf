@@ -5,37 +5,37 @@
 
 # Enable IAM API
 resource "google_project_service" "iam" {
-  provider = google-beta
+  provider           = google-beta
   service            = "iam.googleapis.com"
   disable_on_destroy = false
 }
 # Enable Artifact Registry API
 resource "google_project_service" "artifact_registry" {
-  provider = google-beta
+  provider           = google-beta
   service            = "artifactregistry.googleapis.com"
   disable_on_destroy = false
 }
 # Enable Cloud Run API
 resource "google_project_service" "cloud_run" {
-  provider = google-beta
+  provider           = google-beta
   service            = "run.googleapis.com"
   disable_on_destroy = false
 }
 # Enable Cloud Resource Manager API
 resource "google_project_service" "resource_manager" {
-  provider = google-beta
+  provider           = google-beta
   service            = "cloudresourcemanager.googleapis.com"
   disable_on_destroy = false
 }
 # Enable Firestore API
 resource "google_project_service" "firestore" {
-  provider = google-beta
+  provider           = google-beta
   service            = "firestore.googleapis.com"
   disable_on_destroy = false
 }
 # Enable App Engine API
 resource "google_project_service" "appengine" {
-  provider = google-beta
+  provider           = google-beta
   service            = "appengine.googleapis.com"
   disable_on_destroy = false
 }
@@ -51,5 +51,5 @@ resource "time_sleep" "api_activation_waiting" {
     google_project_service.resource_manager,
     google_project_service.firestore,
     google_project_service.appengine
-    ]
+  ]
 }

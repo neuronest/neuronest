@@ -7,6 +7,7 @@ import dlib
 import pandas as pd
 from core.client.object_detection import ObjectDetectionClient
 from omegaconf import DictConfig
+
 from people_counting.centroid_tracker import CentroidTracker
 from people_counting.common import BoundingBox, Statistics, Status, timed
 from people_counting.config import config

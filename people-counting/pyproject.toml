@@ -2,6 +2,10 @@
 build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core>=1.0.0","pip>=20.0.0"]
 
+[tool.isort]
+known_first_party = ["people_counting"]
+profile = "black"
+
 [tool.poetry]
 authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
 description = "People counting project"

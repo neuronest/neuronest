@@ -2,25 +2,33 @@ import json
 import logging
 import typing
 
-from fastapi import APIRouter, FastAPI, HTTPException, exception_handlers
+from fastapi import FastAPI, HTTPException, exception_handlers
 from fastapi.exceptions import RequestValidationError
-from people_counting.api.routers import people_counter
+from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
-logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
+from people_counting.api.routes import router
+
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_application() -> FastAPI:
-    application = FastAPI()
-    resources_router = APIRouter()
-    resources_router.include_router(people_counter.people_counter_router)
-    application.include_router(resources_router)
-    return application
+def create_app() -> FastAPI:
+    main_app = FastAPI()
+    main_app.include_router(router)
+
+    main_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    return main_app
 
 
-app = get_application()
+app = create_app()
 
 
 async def request_json_store_body(self) -> typing.Any:
@@ -61,3 +69,10 @@ async def log_info_to_reproduce_validation_exception(request, exc):
         f"url: {request.url} and body: {request.scope.get('body')}"
     )
     return await exception_handlers.request_validation_exception_handler(request, exc)
+
+
+if __name__ == "__main__":
+    # used for debugging purposes only
+    import uvicorn  # isort:skip
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
