@@ -7,6 +7,9 @@ variable "project_name" {
 variable "organization_id" {
   type = string
 }
+variable "billing_account" {
+  type = string
+}
 variable "region" {
   type = string
 }
