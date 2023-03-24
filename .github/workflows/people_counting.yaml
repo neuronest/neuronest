@@ -47,7 +47,7 @@ jobs:
       - uses: ./.github/actions/gcloud_auth
         with:
           project_id: ${{ env.PROJECT_ID }}
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
       - id: build_test_push_webapp_image
         uses: ./.github/actions/build_test_push
@@ -61,7 +61,7 @@ jobs:
 
       - uses: ./.github/actions/set_up_terraform
         with:
-          google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER }}
+          google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
       - name: Build infrastructure
         working-directory: people-counting/iac
