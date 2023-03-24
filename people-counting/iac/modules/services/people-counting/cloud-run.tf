@@ -67,17 +67,3 @@ resource "google_cloud_run_service" "people_counting_api" {
     google_service_account.people_counting_api_sa
   ]
 }
-data "google_iam_policy" "no_auth_cloud_run" {
-  binding {
-    role = "roles/run.invoker"
-    members = [
-      "allUsers",
-    ]
-  }
-}
-resource "google_cloud_run_service_iam_policy" "no_auth_people_counting_api" {
-  location    = google_cloud_run_service.people_counting_api.location
-  project     = google_cloud_run_service.people_counting_api.project
-  service     = google_cloud_run_service.people_counting_api.name
-  policy_data = data.google_iam_policy.no_auth_cloud_run.policy_data
-}
