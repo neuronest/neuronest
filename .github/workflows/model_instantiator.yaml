@@ -53,8 +53,8 @@ jobs:
           repository_region: ${{ env.REGION }}
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
+          dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
 
   run:
     name: run

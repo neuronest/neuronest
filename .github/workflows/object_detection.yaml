@@ -54,8 +54,8 @@ jobs:
           repository_region: ${{ env.REGION }}
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
+          dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
           target: training
 
   train:
@@ -69,8 +69,8 @@ jobs:
     container:
       image: ${{needs.build_test_push_training.outputs.dockerhub_training_image_name}}
       credentials:
-        username: ${{ vars.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
+        password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
     env:
       MODEL_WEIGHTS: model/model.pt
     outputs:
@@ -124,8 +124,8 @@ jobs:
           repository_region: ${{ env.REGION }}
           docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
           gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
+          dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
           target: serving
           build_arguments: --build-arg MODEL_PATH=${{ env.REPOSITORY_NAME }}/${{ env.MODEL_PATH }}
 
@@ -141,8 +141,8 @@ jobs:
     container:
       image: ${{needs.build_test_push_training.outputs.dockerhub_training_image_name}}
       credentials:
-        username: ${{ vars.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
+        password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variables
