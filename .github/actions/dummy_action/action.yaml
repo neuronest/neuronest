@@ -1,0 +1,61 @@
+name: My Action
+description: 'A YAML mapping or dictionary of keyword arguments'
+inputs:
+  arguments:
+    required: true
+    description: 'A YAML mapping or dictionary of keyword arguments'
+runs:
+  using: "composite"
+  steps:
+    - run: |
+      # Parse the arguments string as a YAML mapping or dictionary
+      args=$(echo "${{ inputs.arguments }}" | yq e -M -P -j -)
+    
+      # Loop through each key-value pair in the mapping
+      for key in $(echo "${args}" | jq -r "keys[]" ); do
+        value=$(echo "${args}" | jq -r ".\"$key\"")
+
+        # Use the key-value pair as needed
+        echo "$key: $value"
+      done
+      shell: bash
+#name: 'run_linters_tests'
+#description: 'Install dev dependencies, execute linters and tests'
+#inputs:
+#  repository_name:
+#    description: 'Repository name'
+#    required: true
+#  image_name:
+#    description: 'Image name'
+#    required: true
+#runs:
+#  using: "composite"
+#  steps:
+#      - run: |
+#          CONTAINER_ID=$(docker run -dit --entrypoint /bin/bash ${{ inputs.image_name }})
+#          echo "CONTAINER_ID"="$CONTAINER_ID" >> $GITHUB_ENV
+#          echo "MONO_REPOSITORY_PATH"="/mono_repository" >> $GITHUB_ENV
+#          echo "REPOSITORY_PATH"="${{ inputs.repository_name }}" >> $GITHUB_ENV
+#        shell: bash
+#      - run: docker cp ./. $CONTAINER_ID:$MONO_REPOSITORY_PATH
+#        shell: bash
+#      - run: |
+#            docker exec \
+#            --workdir $MONO_REPOSITORY_PATH \
+#            $CONTAINER_ID \
+#            /bin/bash -c "
+#              # to handle detected dubious ownership git issue
+#              git config --global --add safe.directory $MONO_REPOSITORY_PATH \
+#              && cd $REPOSITORY_PATH \
+#              && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
+#              && pip install -r requirements.txt \
+#              && cd $MONO_REPOSITORY_PATH \
+#              && pre-commit install \
+#              && pre-commit run \
+#                --show-diff-on-failure \
+#                --files ${{ inputs.repository_name }}/**/* \
+#              && pytest -x -n auto ${{ inputs.repository_name }}/tests/unit_tests -vv
+#            "
+#        shell: bash
+#      - run: docker rm -f $CONTAINER_ID
+#        shell: bash
