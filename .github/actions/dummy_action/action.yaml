@@ -8,16 +8,17 @@ runs:
   using: "composite"
   steps:
     - run: |
-      # Parse the arguments string as a YAML mapping or dictionary
-      args=$(echo "${{ inputs.arguments }}" | yq e -M -P -j -)
-    
-      # Loop through each key-value pair in the mapping
-      for key in $(echo "${args}" | jq -r "keys[]" ); do
-        value=$(echo "${args}" | jq -r ".\"$key\"")
-
-        # Use the key-value pair as needed
-        echo "$key: $value"
-      done
+        echo "${{ inputs.arguments }}"
+        # Parse the arguments string as a YAML mapping or dictionary
+        args=$(echo "${{ inputs.arguments }}" | yq e -M -P -j -)
+      
+        # Loop through each key-value pair in the mapping
+        for key in $(echo "${args}" | jq -r "keys[]" ); do
+          value=$(echo "${args}" | jq -r ".\"$key\"")
+  
+          # Use the key-value pair as needed
+          echo "$key: $value"
+        done
       shell: bash
 #name: 'run_linters_tests'
 #description: 'Install dev dependencies, execute linters and tests'
