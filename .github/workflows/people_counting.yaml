@@ -39,12 +39,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/dummy_action
         with:
-          arguments: |
-            key1: value1
-            key2: value2
-            key3:
-              - value3
-              - value4
+          arguments: |-
+            key1=value1
+            key2=value2
+            key3=value3
       - uses: ./.github/actions/set_variables
         with:
           repository_static_variables_file_path: people-counting/iac/static_variables.env
