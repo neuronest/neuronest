@@ -68,6 +68,7 @@ jobs:
         run:  |
           gsutil ls -b gs://${{ env.STATE_BUCKET }} || gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://${{ env.STATE_BUCKET }}
           terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET }}"
+          terraform workspace select ${{ env.REPOSITORY_NAME }} || terraform workspace new ${{ env.REPOSITORY_NAME }}
           terraform plan -input=false -out=tfplan
           terraform apply -input=false -auto-approve tfplan
         env:
