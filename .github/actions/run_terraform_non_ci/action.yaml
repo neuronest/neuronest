@@ -1,24 +1,31 @@
 name: My Action
 description: 'A YAML mapping or dictionary of keyword arguments'
 inputs:
-  arguments:
+  terraform_disable_bools:
     required: true
     description: 'A YAML mapping or dictionary of keyword arguments'
 runs:
   using: "composite"
   steps:
     - run: |
-        echo "${{ inputs.arguments }}"
-        # Parse the arguments string as a YAML mapping or dictionary
-        args=$(echo "${{ inputs.arguments }}" | yq e -M -P -j -)
-      
-        # Loop through each key-value pair in the mapping
-        for key in $(echo "${args}" | jq -r "keys[]" ); do
-          value=$(echo "${args}" | jq -r ".\"$key\"")
-  
-          # Use the key-value pair as needed
-          echo "$key: $value"
+        for terraform_disable_bool in "${{ inputs.terraform_disable_bools }}"
+        do
+            echo terraform_disable_bool
+            export TF_VAR_${terraform_disable_bool}=0
+            echo "TF_VAR_${terraform_disable_bool}"="0" >> $GITHUB_ENV
         done
+        
+#        echo "${{ inputs.arguments }}"
+#        # Parse the arguments string as a YAML mapping or dictionary
+#        args=$(echo "${{ inputs.arguments }}" | yq e -M -P -j -)
+#
+#        # Loop through each key-value pair in the mapping
+#        for key in $(echo "${args}" | jq -r "keys[]" ); do
+#          value=$(echo "${args}" | jq -r ".\"$key\"")
+#
+#          # Use the key-value pair as needed
+#          echo "$key: $value"
+#        done
       shell: bash
 #name: 'run_linters_tests'
 #description: 'Install dev dependencies, execute linters and tests'
