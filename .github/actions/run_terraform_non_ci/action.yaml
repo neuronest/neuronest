@@ -11,11 +11,12 @@ runs:
         echo "${{ inputs.terraform_disable_bools }}"
         for terraform_disable_bool in "${{ inputs.terraform_disable_bools }}"
           do
-              echo terraform_disable_bool
-              export TF_VAR_${terraform_disable_bool}=0
-              echo "TF_VAR_${terraform_disable_bool}"="0" >> $GITHUB_ENV
+              echo $terraform_disable_bool
+#              export TF_VAR_${terraform_disable_bool}=0
+#              echo "TF_VAR_${terraform_disable_bool}"="0" >> $GITHUB_ENV
           done
-        
+#        export TF_VAR_${variable_name,,}=$variable_value
+#        echo "TF_VAR_${variable_name,,}"="$variable_value" >> $GITHUB_ENV
 #        echo "${{ inputs.arguments }}"
 #        # Parse the arguments string as a YAML mapping or dictionary
 #        args=$(echo "${{ inputs.arguments }}" | yq e -M -P -j -)
