@@ -37,13 +37,6 @@ jobs:
       image: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/dummy_action
-        with:
-          arguments: |-
-            key1=value1
-            key2=value2
-            key3=value3
-      - uses: ./.github/actions/set_variables
         with:
           repository_static_variables_file_path: people-counting/iac/static_variables.env
           repository_dynamic_variables_file_path: people-counting/iac/dynamic_variables.env
@@ -54,15 +47,17 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
+      - uses: ./.github/actions/set_variables
+
+      - uses: ./.github/actions/run_terraform_non_ci
+        with:
+          terraform_disable_bools: |-
+            set_up_cloud_run
+            set_up_cloud_run
+
       - id: build_test_push_webapp_image
         uses: ./.github/actions/build_test_push
         with:
-          arguments: |
-            key1: value1
-            key2: value2
-            key3:
-              - value3
-              - value4
           repository_name: ${{ env.REPOSITORY_NAME }}
           repository_region: ${{ env.REGION }}
           gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
