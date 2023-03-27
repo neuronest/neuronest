@@ -12,6 +12,7 @@ runs:
         for terraform_disable_bool in "${{ inputs.terraform_disable_bools }}"
           do
               echo $terraform_disable_bool
+              export TF_VAR_${terraform_disable_bool}=0
           done
 #              export TF_VAR_${terraform_disable_bool}=0
 #              echo "TF_VAR_${terraform_disable_bool}"="0" >> $GITHUB_ENV
