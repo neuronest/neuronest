@@ -18,6 +18,6 @@ runs:
           done
       shell: bash
     - run: |
-        gcloud projects create ${{ env.$PROJECT_ID }} --organization ${{ env.ORGANIZATION_ID }}  || true
-        gcloud config set project ${{ env.$PROJECT_ID }}
+        gcloud projects create ${{ env.PROJECT_ID }} --organization ${{ env.ORGANIZATION_ID }}  || true
+        gcloud config set project ${{ env.PROJECT_ID }}
       shell: bash
