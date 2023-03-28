@@ -13,6 +13,7 @@ runs:
           do
               echo $terraform_disable_bool
               export TF_VAR_${terraform_disable_bool}=0
+              echo "TF_VAR_${terraform_disable_bool}=0" >> $GITHUB_ENV
           done
 #              export TF_VAR_${terraform_disable_bool}=0
 #              echo "TF_VAR_${terraform_disable_bool}"="0" >> $GITHUB_ENV
