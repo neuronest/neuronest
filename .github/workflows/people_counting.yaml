@@ -37,10 +37,6 @@ jobs:
       image: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
-        with:
-          repository_static_variables_file_path: people-counting/iac/static_variables.env
-          repository_dynamic_variables_file_path: people-counting/iac/dynamic_variables.env
-          set_up_terraform_variables: true
 
       - uses: ./.github/actions/gcloud_auth
         with:
@@ -48,6 +44,10 @@ jobs:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
       - uses: ./.github/actions/set_variables
+        with:
+          repository_static_variables_file_path: people-counting/iac/static_variables.env
+          repository_dynamic_variables_file_path: people-counting/iac/dynamic_variables.env
+          set_up_terraform_variables: true
 
       - uses: ./.github/actions/run_terraform_non_ci
         with:
