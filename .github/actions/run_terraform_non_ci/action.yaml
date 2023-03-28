@@ -8,6 +8,8 @@ runs:
   using: "composite"
   steps:
     - run: |
+        echo ${{ env.set_up_cloud_run }}
+        echo ${{ env.TF_VAR_set_up_cloud_run }}
         echo "${{ inputs.terraform_disable_bools }}"
         for terraform_disable_bool in "${{ inputs.terraform_disable_bools }}"
           do
