@@ -53,7 +53,6 @@ jobs:
         with:
           terraform_disable_bools: |-
             set_up_cloud_run
-            set_up_cloud_run
 
       - id: build_test_push_webapp_image
         uses: ./.github/actions/build_test_push
