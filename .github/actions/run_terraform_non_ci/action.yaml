@@ -7,6 +7,9 @@ inputs:
   google_github_actions_auth_credentials_json:
     description: 'The Google Cloud JSON service account key to use for authentication'
     required: true
+  repository_name:
+    description: 'Repository name'
+    required: true
 runs:
   using: "composite"
   steps:
@@ -47,4 +50,5 @@ runs:
         
         # import in the terraform state
         terraform import google_project.project ${{ env.PROJECT_ID }}
+      working-directory: ${{ inputs.repository_name }}/iac
       shell: bash
