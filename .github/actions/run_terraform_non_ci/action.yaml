@@ -71,7 +71,7 @@ runs:
         bash -c "terraform plan $terraform_vars -input=false -out=tfplan"
         
         # run terraform apply
-        bash -c "terraform apply $terraform_vars -input=false -auto-approve tfplan"
+        bash -c "terraform apply -input=false -auto-approve tfplan"
       working-directory: ${{ inputs.repository_name }}/iac
       shell: bash
 
