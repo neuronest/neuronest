@@ -48,7 +48,7 @@ runs:
         terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET}}"
         
         # import the project in the terraform state
-        terraform import google_project.project ${{ env.PROJECT_ID }}
+        terraform import google_project.project ${{ env.PROJECT_ID }} || true
         
         # ce sont bien  les -var options du plan et apply qui prennent le pas sur les variables d'env
         # du type TF_VAR etc donc c'est là-dessus qu'il faut agir
