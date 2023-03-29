@@ -25,7 +25,8 @@ runs:
         gcloud config set project ${{ env.PROJECT_ID }}
         yes | gcloud beta billing projects link ${{ env.PROJECT_ID }} --billing-account ${{ env.BILLING_ACCOUNT }}
         DEFAULT_OWNERS_OF_PROJECTS=${{ env.DEFAULT_OWNERS_OF_PROJECTS }}
+        # for default_owner_of_project in "${DEFAULT_OWNERS_OF_PROJECTS[@]}"; do
         for default_owner_of_project in "${DEFAULT_OWNERS_OF_PROJECTS[@]}"; do
-          gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} --member=user:$default_owner_of_project --role=roles/owner
-
+          gcloud projects add-iam-policy-binding $TF_VAR_project_id --member=user:$default_owner_of_project --role=roles/owner
+        done
       shell: bash
