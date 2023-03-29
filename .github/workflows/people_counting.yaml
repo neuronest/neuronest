@@ -7,10 +7,7 @@ on:
       - develop
     paths:
       - .github/workflows/people_counting.yaml
-      - .github/actions/variables/**
-      - .github/actions/build_test_push/**
-      - .github/actions/set_up_terraform/**
-      - .github/actions/gcloud_auth/**
+      - .github/actions/**
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
