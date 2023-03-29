@@ -13,18 +13,18 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: |
-        # if inputs.terraform_disable_bools is not empty
-        if [ -n "${{ inputs.terraform_disable_bools }}" ]; then
-          for terraform_disable_bool in "${{ inputs.terraform_disable_bools }}"; do
-              export ${terraform_disable_bool^^}=0
-              echo "${terraform_disable_bool^^}=0" >> $GITHUB_ENV
-        
-              export TF_VAR_${terraform_disable_bool,,}=0
-              echo "TF_VAR_${terraform_disable_bool,,}=0" >> $GITHUB_ENV
-          done
-        fi
-      shell: bash
+#    - run: |
+#        # if inputs.terraform_disable_bools is not empty
+#        if [ -n "${{ inputs.terraform_disable_bools }}" ]; then
+#          for terraform_disable_bool in "${{ inputs.terraform_disable_bools }}"; do
+#              export ${terraform_disable_bool^^}=0
+#              echo "${terraform_disable_bool^^}=0" >> $GITHUB_ENV
+#
+#              export TF_VAR_${terraform_disable_bool,,}=0
+#              echo "TF_VAR_${terraform_disable_bool,,}=0" >> $GITHUB_ENV
+#          done
+#        fi
+#      shell: bash
     - run: |
         gcloud projects create ${{ env.PROJECT_ID }} --organization ${{ env.ORGANIZATION_ID }} || true
         gcloud config set project ${{ env.PROJECT_ID }}
@@ -47,10 +47,34 @@ runs:
         # create the terraform state
         terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET}}"
         
-        # import in the terraform state
+        # import the project in the terraform state
         terraform import google_project.project ${{ env.PROJECT_ID }}
         
         # ce sont bien  les -var options du plan et apply qui prennent le pas sur les variables d'env
         # du type TF_VAR etc donc c'est là-dessus qu'il faut agir
+        # le but sera simplement d'avoir une seule action terraform_run avec la possibilité
+        # de passer certain vars et de l'appeler deux fois au cours de la CI
       working-directory: ${{ inputs.repository_name }}/iac
       shell: bash
+
+    - run: |
+        # run terraform init 
+        terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET }}"
+        
+        # set up terraform -var arguments
+        terraform_vars=""
+        # if inputs.terraform_disable_bools is not empty
+        if [ -n "${{ inputs.terraform_disable_bools }}" ]; then
+          for terraform_disable_bool in "${{ inputs.terraform_disable_bools }}"; do
+              terraform_vars="$terraform_vars -var $terraform_disable_bool"
+          done
+        fi
+        echo $terraform_vars
+        
+        # run terraform plan
+        bash -c "terraform plan $terraform_vars -input=false -out=tfplan"
+        
+        # run terraform apply
+        bash -c "terraform apply $terraform_vars -input=false -auto-approve tfplan"
+      shell: bash
+

@@ -3,6 +3,7 @@
 ##############################################
 # Deploy image to Cloud Run
 resource "google_cloud_run_service" "people_counting_api" {
+  count = var.set_up_cloud_run ? 1 : 0
   provider                   = google-beta
   name                       = var.project_name
   location                   = var.region
