@@ -39,5 +39,4 @@ module "people_counting" {
   cloud_run_min_scale          = var.cloud_run_min_scale
   cloud_run_max_scale          = var.cloud_run_max_scale
   set_up_cloud_run             = var.set_up_cloud_run
-  firestore_app_engine_location_id = var.firestore_app_engine_location_id
 }
