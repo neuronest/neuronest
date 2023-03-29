@@ -32,7 +32,6 @@ runs:
         
         default_owners_of_projects=${{ env.DEFAULT_OWNERS_OF_PROJECTS }}
         for default_owner_of_project in ${default_owners_of_projects//,/ }; do
-          echo $default_owner_of_project
           gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} --member=user:$default_owner_of_project --role=roles/owner
         done
       shell: bash
@@ -50,5 +49,8 @@ runs:
         
         # import in the terraform state
         terraform import google_project.project ${{ env.PROJECT_ID }}
+        
+        # ce sont bien  les -var options du plan et apply qui prennent le pas sur les variables d'env
+        # du type TF_VAR etc donc c'est là-dessus qu'il faut agir
       working-directory: ${{ inputs.repository_name }}/iac
       shell: bash
