@@ -44,22 +44,18 @@ runs:
         # create state bucket
         gsutil ls -b gs://${{ env.STATE_BUCKET}} || gsutil mb -p ${{ env.PROJECT_ID }} -c STANDARD -l ${{ env.REGION }} -b on gs://${{ env.STATE_BUCKET}}
         
-        # create the terraform state
-        terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET}}"
-        
-        # import the project in the terraform state
-        terraform import google_project.project ${{ env.PROJECT_ID }} || true
-        
         # ce sont bien  les -var options du plan et apply qui prennent le pas sur les variables d'env
         # du type TF_VAR etc donc c'est là-dessus qu'il faut agir
         # le but sera simplement d'avoir une seule action terraform_run avec la possibilité
         # de passer certain vars et de l'appeler deux fois au cours de la CI
-      working-directory: ${{ inputs.repository_name }}/iac
       shell: bash
 
     - run: |
-        # run terraform init 
-        terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET }}"
+        # run terraform init and create the terraform state locally
+        terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET}}"
+        
+        # import the project in the terraform state
+        terraform import google_project.project ${{ env.PROJECT_ID }} || true
         
         # set up terraform -var arguments
         terraform_vars=""
@@ -76,6 +72,7 @@ runs:
         
         # run terraform apply
         bash -c "terraform apply $terraform_vars -input=false -auto-approve tfplan"
+      working-directory: ${{ inputs.repository_name }}/iac
       shell: bash
 
 

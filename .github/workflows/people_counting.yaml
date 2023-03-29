@@ -49,7 +49,7 @@ jobs:
       - uses: ./.github/actions/run_terraform_non_ci
         with:
           terraform_disable_bools: |-
-            set_up_cloud_run=0
+            set_up_cloud_run=false
           google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
           repository_name: ${{ env.REPOSITORY_NAME }}
 

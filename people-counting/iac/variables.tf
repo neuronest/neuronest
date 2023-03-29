@@ -58,4 +58,5 @@ variable "cloud_run_max_scale" {
 }
 variable "set_up_cloud_run" {
   type = bool
+  default = true
 }
