@@ -56,9 +56,6 @@ variable "cloud_run_min_scale" {
 variable "cloud_run_max_scale" {
   type = string
 }
-variable "firestore_app_engine_location_id" {
-  type = string
-}
 variable "set_up_cloud_run" {
   type = bool
 }
