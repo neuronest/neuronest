@@ -50,6 +50,7 @@ jobs:
         with:
           terraform_disable_bools: |-
             set_up_cloud_run
+          google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
       - id: build_test_push_webapp_image
         uses: ./.github/actions/build_test_push

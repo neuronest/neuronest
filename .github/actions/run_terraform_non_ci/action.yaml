@@ -4,6 +4,9 @@ inputs:
   terraform_disable_bools:
     required: true
     description: 'A YAML mapping or dictionary of keyword arguments'
+  google_github_actions_auth_credentials_json:
+    description: 'The Google Cloud JSON service account key to use for authentication'
+    required: true
 runs:
   using: "composite"
   steps:
@@ -19,19 +22,22 @@ runs:
           done
         fi
       shell: bash
-    - run: gcloud projects create ${{ env.PROJECT_ID }} --organization ${{ env.ORGANIZATION_ID }} || true
-      shell: bash
-    - run: gcloud config set project ${{ env.PROJECT_ID }}
-      shell: bash
-    - run: gcloud beta billing projects link ${{ env.PROJECT_ID }} --billing-account ${{ env.BILLING_ACCOUNT }}
-      shell: bash
     - run: |
+        gcloud projects create ${{ env.PROJECT_ID }} --organization ${{ env.ORGANIZATION_ID }} || true
+        gcloud config set project ${{ env.PROJECT_ID }}
+        gcloud beta billing projects link ${{ env.PROJECT_ID }} --billing-account ${{ env.BILLING_ACCOUNT }}
+        
         default_owners_of_projects=${{ env.DEFAULT_OWNERS_OF_PROJECTS }}
         for default_owner_of_project in ${default_owners_of_projects//,/ }; do
           echo $default_owner_of_project
           gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} --member=user:$default_owner_of_project --role=roles/owner
         done
       shell: bash
+
+    - uses: ./.github/actions/set_up_terraform
+      with:
+        google_github_actions_auth_credentials_json: ${{ inputs.google_github_actions_auth_credentials_json }}
+
     - run: |
         # create state bucket
         gsutil ls -b gs://${{ env.STATE_BUCKET}} || gsutil mb -p ${{ env.PROJECT_ID }} -c STANDARD -l ${{ env.REGION }} -b on gs://${{ env.STATE_BUCKET}}
