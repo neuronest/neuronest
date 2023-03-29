@@ -23,8 +23,8 @@ runs:
       shell: bash
     - run: gcloud config set project ${{ env.PROJECT_ID }}
       shell: bash
-    - run: yes | gcloud beta billing projects link ${{ env.PROJECT_ID }} --billing-account ${{ env.BILLING_ACCOUNT }}
-      shell: bash
+#    - run: yes | gcloud beta billing projects link ${{ env.PROJECT_ID }} --billing-account ${{ env.BILLING_ACCOUNT }}
+#      shell: bash
     - run: |
         default_owners_of_projects=${{ env.DEFAULT_OWNERS_OF_PROJECTS }}
         for default_owner_of_project in ${default_owners_of_projects//,/ }; do
