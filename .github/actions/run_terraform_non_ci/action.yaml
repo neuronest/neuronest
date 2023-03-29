@@ -18,7 +18,6 @@ runs:
               echo "TF_VAR_${terraform_disable_bool,,}=0" >> $GITHUB_ENV
           done
         fi
-
       shell: bash
     - run: |
         # create project
@@ -26,14 +25,12 @@ runs:
         gcloud config set project ${{ env.PROJECT_ID }}
         yes | gcloud beta billing projects link ${{ env.PROJECT_ID }} --billing-account ${{ env.BILLING_ACCOUNT }}
       shell: bash
-
     - run: |
         for default_owner_of_project in ${DEFAULT_OWNERS_OF_PROJECTS//,/ }; do
           echo $default_owner_of_project
           gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} --member=user:$default_owner_of_project --role=roles/owner
         done
       shell: bash
-
     - run: |
         # create state bucket
         gsutil ls -b gs://${{ env.STATE_BUCKET}} || gsutil mb -p ${{ env.PROJECT_ID }} -c STANDARD -l ${{ env.REGION }} -b on gs://${{ env.STATE_BUCKET}}
