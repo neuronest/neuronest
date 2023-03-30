@@ -76,3 +76,4 @@ jobs:
           terraform apply -input=false -auto-approve tfplan
         env:
            TF_VAR_webapp_image: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}
+
