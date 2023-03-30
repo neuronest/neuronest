@@ -1,9 +1,10 @@
 name: My Action
 description: 'A YAML mapping or dictionary of keyword arguments'
 inputs:
-  terraform_disable_bools:
-    required: true
-    description: 'A YAML mapping or dictionary of keyword arguments'
+  vars:
+    required: false
+    description: 'The variables usually named -var found in the terraform plan and terraform apply commands'
+    default: ""
   google_github_actions_auth_credentials_json:
     description: 'The Google Cloud JSON service account key to use for authentication'
     required: true
@@ -13,18 +14,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-#    - run: |
-#        # if inputs.terraform_disable_bools is not empty
-#        if [ -n "${{ inputs.terraform_disable_bools }}" ]; then
-#          for terraform_disable_bool in "${{ inputs.terraform_disable_bools }}"; do
-#              export ${terraform_disable_bool^^}=0
-#              echo "${terraform_disable_bool^^}=0" >> $GITHUB_ENV
-#
-#              export TF_VAR_${terraform_disable_bool,,}=0
-#              echo "TF_VAR_${terraform_disable_bool,,}=0" >> $GITHUB_ENV
-#          done
-#        fi
-#      shell: bash
     - run: |
         gcloud projects create ${{ env.PROJECT_ID }} --organization ${{ env.ORGANIZATION_ID }} || true
         gcloud config set project ${{ env.PROJECT_ID }}
@@ -43,11 +32,6 @@ runs:
     - run: |
         # create state bucket
         gsutil ls -b gs://${{ env.STATE_BUCKET}} || gsutil mb -p ${{ env.PROJECT_ID }} -c STANDARD -l ${{ env.REGION }} -b on gs://${{ env.STATE_BUCKET}}
-        
-        # ce sont bien  les -var options du plan et apply qui prennent le pas sur les variables d'env
-        # du type TF_VAR etc donc c'est là-dessus qu'il faut agir
-        # le but sera simplement d'avoir une seule action terraform_run avec la possibilité
-        # de passer certain vars et de l'appeler deux fois au cours de la CI
       shell: bash
 
     - run: |
@@ -59,13 +43,12 @@ runs:
         
         # set up terraform -var arguments
         terraform_vars=""
-        # if inputs.terraform_disable_bools is not empty
-        if [ -n "${{ inputs.terraform_disable_bools }}" ]; then
-          for terraform_disable_bool in "${{ inputs.terraform_disable_bools }}"; do
-              terraform_vars="$terraform_vars -var $terraform_disable_bool"
+        # if inputs.vars is not empty
+        if [ -n "${{ inputs.vars }}" ]; then
+          for input_var in "${{ inputs.vars }}"; do
+              terraform_vars="$terraform_vars -var $input_var"
           done
         fi
-        echo $terraform_vars
         
         # run terraform plan
         bash -c "terraform plan $terraform_vars -input=false -out=tfplan"
