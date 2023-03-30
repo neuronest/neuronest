@@ -43,6 +43,6 @@ variable "cloud_run_min_scale" {
 variable "cloud_run_max_scale" {
   type = string
 }
-variable "set_up_cloud_run" {
+variable "ignore_cloud_run" {
   type = bool
 }
