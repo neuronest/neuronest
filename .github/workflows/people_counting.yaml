@@ -68,8 +68,8 @@ jobs:
         with:
           google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
           repository_name: ${{ env.REPOSITORY_NAME }}
-          env:
-            TF_VAR_webapp_image: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}
+        env:
+          TF_VAR_webapp_image: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}
 
 
 #      - name: Build infrastructure
