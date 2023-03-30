@@ -5,6 +5,10 @@ inputs:
     required: false
     description: 'The variables usually named -var found in the terraform plan and terraform apply commands'
     default: ""
+  targets:
+    required: false
+    description: 'The variables usually named -var found in the terraform plan and terraform apply commands'
+    default: ""
   google_github_actions_auth_credentials_json:
     description: 'The Google Cloud JSON service account key to use for authentication'
     required: true
@@ -50,8 +54,18 @@ runs:
           done
         fi
         
+        # set up terraform -target arguments
+        terraform_targets=""
+        # if inputs.targets is not empty
+        if [ -n "${{ inputs.targets }}" ]; then
+          for $input_target in "${{ inputs.targets }}"; do
+              echo $input_target
+              terraform_targets="terraform_targets -target $input_target"
+          done
+        fi
+        
         # run terraform plan
-        bash -c "terraform plan $terraform_vars -input=false -out=tfplan"
+        bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
         
         # run terraform apply
         bash -c "terraform apply -input=false -auto-approve tfplan"

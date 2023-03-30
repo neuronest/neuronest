@@ -46,11 +46,10 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
-      - name: terraform_run without cloud_run
+      - name: terraform_run on necessary resources for ci
         uses: ./.github/actions/terraform_run
         with:
-          vars: |-
-            ignore_cloud_run=true
+          targets: ${{ env.PEOPLE_COUNTING_NEEDED_RESOURCES_FOR_CI }}
           google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
           repository_name: ${{ env.REPOSITORY_NAME }}
 
