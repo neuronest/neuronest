@@ -55,6 +55,7 @@ runs:
         fi
         
         # set up terraform -target arguments
+        echo "test${{ inputs.targets }}test"
         terraform_targets=""
         # if inputs.targets is not empty
         if [ -n "${{ inputs.targets }}" ]; then
