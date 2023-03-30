@@ -61,7 +61,7 @@ runs:
         if [ -n "${{ inputs.targets }}" ]; then
           for input_target in "${{ inputs.targets }}"; do
               echo $input_target
-              terraform_targets="terraform_targets -target $input_target"
+              terraform_targets="$terraform_targets -target $input_target"
           done
         fi
         
