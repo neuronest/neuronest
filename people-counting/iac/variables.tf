@@ -27,7 +27,6 @@ variable "repository_name" {
 }
 variable "webapp_image" {
   type = string
-  default = ""
 }
 variable "firestore_results_collection" {
   type = string

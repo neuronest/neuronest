@@ -3,12 +3,6 @@
 ##############################################
 # Deploy image to Cloud Run
 resource "google_cloud_run_service" "people_counting_api" {
-  # count = var.set_up_cloud_run ? 1 : 0
-#  count = var.ignore_cloud_run == false ? 1 : 0
-#  lifecycle {
-#    # Ignore all changes to the resource if the "ignore_changes" variable is true
-#    ignore_changes = var.ignore_cloud_run == true ? ["*"] : []
-#  }
   provider                   = google-beta
   name                       = var.project_name
   location                   = var.region
