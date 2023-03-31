@@ -7,10 +7,7 @@ on:
       - develop
     paths:
       - .github/workflows/people_counting.yaml
-      - .github/actions/variables/**
-      - .github/actions/build_test_push/**
-      - .github/actions/set_up_terraform/**
-      - .github/actions/gcloud_auth/**
+      - .github/actions/**
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
@@ -49,6 +46,15 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
+      - name: terraform_run on necessary resources for ci
+        uses: ./.github/actions/terraform_run
+        with:
+          targets: ${{ env.PEOPLE_COUNTING_NEEDED_RESOURCES_FOR_CI }}
+          google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
+        env:
+          TF_VAR_webapp_image: ""
+
       - id: build_test_push_webapp_image
         uses: ./.github/actions/build_test_push
         with:
@@ -59,17 +65,9 @@ jobs:
           dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
           dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
 
-      - uses: ./.github/actions/set_up_terraform
+      - uses: ./.github/actions/terraform_run
         with:
           google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-
-      - name: Build infrastructure
-        working-directory: people-counting/iac
-        run:  |
-          gsutil ls -b gs://${{ env.STATE_BUCKET }} || gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://${{ env.STATE_BUCKET }}
-          terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET }}"
-          terraform workspace select ${{ env.REPOSITORY_NAME }} || terraform workspace new ${{ env.REPOSITORY_NAME }}
-          terraform plan -input=false -out=tfplan
-          terraform apply -input=false -auto-approve tfplan
+          repository_name: ${{ env.REPOSITORY_NAME }}
         env:
-           TF_VAR_webapp_image: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}
+          TF_VAR_webapp_image: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}

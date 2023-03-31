@@ -1,0 +1,77 @@
+name: My Action
+description: 'A YAML mapping or dictionary of keyword arguments'
+inputs:
+  vars:
+    required: false
+    description: 'The variables usually named -var found in the terraform plan and terraform apply commands'
+    default: ""
+  targets:
+    required: false
+    description: 'The variables usually named -var found in the terraform plan and terraform apply commands'
+    default: ""
+  google_github_actions_auth_credentials_json:
+    description: 'The Google Cloud JSON service account key to use for authentication'
+    required: true
+  repository_name:
+    description: 'Repository name'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        gcloud projects create ${{ env.PROJECT_ID }} --organization ${{ env.ORGANIZATION_ID }} || true
+        gcloud config set project ${{ env.PROJECT_ID }}
+        gcloud beta billing projects link ${{ env.PROJECT_ID }} --billing-account ${{ env.BILLING_ACCOUNT }}
+        
+        default_owners_of_projects=${{ env.DEFAULT_OWNERS_OF_PROJECTS }}
+        for default_owner_of_project in ${default_owners_of_projects//,/ }; do
+          gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} --member=user:$default_owner_of_project --role=roles/owner
+        done
+      shell: bash
+
+    - uses: ./.github/actions/set_up_terraform
+      with:
+        google_github_actions_auth_credentials_json: ${{ inputs.google_github_actions_auth_credentials_json }}
+
+    - run: |
+        # create state bucket
+        gsutil ls -b gs://${{ env.STATE_BUCKET}} || gsutil mb -p ${{ env.PROJECT_ID }} -c STANDARD -l ${{ env.REGION }} -b on gs://${{ env.STATE_BUCKET}}
+      shell: bash
+
+    - run: |
+        # run terraform init and create the terraform state locally
+        terraform init -input=false -backend-config="bucket=${{ env.STATE_BUCKET}}"
+        
+        # import the project in the terraform state
+        terraform import google_project.project ${{ env.PROJECT_ID }} || true
+        
+        # set up terraform -var arguments
+        terraform_vars=""
+        # if inputs.vars is not empty
+        if [ -n "${{ inputs.vars }}" ]; then
+          for input_var in "${{ inputs.vars }}"; do
+              terraform_vars="$terraform_vars -var $input_var"
+          done
+        fi
+        
+        # set up terraform -target arguments
+        echo "test${{ inputs.targets }}test"
+        terraform_targets=""
+        # if inputs.targets is not empty
+        if [ -n "${{ inputs.targets }}" ]; then
+          for input_target in "${{ inputs.targets }}"; do
+              echo $input_target
+              terraform_targets="$terraform_targets -target $input_target"
+          done
+        fi
+        
+        # run terraform plan
+        bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
+        
+        # run terraform apply
+        bash -c "terraform apply -input=false -auto-approve tfplan"
+      working-directory: ${{ inputs.repository_name }}/iac
+      shell: bash
+
+
+
