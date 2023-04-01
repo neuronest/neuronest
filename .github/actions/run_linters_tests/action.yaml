@@ -1,9 +1,6 @@
 name: 'run_linters_tests'
 description: 'Install dev dependencies, execute linters and tests'
 inputs:
-  repository_name:
-    description: 'Repository name'
-    required: true
   image_name:
     description: 'Image name'
     required: true
@@ -14,7 +11,6 @@ runs:
           CONTAINER_ID=$(docker run -dit --entrypoint /bin/bash ${{ inputs.image_name }})
           echo "CONTAINER_ID"="$CONTAINER_ID" >> $GITHUB_ENV
           echo "MONO_REPOSITORY_PATH"="/mono_repository" >> $GITHUB_ENV
-          echo "REPOSITORY_PATH"="${{ inputs.repository_name }}" >> $GITHUB_ENV
         shell: bash
       - run: docker cp ./. $CONTAINER_ID:$MONO_REPOSITORY_PATH
         shell: bash
@@ -32,8 +28,8 @@ runs:
               && pre-commit install \
               && pre-commit run \
                 --show-diff-on-failure \
-                --files ${{ inputs.repository_name }}/**/* \
-              && pytest -x -n auto ${{ inputs.repository_name }}/tests/unit_tests -vv
+                --files $REPOSITORY_NAME/**/* \
+              && pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv
             "
         shell: bash
       - run: docker rm -f $CONTAINER_ID

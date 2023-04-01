@@ -1,7 +1,7 @@
 name: 'set_up_terraform'
-description: 'Installs utilities that terraform needs that we might not have in a given docker image'
+description: 'Install utilities that terraform needs that we might not have in a given docker image'
 inputs:
-    google_github_actions_auth_credentials_json:
+    credentials_json:
       description: 'The Google Cloud JSON service account key to use for authentication'
       required: true
 runs:
@@ -18,4 +18,4 @@ runs:
       - uses: hashicorp/setup-terraform@v1
       - uses: google-github-actions/auth@v1
         with:
-          credentials_json : ${{ inputs.google_github_actions_auth_credentials_json }}
+          credentials_json : ${{ inputs.credentials_json }}
