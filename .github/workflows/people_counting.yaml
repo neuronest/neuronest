@@ -66,8 +66,8 @@ jobs:
           dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
 
       - id: terraform_run
-      - name: Initialize and apply terraform
-      - uses: ./.github/actions/terraform_run
+        name: Initialize and apply terraform
+        uses: ./.github/actions/terraform_run
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
           image_name: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}
