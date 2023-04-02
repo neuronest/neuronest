@@ -15,7 +15,7 @@ runs:
       shell: bash
 
     - run: |
-        gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID || true
+        gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID 2>/dev/null
         gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
 
         for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
@@ -37,7 +37,7 @@ runs:
         terraform workspace select $REPOSITORY_NAME || terraform workspace new $REPOSITORY_NAME
 
         # import the project in the terraform state
-        terraform import google_project.project $PROJECT_ID || true
+        terraform import google_project.project $PROJECT_ID 2>/dev/null
 
         # set up terraform -target arguments
         terraform_targets=""
