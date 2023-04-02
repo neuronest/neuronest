@@ -22,7 +22,7 @@ runs:
         gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
 
         for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
-          gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:default_projects_owner --role=roles/owner
+          gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
         done
       shell: bash
 
