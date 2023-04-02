@@ -47,7 +47,6 @@ jobs:
         name: gcloud SDK Authentication
         uses: ./.github/actions/gcloud_auth
         with:
-          project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
       - id: prior_terraform_run
