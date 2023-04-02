@@ -25,7 +25,7 @@ variable "state_bucket" {
 variable "repository_name" {
   type = string
 }
-variable "webapp_image" {
+variable "image_name" {
   type = string
 }
 variable "firestore_results_collection" {

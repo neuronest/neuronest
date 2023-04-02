@@ -1,0 +1,57 @@
+name: 'run_terraform'
+description: 'Create the base infrastructure components, initialize and apply terraform'
+inputs:
+  image_name:
+    description: 'Image name'
+    required: true
+  targets:
+    description: 'Terraform targets to build, useful for partial terraform runs'
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - run: echo "TF_VAR_image_name"="${{ inputs.image_name }}" >> $GITHUB_ENV
+      shell: bash
+
+    - run: |
+        gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID 2>/dev/null || true
+        gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
+
+        for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
+          gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
+        done
+      shell: bash
+
+    - uses: ./.github/actions/set_up_terraform
+
+    - run: |
+        # create state bucket
+        gsutil ls -b gs://$STATE_BUCKET || gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
+      shell: bash
+
+    - run: |
+        # run terraform init and create the terraform state locally
+        terraform init -input=false -backend-config="bucket=$STATE_BUCKET"
+
+        terraform workspace select $REPOSITORY_NAME || terraform workspace new $REPOSITORY_NAME
+
+        # import the project in the terraform state
+        terraform import google_project.project $PROJECT_ID 2>/dev/null || true
+
+        # set up terraform -target arguments
+        terraform_targets=""
+        # if inputs.targets is not empty
+        if [ -n "${{ inputs.targets }}" ]; then
+          for input_target in "${{ inputs.targets }}"; do
+              terraform_targets="$terraform_targets -target $input_target"
+          done
+        fi
+
+        # run terraform plan
+        bash -c "terraform plan $terraform_targets -input=false -out=tfplan"
+
+        # run terraform apply
+        bash -c "terraform apply -input=false -auto-approve tfplan"
+      working-directory: ${{ env.REPOSITORY_NAME }}/iac
+      shell: bash

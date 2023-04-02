@@ -35,39 +35,36 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/set_variables
+      - id: set_variables
+        name: Set environment variables
+        uses: ./.github/actions/set_variables
         with:
           repository_static_variables_file_path: people-counting/iac/static_variables.env
           repository_dynamic_variables_file_path: people-counting/iac/dynamic_variables.env
           set_up_terraform_variables: true
 
-      - uses: ./.github/actions/gcloud_auth
+      - id: gcloud_auth
+        name: gcloud SDK Authentication
+        uses: ./.github/actions/gcloud_auth
         with:
-          project_id: ${{ env.PROJECT_ID }}
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
-      - name: terraform_run on necessary resources for ci
-        uses: ./.github/actions/terraform_run
+      - id: prior_run_terraform
+        name: Initialize and apply partial terraform on prior needed resources
+        uses: ./.github/actions/run_terraform
         with:
-          targets: ${{ env.PEOPLE_COUNTING_NEEDED_RESOURCES_FOR_CI }}
-          google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-          repository_name: ${{ env.REPOSITORY_NAME }}
-        env:
-          TF_VAR_webapp_image: ""
+          targets: ${{ env.PRIOR_TERRAFORM_RESOURCES }}
+          image_name: ""  # set emtpy for a partial terraform run
 
-      - id: build_test_push_webapp_image
+      - id: build_test_push
+        name: Build test push docker image
         uses: ./.github/actions/build_test_push
         with:
-          repository_name: ${{ env.REPOSITORY_NAME }}
-          repository_region: ${{ env.REGION }}
-          gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
-          dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
-          dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - uses: ./.github/actions/terraform_run
+      - id: run_terraform
+        name: Initialize and apply terraform
+        uses: ./.github/actions/run_terraform
         with:
-          google_github_actions_auth_credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-          repository_name: ${{ env.REPOSITORY_NAME }}
-        env:
-          TF_VAR_webapp_image: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}
+          image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
