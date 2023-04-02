@@ -1,9 +1,6 @@
 name: 'run_terraform'
 description: 'Create the base infrastructure components, initialize and apply terraform'
 inputs:
-  credentials_json:
-    description: 'The Google Cloud JSON service account key to use for authentication'
-    required: true
   image_name:
     description: 'Image name'
     required: true
@@ -25,10 +22,6 @@ runs:
           gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
         done
       shell: bash
-
-    - uses: ./.github/actions/set_up_terraform
-      with:
-        credentials_json: ${{ inputs.credentials_json }}
 
     - run: |
         # create state bucket
@@ -54,7 +47,7 @@ runs:
         fi
 
         # run terraform plan
-        bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
+        bash -c "terraform plan $terraform_targets -input=false -out=tfplan"
 
         # run terraform apply
         bash -c "terraform apply -input=false -auto-approve tfplan"

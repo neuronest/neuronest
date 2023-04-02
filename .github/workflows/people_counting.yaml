@@ -54,7 +54,6 @@ jobs:
         uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.PRIOR_TERRAFORM_RESOURCES }}
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
           image_name: ""  # set emtpy for a partial terraform run
 
       - id: build_test_push
@@ -68,5 +67,4 @@ jobs:
         name: Initialize and apply terraform
         uses: ./.github/actions/run_terraform
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
           image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
