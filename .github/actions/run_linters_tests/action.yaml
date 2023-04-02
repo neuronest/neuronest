@@ -21,7 +21,7 @@ runs:
             /bin/bash -c "
               # to handle detected dubious ownership git issue
               git config --global --add safe.directory $MONO_REPOSITORY_PATH \
-              && cd $REPOSITORY_PATH \
+              && cd $REPOSITORY_NAME \
               && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
               && pip install -r requirements.txt \
               && cd $MONO_REPOSITORY_PATH \
