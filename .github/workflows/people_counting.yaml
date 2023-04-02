@@ -36,7 +36,6 @@ jobs:
       - uses: actions/checkout@v3
 
       - id: set_variables
-        name: Set environment variables
         uses: ./.github/actions/set_variables
         with:
           repository_static_variables_file_path: people-counting/iac/static_variables.env
@@ -44,27 +43,23 @@ jobs:
           set_up_terraform_variables: true
 
       - id: gcloud_auth
-        name: gcloud SDK Authentication
         uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
       - id: prior_run_terraform
-        name: Initialize and apply partial terraform on prior needed resources
         uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.PRIOR_TERRAFORM_RESOURCES }}
           image_name: ""  # set emtpy for a partial terraform run
 
       - id: build_test_push
-        name: Build test push docker image
         uses: ./.github/actions/build_test_push
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - id: run_terraform
-        name: Initialize and apply terraform
         uses: ./.github/actions/run_terraform
         with:
           image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
