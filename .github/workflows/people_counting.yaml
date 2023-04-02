@@ -49,9 +49,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
-      - id: prior_terraform_run
+      - id: prior_run_terraform
         name: Initialize and apply partial terraform on prior needed resources
-        uses: ./.github/actions/terraform_run
+        uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.PRIOR_TERRAFORM_RESOURCES }}
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
@@ -64,9 +64,9 @@ jobs:
           dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
           dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
 
-      - id: terraform_run
+      - id: run_terraform
         name: Initialize and apply terraform
-        uses: ./.github/actions/terraform_run
+        uses: ./.github/actions/run_terraform
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
           image_name: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}
