@@ -60,8 +60,8 @@ jobs:
         name: Build test push docker image
         uses: ./.github/actions/build_test_push
         with:
-          dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
-          dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - id: run_terraform
         name: Initialize and apply terraform
