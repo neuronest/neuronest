@@ -28,7 +28,7 @@ module "people_counting" {
   region                       = var.region
   firestore_region             = var.firestore_region
   repository_name              = var.repository_name
-  webapp_image                 = var.webapp_image
+  image_name                   = var.image_name
   firestore_results_collection = var.firestore_results_collection
   videos_to_count_bucket       = var.videos_to_count_bucket
   counted_videos_bucket        = var.counted_videos_bucket

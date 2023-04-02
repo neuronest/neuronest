@@ -10,7 +10,7 @@ resource "google_cloud_run_service" "people_counting_api" {
   template {
     spec {
       containers {
-        image = var.webapp_image
+        image = var.image_name
         resources {
           limits = {
             "memory" = var.cloud_run_memory

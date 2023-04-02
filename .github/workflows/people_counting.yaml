@@ -69,4 +69,4 @@ jobs:
         uses: ./.github/actions/run_terraform
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-          image_name: ${{ steps.build_test_push_webapp_image.outputs.gcp_image_name }}
+          image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
