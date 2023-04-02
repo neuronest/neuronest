@@ -58,5 +58,5 @@ runs:
 
         # run terraform apply
         bash -c "terraform apply -input=false -auto-approve tfplan"
-      working-directory: $REPOSITORY_NAME/iac
+      working-directory: ${{ env.REPOSITORY_NAME }}/iac
       shell: bash
