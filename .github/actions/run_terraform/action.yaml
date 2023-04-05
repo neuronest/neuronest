@@ -2,16 +2,32 @@ name: 'run_terraform'
 description: 'Create the base infrastructure components, initialize and apply terraform'
 inputs:
   image_name:
-    description: 'Image name'
-    required: true
+    description: 'Docker image name built'
+    required: false
+    default: ""  # can only be empty for partial terraform runs, aka with targets
+  vars:
+    description: 'Variables usually named -var found in the terraform plan and terraform apply commands'
+    required: false
+    default: ""
   targets:
     description: 'Terraform targets to build, useful for partial terraform runs'
     required: false
     default: ""
+  workspace:
+    description: 'Terraform workspace to use, default will be $REPOSITORY_NAME'
+    required: false
+    default: ""
+
 runs:
   using: "composite"
   steps:
     - run: echo "TF_VAR_image_name"="${{ inputs.image_name }}" >> $GITHUB_ENV
+      shell: bash
+
+    - run: |
+        if [ -n "${{ inputs.targets }}" && -n "${{ inputs.image_name }}" ]; then
+        echo "If no targets are specified, image_name must not be empty"
+        exit 1
       shell: bash
 
     - run: |
@@ -34,10 +50,23 @@ runs:
         # run terraform init and create the terraform state locally
         terraform init -input=false -backend-config="bucket=$STATE_BUCKET"
 
-        terraform workspace select $REPOSITORY_NAME || terraform workspace new $REPOSITORY_NAME
+        workspace=$REPOSITORY_NAME
+        if [ -n "${{ inputs.workspace }}" ]; then
+          workspace=${{ inputs.workspace }}
+        fi
+        terraform workspace select $workspace || terraform workspace new $workspace
 
         # import the project in the terraform state
         terraform import google_project.project $PROJECT_ID 2>/dev/null || true
+        
+        # set up terraform -var arguments
+        terraform_vars=""
+        # if inputs.vars is not empty
+        if [ -n "${{ inputs.vars }}" ]; then
+          for input_var in "${{ inputs.vars }}"; do
+              terraform_vars="$terraform_vars -var $input_var"
+          done
+        fi
 
         # set up terraform -target arguments
         terraform_targets=""
@@ -49,7 +78,7 @@ runs:
         fi
 
         # run terraform plan
-        bash -c "terraform plan $terraform_targets -input=false -out=tfplan"
+        bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
 
         # run terraform apply
         bash -c "terraform apply -input=false -auto-approve tfplan"

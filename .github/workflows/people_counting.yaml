@@ -8,6 +8,7 @@ on:
     paths:
       - .github/workflows/people_counting.yaml
       - .github/actions/**
+      - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
@@ -17,10 +18,8 @@ on:
       - develop
     paths:
       - .github/workflows/people_counting.yaml
-      - .github/actions/variables/**
-      - .github/actions/build_test_push/**
-      - .github/actions/set_up_terraform/**
-      - .github/actions/gcloud_auth/**
+      - .github/actions/**
+      - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
@@ -47,11 +46,16 @@ jobs:
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
+      - id: base_run_terraform
+        uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
+          workspace: base
+
       - id: prior_run_terraform
         uses: ./.github/actions/run_terraform
         with:
-          targets: ${{ env.PRIOR_TERRAFORM_RESOURCES }}
-          image_name: ""  # set emtpy for a partial terraform run
+          targets: ${{ env.PRE_PUSH_TERRAFORM_RESOURCES }}
 
       - id: build_test_push
         uses: ./.github/actions/build_test_push
