@@ -26,8 +26,9 @@ runs:
 
     - run: |
         if [ -n "${{ inputs.targets }}" && -n "${{ inputs.image_name }}" ]; then
-        echo "If no targets are specified, image_name must not be empty"
-        exit 1
+          echo "If no targets are specified, image_name must not be empty"
+          exit 1
+        fi
       shell: bash
 
     - run: |
