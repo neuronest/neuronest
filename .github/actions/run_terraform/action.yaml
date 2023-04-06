@@ -23,7 +23,7 @@ runs:
       shell: bash
 
     - run: |
-        if [ "${{ inputs.workspace }} != "base" && "${{ inputs.workspace }} != "$REPOSITORY_NAME" ]; then
+        if [[ ${{ inputs.workspace }} != "base" && ${{ inputs.workspace }} != "$REPOSITORY_NAME" ]]; then
           echo "Incorrect workspace input: expected $REPOSITORY_NAME or base, got ${{ inputs.workspace }}"
           exit 1
         fi
