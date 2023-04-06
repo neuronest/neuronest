@@ -2,7 +2,7 @@
 #       Deploy API to Google Cloud Run       #
 ##############################################
 # Deploy image to Cloud Run
-resource "google_cloud_run_service" "model-instantiator_api" {
+resource "google_cloud_run_service" "model_instantiator_api" {
   provider                   = google-beta
   name                       = var.project_name
   location                   = var.region

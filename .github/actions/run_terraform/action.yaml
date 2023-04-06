@@ -35,6 +35,7 @@ runs:
 
         for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
           gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
+          sleep 1  # avoid concurrent conflict
         done
       shell: bash
 

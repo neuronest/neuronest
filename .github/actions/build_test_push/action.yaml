@@ -60,7 +60,7 @@ runs:
     - run: touch $REPOSITORY_NAME/.dockerignore
       shell: bash
     - run: |
-        for to_include_line in '**/*' '!$REPOSITORY_NAME' '!${{ inputs.shared_repository_name }}'
+        for to_include_line in '**/*' '!${{ env.REPOSITORY_NAME }}' '!${{ inputs.shared_repository_name }}'
         do
           grep -qxF "$to_include_line" $REPOSITORY_NAME/.dockerignore || \
           echo "$to_include_line" >> $REPOSITORY_NAME/.dockerignore
