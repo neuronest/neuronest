@@ -51,28 +51,12 @@ jobs:
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
-      - id: base_run_terraform
-        uses: ./.github/actions/run_terraform
-        with:
-          targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
-          workspace: base
-
-      - id: prior_run_terraform
-        uses: ./.github/actions/run_terraform
-        with:
-          targets: ${{ env.PRE_PUSH_TERRAFORM_RESOURCES }}
-
-      - id: build_test_push
-        uses: ./.github/actions/build_test_push
+      - id: build_test_push_deploy
+        uses: ./.github/actions/build_test_push_deploy
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: training
-
-      - id: run_terraform
-        uses: ./.github/actions/run_terraform
-        with:
-          image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
 
   train:
     name: train
@@ -99,7 +83,6 @@ jobs:
         with:
           repository_static_variables_file_path: object-detection/iac/static_variables.env
           repository_dynamic_variables_file_path: object-detection/iac/dynamic_variables.env
-          set_up_terraform_variables: true
 
       - id: set_additional_variables
         run: |
@@ -138,7 +121,6 @@ jobs:
         with:
           repository_static_variables_file_path: object-detection/iac/static_variables.env
           repository_dynamic_variables_file_path: object-detection/iac/dynamic_variables.env
-          set_up_terraform_variables: true
 
       - id: set_additional_variables
         run: |
@@ -182,7 +164,6 @@ jobs:
         with:
           repository_static_variables_file_path: object-detection/iac/static_variables.env
           repository_dynamic_variables_file_path: object-detection/iac/dynamic_variables.env
-          set_up_terraform_variables: true
 
       - id: set_additional_variables
         run: |

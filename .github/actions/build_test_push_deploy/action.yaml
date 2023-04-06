@@ -1,0 +1,68 @@
+name: 'build_test_push_deploy'
+description: 'Build, test, push docker image, and deploy using terraform'
+inputs:
+  dockerhub_username:
+    description: 'Docker repository password'
+    required: true
+  dockerhub_password:
+    description: 'Docker repository password'
+    required: true
+  target:
+    description: >
+      Docker target in case of a multi-stage build
+      (e.g.: "train")
+  build_arguments:
+    description: >
+      Docker build arguments 
+      (e.g.: "--build-arg MODEL_PATH=model.pt --build-arg ARTIFACTS_PATH=artifacts")
+  shared_repository_name:
+    description: 'Shared repository name'
+    default: shared
+  maximum_number_images_to_keep:
+    description: 'Maximum number of most recent docker images to keep in the registry'
+    default: 2
+outputs:
+  dockerhub_image_name:
+    description: 'Built and pushed image name to DockerHub'
+    value: ${{ steps.dockerhub_output_step.outputs.dockerhub_image_name }}
+  gcp_image_name:
+    description: 'Built and pushed image name to GCP'
+    value: ${{ steps.gcp_output_step.outputs.gcp_image_name }}
+runs:
+  using: "composite"
+  steps:
+    - id: base_run_terraform
+      uses: ./.github/actions/run_terraform
+      with:
+        targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
+        workspace: base
+
+    - id: prior_run_terraform
+      uses: ./.github/actions/run_terraform
+      with:
+        targets: ${{ env.PRE_PUSH_TERRAFORM_RESOURCES }}
+        workspace: ${{ env.REPOSITORY_NAME }}
+
+    - id: build_test_push
+      uses: ./.github/actions/build_test_push
+      with:
+        dockerhub_username: ${{ inputs.dockerhub_username }}
+        dockerhub_password: ${{ inputs.dockerhub_password }}
+        target: ${{ inputs.target }}
+        build_arguments: ${{ inputs.build_arguments }}
+        shared_repository_name: ${{ inputs.shared_repository_name }}
+        maximum_number_images_to_keep: ${{ inputs.maximum_number_images_to_keep }}
+
+    - id: run_terraform
+      uses: ./.github/actions/run_terraform
+      with:
+        targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+        workspace: ${{ env.REPOSITORY_NAME }}
+        image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
+
+    - id: dockerhub_output_step
+      run: echo "dockerhub_image_name=${{ steps.build_test_push.outputs.dockerhub_image_name }}" >> $GITHUB_OUTPUT
+      shell: bash
+    - id: gcp_output_step
+      run: echo "gcp_image_name=${{ steps.build_test_push.outputs.gcp_image_name }}" >> $GITHUB_OUTPUT
+      shell: bash
