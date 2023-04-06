@@ -29,8 +29,8 @@ env:
   MODEL_INSTANTIATOR_HOST: model-instantiator-bnuahhbzua-ew.a.run.app
 
 jobs:
-  build_test_deploy_training:
-    name: build_test_push_training
+  build_test_push_deploy_training:
+    name: build_test_push_deploy_training
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
@@ -61,13 +61,13 @@ jobs:
   train:
     name: train
     needs:
-      - build_test_push_training
+      - build_test_push_deploy_training
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.build_test_push_training.outputs.dockerhub_training_image_name}}
+      image: ${{needs.build_test_push_deploy_training.outputs.dockerhub_training_image_name}}
       credentials:
         username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
         password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
@@ -86,7 +86,7 @@ jobs:
 
       - id: set_additional_variables
         run: |
-          echo "TRAINING_IMAGE_NAME"="${{ needs.build_test_push_training.outputs.gcp_training_image_name }}" >> $GITHUB_ENV
+          echo "TRAINING_IMAGE_NAME"="${{ needs.build_test_push_deploy_training.outputs.gcp_training_image_name }}" >> $GITHUB_ENV
           echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
           echo "MODEL_GSPATH"="gs://$MODELS_BUCKET/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
 
@@ -104,7 +104,7 @@ jobs:
   build_test_push_serving:
     name: build_test_push_serving
     needs:
-      - build_test_push_training
+      - build_test_push_deploy_training
       - train
     runs-on: ubuntu-latest
     container: google/cloud-sdk
@@ -145,14 +145,14 @@ jobs:
   test_serving:
     name: test_serving
     needs:
-      - build_test_push_training
+      - build_test_push_deploy_training
       - build_test_push_serving
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.build_test_push_training.outputs.dockerhub_training_image_name}}
+      image: ${{needs.build_test_push_deploy_training.outputs.dockerhub_training_image_name}}
       credentials:
         username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
         password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}

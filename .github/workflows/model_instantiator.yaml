@@ -7,78 +7,46 @@ on:
       - develop
     paths:
       - .github/workflows/model_instantiator.yaml
-      - .github/actions/run_pre_commits/**
+      - .github/actions/**
+      - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
-      - model-instantiator/**
+      - people-counting/**
   pull_request:
     branches:
       - main
       - develop
     paths:
       - .github/workflows/model_instantiator.yaml
-      - .github/actions/run_pre_commits/**
+      - .github/actions/**
+      - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
-      - model-instantiator/**
+      - people-counting/**
   workflow_dispatch:
-
-env:
-  REPOSITORY_NAME: model-instantiator
-  PACKAGE_NAME: model_instantiator
 
 jobs:
   build_test_push:
     name: build_test_push
     runs-on: ubuntu-latest
     container: google/cloud-sdk
-    outputs:
-      dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
-      gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set environment variables
-        uses: ./.github/actions/set_variables
-      - id: gcloud_auth
-        name: GCP authentication
-        uses: ./.github/actions/gcloud_auth
-        with:
-          project_id: ${{ env.PROJECT_ID }}
-          credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
-      - id: build_test_push
-        name: Build test push
-        uses: ./.github/actions/build_test_push
-        with:
-          repository_name: ${{ env.REPOSITORY_NAME }}
-          repository_region: ${{ env.REGION }}
-          docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
-          gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
-          dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
 
-  run:
-    name: run
-    needs:
-      - build_test_push
-    runs-on: ubuntu-latest
-    container: google/cloud-sdk
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set environment variables
+      - id: set_variables
         uses: ./.github/actions/set_variables
+        with:
+          repository_static_variables_file_path: model-instantiator/iac/static_variables.env
+          repository_dynamic_variables_file_path: model-instantiator/iac/dynamic_variables.env
+          set_up_terraform_variables: true
+
       - id: gcloud_auth
-        name: GCP authentication
         uses: ./.github/actions/gcloud_auth
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          credentials_json: ${{ secrets.MODEL_INSTANTIATOR_CI_SERVICE_ACCOUNT }}
-      - run: |
-          gcloud run deploy model-instantiator \
-          --set-env-vars PROJECT_ID=${PROJECT_ID},REGION=${REGION},IMAGE_NAME=${{ needs.build_test_push.outputs.gcp_image_name }} \
-          --port 80 \
-          --cpu "1.0" \
-          --memory "1Gi" \
-          --image ${{ needs.build_test_push.outputs.gcp_image_name }} \
-          --service-account $REPOSITORY_NAME@$PROJECT_ID.iam.gserviceaccount.com \
-          --project ${PROJECT_ID} \
-          --region ${REGION}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+
+      - id: build_test_push_deploy
+        uses: ./.github/actions/build_test_push_deploy
+        with:
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
