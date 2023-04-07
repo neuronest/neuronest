@@ -15,16 +15,14 @@ inputs:
     description: 'Variables usually named -var found in the terraform plan and terraform apply commands'
     required: false
     default: ""
-  lock_timeout:
-    description: 'Maximum number of seconds to wait during a terraform lock before giving up'
-    required: false
-    default: "180s"
 
 runs:
   using: "composite"
   steps:
     - run: echo "TF_VAR_image_name"="${{ inputs.image_name }}" >> $GITHUB_ENV
       shell: bash
+
+    - uses: ./.github/actions/set_up_terraform
 
     - run: |
         if [[ ${{ inputs.workspace }} != "base" && ${{ inputs.workspace }} != "$REPOSITORY_NAME" ]]; then
@@ -38,8 +36,13 @@ runs:
         gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
       shell: bash
 
-    - id: add_iam_for_default_owners
-      uses: nick-fields/retry@v2
+    - run: |
+        # create state bucket
+        gsutil ls -b gs://$STATE_BUCKET || gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
+      shell: bash
+
+    - id: add_iam_with_retry
+      uses: nick-fields/retry@v2.8.2
       with:
         timeout_seconds: 30
         max_attempts: 3
@@ -48,32 +51,27 @@ runs:
             gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
           done
 
-    - uses: ./.github/actions/set_up_terraform
-
-    - run: |
-        # create state bucket
-        gsutil ls -b gs://$STATE_BUCKET || gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
-      shell: bash
-
-    - run: |
-        # run terraform init and create the terraform state locally
-        terraform init -input=false -backend-config="bucket=$STATE_BUCKET"
-
-        workspace=$REPOSITORY_NAME
-        if [ -n "${{ inputs.workspace }}" ]; then
-          workspace=${{ inputs.workspace }}
-        fi
-        terraform workspace select $workspace || terraform workspace new $workspace
-
-        # import the project in the terraform state
-        terraform import google_project.project $PROJECT_ID 2>/dev/null || true
-
-    - id: terraform_plan_and_apply
-      uses: nick-fields/retry@v2
+    - id: terraform_with_retry
+      uses: nick-fields/retry@v2.8.2
       with:
-        timeout_minutes: 5
+        timeout_seconds: 600
         max_attempts: 3
+        retry_wait_seconds: 60
         command: |
+          cd ${{ env.REPOSITORY_NAME }}/iac
+          
+          # run terraform init and create the terraform state locally
+          terraform init -input=false -backend-config="bucket=$STATE_BUCKET"
+  
+          workspace=$REPOSITORY_NAME
+          if [ -n "${{ inputs.workspace }}" ]; then
+            workspace=${{ inputs.workspace }}
+          fi
+          terraform workspace select $workspace || terraform workspace new $workspace
+  
+          # import the project in the terraform state
+          terraform import google_project.project $PROJECT_ID 2>/dev/null || true
+          
           # set up terraform -var arguments
           terraform_vars=""
           # if inputs.vars is not empty
@@ -82,7 +80,7 @@ runs:
                 terraform_vars="$terraform_vars -var $input_var"
             done
           fi
-
+  
           # set up terraform -target arguments
           terraform_targets=""
           # if inputs.targets is not empty
@@ -91,11 +89,9 @@ runs:
                 terraform_targets="$terraform_targets -target $input_target"
             done
           fi
-          
-          cd ${{ env.REPOSITORY_NAME }}/iac
   
           # run terraform plan
-          bash -c "terraform plan $terraform_vars $terraform_targets -lock-timeout=${{ inputs.lock_timeout }} -input=false -out=tfplan"
+          bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
   
           # run terraform apply
-          bash -c "terraform apply -lock-timeout=${{ inputs.lock_timeout }} -input=false -auto-approve tfplan"
+          bash -c "terraform apply -input=false -auto-approve tfplan"
