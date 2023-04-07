@@ -74,10 +74,6 @@ runs:
         timeout_minutes: 5
         max_attempts: 3
         command: |
-          for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
-            gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
-          done
-        
           # set up terraform -var arguments
           terraform_vars=""
           # if inputs.vars is not empty
@@ -95,10 +91,11 @@ runs:
                 terraform_targets="$terraform_targets -target $input_target"
             done
           fi
+          
+          cd ${{ env.REPOSITORY_NAME }}/iac
   
           # run terraform plan
           bash -c "terraform plan $terraform_vars $terraform_targets -lock-timeout=${{ inputs.lock_timeout }} -input=false -out=tfplan"
   
           # run terraform apply
           bash -c "terraform apply -lock-timeout=${{ inputs.lock_timeout }} -input=false -auto-approve tfplan"
-      working-directory: ${{ env.REPOSITORY_NAME }}/iac
