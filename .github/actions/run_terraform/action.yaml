@@ -39,7 +39,7 @@ runs:
       shell: bash
 
     - id: add_iam_for_default_owners
-    - uses: nick-fields/retry@v2
+      uses: nick-fields/retry@v2
       with:
         timeout_seconds: 30
         max_attempts: 3
