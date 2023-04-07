@@ -15,6 +15,10 @@ inputs:
     description: 'Variables usually named -var found in the terraform plan and terraform apply commands'
     required: false
     default: ""
+  lock_timeout:
+    description: 'Maximum number of seconds to wait during a terraform lock before giving up'
+    required: false
+    default: "180s"
 
 runs:
   using: "composite"
@@ -32,12 +36,17 @@ runs:
     - run: |
         gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID 2>/dev/null || true
         gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
-
-        for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
-          gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
-          sleep 1  # avoid concurrent conflict
-        done
       shell: bash
+
+    - id: add_iam_for_default_owners
+    - uses: nick-fields/retry@v2
+      with:
+        timeout_seconds: 30
+        max_attempts: 3
+        command: |
+          for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
+            gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
+          done
 
     - uses: ./.github/actions/set_up_terraform
 
@@ -78,9 +87,9 @@ runs:
         fi
 
         # run terraform plan
-        bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
+        bash -c "terraform plan $terraform_vars $terraform_targets -lock-timeout=${{ inputs.lock_timeout }} -input=false -out=tfplan"
 
         # run terraform apply
-        bash -c "terraform apply -input=false -auto-approve tfplan"
+        bash -c "terraform apply -lock-timeout=${{ inputs.lock_timeout }} -input=false -auto-approve tfplan"
       working-directory: ${{ env.REPOSITORY_NAME }}/iac
       shell: bash
