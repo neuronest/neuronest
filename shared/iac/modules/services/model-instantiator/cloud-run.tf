@@ -4,7 +4,7 @@
 # Deploy image to Cloud Run
 resource "google_cloud_run_service" "model_instantiator_api" {
   provider                   = google-beta
-  name                       = var.project_name
+  name                       = var.repository_name
   location                   = var.region
   autogenerate_revision_name = true
   template {

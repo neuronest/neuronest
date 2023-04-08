@@ -69,8 +69,8 @@ jobs:
     container:
       image: ${{needs.build_test_push_deploy_training.outputs.dockerhub_training_image_name}}
       credentials:
-        username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
-        password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
     env:
       MODEL_WEIGHTS: model/model.pt
     outputs:
