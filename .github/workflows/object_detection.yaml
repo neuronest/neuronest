@@ -34,8 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      dockerhub_training_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
-      gcp_training_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
+      dockerhub_training_image_name: ${{ steps.build_test_push_deploy.outputs.dockerhub_image_name }}
+      gcp_training_image_name: ${{ steps.build_test_push_deploy.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
 
