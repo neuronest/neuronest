@@ -7,6 +7,9 @@ variable "project_name" {
 variable "region" {
   type = string
 }
+variable "timezone" {
+  type = string
+}
 variable "repository_name" {
   type = string
 }
@@ -23,5 +26,17 @@ variable "cloud_run_min_scale" {
   type = string
 }
 variable "cloud_run_max_scale" {
+  type = string
+}
+variable "cloud_cloud_scheduler_job_name" {
+  type = string
+}
+variable "cloud_cloud_scheduler_schedule" {
+  type = string
+}
+variable "cloud_cloud_scheduler_body" {
+  type = string
+}
+variable "cloud_cloud_scheduler_url" {
   type = string
 }
