@@ -33,5 +33,6 @@ module "object_detection" {
   project_id                   = var.project_id
   region                       = var.region
   repository_name              = var.repository_name
+  service_account_name         = var.service_account_name
   models_bucket                = var.models_bucket
 }

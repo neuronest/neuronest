@@ -30,17 +30,19 @@ module "base" {
 
 module "model_instantiator" {
   source                       = "../../shared/iac/modules/services/model-instantiator"
-  project_id                   = var.project_id
-  region                       = var.region
-  timezone                     = var.timezone
-  repository_name              = var.repository_name
-  image_name                   = var.image_name
-  cloud_run_memory             = var.cloud_run_memory
-  cloud_run_cpu                = var.cloud_run_cpu
-  cloud_run_min_scale          = var.cloud_run_min_scale
-  cloud_run_max_scale          = var.cloud_run_max_scale
-  cloud_scheduler_job_name     = var.cloud_scheduler_job_name
-  cloud_scheduler_schedule     = var.cloud_scheduler_schedule
-  cloud_scheduler_body         = var.cloud_scheduler_body
-  cloud_uninstantiate_route    = var.cloud_uninstantiate_route
+  project_id                           = var.project_id
+  region                               = var.region
+  timezone                             = var.timezone
+  repository_name                      = var.repository_name
+  image_name                           = var.image_name
+  webapp_service_account_name          = var.webapp_service_account_name
+  cloud_scheduler_service_account_name = var.cloud_scheduler_service_account_name
+  cloud_run_memory                     = var.cloud_run_memory
+  cloud_run_cpu                        = var.cloud_run_cpu
+  cloud_run_min_scale                  = var.cloud_run_min_scale
+  cloud_run_max_scale                  = var.cloud_run_max_scale
+  cloud_scheduler_job_name             = var.cloud_scheduler_job_name
+  cloud_scheduler_schedule             = var.cloud_scheduler_schedule
+  cloud_scheduler_body                 = var.cloud_scheduler_body
+  cloud_uninstantiate_route            = var.cloud_uninstantiate_route
 }

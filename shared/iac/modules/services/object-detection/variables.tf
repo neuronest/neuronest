@@ -7,6 +7,9 @@ variable "region" {
 variable "repository_name" {
   type = string
 }
+variable "service_account_name" {
+  type = string
+}
 variable "models_bucket" {
   type = string
 }
