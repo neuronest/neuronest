@@ -15,12 +15,6 @@ resource "google_project_service" "artifact_registry" {
   service            = "artifactregistry.googleapis.com"
   disable_on_destroy = false
 }
-# Enable Cloud Run API
-resource "google_project_service" "cloud_run" {
-  provider           = google-beta
-  service            = "run.googleapis.com"
-  disable_on_destroy = false
-}
 # Enable Cloud Resource Manager API
 resource "google_project_service" "resource_manager" {
   provider           = google-beta
@@ -47,9 +41,6 @@ resource "time_sleep" "api_activation_waiting" {
   depends_on = [
     google_project_service.iam,
     google_project_service.artifact_registry,
-    google_project_service.cloud_run,
-    google_project_service.resource_manager,
-    google_project_service.firestore,
-    google_project_service.appengine
+    google_project_service.resource_manager
   ]
 }

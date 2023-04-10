@@ -1,54 +1,54 @@
 name: 'set_variables'
 description: 'Configure environment variables for a workflow'
 inputs:
-  repository_static_variables_file_path:
-    description: 'File path to variable file or directory. Defaults to ./.github/variables/* if none specified and runs against each file in that directory.'
-    required: false
-    default: ''
-  repository_dynamic_variables_file_path:
-    description: 'File path to variable file or directory. Defaults to ./.github/variables/* if none specified and runs against each file in that directory.'
+  repository_name:
+    description: 'Name of the repository'
     required: false
     default: ''
   set_up_terraform_variables:
-    description: 'File path to variable file or directory. Defaults to ./.github/variables/* if none specified and runs against each file in that directory.'
+    description: 'Whether to also create corresponding terraform variables'
     required: false
-    default: 'false'
+    default: 'true'
 runs:
   using: "composite"
   steps:
     - run: |
-        # link to shared variables files which can only be in one place in the repo
-        shared_static_variables_file_path=.github/variables/static_variables.env
-        shared_dynamic_variables_file_path=.github/variables/dynamic_variables.env
-        
-        variables_files_path=( $shared_static_variables_file_path
-          ${{ inputs.repository_static_variables_file_path }}
-          $shared_dynamic_variables_file_path
-          ${{ inputs.repository_dynamic_variables_file_path }}
-        )
+        echo "SHARED_STATIC_VARIABLES_PATH=.github/variables/static_variables.env" >> $GITHUB_ENV
+        echo "REPOSITORY_STATIC_VARIABLES_PATH"="$([[ ! -z '${{ inputs.repository_name }}' ]] && echo '${{ inputs.repository_name }}/iac/static_variables.env' || echo '')" >> $GITHUB_ENV
+        echo "SHARED_DYNAMIC_VARIABLES_PATH=.github/variables/dynamic_variables.env" >> $GITHUB_ENV
+        echo "REPOSITORY_DYNAMIC_VARIABLES_PATH"="$([[ ! -z '${{ inputs.repository_name }}' ]] && echo '${{ inputs.repository_name }}/iac/dynamic_variables.env' || echo '')" >> $GITHUB_ENV
 
-        for variables_file_path in "${variables_files_path[@]}"; do
-          # if path is not provided go to next path
-          if [[ -z $variables_file_path ]]; then
+        # temporary file that will be generated
+        echo "PREPROCESSED_VARIABLES_PATH=/tmp/variables.env" >> $GITHUB_ENV
+      shell: bash
+
+    - run: |
+        for variables_path in $SHARED_STATIC_VARIABLES_PATH $REPOSITORY_STATIC_VARIABLES_PATH $SHARED_DYNAMIC_VARIABLES_PATH $REPOSITORY_DYNAMIC_VARIABLES_PATH; do
+          if [ ! -f $variables_path ]; then
             continue
           fi
+        
+          current_preprocessed_variables_path=$(mktemp)
+          # remove comment lines
+          grep -v '^#' $variables_path > $current_preprocessed_variables_path
+  
+          # remove empty lines
+          sed -ir '/^\s*$/d' $current_preprocessed_variables_path
+  
+          # add terraform variables
+          if [ ${{ inputs.set_up_terraform_variables }} == 'true' ]; then
+            terraform_variables_path=$(mktemp)
+            cp $current_preprocessed_variables_path $terraform_variables_path
+            sed -ir 's/\(.*=\)/\L\1/' $terraform_variables_path
+            sed -ir 's/^/TF_VAR_/' $terraform_variables_path
+            cat $terraform_variables_path >> $current_preprocessed_variables_path
+          fi
 
-          while IFS= read -r variable_row; do
-            if [[ -z $variable_row || $variable_row = \#* ]]; then
-              continue
-            fi
-
-            variable_name=$(echo $variable_row | cut -d "=" -f1)
-            variable_value=$(echo $variable_row | cut -d "=" -f2)
-            eval variable_value=$variable_value  # variable resolution
-      
-            export $variable_name=$variable_value
-            echo "$variable_name"="$variable_value" >> $GITHUB_ENV
-      
-            if [ ${{ inputs.set_up_terraform_variables }} == 'true' ]; then
-              export TF_VAR_${variable_name,,}=$variable_value
-              echo "TF_VAR_${variable_name,,}"="$variable_value" >> $GITHUB_ENV
-            fi
-          done < "$variables_file_path"
+          cat $current_preprocessed_variables_path >> $PREPROCESSED_VARIABLES_PATH
         done
       shell: bash
+
+    - uses: cardinalby/export-env-action@v2
+      with:
+        envFile: ${{ env.PREPROCESSED_VARIABLES_PATH }}
+        expand: 'true'

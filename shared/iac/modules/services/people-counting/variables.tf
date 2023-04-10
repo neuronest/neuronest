@@ -7,9 +7,6 @@ variable "project_name" {
 variable "region" {
   type = string
 }
-variable "firestore_region" {
-  type = string
-}
 variable "repository_name" {
   type = string
 }

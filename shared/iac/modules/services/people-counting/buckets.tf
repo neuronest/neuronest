@@ -10,7 +10,6 @@ resource "google_storage_bucket" "videos_to_count_bucket" {
   versioning {
     enabled = false
   }
-  depends_on = [time_sleep.api_activation_waiting]
 }
 resource "google_storage_bucket" "counted_videos_bucket" {
   name          = var.counted_videos_bucket
@@ -21,5 +20,4 @@ resource "google_storage_bucket" "counted_videos_bucket" {
   versioning {
     enabled = false
   }
-  depends_on = [time_sleep.api_activation_waiting]
 }

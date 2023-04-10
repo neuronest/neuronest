@@ -64,6 +64,7 @@ resource "google_cloud_run_service" "people_counting_api" {
     latest_revision = true
   }
   depends_on = [
+    time_sleep.api_activation_waiting,
     google_service_account.people_counting_api_sa
   ]
 }

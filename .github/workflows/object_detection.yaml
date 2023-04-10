@@ -29,73 +29,80 @@ env:
   MODEL_INSTANTIATOR_HOST: model-instantiator-bnuahhbzua-ew.a.run.app
 
 jobs:
-  build_test_push_training:
-    name: build_test_push_training
+  build_test_push_deploy_training:
+    name: build_test_push_deploy_training
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      dockerhub_training_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
-      gcp_training_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
+      dockerhub_training_image_name: ${{ steps.build_test_push_deploy.outputs.dockerhub_image_name }}
+      gcp_training_image_name: ${{ steps.build_test_push_deploy.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set environment variables
+
+      - id: set_variables
         uses: ./.github/actions/set_variables
+        with:
+          repository_name: object-detection
+
       - id: gcloud_auth
-        name: GCP authentication
         uses: ./.github/actions/gcloud_auth
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          credentials_json: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
-      - id: build_test_push
-        name: Build test push
-        uses: ./.github/actions/build_test_push
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+
+      - id: build_test_push_deploy
+        uses: ./.github/actions/build_test_push_deploy
         with:
-          repository_name: ${{ env.REPOSITORY_NAME }}
-          repository_region: ${{ env.REGION }}
-          docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
-          gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
-          dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: training
 
   train:
     name: train
     needs:
-      - build_test_push_training
+      - build_test_push_deploy_training
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.build_test_push_training.outputs.dockerhub_training_image_name}}
+      image: ${{needs.build_test_push_deploy_training.outputs.dockerhub_training_image_name}}
       credentials:
-        username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
-        password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
     env:
       MODEL_WEIGHTS: model/model.pt
     outputs:
       model_gspath: ${{ steps.output_step.outputs.model_gspath }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set environment variables
+
+      - id: set_variables
         uses: ./.github/actions/set_variables
-      - run: echo "TRAINING_IMAGE_NAME"="${{ needs.build_test_push_training.outputs.gcp_training_image_name }}" >> $GITHUB_ENV
-      - run: echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
-      - run: echo "MODEL_GSPATH"="gs://$REPOSITORY_NAME-models/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
+        with:
+          repository_name: object-detection
+          set_up_terraform_variables: false
+
+      - id: set_additional_variables
+        run: |
+          echo "TRAINING_IMAGE_NAME"="${{ needs.build_test_push_deploy_training.outputs.gcp_training_image_name }}" >> $GITHUB_ENV
+          echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
+          echo "MODEL_GSPATH"="gs://$MODELS_BUCKET/$PACKAGE_NAME-$RUN_ID" >> $GITHUB_ENV
+
       - id: gcloud_auth
-        name: GCP authentication
         uses: ./.github/actions/gcloud_auth
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          credentials_json: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
-      - run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+
+      - id: train
+        run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
+
       - id: output_step
         run: echo "model_gspath=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
 
   build_test_push_serving:
     name: build_test_push_serving
     needs:
-      - build_test_push_training
+      - build_test_push_deploy_training
       - train
     runs-on: ubuntu-latest
     container: google/cloud-sdk
@@ -106,54 +113,64 @@ jobs:
       gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set environment variables
+
+      - id: set_variables
         uses: ./.github/actions/set_variables
-      - run: echo "MODEL_GSPATH"="${{ needs.train.outputs.model_gspath }}" >> $GITHUB_ENV
+        with:
+          repository_name: object-detection
+          set_up_terraform_variables: false
+
+      - id: set_additional_variables
+        run: |
+          echo "MODEL_GSPATH"="${{ needs.train.outputs.model_gspath }}" >> $GITHUB_ENV
+
       - id: gcloud_auth
-        name: GCP authentication
         uses: ./.github/actions/gcloud_auth
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          credentials_json: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
-      - run: gsutil cp $MODEL_GSPATH ${{ env.REPOSITORY_NAME }}/$MODEL_PATH
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+
+      - id: download_model_weights
+        run: gsutil cp $MODEL_GSPATH ${{ env.REPOSITORY_NAME }}/$MODEL_PATH
+
       - id: build_test_push
-        name: Build test push
         uses: ./.github/actions/build_test_push
         with:
-          repository_name: ${{ env.REPOSITORY_NAME }}
-          repository_region: ${{ env.REGION }}
-          docker_repository_name: ${{ env.DOCKER_REPOSITORY_NAME }}
-          gcp_registry_name: ${{ env.GCP_REGISTRY_NAME }}
-          dockerhub_username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
-          dockerhub_password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: serving
           build_arguments: --build-arg MODEL_PATH=${{ env.REPOSITORY_NAME }}/${{ env.MODEL_PATH }}
 
   test_serving:
     name: test_serving
     needs:
-      - build_test_push_training
+      - build_test_push_deploy_training
       - build_test_push_serving
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.build_test_push_training.outputs.dockerhub_training_image_name}}
+      image: ${{needs.build_test_push_deploy_training.outputs.dockerhub_training_image_name}}
       credentials:
-        username: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).username }}
-        password: ${{ fromJSON(secrets.DOCKERHUB_LOGIN).password }}
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set environment variables
+
+      - id: set_variables
         uses: ./.github/actions/set_variables
-      - run: echo "SERVING_IMAGE_NAME"="${{ needs.build_test_push_serving.outputs.gcp_serving_image_name }}" >> $GITHUB_ENV
+        with:
+          repository_name: object-detection
+          set_up_terraform_variables: false
+
+      - id: set_additional_variables
+        run: |
+          echo "SERVING_IMAGE_NAME"="${{ needs.build_test_push_serving.outputs.gcp_serving_image_name }}" >> $GITHUB_ENV
+
       - id: gcloud_auth
-        name: GCP authentication
         uses: ./.github/actions/gcloud_auth
         with:
-          project_id: ${{ env.PROJECT_ID }}
-          credentials_json: ${{ secrets.OBJECT_DETECTION_CI_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
       - id: model_upload
         run: python -m object_detection.cli --actions model_upload

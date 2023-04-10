@@ -8,6 +8,7 @@ on:
     paths:
       - .github/workflows/people_counting.yaml
       - .github/actions/**
+      - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
@@ -17,10 +18,8 @@ on:
       - develop
     paths:
       - .github/workflows/people_counting.yaml
-      - .github/actions/variables/**
-      - .github/actions/build_test_push/**
-      - .github/actions/set_up_terraform/**
-      - .github/actions/gcloud_auth/**
+      - .github/actions/**
+      - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
@@ -38,28 +37,15 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_static_variables_file_path: people-counting/iac/static_variables.env
-          repository_dynamic_variables_file_path: people-counting/iac/dynamic_variables.env
-          set_up_terraform_variables: true
+          repository_name: people-counting
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
-      - id: prior_run_terraform
-        uses: ./.github/actions/run_terraform
-        with:
-          targets: ${{ env.PRIOR_TERRAFORM_RESOURCES }}
-          image_name: ""  # set emtpy for a partial terraform run
-
-      - id: build_test_push
-        uses: ./.github/actions/build_test_push
+      - id: build_test_push_deploy
+        uses: ./.github/actions/build_test_push_deploy
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      - id: run_terraform
-        uses: ./.github/actions/run_terraform
-        with:
-          image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
