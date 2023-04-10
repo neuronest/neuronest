@@ -42,9 +42,7 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_static_variables_file_path: object-detection/iac/static_variables.env
-          repository_dynamic_variables_file_path: object-detection/iac/dynamic_variables.env
-          set_up_terraform_variables: true
+          repository_name: object-detection
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
@@ -81,8 +79,8 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_static_variables_file_path: object-detection/iac/static_variables.env
-          repository_dynamic_variables_file_path: object-detection/iac/dynamic_variables.env
+          repository_name: object-detection
+          set_up_terraform_variables: false
 
       - id: set_additional_variables
         run: |
@@ -119,8 +117,8 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_static_variables_file_path: object-detection/iac/static_variables.env
-          repository_dynamic_variables_file_path: object-detection/iac/dynamic_variables.env
+          repository_name: object-detection
+          set_up_terraform_variables: false
 
       - id: set_additional_variables
         run: |
@@ -162,8 +160,8 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_static_variables_file_path: object-detection/iac/static_variables.env
-          repository_dynamic_variables_file_path: object-detection/iac/dynamic_variables.env
+          repository_name: object-detection
+          set_up_terraform_variables: false
 
       - id: set_additional_variables
         run: |

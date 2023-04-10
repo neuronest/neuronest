@@ -36,9 +36,7 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_static_variables_file_path: model-instantiator/iac/static_variables.env
-          repository_dynamic_variables_file_path: model-instantiator/iac/dynamic_variables.env
-          set_up_terraform_variables: true
+          repository_name: model-instantiator
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth

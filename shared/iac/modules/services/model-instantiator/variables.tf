@@ -28,15 +28,15 @@ variable "cloud_run_min_scale" {
 variable "cloud_run_max_scale" {
   type = string
 }
-variable "cloud_cloud_scheduler_job_name" {
+variable "cloud_scheduler_job_name" {
   type = string
 }
-variable "cloud_cloud_scheduler_schedule" {
+variable "cloud_scheduler_schedule" {
   type = string
 }
-variable "cloud_cloud_scheduler_body" {
+variable "cloud_scheduler_body" {
   type = string
 }
-variable "cloud_cloud_scheduler_url" {
+variable "cloud_uninstantiate_route" {
   type = string
 }
