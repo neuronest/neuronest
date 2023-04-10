@@ -7,3 +7,6 @@ variable "region" {
 variable "firestore_region" {
   type = string
 }
+variable "base_service_account_name" {
+  type = string
+}
