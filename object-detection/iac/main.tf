@@ -24,7 +24,6 @@ resource "google_project" "project" {
 module "base" {
   source                       = "../../shared/iac/modules/services/base"
   project_id                   = var.project_id
-  project_name                 = var.project_id
   region                       = var.region
   firestore_region             = var.firestore_region
 }
@@ -32,7 +31,6 @@ module "base" {
 module "object_detection" {
   source                       = "../../shared/iac/modules/services/object-detection"
   project_id                   = var.project_id
-  project_name                 = var.project_id
   region                       = var.region
   repository_name              = var.repository_name
   models_bucket                = var.models_bucket

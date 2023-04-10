@@ -24,7 +24,6 @@ resource "google_project" "project" {
 module "base" {
   source                       = "../../shared/iac/modules/services/base"
   project_id                   = var.project_id
-  project_name                 = var.project_id
   region                       = var.region
   firestore_region             = var.firestore_region
 }
@@ -32,7 +31,6 @@ module "base" {
 module "model_instantiator" {
   source                       = "../../shared/iac/modules/services/model-instantiator"
   project_id                   = var.project_id
-  project_name                 = var.project_id
   region                       = var.region
   timezone                     = var.timezone
   repository_name              = var.repository_name
