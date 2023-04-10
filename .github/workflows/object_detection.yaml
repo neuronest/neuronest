@@ -7,7 +7,8 @@ on:
       - develop
     paths:
       - .github/workflows/object_detection.yaml
-      - .github/actions/run_pre_commits/**
+      - .github/actions/**
+      - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
       - object-detection/**
@@ -17,7 +18,8 @@ on:
       - develop
     paths:
       - .github/workflows/object_detection.yaml
-      - .github/actions/run_pre_commits/**
+      - .github/actions/**
+      - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
       - object-detection/**

@@ -54,9 +54,9 @@ runs:
     - id: terraform_with_retry
       uses: nick-fields/retry@v2.8.2
       with:
-        timeout_seconds: 600
-        max_attempts: 3
-        retry_wait_seconds: 60
+        timeout_seconds: 1200
+        max_attempts: 5
+        retry_wait_seconds: 120
         command: |
           cd ${{ env.REPOSITORY_NAME }}/iac
           

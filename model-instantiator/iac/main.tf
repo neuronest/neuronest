@@ -15,7 +15,7 @@ provider "google-beta" {
   zone    = var.zone
 }
 resource "google_project" "project" {
-  name            = var.project_name
+  name            = var.project_id
   project_id      = var.project_id
   org_id          = var.organization_id
   billing_account = var.billing_account
@@ -24,7 +24,7 @@ resource "google_project" "project" {
 module "base" {
   source                       = "../../shared/iac/modules/services/base"
   project_id                   = var.project_id
-  project_name                 = var.project_name
+  project_name                 = var.project_id
   region                       = var.region
   firestore_region             = var.firestore_region
 }
@@ -32,7 +32,7 @@ module "base" {
 module "model_instantiator" {
   source                       = "../../shared/iac/modules/services/model-instantiator"
   project_id                   = var.project_id
-  project_name                 = var.project_name
+  project_name                 = var.project_id
   region                       = var.region
   timezone                     = var.timezone
   repository_name              = var.repository_name
