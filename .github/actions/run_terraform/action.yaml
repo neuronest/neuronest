@@ -63,11 +63,7 @@ runs:
           # run terraform init and create the terraform state locally
           terraform init -input=false -backend-config="bucket=$STATE_BUCKET"
   
-          workspace=$REPOSITORY_NAME
-          if [ -n "${{ inputs.workspace }}" ]; then
-            workspace=${{ inputs.workspace }}
-          fi
-          terraform workspace select $workspace || terraform workspace new $workspace
+          terraform workspace select ${{ inputs.workspace }} || terraform workspace new ${{ inputs.workspace }}
   
           # import the project in the terraform state
           terraform import google_project.project $PROJECT_ID 2>/dev/null || true
@@ -95,3 +91,7 @@ runs:
   
           # run terraform apply
           bash -c "terraform apply -input=false -auto-approve tfplan"
+
+    - id: release_terraform_lock
+      if: ${{ failure() && steps.terraform_with_retry.conclusion == 'failure' }}
+      run: gcloud storage rm gs://$STATE_BUCKET/terraform/state/${{ inputs.workspace }}.tflock
