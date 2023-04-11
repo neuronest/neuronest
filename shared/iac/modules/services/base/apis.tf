@@ -4,6 +4,12 @@
 ##############################################
 
 # Enable IAM API
+resource "google_project_service" "cloud_billing" {
+  provider           = google-beta
+  service            = "cloudbilling.googleapis.com"
+  disable_on_destroy = false
+}
+# Enable IAM API
 resource "google_project_service" "iam" {
   provider           = google-beta
   service            = "iam.googleapis.com"
