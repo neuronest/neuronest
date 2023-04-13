@@ -97,6 +97,8 @@ jobs:
 
       - id: train
         run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
+        env:
+          SERVICE_ACCOUNT_EMAIL: neuronest-infrastructure-build@neuronest.iam.gserviceaccount.com
 
       - id: output_step
         run: echo "model_gspath=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
