@@ -96,7 +96,10 @@ jobs:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
       - id: train
-        run: python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
+        run: |
+          echo $(gcloud auth list --filter=status=ACTIVE --format="value(account)")
+          python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
+          
         env:
           SERVICE_ACCOUNT_EMAIL: neuronest-infrastructure-build@neuronest.iam.gserviceaccount.com
 
