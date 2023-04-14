@@ -13,5 +13,6 @@ runs:
       with:
         project_id: ${{ env.PROJECT_ID }}
         credentials_json: ${{ inputs.credentials_json }}
+        delegates: people-counting-230411-owner@people-counting-230411.iam.gserviceaccount.com
     - run: gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
       shell: bash
