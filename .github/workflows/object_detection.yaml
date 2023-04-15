@@ -38,6 +38,8 @@ jobs:
     outputs:
       dockerhub_training_image_name: ${{ steps.build_test_push_deploy.outputs.dockerhub_image_name }}
       gcp_training_image_name: ${{ steps.build_test_push_deploy.outputs.gcp_image_name }}
+      base_project_builder_sa_key: ${{ steps.build_test_push_deploy.outputs.base_project_builder_sa_key }}
+
     steps:
       - uses: actions/checkout@v3
 
@@ -93,7 +95,7 @@ jobs:
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.build_test_push_deploy_training.outputs.base_project_builder_sa_key }}
 
       - id: train
         run: |

@@ -28,6 +28,9 @@ outputs:
   gcp_image_name:
     description: 'Built and pushed image name to GCP'
     value: ${{ steps.gcp_output_step.outputs.gcp_image_name }}
+  base_project_builder_sa_key:
+    description: 'base project builder service account key'
+    value: ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
 runs:
   using: "composite"
   steps:
@@ -62,10 +65,6 @@ runs:
         targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
         workspace: ${{ env.REPOSITORY_NAME }}
         image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
-
-    - uses: ./.github/actions/gcloud_auth
-      with:
-        credentials_json: ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
 
     - id: dockerhub_output_step
       run: echo "dockerhub_image_name=${{ steps.build_test_push.outputs.dockerhub_image_name }}" >> $GITHUB_OUTPUT
