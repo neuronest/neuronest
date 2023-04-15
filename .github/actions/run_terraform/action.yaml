@@ -94,6 +94,7 @@ runs:
 
           # add the project builder key as an environment variable
           base_project_builder_sa_key=$(terraform output base_project_builder_sa_key)
+          echo "test $base_project_builder_sa_key"
           # echo "BASE_PROJECT_BUILDER_SA_KEY=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
 
     - id: release_terraform_lock
