@@ -92,6 +92,9 @@ runs:
           # run terraform apply
           bash -c "terraform apply -input=false -auto-approve tfplan"
 
+          # add the project builder key as an environment variable
+          echo "BASE_PROJECT_BUILDER_SA_KEY=$(terraform output base_project_builder_sa_key)" >> $GITHUB_OUTPUT
+
     - id: release_terraform_lock
       if: ${{ failure() && steps.terraform_with_retry.conclusion == 'failure' }}
       run: gcloud storage rm gs://$STATE_BUCKET/terraform/state/${{ inputs.workspace }}.tflock

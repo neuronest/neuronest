@@ -99,7 +99,7 @@ jobs:
         run: |
           echo $(gcloud auth list --filter=status=ACTIVE --format="value(account)")
           python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
-          
+
         env:
           SERVICE_ACCOUNT_EMAIL: neuronest-infrastructure-build@neuronest.iam.gserviceaccount.com
 
