@@ -106,10 +106,6 @@ runs:
             echo strings are not equal
           fi
           
-          
-#          echo "BASE_PROJECT_BUILDER_SA_KEY_ONE=$base_project_builder_sa_key_one" >> $GITHUB_ENV
-#          echo "BASE_PROJECT_BUILDER_SA_KEY_TWO=$base_project_builder_sa_key_two" >> $GITHUB_ENV
-          
           if [[ ${{ inputs.workspace }} = "base"; then
             base_project_builder_sa_key=$(terraform output base_project_builder_sa_key | tr -d '"')
           else
