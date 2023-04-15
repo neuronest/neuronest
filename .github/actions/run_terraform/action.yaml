@@ -93,7 +93,8 @@ runs:
           bash -c "terraform apply -input=false -auto-approve tfplan"
 
           # add the project builder key as an environment variable
-          # echo "BASE_PROJECT_BUILDER_SA_KEY=$(terraform output base_project_builder_sa_key)" >> $GITHUB_OUTPUT
+          base_project_builder_sa_key=$(terraform output base_project_builder_sa_key)
+          # echo "BASE_PROJECT_BUILDER_SA_KEY=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
 
     - id: release_terraform_lock
       if: ${{ failure() && steps.terraform_with_retry.conclusion == 'failure' }}
