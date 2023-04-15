@@ -101,9 +101,8 @@ jobs:
         run: |
           echo $(gcloud auth list --filter=status=ACTIVE --format="value(account)")
           python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
-
         env:
-          SERVICE_ACCOUNT_EMAIL: neuronest-infrastructure-build@neuronest.iam.gserviceaccount.com
+          SERVICE_ACCOUNT_EMAIL: ${{ env.PROJECT_BUILDER_SERVICE_ACCOUNT_EMAIL }}
 
       - id: output_step
         run: echo "model_gspath=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
@@ -136,7 +135,7 @@ jobs:
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.build_test_push_deploy_training.outputs.base_project_builder_sa_key }}
 
       - id: download_model_weights
         run: gsutil cp $MODEL_GSPATH ${{ env.REPOSITORY_NAME }}/$MODEL_PATH
@@ -179,7 +178,7 @@ jobs:
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.build_test_push_deploy_training.outputs.base_project_builder_sa_key }}
 
       - id: model_upload
         run: python -m object_detection.cli --actions model_upload
