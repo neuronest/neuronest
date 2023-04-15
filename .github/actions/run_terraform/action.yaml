@@ -105,8 +105,8 @@ runs:
           else
             echo strings are not equal
           fi
-          
-          if [[ ${{ inputs.workspace }} = "base"; then
+
+          if [ ${{ inputs.workspace }} = "base" ]; then
             base_project_builder_sa_key=$(terraform output base_project_builder_sa_key | tr -d '"')
           else
             base_project_builder_sa_key=""
