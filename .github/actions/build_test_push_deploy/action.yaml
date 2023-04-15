@@ -36,6 +36,9 @@ runs:
       with:
         targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
         workspace: base
+    - name: test credentials
+      run: echo ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
+      shell: bash
 
     - id: prior_run_terraform
       uses: ./.github/actions/run_terraform
@@ -62,7 +65,7 @@ runs:
 
     - uses: ./.github/actions/gcloud_auth
       with:
-        credentials_json: ${{ env.BASE_PROJECT_BUILDER_SA_KEY }}
+        credentials_json: ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
 
     - id: dockerhub_output_step
       run: echo "dockerhub_image_name=${{ steps.build_test_push.outputs.dockerhub_image_name }}" >> $GITHUB_OUTPUT
