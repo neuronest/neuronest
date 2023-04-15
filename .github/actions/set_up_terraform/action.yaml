@@ -12,3 +12,5 @@ runs:
         with:
           node-version: 16
       - uses: hashicorp/setup-terraform@v2.0.3
+        with:
+          terraform_wrapper: false
