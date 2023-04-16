@@ -15,6 +15,10 @@ inputs:
     description: 'Variables usually named -var found in the terraform plan and terraform apply commands'
     required: false
     default: ""
+outputs:
+  base_project_builder_sa_key:
+    description: 'base project builder service account key'
+    value: ${{ steps.terraform_with_retry.outputs.base_project_builder_sa_key }}
 
 runs:
   using: "composite"
@@ -92,7 +96,17 @@ runs:
           # run terraform apply
           bash -c "terraform apply -input=false -auto-approve tfplan"
 
+          # add the project builder key as the output of the action
+          if [ ${{ inputs.workspace }} = "base" ]; then
+            # get the key and remove the double quotes that create problems 
+            # when you want to activate the service account
+            base_project_builder_sa_key=$(terraform output base_project_builder_sa_key | tr -d '"')
+          else
+            base_project_builder_sa_key=""
+          fi
+          echo "base_project_builder_sa_key=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
+
     - id: release_terraform_lock
       if: ${{ failure() && steps.terraform_with_retry.conclusion == 'failure' }}
-      run: gcloud storage rm gs://$STATE_BUCKET/terraform/state/${{ inputs.workspace }}.tflock
+      run: gcloud storage rm gs://$STATE_BUCKET/terraform/state/${{ inputs.workspace }}.tflock || true
       shell: bash

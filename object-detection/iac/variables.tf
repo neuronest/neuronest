@@ -28,3 +28,6 @@ variable "service_account_name" {
 variable "models_bucket" {
   type = string
 }
+variable "project_builder_service_account_name" {
+  type = string
+}

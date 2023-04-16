@@ -26,6 +26,7 @@ module "base" {
   project_id                   = var.project_id
   region                       = var.region
   firestore_region             = var.firestore_region
+  project_builder_service_account_name = var.project_builder_service_account_name
 }
 
 module "object_detection" {

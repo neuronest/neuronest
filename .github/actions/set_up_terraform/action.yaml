@@ -12,3 +12,7 @@ runs:
         with:
           node-version: 16
       - uses: hashicorp/setup-terraform@v2.0.3
+        with:
+          # underworld demon bug where terraform command name is appended to usual
+          # command substitution. See: https://stackoverflow.com/questions/66496105/how-can-i-remove-all-the-extraneous-output-from-redirected-output-in-github-acti
+          terraform_wrapper: false

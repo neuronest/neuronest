@@ -28,6 +28,9 @@ outputs:
   gcp_image_name:
     description: 'Built and pushed image name to GCP'
     value: ${{ steps.gcp_output_step.outputs.gcp_image_name }}
+  base_project_builder_sa_key:
+    description: 'base project builder service account key'
+    value: ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
 runs:
   using: "composite"
   steps:
