@@ -55,3 +55,6 @@ variable "cloud_run_min_scale" {
 variable "cloud_run_max_scale" {
   type = string
 }
+variable "project_builder_service_account_name" {
+  type = string
+}

@@ -58,3 +58,6 @@ variable "cloud_scheduler_body" {
 variable "cloud_uninstantiate_route" {
   type = string
 }
+variable "project_builder_service_account_name" {
+  type = string
+}
