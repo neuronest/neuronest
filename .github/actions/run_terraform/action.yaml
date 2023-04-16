@@ -98,6 +98,8 @@ runs:
 
           # add the project builder key as the output of the action
           if [ ${{ inputs.workspace }} = "base" ]; then
+            # get the key and remove the double quotes that create problems 
+            # when you want to activate the service account
             base_project_builder_sa_key=$(terraform output base_project_builder_sa_key | tr -d '"')
           else
             base_project_builder_sa_key=""

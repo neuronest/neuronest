@@ -99,7 +99,6 @@ jobs:
 
       - id: train
         run: |
-          echo $(gcloud auth list --filter=status=ACTIVE --format="value(account)")
           python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
         env:
           SERVICE_ACCOUNT_EMAIL: ${{ env.PROJECT_BUILDER_SERVICE_ACCOUNT_EMAIL }}

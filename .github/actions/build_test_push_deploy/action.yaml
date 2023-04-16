@@ -39,9 +39,6 @@ runs:
       with:
         targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
         workspace: base
-    - name: test credentials
-      run: echo ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
-      shell: bash
 
     - id: prior_run_terraform
       uses: ./.github/actions/run_terraform
