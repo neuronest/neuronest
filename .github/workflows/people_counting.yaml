@@ -39,22 +39,6 @@ jobs:
         with:
           repository_name: people-counting
 
-      - name: Loop over actions
-        run: |
-          for i in 1 2 3
-          do
-            echo "Running action $i"
-            # Replace org/repo/action with the name of your reusable action
-            # Replace tag with the version of the action you want to use
-            # Replace arg1, arg2, and arg3 with the arguments you want to pass to the action
-            # You can use $i to pass different arguments for each iteration
-            uses: ./.github/actions/set_variables
-            with:
-              arg1: value1
-              arg2: value2
-              arg3: value3
-          done
-
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
