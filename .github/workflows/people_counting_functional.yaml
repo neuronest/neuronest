@@ -1,4 +1,4 @@
-name: people_counting
+name: people_counting_functional
 
 on:
   push:
