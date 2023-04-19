@@ -36,7 +36,6 @@ runs:
             if [ ! -f $variables_path ]; then
               continue
             fi
-          
             current_preprocessed_variables_path=$(mktemp)
             # remove comment lines
             grep -v '^#' $variables_path > $current_preprocessed_variables_path
