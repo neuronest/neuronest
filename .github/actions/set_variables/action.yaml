@@ -27,7 +27,8 @@ runs:
         SHARED_DYNAMIC_VARIABLES_PATH=".github/variables/dynamic_variables.env"
         
         for repository_name in ${{ inputs.repository_names }}
-          REPOSITORY_STATIC_VARIABLES_PATH=${repository_name:+"$repository_name/iac/static_variables.env"}
+          echo "test${repository_name}test"
+          REPOSITORY_STATIC_VARIABLES_PATH=${repository_name:+"${repository_name}/iac/static_variables.env"}
           REPOSITORY_DYNAMIC_VARIABLES_PATH=${repository_name:+"$repository_name/iac/dynamic_variables.env"}
           PREPROCESSED_VARIABLES_PATH="/tmp/${repository_name}_variables.env"
           
