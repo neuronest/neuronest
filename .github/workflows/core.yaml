@@ -36,7 +36,7 @@ jobs:
       - name: Set environment variables
         uses: ./.github/actions/set_variables
         with:
-          repository_name: shared
+          repository_names: shared
 
       - run: apt update && apt install -y cmake ffmpeg git libsm6 libxext6
       - run: pip install --upgrade pip

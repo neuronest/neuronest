@@ -46,7 +46,7 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_name: object-detection
+          repository_names: object-detection
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
@@ -83,7 +83,7 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_name: object-detection
+          repository_names: object-detection
           set_up_terraform_variables: false
 
       - id: set_additional_variables
@@ -124,7 +124,7 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_name: object-detection
+          repository_names: object-detection
           set_up_terraform_variables: false
 
       - id: set_additional_variables
@@ -167,7 +167,7 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_name: object-detection
+          repository_names: object-detection
           set_up_terraform_variables: false
 
       - id: set_additional_variables

@@ -37,7 +37,7 @@ jobs:
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_name: people-counting
+          repository_names: people-counting
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth

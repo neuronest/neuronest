@@ -1,4 +1,4 @@
-name: model_instantiator
+name: people_counting
 
 on:
   push:
@@ -6,45 +6,46 @@ on:
       - main
       - develop
     paths:
-      - .github/workflows/model_instantiator.yaml
+      - .github/workflows/people_counting_functional.yaml
       - .github/actions/**
       - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
-      - model-instantiator/**
+      - people-counting/**
   pull_request:
     branches:
       - main
       - develop
     paths:
-      - .github/workflows/model_instantiator.yaml
+      - .github/workflows/people_counting_functional.yaml
       - .github/actions/**
       - .github/variables/**
       - .pre-commit-config.yaml
       - shared/**
-      - model-instantiator/**
+      - people-counting/**
   workflow_dispatch:
 
 jobs:
-  build_test_push:
-    name: build_test_push
+  build_test_deploy:
+    name: build_test_deploy
     runs-on: ubuntu-latest
-    container: google/cloud-sdk
+    container:
+      image: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
 
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
-          repository_names: model-instantiator
+          repository_names: people-counting object-detection model-instantiator
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
-      - id: build_test_push_deploy
-        uses: ./.github/actions/build_test_push_deploy
-        with:
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#      - id: build_test_push_deploy
+#        uses: ./.github/actions/build_test_push_deploy
+#        with:
+#          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+#          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
