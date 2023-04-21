@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - develop
+    tags-ignore:
+      - '*functional'
     paths:
       - .github/workflows/people_counting.yaml
       - .github/actions/**
@@ -24,28 +26,40 @@ on:
       - shared/**
       - people-counting/**
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      deploy:
+        required: false
+        type: string
+        default: true
+
+env:
+  REPOSITORY_NAME: people-counting
 
 jobs:
-  build_test_deploy:
-    name: build_test_deploy
+  build_test_push_deploy:
+    name: build_test_push_deploy
     runs-on: ubuntu-latest
+    if: ${{ inputs.deploy == 'true' }}
     container:
       image: google/cloud-sdk
     steps:
-      - uses: actions/checkout@v3
-
-      - id: set_variables
-        uses: ./.github/actions/set_variables
-        with:
-          repository_names: people-counting
-
-      - id: gcloud_auth
-        uses: ./.github/actions/gcloud_auth
-        with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-
-      - id: build_test_push_deploy
-        uses: ./.github/actions/build_test_push_deploy
-        with:
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#      - uses: actions/checkout@v3
+#      - uses: ./.github/actions/set_variables
+#        with:
+#          repository_names: people-counting
+#      - uses: ./.github/actions/gcloud_auth
+#        with:
+#          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - uses: ./.github/actions/build_test_push_deploy
+#        with:
+#          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+#          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+  build_test_push:
+    name: build_test_push
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy == 'false' }}
+    container:
+      image: google/cloud-sdk
+    steps:
+      - uses: ./.github/actions/build_test_push_deploy

@@ -29,8 +29,8 @@ module "base" {
   project_builder_service_account_name = var.project_builder_service_account_name
 }
 
-module "people_counting" {
-  source                       = "../../shared/iac/modules/services/people-counting"
+module "people_counting_functional" {
+  source                       = "../../shared/iac/modules/services/people-counting-functional"
   project_id                   = var.project_id
   region                       = var.region
   repository_name              = var.repository_name

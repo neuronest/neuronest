@@ -56,8 +56,8 @@ jobs:
       - id: build_test_push_deploy
         uses: ./.github/actions/build_test_push_deploy
         with:
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          # dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          # dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: training
 
   train:
@@ -142,8 +142,8 @@ jobs:
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          # dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          # dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: serving
           build_arguments: --build-arg MODEL_PATH=${{ env.REPOSITORY_NAME }}/${{ env.MODEL_PATH }}
 

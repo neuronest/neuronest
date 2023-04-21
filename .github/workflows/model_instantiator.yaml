@@ -25,6 +25,9 @@ on:
       - model-instantiator/**
   workflow_dispatch:
 
+env:
+  REPOSITORY_NAME: model-instantiator
+
 jobs:
   build_test_push:
     name: build_test_push
@@ -45,6 +48,6 @@ jobs:
 
       - id: build_test_push_deploy
         uses: ./.github/actions/build_test_push_deploy
-        with:
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#        with:
+#          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+#          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}

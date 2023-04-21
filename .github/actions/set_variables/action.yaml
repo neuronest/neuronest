@@ -2,7 +2,7 @@ name: 'set_variables'
 description: 'Configure environment variables for a workflow'
 inputs:
   repository_names:
-    description: 'Name of the repository'
+    description: 'Name of the repositories'
     required: false
     default: ''
   set_up_terraform_variables:
