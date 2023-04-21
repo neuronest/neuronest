@@ -23,6 +23,8 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - uses: actions/checkout@v3
+
     - run: echo "TF_VAR_image_name"="${{ inputs.image_name }}" >> $GITHUB_ENV
       shell: bash
 
