@@ -29,21 +29,26 @@ on:
 
 jobs:
   run_base_terraform:
-    uses: ./.github/actions/run_terraform
-    with:
-      targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
-      workspace: base
+    runs-on: ubuntu-latest
+    container: google/cloud-sdk
+    steps:
+      - uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
+          workspace: base
 
   build_test_push_people_counting:
     needs: run_base_terraform
-    uses: .github/workflows/people-counting.yaml@main
-    with:
-      deploy: false
+    runs-on: ubuntu-latest
+    container: google/cloud-sdk
+    steps:
+      - uses: .github/workflows/people-counting.yaml@main
+        with:
+          deploy: false
 
   deploy_people_counting_functional:
-    name: build_test_deploy
-    runs-on: ubuntu-latest
     needs: build_test_push_people_counting
+    runs-on: ubuntu-latest
     container:
       image: google/cloud-sdk
     steps:
