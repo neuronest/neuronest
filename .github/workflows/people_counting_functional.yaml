@@ -6,7 +6,7 @@ on:
       - main
       - develop
     tags:
-      - people-counting-functional
+      - people-counting-functional*
     paths:
       - .github/workflows/people_counting_functional.yaml
       - .github/actions/**
