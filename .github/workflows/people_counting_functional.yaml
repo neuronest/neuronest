@@ -27,12 +27,16 @@ on:
       - people-counting/**
   workflow_dispatch:
 
+env:
+  REPOSITORY_NAME: people-counting-functional
+
 jobs:
   run_base_terraform:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables
       - uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
@@ -54,11 +58,9 @@ jobs:
       image: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
-
-      - id: set_variables
-        uses: ./.github/actions/set_variables
-        with:
-          repository_names: people-counting object-detection model-instantiator
+      - uses: ./.github/actions/set_variables
+#        with:
+#          repository_names: people-counting object-detection model-instantiator
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
