@@ -18,7 +18,7 @@ runs:
     #        echo "REPOSITORY_DYNAMIC_VARIABLES_PATH"="$([[ ! -z '${{ inputs.repository_name }}' ]] && echo '${{ inputs.repository_name }}/iac/dynamic_variables.env' || echo '')" >> $GITHUB_ENV
     - uses: actions/setup-python@v2
       with:
-        python-version: 3.10.9
+        python-version: '3.8'
     - run: |
         # temporary file that will be generated
         echo "PREPROCESSED_VARIABLES_PATH=/tmp/variables.env" >> $GITHUB_ENV
