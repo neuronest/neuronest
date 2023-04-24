@@ -1,0 +1,12 @@
+name: 'set_up_python'
+description: 'Install latest python'
+runs:
+  using: "composite"
+  steps:
+      - name: Install the latest version of python
+        run: |
+          apt update
+          apt install python3
+          echo "alias python=python3" >> ~/.bashrc
+          source ~/.bashrc
+        shell: bash
