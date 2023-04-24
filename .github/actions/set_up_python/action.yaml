@@ -7,6 +7,5 @@ runs:
         run: |
           apt update
           apt install python3
-          echo "alias python=python3" >> ~/.bashrc
-          source ~/.bashrc
+          alias python=python3
         shell: bash

@@ -22,7 +22,7 @@ runs:
         echo "PREPROCESSED_VARIABLES_PATH=/tmp/variables.env" >> $GITHUB_ENV
       shell: bash
     - run: |
-        python .github/actions/set_variables/create_env_file.py --repository_name ${{ env.REPOSITORY_NAME }} --environment_variables_file_path $PREPROCESSED_VARIABLES_PATH --add_terraform_variables ${{ inputs.set_up_terraform_variables }}
+        python3 .github/actions/set_variables/create_env_file.py --repository_name ${{ env.REPOSITORY_NAME }} --environment_variables_file_path $PREPROCESSED_VARIABLES_PATH --add_terraform_variables ${{ inputs.set_up_terraform_variables }}
 #    - run: |
 #        SHARED_STATIC_VARIABLES_PATH=".github/variables/static_variables.env"
 #        SHARED_DYNAMIC_VARIABLES_PATH=".github/variables/dynamic_variables.env"
