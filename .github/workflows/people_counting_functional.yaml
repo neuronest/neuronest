@@ -51,9 +51,9 @@ jobs:
     container: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
-#      - uses: .github/workflows/people-counting.yaml@main
-#        with:
-#          deploy: false
+      - uses: .github/workflows/people-counting.yaml@main
+        with:
+          deploy: false
 
   deploy_people_counting_functional:
     needs: build_test_push_people_counting
