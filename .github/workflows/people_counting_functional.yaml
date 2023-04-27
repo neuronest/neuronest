@@ -47,15 +47,7 @@ jobs:
 
   build_test_push_people_counting:
     needs: run_base_terraform
-    runs-on: ubuntu-latest
-    container: google/cloud-sdk
-    steps:
-      - uses: actions/checkout@v3
-      - name: see pwd
-        run: |
-          echo $(pwd)
-          ls -a .
-      - uses: ./.github/workflows/people-counting.yaml
+    uses: ./.github/workflows/people-counting.yaml
         with:
           deploy: false
 
