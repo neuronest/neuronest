@@ -64,6 +64,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - uses: ./.github/actions/build_test_push_deploy
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
