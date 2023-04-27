@@ -55,7 +55,7 @@ jobs:
         run: |
           echo $(pwd)
           ls -a .
-      - uses: ./.github/workflows/people-counting.yaml@main
+      - uses: ./.github/workflows/people-counting.yaml
         with:
           deploy: false
 
