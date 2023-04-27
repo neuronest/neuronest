@@ -31,13 +31,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v3
-    - uses: ./.github/actions/set_variables
-      with:
-        repository_names: ${{ env.REPOSITORY_NAME }}
-    - uses: ./.github/actions/gcloud_auth
-      with:
-        credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
     - run: echo "IMAGE_NAME_SUFFIX"="$([[ ! -z '${{ inputs.target }}' ]] && echo '-${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
       shell: bash
     - run: echo "IMAGE_NAME"="$REPOSITORY_NAME$IMAGE_NAME_SUFFIX" >> $GITHUB_ENV
