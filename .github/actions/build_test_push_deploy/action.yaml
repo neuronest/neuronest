@@ -1,12 +1,12 @@
 name: 'build_test_push_deploy'
 description: 'Build, test, push docker image, and deploy using terraform'
 inputs:
-#  dockerhub_username:
-#    description: 'Docker repository password'
-#    required: true
-#  dockerhub_password:
-#    description: 'Docker repository password'
-#    required: true
+  dockerhub_username:
+    description: 'Docker repository password'
+    required: true
+  dockerhub_password:
+    description: 'Docker repository password'
+    required: true
   target:
     description: >
       Docker target in case of a multi-stage build
@@ -49,8 +49,8 @@ runs:
     - id: build_test_push
       uses: ./.github/actions/build_test_push
       with:
-        # dockerhub_username: ${{ inputs.dockerhub_username }}
-        # dockerhub_password: ${{ inputs.dockerhub_password }}
+        dockerhub_username: ${{ inputs.dockerhub_username }}
+        dockerhub_password: ${{ inputs.dockerhub_password }}
         target: ${{ inputs.target }}
         build_arguments: ${{ inputs.build_arguments }}
         shared_repository_name: ${{ inputs.shared_repository_name }}

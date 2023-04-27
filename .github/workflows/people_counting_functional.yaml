@@ -59,19 +59,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
-#        with:
-#          repository_names: people-counting object-detection model-instantiator
-
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
-
-
-
-#      - id: deploy
-#        uses: ./.github/actions/deploy
-#        with:
-#          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-#          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
