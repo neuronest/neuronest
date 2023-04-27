@@ -51,7 +51,11 @@ jobs:
     container: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
-      - uses: .github/workflows/people-counting.yaml@main
+      - name: see pwd
+        run: |
+          echo $(pwd)
+          ls -a .
+      - uses: ./.github/workflows/people-counting.yaml@main
         with:
           deploy: false
 
