@@ -47,7 +47,7 @@ jobs:
 
   build_test_push_people_counting:
     needs: run_base_terraform
-    uses: ./.github/workflows/people-counting.yaml
+    uses: ./.github/workflows/people_counting.yaml
     with:
       deploy: false
 
