@@ -50,6 +50,7 @@ jobs:
     uses: ./.github/workflows/people_counting.yaml
     with:
       deploy: false
+    secrets: inherit
 
   deploy_people_counting_functional:
     needs: build_test_push_people_counting
