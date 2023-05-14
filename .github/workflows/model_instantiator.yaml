@@ -24,6 +24,16 @@ on:
       - shared/**
       - model-instantiator/**
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      deploy:
+        required: false
+        type: string
+        default: true
+    outputs:
+      gcp_image_name:
+        description: "The gcp image name"
+        value: ${{ jobs.build_test_push.outputs.gcp_image_name }}
 
 env:
   REPOSITORY_NAME: model-instantiator
@@ -33,6 +43,8 @@ jobs:
     name: build_test_push
     runs-on: ubuntu-latest
     container: google/cloud-sdk
+    outputs:
+      gcp_image_name: ${{ steps.build_test_push_deploy.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
 

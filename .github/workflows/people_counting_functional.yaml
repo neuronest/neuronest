@@ -64,4 +64,11 @@ jobs:
         uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+          workspace: ${{ env.REPOSITORY_NAME }}
+          vars: |-
+            model_instantiator_image_name=test
+            people_counting_image_name=${{ needs.jobs.build_test_push_people_counting.steps.outputs.gcp_image_name }}
 

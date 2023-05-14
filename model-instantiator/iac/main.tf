@@ -27,6 +27,7 @@ module "base" {
   region                       = var.region
   firestore_region             = var.firestore_region
   project_builder_service_account_name = var.project_builder_service_account_name
+  mono_repository_name = var.mono_repository_name
 }
 
 module "model_instantiator" {
@@ -46,4 +47,5 @@ module "model_instantiator" {
   cloud_scheduler_schedule             = var.cloud_scheduler_schedule
   cloud_scheduler_body                 = var.cloud_scheduler_body
   cloud_uninstantiate_route            = var.cloud_uninstantiate_route
+  cloud_scheduler_model_name           = var.cloud_scheduler_model_name
 }

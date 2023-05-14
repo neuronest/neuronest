@@ -27,6 +27,7 @@ module "base" {
   region                       = var.region
   firestore_region             = var.firestore_region
   project_builder_service_account_name = var.project_builder_service_account_name
+  mono_repository_name = var.mono_repository_name
 }
 
 module "object_detection" {
@@ -36,4 +37,5 @@ module "object_detection" {
   repository_name              = var.repository_name
   service_account_name         = var.service_account_name
   models_bucket                = var.models_bucket
+  package_name                 = var.package_name
 }

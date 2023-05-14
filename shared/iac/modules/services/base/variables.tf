@@ -10,3 +10,6 @@ variable "firestore_region" {
 variable "project_builder_service_account_name" {
   type = string
 }
+variable "mono_repository_name" {
+  type = string
+}

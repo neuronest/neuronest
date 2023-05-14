@@ -1,10 +1,5 @@
+# SHARED VARIABLES
 variable "project_id" {
-  type = string
-}
-variable "organization_id" {
-  type = string
-}
-variable "billing_account" {
   type = string
 }
 variable "region" {
@@ -13,9 +8,25 @@ variable "region" {
 variable "zone" {
   type = string
 }
+variable "organization_id" {
+  type = string
+}
+variable "billing_account" {
+  type = string
+}
 variable "firestore_region" {
   type = string
 }
+variable "project_builder_service_account_name" {
+  type = string
+}
+variable "mono_repository_name" {
+  type = string
+}
+variable "timezone" {
+  type = string
+}
+# END OF SHARED VARIABLES
 variable "state_bucket" {
   type = string
 }
@@ -53,8 +64,5 @@ variable "cloud_run_min_scale" {
   type = string
 }
 variable "cloud_run_max_scale" {
-  type = string
-}
-variable "project_builder_service_account_name" {
   type = string
 }

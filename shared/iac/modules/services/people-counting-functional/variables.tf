@@ -4,39 +4,90 @@ variable "project_id" {
 variable "region" {
   type = string
 }
-variable "repository_name" {
+variable "timezone" {
   type = string
 }
-variable "image_name" {
+variable "people_counting_repository_name" {
   type = string
 }
-variable "webapp_service_account_name" {
+variable "people_counting_image_name" {
   type = string
 }
-variable "firestore_results_collection" {
+variable "people_counting_webapp_service_account_name" {
   type = string
 }
-variable "videos_to_count_bucket" {
+variable "people_counting_firestore_results_collection" {
   type = string
 }
-variable "counted_videos_bucket" {
+variable "people_counting_videos_to_count_bucket" {
   type = string
 }
-variable "model_instantiator_host" {
+variable "people_counting_counted_videos_bucket" {
   type = string
 }
-variable "object_detection_model_name" {
+variable "people_counting_model_instantiator_host" {
   type = string
 }
-variable "cloud_run_memory" {
+variable "people_counting_object_detection_model_name" {
   type = string
 }
-variable "cloud_run_cpu" {
+variable "people_counting_cloud_run_memory" {
   type = string
 }
-variable "cloud_run_min_scale" {
+variable "people_counting_cloud_run_cpu" {
   type = string
 }
-variable "cloud_run_max_scale" {
+variable "people_counting_cloud_run_min_scale" {
+  type = string
+}
+variable "people_counting_cloud_run_max_scale" {
+  type = string
+}
+variable "object_detection_repository_name" {
+  type = string
+}
+variable "object_detection_service_account_name" {
+  type = string
+}
+variable "object_detection_models_bucket" {
+  type = string
+}
+variable "object_detection_package_name" {
+  type = string
+}
+variable "model_instantiator_repository_name" {
+  type = string
+}
+variable "model_instantiator_image_name" {
+  type = string
+}
+variable "model_instantiator_webapp_service_account_name" {
+  type = string
+}
+variable "model_instantiator_cloud_scheduler_service_account_name" {
+  type = string
+}
+variable "model_instantiator_cloud_run_memory" {
+  type = string
+}
+variable "model_instantiator_cloud_run_cpu" {
+  type = string
+}
+variable "model_instantiator_cloud_run_min_scale" {
+  type = string
+}
+variable "model_instantiator_cloud_run_max_scale" {
+  type = string
+}
+variable "model_instantiator_cloud_scheduler_job_name" {
+  type = string
+}
+variable "model_instantiator_cloud_scheduler_schedule" {
+  type = string
+}
+variable "model_instantiator_cloud_scheduler_body" {
+  type = string
+}
+variable "model_instantiator_cloud_uninstantiate_route" {
   type = string
 }

@@ -1,4 +1,11 @@
+# SHARED VARIABLES
 variable "project_id" {
+  type = string
+}
+variable "region" {
+  type = string
+}
+variable "zone" {
   type = string
 }
 variable "organization_id" {
@@ -7,18 +14,19 @@ variable "organization_id" {
 variable "billing_account" {
   type = string
 }
-variable "region" {
+variable "firestore_region" {
+  type = string
+}
+variable "project_builder_service_account_name" {
+  type = string
+}
+variable "mono_repository_name" {
   type = string
 }
 variable "timezone" {
   type = string
 }
-variable "zone" {
-  type = string
-}
-variable "firestore_region" {
-  type = string
-}
+# END OF SHARED VARIABLES
 variable "state_bucket" {
   type = string
 }
@@ -58,6 +66,7 @@ variable "cloud_scheduler_body" {
 variable "cloud_uninstantiate_route" {
   type = string
 }
-variable "project_builder_service_account_name" {
+variable "cloud_scheduler_model_name" {
   type = string
 }
+

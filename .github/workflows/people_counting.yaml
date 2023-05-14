@@ -32,33 +32,57 @@ on:
         required: false
         type: string
         default: true
+    outputs:
+      gcp_image_name:
+        description: "The gcp image name"
+        value: ${{ jobs.build_test_push_deploy.outputs.gcp_image_name }}
 
 env:
   REPOSITORY_NAME: people-counting
 
 jobs:
-  build_test_push_deploy:
-    name: build_test_push_deploy
-    runs-on: ubuntu-latest
-    if: ${{ inputs.deploy == 'true' }}
-    container:
-      image: google/cloud-sdk
-    steps:
+#  build_test_push_deploy:
+#    name: build_test_push_deploy
+#    runs-on: ubuntu-latest
+#    if: ${{ inputs.deploy == 'true' }}
+#    container:
+#      image: google/cloud-sdk
+#     outputs:
+#        dockerhub_training_image_name: ${{ steps.build_test_push_deploy.outputs.dockerhub_image_name }}
+#        gcp_training_image_name: ${{ steps.build_test_push_deploy.outputs.gcp_image_name }}
+#    steps:
 #      - uses: actions/checkout@v3
 #      - uses: ./.github/actions/set_variables
-#        with:
-#          repository_names: people-counting
 #      - uses: ./.github/actions/gcloud_auth
 #        with:
 #          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-      - uses: ./.github/actions/build_test_push_deploy
-        with:
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#      - uses: ./.github/actions/build_test_push_deploy
+#        with:
+#          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+#          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
   build_test_push:
     name: build_test_push
     runs-on: ubuntu-latest
-    if: ${{ inputs.deploy == 'false' }}
+    container:
+      image: google/cloud-sdk
+     outputs:
+        gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - id: build_test_push
+        uses: ./.github/actions/build_test_push
+        with:
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy == 'true' }}
     container:
       image: google/cloud-sdk
     steps:
@@ -67,7 +91,8 @@ jobs:
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-      - uses: ./.github/actions/build_test_push_deploy
+      - uses: ./.github/actions/run_terraform
         with:
-          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
-          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+          workspace: ${{ env.REPOSITORY_NAME }}
+          image_name: ${{ needs.jobs.build_test_push.steps.build_test_push.outputs.gcp_image_name }}
