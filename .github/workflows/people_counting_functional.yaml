@@ -60,8 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
-      - id: gcloud_auth
-        uses: ./.github/actions/gcloud_auth
+      - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - uses: ./.github/actions/run_terraform
