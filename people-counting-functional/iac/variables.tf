@@ -30,8 +30,10 @@ variable "timezone" {
 variable "people_counting_repository_name" {
   type = string
 }
+# default dummy value when running focusing on the base module
 variable "people_counting_image_name" {
   type = string
+  default = "people_counting_image_name_dummy"
 }
 variable "people_counting_webapp_service_account_name" {
   type = string
@@ -78,8 +80,10 @@ variable "object_detection_package_name" {
 variable "model_instantiator_repository_name" {
   type = string
 }
+# default dummy value when running focusing on the base module
 variable "model_instantiator_image_name" {
   type = string
+  default = "model_instantiator_image_name_dummy"
 }
 variable "model_instantiator_webapp_service_account_name" {
   type = string
