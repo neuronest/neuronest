@@ -56,6 +56,7 @@ runs:
             gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
           done
 
+    # issue multiline? https://github.com/nick-fields/retry/issues/53
     - id: terraform_with_retry
       uses: nick-fields/retry@v2.8.2
       with:
@@ -96,6 +97,9 @@ runs:
   
           # run terraform apply
           bash -c "terraform apply -input=false -auto-approve tfplan"
+          terraform_exit_status=$?
+          
+          echo "terraform exit status: $terraform_exit_status"
 
           # add the project builder key as the output of the action
           if [ ${{ inputs.workspace }} = "base" ]; then
@@ -106,6 +110,10 @@ runs:
             base_project_builder_sa_key=""
           fi
           echo "base_project_builder_sa_key=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
+          
+          # force script to terminate on terraform exit code to account for bug 
+          # where last command dictates error or not: https://github.com/nick-fields/retry/issues/53
+          exit $terraform_exit_status
 
     - id: release_terraform_lock
       if: ${{ failure() && steps.terraform_with_retry.conclusion == 'failure' }}
