@@ -43,7 +43,7 @@ runs:
 
     - run: |
         # create state bucket
-        gsutil ls -b gs://$STATE_BUCKET || gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
+        gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET || true
       shell: bash
 
     - id: add_iam_with_retry
