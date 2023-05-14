@@ -5,8 +5,9 @@ on:
     branches:
       - main
       - develop
-    tags-ignore:
-      - 'people-counting-functional*'
+    tags:
+      - '*'
+      - '!*people-counting-functional*'
     paths:
       - .github/workflows/people_counting.yaml
       - .github/actions/**
