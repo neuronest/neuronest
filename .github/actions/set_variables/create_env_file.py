@@ -104,10 +104,10 @@ class VariableLine:
 
     def get_variables_inside_value(self):
 
-        if matches := re.findall(
+        if variables_inside_value := re.findall(
             "\$\{([^\}]*)\}", self.value  # pylint: disable=W1401  # noqa: W605
         ):
-            return list(matches)
+            return list(variables_inside_value)
         return None
 
 
