@@ -17,7 +17,7 @@ on:
       - main
       - develop
     tags-ignore:
-      - 'tags-ignore-test-1'
+      - 'tags-ignore-test-2'
     paths:
       - .github/workflows/people_counting.yaml
       - .github/actions/**
