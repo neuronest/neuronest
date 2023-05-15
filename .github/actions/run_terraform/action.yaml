@@ -94,6 +94,7 @@ runs:
           fi
           echo "terraform_targets: $terraform_targets"
           # run terraform plan
+          echo "terraform plan: terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
           bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
   
           # run terraform apply
