@@ -6,7 +6,8 @@ on:
       - main
       - develop
     tags-ignore:
-      - '*'
+      - v2
+      - v1.*
     paths:
       - .github/workflows/people_counting.yaml
       - .github/actions/**
@@ -19,7 +20,8 @@ on:
       - main
       - develop
     tags-ignore:
-      - '*'
+      - v2
+      - v1.*
     paths:
       - .github/workflows/people_counting.yaml
       - .github/actions/**
