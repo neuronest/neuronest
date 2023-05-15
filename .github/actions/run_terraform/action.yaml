@@ -79,7 +79,7 @@ runs:
           terraform_vars=""
           # if inputs.vars is not empty
           if [ -n "${{ inputs.vars }}" ]; then
-            for input_var in "${{ inputs.vars }}"; do
+            for input_var in $(echo "${{ inputs.vars }}" | tr '\n' ' '); do
                 terraform_vars="$terraform_vars -var $input_var"
             done
           fi
