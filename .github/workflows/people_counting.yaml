@@ -17,7 +17,7 @@ on:
       - main
       - develop
     tags-ignore:
-      - '*functional'
+      - 'people-counting-functional*'
     paths:
       - .github/workflows/people_counting.yaml
       - .github/actions/**
