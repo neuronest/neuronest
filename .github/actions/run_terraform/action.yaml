@@ -92,7 +92,7 @@ runs:
                 terraform_targets="$terraform_targets -target $input_target"
             done
           fi
-  
+          echo "terraform_targets: $terraform_targets"
           # run terraform plan
           bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
   
