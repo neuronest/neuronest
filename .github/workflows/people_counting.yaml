@@ -5,30 +5,30 @@ on:
     branches:
       - main
       - develop
-    tags-ignore:
-      - v2
-      - v1.*
-    paths:
-      - .github/workflows/people_counting.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - people-counting/**
-  pull_request:
-    branches:
-      - main
-      - develop
-    tags-ignore:
-      - v2
-      - v1.*
-    paths:
-      - .github/workflows/people_counting.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - people-counting/**
+#    tags-ignore:
+#      - v2
+#      - v1.*
+#    paths:
+#      - .github/workflows/people_counting.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - people-counting/**
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
+#    tags-ignore:
+#      - v2
+#      - v1.*
+#    paths:
+#      - .github/workflows/people_counting.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - people-counting/**
   workflow_dispatch:
   workflow_call:
     inputs:
