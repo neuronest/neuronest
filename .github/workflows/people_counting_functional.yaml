@@ -73,7 +73,10 @@ jobs:
     secrets: inherit
 
   deploy_people_counting_functional:
-    needs: build_test_push_people_counting
+    needs:
+     - build_test_push_people_counting
+     - build_test_push_object_detection
+     - build_test_push_model_instantiator
     runs-on: ubuntu-latest
     container:
       image: google/cloud-sdk
