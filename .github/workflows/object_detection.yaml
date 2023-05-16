@@ -5,25 +5,53 @@ on:
     branches:
       - main
       - develop
-    paths:
-      - .github/workflows/object_detection.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - object-detection/**
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/object_detection.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - object-detection/**
+#    paths:
+#      - .github/workflows/object_detection.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - object-detection/**
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/object_detection.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - object-detection/**
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      build:
+        required: false
+        type: string
+        default: true
+      deploy:
+        required: false
+        type: string
+        default: true
+      do_post_deployment:
+        required: false
+        type: string
+        default: true
+      base_project_builder_sa_key:
+        required: false
+        type: string
+        default: ""
+    outputs:
+      gcp_training_image_name:
+        description: "The gcp image name"
+        value: ${{ jobs.get_gcp_training_image_name.outputs.value }}
+      dockerhub_training_image_name:
+        description: "The gcp image name"
+        value: ${{ jobs.get_dockerhub_training_image_name.outputs.value }}
+      base_project_builder_sa_key:
+        description: "The gcp image name"
+        value: ${{ jobs.get_base_project_builder_sa_key.outputs.value }}
 
 env:
   REPOSITORY_NAME: object-detection
@@ -31,28 +59,25 @@ env:
   MODEL_INSTANTIATOR_HOST: model-instantiator-bnuahhbzua-ew.a.run.app
 
 jobs:
-  build_test_push_deploy_training:
-    name: build_test_push_deploy_training
+  build_test_push_training_image:
+    name: build_test_push_training_image
     runs-on: ubuntu-latest
+    if: ${{ inputs.build == 'true' }}
     container: google/cloud-sdk
     outputs:
       dockerhub_training_image_name: ${{ steps.build_test_push_deploy.outputs.dockerhub_image_name }}
       gcp_training_image_name: ${{ steps.build_test_push_deploy.outputs.gcp_image_name }}
       base_project_builder_sa_key: ${{ steps.build_test_push_deploy.outputs.base_project_builder_sa_key }}
-
     steps:
       - uses: actions/checkout@v3
-
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
           repository_names: object-detection
-
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-
       - id: build_test_push_deploy
         uses: ./.github/actions/build_test_push_deploy
         with:
@@ -60,16 +85,80 @@ jobs:
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: training
 
+  get_gcp_training_image_name:
+    runs-on: ubuntu-latest
+    needs: build_test_push_training_image
+    outputs:
+      value: ${{ steps.get_gcp_training_image_name.outputs.gcp_training_image_name }}
+    steps:
+      - id: get_gcp_training_image_name
+        run: |
+          job_gcp_training_image_name=${{ needs.jobs.build_test_push_training_image.outputs.gcp_training_image_name }}
+          input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
+          echo "gcp_training_image_name=${job_gcp_training_image_name:-input_gcp_training_image_name}" >> $GITHUB_OUTPUT
+
+  get_dockerhub_training_image_name:
+    runs-on: ubuntu-latest
+    needs: build_test_push_training_image
+    outputs:
+      value: ${{ steps.get_dockerhub_training_image_name.outputs.dockerhub_training_image_name }}
+    steps:
+      - id: get_dockerhub_training_image_name
+        run: |
+          job_dockerhub_training_image_name=${{ needs.jobs.build_test_push_training_image.outputs.dockerhub_training_image_name }}
+          input_dockerhub_training_image_name=${{ inputs.gcp_training_image_name }}
+          echo "dockerhub_training_image_name=${job_dockerhub_training_image_name:-input_dockerhub_training_image_name}" >> $GITHUB_OUTPUT
+
+  deploy_with_training_image:
+    name: deploy_with_training_image
+    runs-on: ubuntu-latest
+    needs: get_dockerhub_training_image_name
+    if: ${{ inputs.deploy == 'true' }}
+    container: google/cloud-sdk
+    outputs:
+      base_project_builder_sa_key: ${{ steps.build_test_push_deploy.outputs.base_project_builder_sa_key }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - id: base_run_terraform
+        uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
+          workspace: base
+      - uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+          workspace: ${{ env.REPOSITORY_NAME }}
+          image_name: ${{ needs.jobs.get_dockerhub_training_image_name.outputs.value }}
+
+  get_base_project_builder_sa_key:
+    runs-on: ubuntu-latest
+    needs: deploy_with_training_image
+    outputs:
+      value: ${{ steps.get_deploy_with_training_image.outputs.base_project_builder_sa_key }}
+    steps:
+      - id: get_base_project_builder_sa_key
+        run: |
+          job_base_project_builder_sa_key=${{ needs.jobs.deploy_with_training_image.outputs.base_project_builder_sa_key }}
+          input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
+          echo "base_project_builder_sa_key=${job_base_project_builder_sa_key:-input_base_project_builder_sa_key}" >> $GITHUB_OUTPUT
+
   train:
     name: train
     needs:
-      - build_test_push_deploy_training
+      - get_gcp_training_image_name
+      - get_dockerhub_training_image_name
+      - get_base_project_builder_sa_key
     runs-on: ubuntu-latest
+    if: ${{ inputs.do_post_deployment == 'true' }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.build_test_push_deploy_training.outputs.dockerhub_training_image_name}}
+      image: ${{needs.get_dockerhub_training_image_name.outputs.value}}
       credentials:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -88,14 +177,14 @@ jobs:
 
       - id: set_additional_variables
         run: |
-          echo "TRAINING_IMAGE_NAME"="${{ needs.build_test_push_deploy_training.outputs.gcp_training_image_name }}" >> $GITHUB_ENV
+          echo "TRAINING_IMAGE_NAME"="${{ needs.get_gcp_training_image_name.outputs.value }}" >> $GITHUB_ENV
           echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
           echo "MODEL_GSPATH"="gs://${MODELS_BUCKET}/${PACKAGE_NAME}-${RUN_ID}" >> $GITHUB_ENV
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ needs.build_test_push_deploy_training.outputs.base_project_builder_sa_key }}
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
 
       - id: train
         run: |
@@ -106,12 +195,13 @@ jobs:
       - id: output_step
         run: echo "model_gspath=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
 
-  build_test_push_serving:
-    name: build_test_push_serving
+  build_test_push_serving_image:
+    name: build_test_push_serving_image
     needs:
-      - build_test_push_deploy_training
+      - get_base_project_builder_sa_key
       - train
     runs-on: ubuntu-latest
+    if: ${{ inputs.do_post_deployment == 'true' }}
     container: google/cloud-sdk
     env:
       MODEL_PATH: model.pt
@@ -134,7 +224,7 @@ jobs:
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ needs.build_test_push_deploy_training.outputs.base_project_builder_sa_key }}
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
 
       - id: download_model_weights
         run: gsutil cp $MODEL_GSPATH ${{ env.REPOSITORY_NAME }}/$MODEL_PATH
@@ -150,14 +240,16 @@ jobs:
   test_serving:
     name: test_serving
     needs:
-      - build_test_push_deploy_training
-      - build_test_push_serving
+      - get_dockerhub_training_image_name
+      - get_base_project_builder_sa_key
+      - build_test_push_serving_image
     runs-on: ubuntu-latest
+    if: ${{ inputs.do_post_deployment == 'true' }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.build_test_push_deploy_training.outputs.dockerhub_training_image_name}}
+      image: ${{needs.get_dockerhub_training_image_name.outputs.value}}
       credentials:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -172,22 +264,22 @@ jobs:
 
       - id: set_additional_variables
         run: |
-          echo "SERVING_IMAGE_NAME"="${{ needs.build_test_push_serving.outputs.gcp_serving_image_name }}" >> $GITHUB_ENV
+          echo "SERVING_IMAGE_NAME"="${{ needs.build_test_push_serving_image.outputs.gcp_serving_image_name }}" >> $GITHUB_ENV
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ needs.build_test_push_deploy_training.outputs.base_project_builder_sa_key }}
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
 
       - id: model_upload
         run: python -m object_detection.cli --actions model_upload
 
-#      - id: deploy
-#        run: python -m object_detection.cli --actions deploy
-#      - id: remove_last_model_version
-#        if: ${{ failure() && steps.deploy.conclusion == 'failure' }}
-#        run: python -m object_detection.cli --actions remove_last_model_version
-#
+      - id: deploy
+        run: python -m object_detection.cli --actions deploy
+      - id: remove_last_model_version
+        if: ${{ failure() && steps.deploy.conclusion == 'failure' }}
+        run: python -m object_detection.cli --actions remove_last_model_version
+
 #      - id: poetry_install_with_test
 #        run: poetry check && poetry install --with dev
 #

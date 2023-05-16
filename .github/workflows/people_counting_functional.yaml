@@ -49,7 +49,27 @@ jobs:
     needs: run_base_terraform
     uses: ./.github/workflows/people_counting.yaml
     with:
+      build: true
       deploy: false
+      do_post_deployment: false
+    secrets: inherit
+
+  build_test_push_object_detection:
+    needs: run_base_terraform
+    uses: ./.github/workflows/object_detection.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+    secrets: inherit
+
+  build_test_push_model_instantiator:
+    needs: run_base_terraform
+    uses: ./.github/workflows/model_instantiator.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
     secrets: inherit
 
   deploy_people_counting_functional:
@@ -68,6 +88,5 @@ jobs:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
           workspace: ${{ env.REPOSITORY_NAME }}
           vars: |-
-            model_instantiator_image_name=test
-            people_counting_image_name=${{ needs.jobs.build_test_push_people_counting.steps.outputs.gcp_image_name }}
-
+            model_instantiator_image_name=${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
+            people_counting_image_name=${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
