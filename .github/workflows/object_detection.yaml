@@ -42,6 +42,14 @@ on:
         required: false
         type: string
         default: ""
+      dockerhub_training_image_name:
+        required: false
+        type: string
+        default: ""
+      gcp_training_image_name:
+        required: false
+        type: string
+        default: ""
     outputs:
       gcp_training_image_name:
         description: "The gcp image name"
