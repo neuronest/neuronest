@@ -121,7 +121,6 @@ jobs:
   deploy_with_training_image:
     name: deploy_with_training_image
     runs-on: ubuntu-latest
-    needs: get_dockerhub_training_image_name
     if: ${{ inputs.deploy == 'true' }}
     container: google/cloud-sdk
     outputs:
