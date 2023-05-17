@@ -101,7 +101,7 @@ jobs:
     steps:
       - id: get_gcp_training_image_name
         run: |
-          job_gcp_training_image_name=${{ needs.jobs.build_test_push_training_image.outputs.gcp_training_image_name }}
+          job_gcp_training_image_name=${{ needs.build_test_push_training_image.outputs.gcp_training_image_name }}
           input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
           echo "job_gcp_training_image_name=$job_gcp_training_image_name"
           echo "input_gcp_training_image_name=$input_gcp_training_image_name"
@@ -118,8 +118,8 @@ jobs:
     steps:
       - id: get_dockerhub_training_image_name
         run: |
-          job_dockerhub_training_image_name=${{ needs.jobs.build_test_push_training_image.outputs.dockerhub_training_image_name }}
-          input_dockerhub_training_image_name=${{ inputs.gcp_training_image_name }}
+          job_dockerhub_training_image_name=${{ needs.build_test_push_training_image.outputs.dockerhub_training_image_name }}
+          input_dockerhub_training_image_name=${{ inputs.dockerhub_training_image_name }}
           echo "job_dockerhub_training_image_name=$job_dockerhub_training_image_name"
           echo "input_dockerhub_training_image_name=$input_dockerhub_training_image_name"
           dockerhub_training_image_name=${job_dockerhub_training_image_name:-$input_dockerhub_training_image_name}
@@ -138,7 +138,7 @@ jobs:
     if: ${{ always() && inputs.deploy == 'true' }}
     container: google/cloud-sdk
     outputs:
-      base_project_builder_sa_key: ${{ steps.build_test_push_deploy.outputs.base_project_builder_sa_key }}
+      base_project_builder_sa_key: ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
@@ -154,18 +154,18 @@ jobs:
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
           workspace: ${{ env.REPOSITORY_NAME }}
-          image_name: ${{ needs.jobs.get_dockerhub_training_image_name.outputs.value }}
+          image_name: ${{ needs.get_dockerhub_training_image_name.outputs.value }}
 
   get_base_project_builder_sa_key:
     runs-on: ubuntu-latest
     needs: deploy_with_training_image
     if: always()
     outputs:
-      value: ${{ steps.get_deploy_with_training_image.outputs.base_project_builder_sa_key }}
+      value: ${{ steps.get_base_project_builder_sa_key.outputs.base_project_builder_sa_key }}
     steps:
       - id: get_base_project_builder_sa_key
         run: |
-          job_base_project_builder_sa_key=${{ needs.jobs.deploy_with_training_image.outputs.base_project_builder_sa_key }}
+          job_base_project_builder_sa_key=${{ needs.deploy_with_training_image.outputs.base_project_builder_sa_key }}
           input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
           echo "job_base_project_builder_sa_key=$job_base_project_builder_sa_key"
           echo "input_base_project_builder_sa_key=$input_base_project_builder_sa_key"

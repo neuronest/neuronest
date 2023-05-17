@@ -72,15 +72,6 @@ jobs:
       do_post_deployment: false
     secrets: inherit
 
-  post_deploy_people_counting_first:
-    needs: run_base_terraform
-    uses: ./.github/workflows/people_counting.yaml
-    with:
-      build: false
-      deploy: false
-      do_post_deployment: false
-    secrets: inherit
-
   post_deploy_object_detection_first:
     needs: run_base_terraform
     uses: ./.github/workflows/object_detection.yaml
@@ -91,15 +82,6 @@ jobs:
       gcp_training_image_name: test
       dockerhub_training_image_name: test
       base_project_builder_sa_key: test
-    secrets: inherit
-
-  post_deploy_model_instantiator_first:
-    needs: run_base_terraform
-    uses: ./.github/workflows/model_instantiator.yaml
-    with:
-      build: false
-      deploy: false
-      do_post_deployment: false
     secrets: inherit
 
   deploy_people_counting_functional:
