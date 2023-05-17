@@ -121,7 +121,7 @@ jobs:
   deploy_with_training_image:
     name: deploy_with_training_image
     runs-on: ubuntu-latest
-    if: ${{ inputs.deploy == 'true' }}
+    if: ${{ inputs.deploy == 'true' && needs.jobs.get_dockerhub_training_image_name.result == 'success' }}
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.build_test_push_deploy.outputs.base_project_builder_sa_key }}
