@@ -51,7 +51,7 @@ jobs:
     with:
       build: true
       deploy: false
-      do_post_deployment: false
+      do_post_deployment: true
     secrets: inherit
 
   post_deploy_people_counting_first:
