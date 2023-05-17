@@ -56,7 +56,7 @@ jobs:
   build_test_push:
     name: build_test_push
     runs-on: ubuntu-latest
-    if: ${{ inputs.do_post_deployment == 'true' }}
+    if: ${{ inputs.build == 'true' }}
     container: google/cloud-sdk
     outputs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}

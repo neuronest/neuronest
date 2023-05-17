@@ -51,16 +51,7 @@ jobs:
     with:
       build: true
       deploy: false
-      do_post_deployment: true
-    secrets: inherit
-
-  post_deploy_people_counting_first:
-    needs: run_base_terraform
-    uses: ./.github/workflows/people_counting.yaml
-    with:
-      build: false
-      deploy: false
-      do_post_deployment: true
+      do_post_deployment: false
     secrets: inherit
 
   build_test_push_object_detection:

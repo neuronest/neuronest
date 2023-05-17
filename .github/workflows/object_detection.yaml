@@ -95,6 +95,7 @@ jobs:
   get_gcp_training_image_name:
     runs-on: ubuntu-latest
     needs: build_test_push_training_image
+    if: always()
     outputs:
       value: ${{ steps.get_gcp_training_image_name.outputs.gcp_training_image_name }}
     steps:
@@ -107,6 +108,7 @@ jobs:
   get_dockerhub_training_image_name:
     runs-on: ubuntu-latest
     needs: build_test_push_training_image
+    if: always()
     outputs:
       value: ${{ steps.get_dockerhub_training_image_name.outputs.dockerhub_training_image_name }}
     steps:
@@ -144,6 +146,7 @@ jobs:
   get_base_project_builder_sa_key:
     runs-on: ubuntu-latest
     needs: deploy_with_training_image
+    if: always()
     outputs:
       value: ${{ steps.get_deploy_with_training_image.outputs.base_project_builder_sa_key }}
     steps:
