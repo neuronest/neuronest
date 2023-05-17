@@ -184,6 +184,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: display current image
+        run: echo ${{needs.get_dockerhub_training_image_name.outputs.value}}
+
       - id: set_variables
         uses: ./.github/actions/set_variables
         with:
