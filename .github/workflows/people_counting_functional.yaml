@@ -72,42 +72,6 @@ jobs:
       do_post_deployment: false
     secrets: inherit
 
-  post_deploy_object_detection_first:
-    needs: run_base_terraform
-    uses: ./.github/workflows/object_detection.yaml
-    with:
-      build: false
-      deploy: false
-      do_post_deployment: true
-      gcp_training_image_name: test
-      dockerhub_training_image_name: test
-      base_project_builder_sa_key: test
-    secrets: inherit
-
-  post_deploy_object_detection_second:
-    needs: run_base_terraform
-    uses: ./.github/workflows/object_detection.yaml
-    with:
-      build: false
-      deploy: true
-      do_post_deployment: false
-      gcp_training_image_name: test
-      dockerhub_training_image_name: test
-      base_project_builder_sa_key: test
-    secrets: inherit
-
-  post_deploy_object_detection_third:
-    needs: run_base_terraform
-    uses: ./.github/workflows/object_detection.yaml
-    with:
-      build: true
-      deploy: false
-      do_post_deployment: false
-      gcp_training_image_name: test
-      dockerhub_training_image_name: test
-      base_project_builder_sa_key: test
-    secrets: inherit
-
   deploy_people_counting_functional:
     needs:
      - build_test_push_people_counting

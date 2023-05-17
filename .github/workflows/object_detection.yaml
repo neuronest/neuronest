@@ -163,7 +163,10 @@ jobs:
 
   train:
     name: train
-    needs: [get_gcp_training_image_name, get_dockerhub_training_image_name, get_base_project_builder_sa_key]
+    needs:
+      - get_gcp_training_image_name
+      - get_dockerhub_training_image_name
+      - get_base_project_builder_sa_key
     runs-on: ubuntu-latest
     if: ${{ always() && inputs.do_post_deployment == 'true' }}
     defaults:
@@ -209,7 +212,9 @@ jobs:
 
   build_test_push_serving_image:
     name: build_test_push_serving_image
-    needs: [get_base_project_builder_sa_key, train]
+    needs:
+      - get_base_project_builder_sa_key
+      - train
     runs-on: ubuntu-latest
     if: ${{ always() && inputs.do_post_deployment == 'true' }}
     container: google/cloud-sdk
@@ -249,7 +254,10 @@ jobs:
 
   test_serving:
     name: test_serving
-    needs: [get_dockerhub_training_image_name, get_base_project_builder_sa_key, build_test_push_serving_image]
+    needs:
+      - get_dockerhub_training_image_name
+      - get_base_project_builder_sa_key
+      - build_test_push_serving_image
     runs-on: ubuntu-latest
     if: ${{ always() && inputs.do_post_deployment == 'true' }}
     defaults:
