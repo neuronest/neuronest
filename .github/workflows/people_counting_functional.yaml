@@ -73,7 +73,7 @@ jobs:
     secrets: inherit
 
   post_deploy_people_counting_first:
-    needs: deploy_people_counting_functional
+    needs: run_base_terraform
     uses: ./.github/workflows/people_counting.yaml
     with:
       build: false
@@ -82,7 +82,7 @@ jobs:
     secrets: inherit
 
   post_deploy_object_detection_first:
-    needs: deploy_people_counting_functional
+    needs: run_base_terraform
     uses: ./.github/workflows/object_detection.yaml
     with:
       build: false
@@ -94,7 +94,7 @@ jobs:
     secrets: inherit
 
   post_deploy_model_instantiator_first:
-    needs: deploy_people_counting_functional
+    needs: run_base_terraform
     uses: ./.github/workflows/model_instantiator.yaml
     with:
       build: false
