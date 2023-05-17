@@ -34,13 +34,16 @@ jobs:
   run_base_terraform:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
+    outputs:
+      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-      - uses: ./.github/actions/run_terraform
+      - id: run_base_terraform
+        uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
           workspace: base
@@ -122,9 +125,9 @@ jobs:
       build: false
       deploy: false
       do_post_deployment: true
-      gcp_training_image_name: ${{ needs.jobs.build_test_push_object_detection.outputs.gcp_training_image_name }}
-      dockerhub_training_image_name: ${{ needs.jobs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
-      base_project_builder_sa_key: ${{ needs.jobs.build_test_push_object_detection.outputs.base_project_builder_sa_key }}
+      gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
+      dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
+      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
     secrets: inherit
 
   post_deploy_model_instantiator:
