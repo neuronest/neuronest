@@ -103,7 +103,9 @@ jobs:
         run: |
           job_gcp_training_image_name=${{ needs.jobs.build_test_push_training_image.outputs.gcp_training_image_name }}
           input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
-          echo "gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}" >> $GITHUB_OUTPUT
+          gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
+          echo "gcp_training_image_name=$gcp_training_image_name" >> $GITHUB_OUTPUT
+          echo "gcp_training_image_name=$gcp_training_image_name"
 
   get_dockerhub_training_image_name:
     runs-on: ubuntu-latest
@@ -116,7 +118,9 @@ jobs:
         run: |
           job_dockerhub_training_image_name=${{ needs.jobs.build_test_push_training_image.outputs.dockerhub_training_image_name }}
           input_dockerhub_training_image_name=${{ inputs.gcp_training_image_name }}
-          echo "dockerhub_training_image_name=${job_dockerhub_training_image_name:-$input_dockerhub_training_image_name}" >> $GITHUB_OUTPUT
+          dockerhub_training_image_name=${job_dockerhub_training_image_name:-$input_dockerhub_training_image_name}
+          echo "dockerhub_training_image_name=$dockerhub_training_image_name" >> $GITHUB_OUTPUT
+          echo "dockerhub_training_image_name=$dockerhub_training_image_name"
 
   deploy_with_training_image:
     name: deploy_with_training_image
@@ -159,8 +163,9 @@ jobs:
         run: |
           job_base_project_builder_sa_key=${{ needs.jobs.deploy_with_training_image.outputs.base_project_builder_sa_key }}
           input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
-          echo "base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}" >> $GITHUB_OUTPUT
-
+          base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
+          echo "base_project_builder_sa_key=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
+          echo "base_project_builder_sa_key=$base_project_builder_sa_key"
   train:
     name: train
     needs:
@@ -184,8 +189,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: display current image
-        run: echo ${{needs.get_dockerhub_training_image_name.outputs.value}}
+      - name: display dockerhub_training_image_name
+        run: echo "dockerhub_training_image_name ${{needs.get_dockerhub_training_image_name.outputs.value}}"
 
       - id: set_variables
         uses: ./.github/actions/set_variables
@@ -198,6 +203,10 @@ jobs:
           echo "TRAINING_IMAGE_NAME"="${{ needs.get_gcp_training_image_name.outputs.value }}" >> $GITHUB_ENV
           echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
           echo "MODEL_GSPATH"="gs://${MODELS_BUCKET}/${PACKAGE_NAME}-${RUN_ID}" >> $GITHUB_ENV
+          echo "$MODEL_GSPATH: $MODEL_GSPATH"
+
+      - name: display get_base_project_builder_sa_key
+        run: echo "dockerhub_training_image_name ${{ needs.get_base_project_builder_sa_key.outputs.value }}"
 
       - id: gcloud_auth
         uses: ./.github/actions/gcloud_auth
