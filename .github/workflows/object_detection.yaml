@@ -103,8 +103,7 @@ jobs:
         run: |
           job_gcp_training_image_name=${{ needs.jobs.build_test_push_training_image.outputs.gcp_training_image_name }}
           input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
-          echo "gcp_training_image_name=${job_gcp_training_image_name:-input_gcp_training_image_name}" >> $GITHUB_OUTPUT
-          echo "gcp_training_image_name=${job_gcp_training_image_name:-input_gcp_training_image_name}"
+          echo "gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}" >> $GITHUB_OUTPUT
 
   get_dockerhub_training_image_name:
     runs-on: ubuntu-latest
@@ -117,8 +116,7 @@ jobs:
         run: |
           job_dockerhub_training_image_name=${{ needs.jobs.build_test_push_training_image.outputs.dockerhub_training_image_name }}
           input_dockerhub_training_image_name=${{ inputs.gcp_training_image_name }}
-          echo "dockerhub_training_image_name=${job_dockerhub_training_image_name:-input_dockerhub_training_image_name}" >> $GITHUB_OUTPUT
-          echo "dockerhub_training_image_name=${job_dockerhub_training_image_name:-input_dockerhub_training_image_name}"
+          echo "dockerhub_training_image_name=${job_dockerhub_training_image_name:-$input_dockerhub_training_image_name}" >> $GITHUB_OUTPUT
 
   deploy_with_training_image:
     name: deploy_with_training_image
@@ -161,7 +159,7 @@ jobs:
         run: |
           job_base_project_builder_sa_key=${{ needs.jobs.deploy_with_training_image.outputs.base_project_builder_sa_key }}
           input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
-          echo "base_project_builder_sa_key=${job_base_project_builder_sa_key:-input_base_project_builder_sa_key}" >> $GITHUB_OUTPUT
+          echo "base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}" >> $GITHUB_OUTPUT
 
   train:
     name: train
