@@ -58,7 +58,7 @@ jobs:
     needs: run_base_terraform
     uses: ./.github/workflows/people_counting.yaml
     with:
-      build: false
+      build: true
       deploy: false
       do_post_deployment: true
     secrets: inherit
