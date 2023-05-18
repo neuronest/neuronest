@@ -181,11 +181,11 @@ jobs:
       - get_base_project_builder_sa_key
     if: always()
     steps:
-      - id: display_all_workflow_outputs
+      - name: display_all_workflow_outputs
         run: |
-          echo "training_image_name: ${{ jobs.get_gcp_training_image_name.outputs.value }}"
-          echo "dockerhub_training_image_name: ${{ jobs.get_dockerhub_training_image_name.outputs.value }}"
-          echo "base_project_builder_sa_key: ${{ jobs.get_base_project_builder_sa_key.outputs.value }}"
+          echo "training_image_name: ${{ needs.get_gcp_training_image_name.outputs.value }}"
+          echo "dockerhub_training_image_name: ${{ needs.get_dockerhub_training_image_name.outputs.value }}"
+          echo "base_project_builder_sa_key: ${{ needs.get_base_project_builder_sa_key.outputs.value }}"
 
   train:
     name: train
