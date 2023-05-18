@@ -107,6 +107,7 @@ jobs:
      - build_test_push_people_counting
      - build_test_push_object_detection
      - build_test_push_model_instantiator
+     - run_base_terraform
     runs-on: ubuntu-latest
     container:
       image: google/cloud-sdk
@@ -139,7 +140,7 @@ jobs:
     secrets: inherit
 
   post_deploy_object_detection:
-    needs: deploy_people_counting_functional
+    needs: [deploy_people_counting_functional, build_test_push_object_detection, run_base_terraform]
     uses: ./.github/workflows/object_detection.yaml
     with:
       build: false
