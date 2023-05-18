@@ -111,8 +111,8 @@ runs:
           else
             base_project_builder_sa_key=""
           fi
-          echo "base_project_builder_sa_key=$base_project_builder_sa_key"
           echo "base_project_builder_sa_key=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
+          echo "base_project_builder_sa_key=$base_project_builder_sa_key"
           
           # force script to terminate on terraform exit code to account for bug 
           # where last command dictates error or not: https://github.com/nick-fields/retry/issues/53
