@@ -96,10 +96,10 @@ jobs:
     with:
       build: false
       deploy: false
-      do_post_deployment: false
-      gcp_training_image_name: test
-      dockerhub_training_image_name: test
-      base_project_builder_sa_key: test
+      do_post_deployment: true
+      gcp_training_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/object-detection-training:5012570594
+      dockerhub_training_image_name: neuronest/object-detection-training:5012570594
+      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
     secrets: inherit
 
   deploy_people_counting_functional:
