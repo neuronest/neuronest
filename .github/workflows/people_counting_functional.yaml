@@ -108,6 +108,11 @@ jobs:
           vars: |-
             model_instantiator_image_name=${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
             people_counting_image_name=${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
+      - name: display all previous jobs outputs
+        run: |
+          echo "gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}"
+          echo "dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outpus.dockerhub_training_image_name }}"
+          echo "base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}"
 
   post_deploy_people_counting:
     needs: deploy_people_counting_functional
@@ -126,7 +131,7 @@ jobs:
       deploy: false
       do_post_deployment: true
       gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
-      dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
+      dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outpus.dockerhub_training_image_name }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
     secrets: inherit
 

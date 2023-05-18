@@ -172,6 +172,21 @@ jobs:
           base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
           echo "base_project_builder_sa_key=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
           echo "base_project_builder_sa_key=$base_project_builder_sa_key"
+
+  display_all_workflow_outputs:
+    runs-on: ubuntu-latest
+    needs:
+      - get_gcp_training_image_name
+      - get_dockerhub_training_image_name
+      - get_base_project_builder_sa_key
+    if: always()
+    steps:
+      - id: display_all_workflow_outputs
+        run: |
+          echo "training_image_name: ${{ jobs.get_gcp_training_image_name.outputs.value }}"
+          echo "dockerhub_training_image_name: ${{ jobs.get_dockerhub_training_image_name.outputs.value }}"
+          echo "base_project_builder_sa_key: ${{ jobs.get_base_project_builder_sa_key.outputs.value }}"
+
   train:
     name: train
     needs:
