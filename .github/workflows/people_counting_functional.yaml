@@ -35,18 +35,33 @@ jobs:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+      base_project_builder_sa_key: ${{ steps.run_terraform_of_base.outputs.base_project_builder_sa_key }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-      - id: run_base_terraform
+      - id: run_terraform_of_base
         uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
           workspace: base
+
+  display_base_project_builder_sa_key:
+    needs: run_base_terraform
+    runs-on: ubuntu-latest
+    container:
+      image: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - name: display base_project_builder_sa_key
+        run: |
+          echo "base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}"
 
   build_test_push_people_counting:
     needs: run_base_terraform
@@ -111,7 +126,7 @@ jobs:
       - name: display all previous jobs outputs
         run: |
           echo "gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}"
-          echo "dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outpus.dockerhub_training_image_name }}"
+          echo "dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}"
           echo "base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}"
 
   post_deploy_people_counting:
@@ -131,7 +146,7 @@ jobs:
       deploy: false
       do_post_deployment: true
       gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
-      dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outpus.dockerhub_training_image_name }}
+      dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
     secrets: inherit
 
