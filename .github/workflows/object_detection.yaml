@@ -222,8 +222,8 @@ jobs:
       - id: set_additional_variables
         run: |
           echo "TRAINING_IMAGE_NAME"="${{ needs.get_gcp_training_image_name.outputs.value }}" >> $GITHUB_ENV
-          echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
-          echo "MODEL_GSPATH"="gs://${MODELS_BUCKET}/${PACKAGE_NAME}-${RUN_ID}" >> $GITHUB_ENV
+          # echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
+          echo "MODEL_GSPATH"="gs://${MODELS_BUCKET}/${PACKAGE_NAME}-${{ github.sha }}" >> $GITHUB_ENV
           echo "$MODEL_GSPATH: $MODEL_GSPATH"
 
       - name: display get_base_project_builder_sa_key

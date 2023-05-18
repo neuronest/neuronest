@@ -140,7 +140,11 @@ jobs:
     secrets: inherit
 
   post_deploy_object_detection:
-    needs: [deploy_people_counting_functional, build_test_push_object_detection, run_base_terraform]
+    # the job in the needs section is necessary to recover its output
+    needs:
+      - run_base_terraform
+      - deploy_people_counting_functional
+      - build_test_push_object_detection
     uses: ./.github/workflows/object_detection.yaml
     with:
       build: false
