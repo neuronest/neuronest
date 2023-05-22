@@ -100,7 +100,7 @@ jobs:
       gcp_training_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/object-detection-training:5023620642
       dockerhub_training_image_name: neuronest/object-detection-training:5023620642
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
-      model_instantiator_host: https://model-instantiator-su5qqvdtvq-ew.a.run.app
+      model_instantiator_url: https://model-instantiator-su5qqvdtvq-ew.a.run.app
     secrets: inherit
 
   deploy_people_counting_functional:
@@ -165,7 +165,6 @@ jobs:
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       model_instantiator_url: ${{ needs.deploy_people_counting_functional.outputs.model_instantiator_url }}
     secrets: inherit
-
 
   post_deploy_model_instantiator:
     needs: deploy_people_counting_functional
