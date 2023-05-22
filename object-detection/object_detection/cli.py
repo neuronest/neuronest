@@ -252,9 +252,12 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], actions: List[Actio
     vertex_ai_manager = VertexAIManager(
         key_path=GOOGLE_APPLICATION_CREDENTIALS, location=config.region
     )
-    model_instantiator_client = ModelInstantiatorClient(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, host=MODEL_INSTANTIATOR_HOST
-    )
+    if MODEL_INSTANTIATOR_HOST is not None:
+        model_instantiator_client = ModelInstantiatorClient(
+            key_path=GOOGLE_APPLICATION_CREDENTIALS, host=MODEL_INSTANTIATOR_HOST
+        )
+    else:
+        model_instantiator_client = None
     model_name = config.model.name
 
     parameters = {
