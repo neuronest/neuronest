@@ -97,9 +97,10 @@ jobs:
       build: false
       deploy: false
       do_post_deployment: true
-      gcp_training_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/object-detection-training:5012570594
-      dockerhub_training_image_name: neuronest/object-detection-training:5012570594
+      gcp_training_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/object-detection-training:5023620642
+      dockerhub_training_image_name: neuronest/object-detection-training:5023620642
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+      model_instantiator_host: https://model-instantiator-su5qqvdtvq-ew.a.run.app
     secrets: inherit
 
   deploy_people_counting_functional:
@@ -108,6 +109,8 @@ jobs:
      - build_test_push_object_detection
      - build_test_push_model_instantiator
      - run_base_terraform
+    outputs:
+      model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.model_instantiator_url }}
     runs-on: ubuntu-latest
     container:
       image: google/cloud-sdk
@@ -117,18 +120,25 @@ jobs:
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-      - uses: ./.github/actions/run_terraform
+      - id: run_people_counting_functional_terraform
+        uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
           workspace: ${{ env.REPOSITORY_NAME }}
-          vars: |-
-            model_instantiator_image_name=${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
-            people_counting_image_name=${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
+        # favor environment variables that show up clearly in github logs over var-like
+        # arguments to make it easier to reproduce errors locally
+        env:
+          TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
+          TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
       - name: display all previous jobs outputs
         run: |
           echo "gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}"
           echo "dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}"
           echo "base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}"
+      - id: get_model_instantiator_url
+        run: |
+          outputs_as_json=${{ needs.run_people_counting_functional_terraform.outputs.outputs_as_json }}
+          echo "model_instantiator_url=$(echo "$outputs_as_json" | jq -r '.model_instantiator_url.value')" >> $GITHUB_OUTPUT
 
   post_deploy_people_counting:
     needs: deploy_people_counting_functional
@@ -153,6 +163,7 @@ jobs:
       gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
       dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+      model_instantiator_url: ${{ needs.deploy_people_counting_functional.outputs.model_instantiator_url }}
     secrets: inherit
 
   post_deploy_model_instantiator:

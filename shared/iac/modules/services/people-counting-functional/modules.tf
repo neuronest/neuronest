@@ -22,7 +22,6 @@ module "model_instantiator" {
   cloud_run_max_scale                  = var.model_instantiator_cloud_run_max_scale
   cloud_scheduler_job_name             = var.model_instantiator_cloud_scheduler_job_name
   cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
-  cloud_scheduler_body                 = var.model_instantiator_cloud_scheduler_body
   cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
 
   cloud_scheduler_model_name           = module.object_detection.model_name

@@ -64,6 +64,5 @@ module "people_counting_functional" {
   model_instantiator_cloud_run_max_scale            = var.model_instantiator_cloud_run_max_scale
   model_instantiator_cloud_scheduler_job_name       = var.model_instantiator_cloud_scheduler_job_name
   model_instantiator_cloud_scheduler_schedule       = var.model_instantiator_cloud_scheduler_schedule
-  model_instantiator_cloud_scheduler_body           = var.model_instantiator_cloud_scheduler_body
   model_instantiator_cloud_uninstantiate_route      = var.model_instantiator_cloud_uninstantiate_route
 }

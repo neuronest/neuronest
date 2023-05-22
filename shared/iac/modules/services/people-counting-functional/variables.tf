@@ -85,9 +85,6 @@ variable "model_instantiator_cloud_scheduler_job_name" {
 variable "model_instantiator_cloud_scheduler_schedule" {
   type = string
 }
-variable "model_instantiator_cloud_scheduler_body" {
-  type = string
-}
 variable "model_instantiator_cloud_uninstantiate_route" {
   type = string
 }

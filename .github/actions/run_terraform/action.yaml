@@ -19,6 +19,9 @@ outputs:
   base_project_builder_sa_key:
     description: 'base project builder service account key'
     value: ${{ steps.terraform_with_retry.outputs.base_project_builder_sa_key }}
+  outputs_as_json:
+    description: 'all the outputs of a terraform code in the form of key-values'
+    value: ${{ steps.terraform_with_retry.outputs.outputs_as_json }}
 
 runs:
   using: "composite"
@@ -113,9 +116,10 @@ runs:
           fi
           echo "base_project_builder_sa_key=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
           echo "base_project_builder_sa_key=$base_project_builder_sa_key"
+          echo "outputs_as_json=$(terraform output -json)" >> $GITHUB_OUTPUT
           
           # force script to terminate on terraform exit code to account for bug 
-          # where last command dictates error or not: https://github.com/nick-fields/retry/issues/53
+          # where last command dictates that an error has occurred or not: https://github.com/nick-fields/retry/issues/53
           exit $terraform_exit_status
 
     - id: release_terraform_lock

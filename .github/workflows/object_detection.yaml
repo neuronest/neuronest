@@ -50,6 +50,10 @@ on:
         required: false
         type: string
         default: ""
+      model_instantiator_host:
+        required: false
+        type: string
+        default: ""
     outputs:
       gcp_training_image_name:
         description: "The gcp image name"
@@ -64,7 +68,6 @@ on:
 env:
   REPOSITORY_NAME: object-detection
   PACKAGE_NAME: object_detection
-  MODEL_INSTANTIATOR_HOST: model-instantiator-bnuahhbzua-ew.a.run.app
 
 jobs:
   build_test_push_training_image:
@@ -324,6 +327,8 @@ jobs:
 
       - id: deploy
         run: python -m object_detection.cli --actions deploy
+        env:
+          MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_host }}
       - id: remove_last_model_version
         if: ${{ failure() && steps.deploy.conclusion == 'failure' }}
         run: python -m object_detection.cli --actions remove_last_model_version
