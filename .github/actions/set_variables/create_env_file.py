@@ -4,7 +4,8 @@ import os
 import re
 from typing import List, Optional, Tuple
 
-DEPENDENT_REPOSITORIES_IAC_VARIABLE_NAME = "REPOSITORIES_DEPENDENCIES"
+DEPENDENCY_REPOSITORIES_IAC_VARIABLE_NAME = "REPOSITORIES_DEPENDENCIES"
+ARRAY_ELEMENT_SEPARATOR = ","
 
 # create logger
 logger = logging.getLogger("my_logger")
@@ -160,6 +161,23 @@ class Repository:
     def get_dynamic_env_file(self):
         return EnvFile(path=self.dynamic_env_file_path)
 
+    def get_dependency_repositories(self):
+        static_var_name_value = {
+            var_line.name: var_line.value
+            for var_line in self.get_static_env_file().read_the_variables_lines()
+        }
+        if dependency_repositories := static_var_name_value.get(
+            DEPENDENCY_REPOSITORIES_IAC_VARIABLE_NAME, ""
+        ):
+            dependency_repositories = dependency_repositories.rstrip(os.linesep).split(
+                ARRAY_ELEMENT_SEPARATOR
+            )
+            return [
+                Repository(name=dependency_repository)
+                for dependency_repository in dependency_repositories
+            ]
+        return []
+
 
 def get_static_and_dynamic_var_lines(
     repository: Repository,
@@ -176,25 +194,17 @@ def get_static_and_dynamic_var_lines(
         repository.get_dynamic_env_file().read_the_variables_lines()
     )
 
-    for dependent_repository_name in (
-        {
-            var_line.name: var_line.value
-            for var_line in repository_level_static_var_lines
-        }
-        .get(DEPENDENT_REPOSITORIES_IAC_VARIABLE_NAME, "")
-        .rstrip(os.linesep)
-        .split()
-    ):
+    for dependency_repository in repository.get_dependency_repositories():
         (
-            dependent_repository_static_var_lines,
-            dependent_repository_dynamic_var_lines,
+            dependency_repository_static_var_lines,
+            dependency_repository_dynamic_var_lines,
         ) = get_static_and_dynamic_var_lines(
-            repository=Repository(name=dependent_repository_name),
+            repository=dependency_repository,
             add_namespace=True,
         )
 
-        all_repository_static_var_lines += dependent_repository_static_var_lines
-        all_repository_dynamic_var_lines += dependent_repository_dynamic_var_lines
+        all_repository_static_var_lines += dependency_repository_static_var_lines
+        all_repository_dynamic_var_lines += dependency_repository_dynamic_var_lines
 
     all_repository_static_var_lines += repository_level_static_var_lines
     all_repository_dynamic_var_lines += repository_level_dynamic_var_lines
