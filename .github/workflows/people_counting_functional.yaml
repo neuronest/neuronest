@@ -166,6 +166,7 @@ jobs:
       model_instantiator_url: ${{ needs.deploy_people_counting_functional.outputs.model_instantiator_url }}
     secrets: inherit
 
+
   post_deploy_model_instantiator:
     needs: deploy_people_counting_functional
     uses: ./.github/workflows/model_instantiator.yaml
