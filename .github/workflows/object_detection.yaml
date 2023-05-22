@@ -50,7 +50,7 @@ on:
         required: false
         type: string
         default: ""
-      model_instantiator_host:
+      model_instantiator_url:
         required: false
         type: string
         default: ""
@@ -328,7 +328,7 @@ jobs:
       - id: deploy
         run: python -m object_detection.cli --actions deploy
         env:
-          MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_host }}
+          MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_url }}
       - id: remove_last_model_version
         if: ${{ failure() && steps.deploy.conclusion == 'failure' }}
         run: python -m object_detection.cli --actions remove_last_model_version
