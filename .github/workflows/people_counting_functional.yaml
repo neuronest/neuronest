@@ -154,7 +154,8 @@ jobs:
           echo "base_project_builder_sa_key: ${{ steps.run_people_counting_functional_terraform.outputs.base_project_builder_sa_key }}"
       - id: get_model_instantiator_url
         run: |
-          outputs_as_json=${{ steps.run_people_counting_functional_terraform.outputs.outputs_as_json }}
+          echo coucou
+#          outputs_as_json=${{ steps.run_people_counting_functional_terraform.outputs.outputs_as_json }}
 #          echo "outputs_as_json=$outputs_as_json"
 #          apt install -y jq
 #          echo "model_instantiator_url=$(echo ${{ steps.run_people_counting_functional_terraform.outputs.outputs_as_json }} | jq -r .model_instantiator_url.value)" >> $GITHUB_OUTPUT
