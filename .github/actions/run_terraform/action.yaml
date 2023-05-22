@@ -116,7 +116,8 @@ runs:
           fi
           echo "base_project_builder_sa_key=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
           echo "base_project_builder_sa_key=$base_project_builder_sa_key"
-          echo "outputs_as_json=$(terraform output -json)" >> $GITHUB_OUTPUT
+          # github mishandles output multilines, remove newlines characters
+          echo "outputs_as_json=$(terraform output -json | tr -d '\n')" >> $GITHUB_OUTPUT
           
           # force script to terminate on terraform exit code to account for bug 
           # where last command dictates that an error has occurred or not: https://github.com/nick-fields/retry/issues/53
