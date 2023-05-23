@@ -33,6 +33,8 @@ runs:
 #    - uses: ./.github/actions/set_up_terraform
 
     - uses: ./.github/actions/initialize_terraform
+      with:
+        workspace: ${{ inputs.workspace }}
 
 #    - run: |
 #        if [[ ${{ inputs.workspace }} != "base" && ${{ inputs.workspace }} != "$REPOSITORY_NAME" ]]; then
