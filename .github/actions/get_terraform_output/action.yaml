@@ -10,7 +10,7 @@ inputs:
 outputs:
   value:
     description: 'base project builder service account key'
-    value: ${{ steps.terraform_with_retry.outputs.terraform_output_value }}
+    value: ${{ steps.get_terraform_output.outputs.terraform_output_value }}
 
 
 runs:
