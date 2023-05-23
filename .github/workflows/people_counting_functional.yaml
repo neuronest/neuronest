@@ -127,7 +127,7 @@ jobs:
       - id: get_model_instantiator_url
         run: |
           echo coucou
-          outputs_as_json="${{ steps.run_people_counting_functional_terraform.outputs.outputs_as_json }}"
+          outputs_as_json='${{ steps.run_people_counting_functional_terraform.outputs.outputs_as_json }}'
           echo "outputs_as_json=$outputs_as_json"
           apt install -y jq
           # we force the shell to interpret the substituted value as a string with 
