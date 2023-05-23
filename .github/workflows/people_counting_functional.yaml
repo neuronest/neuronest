@@ -133,7 +133,7 @@ jobs:
           # we force the shell to interpret the substituted value as a string with 
           # double quotes. Without it the shell could see a command and arguments there 
           # because of the spaces
-          echo "model_instantiator_url=$(echo "${{ steps.run_people_counting_functional_terraform.outputs.outputs_as_json }}" | jq -r .model_instantiator_url.value)" >> $GITHUB_OUTPUT
+          echo "model_instantiator_url=$(echo "$outputs_as_json" | jq -r .model_instantiator_url.value)" >> $GITHUB_OUTPUT
           echo "model_instantiator_url=$(echo "$outputs_as_json" | jq -r '.model_instantiator_url.value')"
 
   post_deploy_object_detection_first:
