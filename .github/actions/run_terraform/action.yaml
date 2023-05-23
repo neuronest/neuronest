@@ -30,7 +30,7 @@ runs:
     - run: echo "TF_VAR_image_name"="${{ inputs.image_name }}" >> $GITHUB_ENV
       shell: bash
 
-#    - uses: ./.github/actions/set_up_terraform
+    - uses: ./.github/actions/set_up_terraform
 
     - run: |
         if [[ ${{ inputs.workspace }} != "base" && ${{ inputs.workspace }} != "$REPOSITORY_NAME" ]]; then
