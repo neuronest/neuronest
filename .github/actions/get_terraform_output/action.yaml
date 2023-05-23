@@ -1,0 +1,25 @@
+name: 'run_terraform'
+description: 'Create the base infrastructure components, initialize and apply terraform'
+inputs:
+  workspace:
+    description: 'Terraform workspace to use, can be either "base" or "$REPOSITORY_NAME"'
+    required: true
+  terraform_output_name:
+    description: 'terraform output name'
+    required: true
+outputs:
+  value:
+    description: 'base project builder service account key'
+    value: ${{ steps.terraform_with_retry.outputs.terraform_output_value }}
+
+
+runs:
+  using: "composite"
+  steps:
+
+    - id: get_terraform_output
+      run: |
+          source ./.github/functions/initialize_terraform.sh
+          initialize_terraform ${{ env.REPOSITORY_NAME }} ${{ inputs.workspace }} $STATE_BUCKET
+          echo "${{ inputs.terraform_output_name }}=$(terraform output ${{ inputs.terraform_output_name }} | tr -d '"')" >> $GITHUB_OUTPUT
+      shell: bash
