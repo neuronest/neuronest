@@ -30,14 +30,16 @@ runs:
     - run: echo "TF_VAR_image_name"="${{ inputs.image_name }}" >> $GITHUB_ENV
       shell: bash
 
-    - uses: ./.github/actions/set_up_terraform
+#    - uses: ./.github/actions/set_up_terraform
 
-    - run: |
-        if [[ ${{ inputs.workspace }} != "base" && ${{ inputs.workspace }} != "$REPOSITORY_NAME" ]]; then
-          echo "Incorrect workspace input: expected $REPOSITORY_NAME or base, got ${{ inputs.workspace }}"
-          exit 1
-        fi
-      shell: bash
+    - uses: ./.github/actions/initialize_terraform
+
+#    - run: |
+#        if [[ ${{ inputs.workspace }} != "base" && ${{ inputs.workspace }} != "$REPOSITORY_NAME" ]]; then
+#          echo "Incorrect workspace input: expected $REPOSITORY_NAME or base, got ${{ inputs.workspace }}"
+#          exit 1
+#        fi
+#      shell: bash
 
     - run: |
         gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID 2>/dev/null || true
@@ -68,12 +70,12 @@ runs:
         max_attempts: 5
         retry_wait_seconds: 120
         command: |
-          cd ${{ env.REPOSITORY_NAME }}/iac
-          
-          # run terraform init and create the terraform state locally
-          terraform init -input=false -backend-config="bucket=$STATE_BUCKET"
-  
-          terraform workspace select ${{ inputs.workspace }} || terraform workspace new ${{ inputs.workspace }}
+          #          cd ${{ env.REPOSITORY_NAME }}/iac
+          #
+          #          # run terraform init and create the terraform state locally
+          #          terraform init -input=false -backend-config="bucket=$STATE_BUCKET"
+          #
+          #          terraform workspace select ${{ inputs.workspace }} || terraform workspace new ${{ inputs.workspace }}
   
           # import the project in the terraform state
           terraform import google_project.project $PROJECT_ID 2>/dev/null || true
