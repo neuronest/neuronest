@@ -127,7 +127,7 @@ jobs:
      - build_test_push_model_instantiator
      - run_base_terraform
     outputs:
-      model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.model_instantiator_url }}
+      model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
     runs-on: ubuntu-latest
     container:
       image: google/cloud-sdk
@@ -147,23 +147,12 @@ jobs:
         env:
           TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
           TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
-      - name: display all previous jobs outputs
-        run: |
-          echo "gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}"
-          echo "dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}"
-          echo "base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}"
-          echo "base_project_builder_sa_key: ${{ steps.run_people_counting_functional_terraform.outputs.base_project_builder_sa_key }}"
+
       - id: get_model_instantiator_url
-        run: |
-          echo coucou
-          outputs_as_json='${{ steps.run_people_counting_functional_terraform.outputs.outputs_as_json }}'
-          echo "outputs_as_json=$outputs_as_json"
-          apt install -y jq
-          # we force the shell to interpret the substituted value as a string with 
-          # double quotes. Without it the shell could see a command and arguments there 
-          # because of the spaces
-          echo "model_instantiator_url=$(echo "$outputs_as_json" | jq -r .model_instantiator_url.value)" >> $GITHUB_OUTPUT
-          echo "model_instantiator_url=$(echo "$outputs_as_json" | jq -r '.model_instantiator_url.value')"
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: model_instantiator_url
 
   post_deploy_object_detection_first:
     needs:
