@@ -45,7 +45,7 @@ class VertexAIManager:
         # of the credentials is attached
         return (
             self._project_id
-            if self.credentials is not None
+            if self._project_id is not None
             else self.credentials.project_id
         )
 
