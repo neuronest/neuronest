@@ -1,7 +1,7 @@
 import os
 from typing import Tuple
 
-from core.routes.people_counting import route
+from core.routes.people_counting import routes
 from core.schemas import people_counting as schemas
 from fastapi import APIRouter, Body, Depends
 from google.cloud import firestore, storage
@@ -11,7 +11,8 @@ from people_counting.api import dependencies
 from people_counting.common import Statistics
 from people_counting.people_counter import PeopleCounter
 
-router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
+resource_name = os.path.splitext(os.path.basename(__file__))[0]
+router = APIRouter(prefix=f"/{resource_name}", tags=[resource_name])
 
 
 def count_people_and_make_video_from_local_path(
@@ -25,7 +26,7 @@ def count_people_and_make_video_from_local_path(
     return counting_statistics, counted_video_path
 
 
-@router.post(route.count_people_and_make_video, status_code=status.HTTP_201_CREATED)
+@router.post(routes.count_people_and_make_video, status_code=status.HTTP_201_CREATED)
 def count_people_and_make_video(
     *,
     input_of_people_counter: schemas.PeopleCounterInput = Body(..., embed=False),

@@ -31,4 +31,4 @@ def get_people_counter():
 
 
 def get_firestore_results_collection():
-    return firestore.Client().collection(FIRESTORE_RESULTS_COLLECTION)
+    return firestore.Client(project=PROJECT_ID).collection(FIRESTORE_RESULTS_COLLECTION)

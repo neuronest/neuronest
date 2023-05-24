@@ -63,62 +63,60 @@ jobs:
         run: |
           echo "base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}"
 
-#  build_test_push_people_counting:
-#    needs: run_base_terraform
-#    uses: ./.github/workflows/people_counting.yaml
-#    with:
-#      build: true
-#      deploy: false
-#      do_post_deployment: false
-#    secrets: inherit
-#
-#  build_test_push_object_detection:
-#    needs: run_base_terraform
-#    uses: ./.github/workflows/object_detection.yaml
-#    with:
-#      build: true
-#      deploy: false
-#      do_post_deployment: false
-#    secrets: inherit
-#
-#  build_test_push_model_instantiator:
-#    needs: run_base_terraform
-#    uses: ./.github/workflows/model_instantiator.yaml
-#    with:
-#      build: true
-#      deploy: false
-#      do_post_deployment: false
-#    secrets: inherit
-
   build_test_push_people_counting:
-    runs-on: ubuntu-latest
     needs: run_base_terraform
-    outputs:
-      gcp_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/people-counting:5050382212
-    steps:
-      - id: echo_coucou
-        run: echo coucou
+    uses: ./.github/workflows/people_counting.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+    secrets: inherit
 
   build_test_push_object_detection:
-    runs-on: ubuntu-latest
     needs: run_base_terraform
-    outputs:
-      gcp_training_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/object-detection-training:5023620642
-      dockerhub_training_image_name: neuronest/object-detection-training:5023620642
-    steps:
-      - id: echo_coucou
-        run: echo coucou
+    uses: ./.github/workflows/object_detection.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+    secrets: inherit
 
   build_test_push_model_instantiator:
-    runs-on: ubuntu-latest
     needs: run_base_terraform
-    outputs:
-      gcp_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/model-instantiator:5050382212
-    steps:
-      - id: echo_coucou
-        run: echo coucou
+    uses: ./.github/workflows/model_instantiator.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+    secrets: inherit
 
-
+#  build_test_push_people_counting:
+#    runs-on: ubuntu-latest
+#    needs: run_base_terraform
+#    outputs:
+#      gcp_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/people-counting:5050382212
+#    steps:
+#      - id: echo_coucou
+#        run: echo coucou
+#
+#  build_test_push_object_detection:
+#    runs-on: ubuntu-latest
+#    needs: run_base_terraform
+#    outputs:
+#      gcp_training_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/object-detection-training:5023620642
+#      dockerhub_training_image_name: neuronest/object-detection-training:5023620642
+#    steps:
+#      - id: echo_coucou
+#        run: echo coucou
+#
+#  build_test_push_model_instantiator:
+#    runs-on: ubuntu-latest
+#    needs: run_base_terraform
+#    outputs:
+#      gcp_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/model-instantiator:5050382212
+#    steps:
+#      - id: echo_coucou
+#        run: echo coucou
 
   deploy_people_counting_functional:
     needs:
@@ -149,25 +147,26 @@ jobs:
           TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
 
       - id: get_model_instantiator_url
+        name: get_model_instantiator_url
         uses: ./.github/actions/get_terraform_output
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: model_instantiator_url
 
-  post_deploy_object_detection_first:
-    needs:
-      - run_base_terraform
-      - deploy_people_counting_functional
-    uses: ./.github/workflows/object_detection.yaml
-    with:
-      build: false
-      deploy: false
-      do_post_deployment: true
-      gcp_training_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/object-detection-training:5023620642
-      dockerhub_training_image_name: neuronest/object-detection-training:5023620642
-      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
-      model_instantiator_url: https://model-instantiator-su5qqvdtvq-ew.a.run.app
-    secrets: inherit
+#  post_deploy_object_detection_first:
+#    needs:
+#      - run_base_terraform
+#      - deploy_people_counting_functional
+#    uses: ./.github/workflows/object_detection.yaml
+#    with:
+#      build: false
+#      deploy: false
+#      do_post_deployment: true
+#      gcp_training_image_name: europe-west1-docker.pkg.dev/people-counting-000006/neuronest/object-detection-training:5023620642
+#      dockerhub_training_image_name: neuronest/object-detection-training:5023620642
+#      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+#      model_instantiator_url: https://model-instantiator-su5qqvdtvq-ew.a.run.app
+#    secrets: inherit
 
   post_deploy_people_counting:
     needs: deploy_people_counting_functional

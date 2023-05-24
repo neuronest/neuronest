@@ -34,7 +34,6 @@ class PubSubUninstantiateModelLogsConditioned(BaseModel):
             data = UninstantiateModelLogsConditionedInput.parse_obj(
                 json.loads(base64.b64decode(data))
             )
-
         return data
 
 
