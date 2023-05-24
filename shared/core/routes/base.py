@@ -1,17 +1,22 @@
 from abc import ABC
+from typing import ClassVar
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 
 
 class _BaseRoutes(ABC, BaseModel):
+    api_tag: ClassVar[str] = "api"
     service_name: str
-    prefix: str = "/api/v1"
-    root: str = None
+    version_number: int = 1
 
-    @validator("root", pre=True, always=True)
-    # pylint: disable=no-self-argument,unused-argument
-    def populate_root(cls, root: str, values: dict) -> str:
-        service_name = values["service_name"]
-        prefix = values["prefix"]
+    @property
+    def version_name(self) -> str:
+        return f"v{self.version_number}"
 
-        return f"/{service_name}{prefix}"
+    @property
+    def prefix(self) -> str:
+        return f"/{self.api_tag}/{self.version_name}"
+
+    @property
+    def root(self) -> str:
+        return f"/{self.service_name}{self.prefix}"
