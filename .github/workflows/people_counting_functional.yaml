@@ -46,7 +46,7 @@ env:
 jobs:
   run_base_terraform:
     runs-on: ubuntu-latest
-    if: ${{ inputs.deploy == 'true' }}
+    if: ${{ inputs.deploy != 'false' }}
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
