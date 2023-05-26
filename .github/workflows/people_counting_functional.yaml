@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     # when the workflow is called it is true or false and when not called
     # it is empty string. No better syntax yet
-    if: ${{ contains(['true', ''], inputs.deploy) }}
+    if: ${{ contains(fromJSON('["true", ""]'), inputs.deploy) }}
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
