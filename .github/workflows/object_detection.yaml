@@ -70,10 +70,26 @@ env:
   PACKAGE_NAME: object_detection
 
 jobs:
+  run_base_terraform:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy == 'true' }}
+    container: google/cloud-sdk
+    outputs:
+      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - id: run_base_terraform
+        uses: ./.github/actions/run_base_terraform
+
   build_test_push_training_image:
     name: build_test_push_training_image
     runs-on: ubuntu-latest
-    if: ${{ inputs.build == 'true' }}
+    needs: run_base_terraform
+    if: ${{ always() && inputs.build == 'true' }}
     container: google/cloud-sdk
     outputs:
       dockerhub_training_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
@@ -88,6 +104,7 @@ jobs:
         uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - uses: ./.github/actions/run_base_terraform
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
@@ -106,11 +123,8 @@ jobs:
         run: |
           job_gcp_training_image_name=${{ needs.build_test_push_training_image.outputs.gcp_training_image_name }}
           input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
-          echo "job_gcp_training_image_name=$job_gcp_training_image_name"
-          echo "input_gcp_training_image_name=$input_gcp_training_image_name"
           gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
-          echo "gcp_training_image_name=$gcp_training_image_name" >> $GITHUB_OUTPUT
-          echo "gcp_training_image_name=$gcp_training_image_name"
+          echo "gcp_training_image_name=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
 
   get_dockerhub_training_image_name:
     runs-on: ubuntu-latest
@@ -123,11 +137,8 @@ jobs:
         run: |
           job_dockerhub_training_image_name=${{ needs.build_test_push_training_image.outputs.dockerhub_training_image_name }}
           input_dockerhub_training_image_name=${{ inputs.dockerhub_training_image_name }}
-          echo "job_dockerhub_training_image_name=$job_dockerhub_training_image_name"
-          echo "input_dockerhub_training_image_name=$input_dockerhub_training_image_name"
           dockerhub_training_image_name=${job_dockerhub_training_image_name:-$input_dockerhub_training_image_name}
-          echo "dockerhub_training_image_name=$dockerhub_training_image_name" >> $GITHUB_OUTPUT
-          echo "dockerhub_training_image_name=$dockerhub_training_image_name"
+          echo "dockerhub_training_image_name=$dockerhub_training_image_name" | tee -a $GITHUB_OUTPUT
 
   deploy_with_training_image:
     name: deploy_with_training_image
@@ -149,10 +160,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: base_run_terraform
-        uses: ./.github/actions/run_terraform
-        with:
-          targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
-          workspace: base
+        uses: ./.github/actions/run_base_terraform
       - uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
@@ -170,25 +178,8 @@ jobs:
         run: |
           job_base_project_builder_sa_key=${{ needs.deploy_with_training_image.outputs.base_project_builder_sa_key }}
           input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
-          echo "job_base_project_builder_sa_key=$job_base_project_builder_sa_key"
-          echo "input_base_project_builder_sa_key=$input_base_project_builder_sa_key"
           base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
-          echo "base_project_builder_sa_key=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
-          echo "base_project_builder_sa_key=$base_project_builder_sa_key"
-
-  display_all_workflow_outputs:
-    runs-on: ubuntu-latest
-    needs:
-      - get_gcp_training_image_name
-      - get_dockerhub_training_image_name
-      - get_base_project_builder_sa_key
-    if: always()
-    steps:
-      - name: display_all_workflow_outputs
-        run: |
-          echo "training_image_name: ${{ needs.get_gcp_training_image_name.outputs.value }}"
-          echo "dockerhub_training_image_name: ${{ needs.get_dockerhub_training_image_name.outputs.value }}"
-          echo "base_project_builder_sa_key: ${{ needs.get_base_project_builder_sa_key.outputs.value }}"
+          echo "base_project_builder_sa_key=$base_project_builder_sa_key" | tee -a $GITHUB_OUTPUT
 
   train:
     name: train
@@ -224,10 +215,8 @@ jobs:
 
       - id: set_additional_variables
         run: |
-          echo "TRAINING_IMAGE_NAME"="${{ needs.get_gcp_training_image_name.outputs.value }}" >> $GITHUB_ENV
-          # echo "RUN_ID"="$(uuidgen)" >> $GITHUB_ENV
-          echo "MODEL_GSPATH"="gs://${MODELS_BUCKET}/${PACKAGE_NAME}-${{ github.sha }}" >> $GITHUB_ENV
-          echo "$MODEL_GSPATH: $MODEL_GSPATH"
+          echo "TRAINING_IMAGE_NAME"="${{ needs.get_gcp_training_image_name.outputs.value }}" | tee -a $GITHUB_ENV
+          echo "MODEL_GSPATH"="gs://${MODELS_BUCKET}/${PACKAGE_NAME}-${{ github.sha }}" | tee -a $GITHUB_ENV
 
       - name: display get_base_project_builder_sa_key
         run: echo "dockerhub_training_image_name ${{ needs.get_base_project_builder_sa_key.outputs.value }}"
@@ -244,7 +233,7 @@ jobs:
           SERVICE_ACCOUNT_EMAIL: ${{ env.PROJECT_BUILDER_SERVICE_ACCOUNT_EMAIL }}
 
       - id: output_step
-        run: echo "model_gspath=$MODEL_GSPATH/$MODEL_WEIGHTS" >> $GITHUB_OUTPUT
+        run: echo "model_gspath=$MODEL_GSPATH/$MODEL_WEIGHTS" | tee -a $GITHUB_OUTPUT
 
   build_test_push_serving_image:
     name: build_test_push_serving_image
@@ -279,7 +268,6 @@ jobs:
 
       - id: download_model_weights
         run: gsutil cp $MODEL_GSPATH ${{ env.REPOSITORY_NAME }}/$MODEL_PATH
-
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:

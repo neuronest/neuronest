@@ -47,10 +47,26 @@ env:
   REPOSITORY_NAME: model-instantiator
 
 jobs:
+  run_base_terraform:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy == 'true' }}
+    container: google/cloud-sdk
+    outputs:
+      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - id: run_base_terraform
+        uses: ./.github/actions/run_base_terraform
+
   build_test_push:
     name: build_test_push
     runs-on: ubuntu-latest
-    if: ${{ inputs.build == 'true' }}
+    needs: run_base_terraform
+    if: ${{ always() && inputs.build == 'true' }}
     container: google/cloud-sdk
     outputs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
@@ -66,6 +82,8 @@ jobs:
         uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+
+      - uses: ./.github/actions/run_base_terraform
 
       - id: build_test_push
         uses: ./.github/actions/build_test_push

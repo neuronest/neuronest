@@ -71,7 +71,7 @@ class VariableLine:
         namespace: str,
         add_to_name: bool = True,
         add_to_value: bool = False,
-        variable_inside_value: Optional[str] = None,
+        variable_inside_value_to_add_to: Optional[str] = None,
     ):
         if add_to_name:
             name = f"{namespace}_{self.name}"
@@ -81,11 +81,11 @@ class VariableLine:
         if not add_to_value:
             return VariableLine(line=f"{name}={self.value}")
 
-        if variable_inside_value is not None:
+        if variable_inside_value_to_add_to is not None:
             # only add the namespace to this variable only within the value part
             value = self.value.replace(
-                "${" + variable_inside_value + "}",
-                "${" + f"{namespace}_{variable_inside_value}" + "}",
+                "${" + variable_inside_value_to_add_to + "}",
+                "${" + f"{namespace}_{variable_inside_value_to_add_to}" + "}",
             )
         else:
             # add the namespace to all variables within the value part
@@ -120,14 +120,14 @@ class EnvFile:
             raise ValueError(f"path should end with {self.EXTENSION} extension")
         self.path = path
 
-    def read(self):
+    def readlines(self):
         with open(self.path, "r") as self_reader:
             lines = self_reader.readlines()
         return lines
 
-    def read_the_variables_lines(self):
+    def read_variables_lines(self):
         variables_lines = []
-        for line in self.read():
+        for line in self.readlines():
             try:
                 variables_lines.append(VariableLine(line=line.rstrip(os.linesep)))
             except ValueError:
@@ -164,7 +164,7 @@ class Repository:
     def get_dependency_repositories(self):
         static_var_name_value = {
             var_line.name: var_line.value
-            for var_line in self.get_static_env_file().read_the_variables_lines()
+            for var_line in self.get_static_env_file().read_variables_lines()
         }
         if dependency_repositories := static_var_name_value.get(
             DEPENDENCY_REPOSITORIES_IAC_VARIABLE_NAME, ""
@@ -188,10 +188,10 @@ def get_static_and_dynamic_var_lines(
     all_repository_dynamic_var_lines = []
 
     repository_level_static_var_lines = (
-        repository.get_static_env_file().read_the_variables_lines()
+        repository.get_static_env_file().read_variables_lines()
     )
     repository_level_dynamic_var_lines = (
-        repository.get_dynamic_env_file().read_the_variables_lines()
+        repository.get_dynamic_env_file().read_variables_lines()
     )
 
     for dependency_repository in repository.get_dependency_repositories():
@@ -231,7 +231,7 @@ def get_static_and_dynamic_var_lines(
                         repository_name_as_namespace,
                         add_to_name=False,
                         add_to_value=True,
-                        variable_inside_value=variable_inside_value,
+                        variable_inside_value_to_add_to=variable_inside_value,
                     )
         for i, _ in enumerate(all_repository_static_var_lines):
             all_repository_static_var_lines[i] = all_repository_static_var_lines[
@@ -279,10 +279,10 @@ if __name__ == "__main__":
 
     shared_static_variables_lines = EnvFile(
         path=".github/variables/static_variables.env"
-    ).read_the_variables_lines()
+    ).read_variables_lines()
     shared_dynamic_variables_lines = EnvFile(
         path=".github/variables/dynamic_variables.env"
-    ).read_the_variables_lines()
+    ).read_variables_lines()
 
     main_repository = Repository(name=args.repository_name)
     if main_repository.has_env_files():

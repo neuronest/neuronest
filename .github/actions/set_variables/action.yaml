@@ -12,10 +12,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    #        echo "SHARED_STATIC_VARIABLES_PATH=.github/variables/static_variables.env" >> $GITHUB_ENV
-    #        echo "REPOSITORY_STATIC_VARIABLES_PATH"="$([[ ! -z '${{ inputs.repository_name }}' ]] && echo '${{ inputs.repository_name }}/iac/static_variables.env' || echo '')" >> $GITHUB_ENV
-    #        echo "SHARED_DYNAMIC_VARIABLES_PATH=.github/variables/dynamic_variables.env" >> $GITHUB_ENV
-    #        echo "REPOSITORY_DYNAMIC_VARIABLES_PATH"="$([[ ! -z '${{ inputs.repository_name }}' ]] && echo '${{ inputs.repository_name }}/iac/dynamic_variables.env' || echo '')" >> $GITHUB_ENV
     - uses: ./.github/actions/set_up_python
     - run: |
         # temporary file that will be generated
@@ -23,45 +19,7 @@ runs:
       shell: bash
     - run: |
         python3 .github/actions/set_variables/create_env_file.py --repository_name ${{ env.REPOSITORY_NAME }} --environment_variables_file_path $PREPROCESSED_VARIABLES_PATH --add_terraform_variables ${{ inputs.set_up_terraform_variables }}
-#    - run: |
-#        SHARED_STATIC_VARIABLES_PATH=".github/variables/static_variables.env"
-#        SHARED_DYNAMIC_VARIABLES_PATH=".github/variables/dynamic_variables.env"
-#
-#        stack_of_repositories=(${{ env.REPOSITORY_NAME }})
-#        stack_of_repositories_top_index=0
-#        # for repository_name in ${{ inputs.repository_names }}; do
-#        while [ stack_of_repositories_top_index -gt -1 ];
-#
-#          echo "test${repository_name}test"
-#          REPOSITORY_STATIC_VARIABLES_PATH=${repository_name:+"${repository_name}/iac/static_variables.env"}
-#          REPOSITORY_DYNAMIC_VARIABLES_PATH=${repository_name:+"$repository_name/iac/dynamic_variables.env"}
-#          # PREPROCESSED_VARIABLES_PATH="/tmp/${repository_name}_variables.env"
-#
-#          for variables_path in $SHARED_STATIC_VARIABLES_PATH $REPOSITORY_STATIC_VARIABLES_PATH $SHARED_DYNAMIC_VARIABLES_PATH $REPOSITORY_DYNAMIC_VARIABLES_PATH; do
-#            if [ ! -f $variables_path ]; then
-#              continue
-#            fi
-#            current_preprocessed_variables_path=$(mktemp)
-#            # remove comment lines
-#            grep -v '^#' $variables_path > $current_preprocessed_variables_path
-#
-#            # remove empty lines
-#            sed -ir '/^\s*$/d' $current_preprocessed_variables_path
-#
-#            # add terraform variables
-#            if [ ${{ inputs.set_up_terraform_variables }} == 'true' ]; then
-#              terraform_variables_path=$(mktemp)
-#              cp $current_preprocessed_variables_path $terraform_variables_path
-#              sed -ir 's/\(.*=\)/\L\1/' $terraform_variables_path
-#              sed -ir 's/^/TF_VAR_/' $terraform_variables_path
-#              cat $terraform_variables_path >> $current_preprocessed_variables_path
-#            fi
-#
-#            cat $current_preprocessed_variables_path >> $PREPROCESSED_VARIABLES_PATH
-#          done
-#        done
       shell: bash
-
     - uses: cardinalby/export-env-action@v2
       with:
         envFile: ${{ env.PREPROCESSED_VARIABLES_PATH }}
