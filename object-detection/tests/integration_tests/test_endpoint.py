@@ -3,6 +3,7 @@ import os
 import cv2 as cv
 import numpy as np
 import pytest
+from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.object_detection import ObjectDetectionClient
 from core.google.vertex_ai_manager import VertexAIManager
 from omegaconf import DictConfig
@@ -10,9 +11,9 @@ from omegaconf import DictConfig
 from object_detection.config import cfg
 from object_detection.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
+    MODEL_INSTANTIATOR_HOST,
     PROJECT_ID,
 )
-from tests.injection.fake_model_instantiator_client import FakeModelInstantiatorClient
 
 
 @pytest.fixture(name="config")
@@ -46,15 +47,18 @@ def test_endpoint_inference(
 ):
     model_name = config.model.name
 
-    fake_model_instantiator_client = FakeModelInstantiatorClient(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, host="fake_model_instantiator_host"
+    # fake_model_instantiator_client = FakeModelInstantiatorClient(
+    #     key_path=GOOGLE_APPLICATION_CREDENTIALS, host="fake_model_instantiator_host"
+    # )
+    model_instantiator_client = ModelInstantiatorClient(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS, host=MODEL_INSTANTIATOR_HOST
     )
     vertex_ai_manager = VertexAIManager(
         key_path=GOOGLE_APPLICATION_CREDENTIALS, location=cfg.region
     )
     object_detection_client = ObjectDetectionClient(
         vertex_ai_manager=vertex_ai_manager,
-        model_instantiator_client=fake_model_instantiator_client,
+        model_instantiator_client=model_instantiator_client,
         model_name=model_name,
     )
 

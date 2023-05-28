@@ -72,7 +72,7 @@ env:
 jobs:
   run_base_terraform:
     runs-on: ubuntu-latest
-    if: ${{ inputs.deploy == 'true' }}
+    if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
@@ -326,6 +326,8 @@ jobs:
 
       - id: test_integration
         run: poetry run pytest -x tests/integration_tests -vv
+        env:
+          MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_url }}
       - id: undeploy_and_remove_last_model_version_and_redeploy
         if: ${{ failure() && steps.test_integration.conclusion == 'failure' }}
         run: python -m object_detection.cli --actions undeploy remove_last_model_version deploy
