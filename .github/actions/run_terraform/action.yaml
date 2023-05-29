@@ -42,9 +42,14 @@ runs:
         gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
       shell: bash
 
-    - run: |
-        # create state bucket
-        gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET || true
+    - id: create_state_bucket
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 30
+        max_attempts: 3
+        command: |
+        # the command may fail if the project is not actually created yet
+          gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET || true
       shell: bash
 
     - id: add_iam_with_retry
