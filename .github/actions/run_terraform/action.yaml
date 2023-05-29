@@ -50,7 +50,6 @@ runs:
         command: |
           # the command may fail if the project is not actually created yet
           gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET || true
-      shell: bash
 
     - id: add_iam_with_retry
       uses: nick-fields/retry@v2.8.2
