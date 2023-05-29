@@ -48,7 +48,7 @@ runs:
         timeout_seconds: 30
         max_attempts: 3
         command: |
-        # the command may fail if the project is not actually created yet
+          # the command may fail if the project is not actually created yet
           gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET || true
       shell: bash
 
