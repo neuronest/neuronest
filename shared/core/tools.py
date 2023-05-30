@@ -50,7 +50,8 @@ def extract_file_extension(path: str) -> str:
 
 def maybe_async(condition):
     """
-    Make a sync or async function dynamically. Useful in some cases for debug where the
+    Make a sync or async function dynamically.
+    Useful in some cases for debug where the
     function must then be def or async def for example
     """
 
