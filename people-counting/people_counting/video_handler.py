@@ -217,6 +217,5 @@ class VideoRenderer:
 
         if self.enable_video_showing:
             cv.imshow(self.windows_name, frame_with_border)
-            cv.waitKey(1) & 0xFF  # pylint: disable=expression-not-assigned
-
+            cv.waitKey(1000 * 100) & 0xFF  # pylint: disable=expression-not-assigned
         return frame_with_border

@@ -61,7 +61,6 @@ runs:
             gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
           done
 
-    # issue multiline? https://github.com/nick-fields/retry/issues/53
     - id: terraform_with_retry
       uses: nick-fields/retry@v2.8.2
       with:

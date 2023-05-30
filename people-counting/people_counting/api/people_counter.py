@@ -3,12 +3,14 @@ from typing import Tuple
 
 from core.routes.people_counting import people_counting_routes
 from core.schemas import people_counting as schemas
+from core.tools import maybe_async
 from fastapi import APIRouter, Body, Depends
 from google.cloud import firestore, storage
 from starlette import status
 
 from people_counting.api import dependencies
 from people_counting.common import Statistics
+from people_counting.config import config
 from people_counting.people_counter import PeopleCounter
 
 resource_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -19,17 +21,21 @@ def count_people_and_make_video_from_local_path(
     people_counter: PeopleCounter, video_path: str, write_video: bool = False
 ) -> Tuple[Statistics, str]:
     counting_statistics, video_renderer = people_counter.run(
-        video_path, enable_video_writing=write_video, enable_video_showing=False
+        video_path, enable_video_writing=write_video, enable_video_showing=True
     )
     counted_video_path = video_renderer.output_path if write_video else None
 
     return counting_statistics, counted_video_path
 
 
+# if we want to show the video in case of debug we make the function async
+# so that fastapi does not place the path operation function in a thread,
+# which is a problem when showing the video
 @router.post(
     people_counting_routes.count_people_and_make_video,
     status_code=status.HTTP_201_CREATED,
 )
+@maybe_async(config.general.enable_video_showing)
 def count_people_and_make_video(
     *,
     input_of_people_counter: schemas.PeopleCounterInput = Body(..., embed=False),

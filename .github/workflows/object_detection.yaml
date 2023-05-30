@@ -71,37 +71,21 @@ env:
 
 jobs:
   run_base_terraform:
-    runs-on: ubuntu-latest
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
-    container: google/cloud-sdk
-    outputs:
-      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/set_variables
-      - uses: ./.github/actions/gcloud_auth
-        with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-      - id: run_base_terraform
-        uses: ./.github/actions/run_base_terraform
+    uses: ./.github/workflows/run_base_terraform.yaml
+    secrets: inherit
 
   build_test_push_training_image:
     name: build_test_push_training_image
     runs-on: ubuntu-latest
     needs: run_base_terraform
-    if: ${{ always() && inputs.build == 'true' }}
+    if: ${{ always() && (inputs.build == 'true' || inputs.build == '') }}
     container: google/cloud-sdk
     outputs:
       dockerhub_training_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_training_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
-      - uses: actions/checkout@v3
-      - id: set_variables
-        uses: ./.github/actions/set_variables
-        with:
-          repository_names: object-detection
-      - id: gcloud_auth
-        uses: ./.github/actions/gcloud_auth
+      - uses: ./.github/actions/initialize_job
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - uses: ./.github/actions/run_base_terraform
@@ -149,14 +133,12 @@ jobs:
     # skipped. To allow jobs to run despite a skip in the series,
     # we use the always() condition
     # see: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds
-    if: ${{ always() && inputs.deploy == 'true' }}
+    if: ${{ always() && (inputs.deploy == 'true' || inputs.deploy == '') }}
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/set_variables
-      - uses: ./.github/actions/gcloud_auth
+      - uses: ./.github/actions/initialize_job
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: base_run_terraform
@@ -178,6 +160,7 @@ jobs:
         run: |
           job_base_project_builder_sa_key=${{ needs.deploy_with_training_image.outputs.base_project_builder_sa_key }}
           input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
+          # take the one that is not empty
           base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
           echo "base_project_builder_sa_key=$base_project_builder_sa_key" | tee -a $GITHUB_OUTPUT
 
@@ -188,7 +171,7 @@ jobs:
       - get_dockerhub_training_image_name
       - get_base_project_builder_sa_key
     runs-on: ubuntu-latest
-    if: ${{ always() && inputs.do_post_deployment == 'true' }}
+    if: ${{ always() && (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
@@ -202,16 +185,16 @@ jobs:
     outputs:
       model_gspath: ${{ steps.output_step.outputs.model_gspath }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: ./.github/actions/initialize_job
+        with:
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+#      - uses: actions/checkout@v3
 
       - name: display dockerhub_training_image_name
         run: echo "dockerhub_training_image_name ${{needs.get_dockerhub_training_image_name.outputs.value}}"
 
-      - id: set_variables
-        uses: ./.github/actions/set_variables
-        with:
-          repository_names: object-detection
-          set_up_terraform_variables: false
+#      - id: set_variables
+#        uses: ./.github/actions/set_variables
 
       - id: set_additional_variables
         run: |
@@ -221,10 +204,10 @@ jobs:
       - name: display get_base_project_builder_sa_key
         run: echo "dockerhub_training_image_name ${{ needs.get_base_project_builder_sa_key.outputs.value }}"
 
-      - id: gcloud_auth
-        uses: ./.github/actions/gcloud_auth
-        with:
-          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+#      - id: gcloud_auth
+#        uses: ./.github/actions/gcloud_auth
+#        with:
+#          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
 
       - id: train
         run: |
@@ -241,7 +224,7 @@ jobs:
       - get_base_project_builder_sa_key
       - train
     runs-on: ubuntu-latest
-    if: ${{ always() && inputs.do_post_deployment == 'true' }}
+    if: ${{ always() && (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') }}
     container: google/cloud-sdk
     env:
       MODEL_PATH: model.pt
@@ -249,22 +232,21 @@ jobs:
       dockerhub_serving_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
-      - uses: actions/checkout@v3
-
-      - id: set_variables
-        uses: ./.github/actions/set_variables
+#      - uses: actions/checkout@v3
+      - uses: ./.github/actions/initialize_job
         with:
-          repository_names: object-detection
-          set_up_terraform_variables: false
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+#      - id: set_variables
+#        uses: ./.github/actions/set_variables
 
       - id: set_additional_variables
         run: |
           echo "MODEL_GSPATH"="${{ needs.train.outputs.model_gspath }}" >> $GITHUB_ENV
 
-      - id: gcloud_auth
-        uses: ./.github/actions/gcloud_auth
-        with:
-          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+#      - id: gcloud_auth
+#        uses: ./.github/actions/gcloud_auth
+#        with:
+#          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
 
       - id: download_model_weights
         run: gsutil cp $MODEL_GSPATH ${{ env.REPOSITORY_NAME }}/$MODEL_PATH
@@ -283,7 +265,7 @@ jobs:
       - get_base_project_builder_sa_key
       - build_test_push_serving_image
     runs-on: ubuntu-latest
-    if: ${{ always() && inputs.do_post_deployment == 'true' }}
+    if: ${{ always() && (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
@@ -293,22 +275,24 @@ jobs:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
     steps:
-      - uses: actions/checkout@v3
-
-      - id: set_variables
-        uses: ./.github/actions/set_variables
+#      - uses: actions/checkout@v3
+      - uses: ./.github/actions/initialize_job
         with:
-          repository_names: object-detection
-          set_up_terraform_variables: false
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+#      - id: set_variables
+#        uses: ./.github/actions/set_variables
+#        with:
+#          repository_names: object-detection
+#          set_up_terraform_variables: false
 
       - id: set_additional_variables
         run: |
           echo "SERVING_IMAGE_NAME"="${{ needs.build_test_push_serving_image.outputs.gcp_serving_image_name }}" >> $GITHUB_ENV
 
-      - id: gcloud_auth
-        uses: ./.github/actions/gcloud_auth
-        with:
-          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+#      - id: gcloud_auth
+#        uses: ./.github/actions/gcloud_auth
+#        with:
+#          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
 
       - id: model_upload
         run: python -m object_detection.cli --actions model_upload

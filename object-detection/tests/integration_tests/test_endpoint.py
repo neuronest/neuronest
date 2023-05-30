@@ -47,9 +47,6 @@ def test_endpoint_inference(
 ):
     model_name = config.model.name
 
-    # fake_model_instantiator_client = FakeModelInstantiatorClient(
-    #     key_path=GOOGLE_APPLICATION_CREDENTIALS, host="fake_model_instantiator_host"
-    # )
     model_instantiator_client = ModelInstantiatorClient(
         key_path=GOOGLE_APPLICATION_CREDENTIALS, host=MODEL_INSTANTIATOR_HOST
     )

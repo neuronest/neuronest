@@ -1,0 +1,21 @@
+name: run_base_terraform
+
+on:
+  workflow_call:
+    outputs:
+      base_project_builder_sa_key:
+        description: "The gcp image name"
+        value: ${{ jobs.run_base_terraform.outputs.base_project_builder_sa_key }}
+
+jobs:
+  run_base_terraform:
+    runs-on: ubuntu-latest
+    container: google/cloud-sdk
+    outputs:
+      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+    steps:
+      - uses: ./.github/actions/initialize_job
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - id: run_base_terraform
+        uses: ./.github/actions/run_base_terraform
