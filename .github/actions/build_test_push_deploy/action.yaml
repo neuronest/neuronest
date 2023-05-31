@@ -19,7 +19,7 @@ inputs:
     description: 'Shared repository name'
     default: shared
   maximum_number_images_to_keep:
-    description: 'Maximum number of most recent docker images to keep in the registry'
+    description: 'Maximum number of most recent docker images to keep in the registry.tf'
     default: 2
 outputs:
   dockerhub_image_name:
@@ -30,21 +30,12 @@ outputs:
     value: ${{ steps.gcp_output_step.outputs.gcp_image_name }}
   base_project_builder_sa_key:
     description: 'base project builder service account key'
-    value: ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
+    value: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
 runs:
   using: "composite"
   steps:
-    - id: base_run_terraform
-      uses: ./.github/actions/run_terraform
-      with:
-        targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
-        workspace: base
-
-    - id: prior_run_terraform
-      uses: ./.github/actions/run_terraform
-      with:
-        targets: ${{ env.PRE_PUSH_TERRAFORM_RESOURCES }}
-        workspace: ${{ env.REPOSITORY_NAME }}
+    - id: run_base_terraform
+      uses: ./.github/actions/run_base_terraform
 
     - id: build_test_push
       uses: ./.github/actions/build_test_push

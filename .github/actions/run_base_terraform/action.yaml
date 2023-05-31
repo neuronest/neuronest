@@ -1,0 +1,14 @@
+name: 'build_test_push_deploy'
+description: 'Build, test, push docker image, and deploy using terraform'
+outputs:
+  base_project_builder_sa_key:
+    description: 'base project builder service account key'
+    value: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+runs:
+  using: "composite"
+  steps:
+    - id: run_base_terraform
+      uses: ./.github/actions/run_terraform
+      with:
+        targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
+        workspace: base

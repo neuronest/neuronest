@@ -13,3 +13,6 @@ variable "service_account_name" {
 variable "models_bucket" {
   type = string
 }
+variable "package_name" {
+  type = string
+}

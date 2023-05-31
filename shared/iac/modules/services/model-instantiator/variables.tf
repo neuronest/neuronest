@@ -37,9 +37,9 @@ variable "cloud_scheduler_job_name" {
 variable "cloud_scheduler_schedule" {
   type = string
 }
-variable "cloud_scheduler_body" {
+variable "cloud_uninstantiate_route" {
   type = string
 }
-variable "cloud_uninstantiate_route" {
+variable "cloud_scheduler_model_name" {
   type = string
 }

@@ -40,10 +40,13 @@ class VertexAIManager:
 
     @property
     def project_id(self) -> str:
+        # we give priority on the project_id which was passed explicitly to the
+        # instantiation rather than to the project id to which the service account
+        # of the credentials is attached
         return (
-            self.credentials.project_id
-            if self.credentials is not None
-            else self._project_id
+            self._project_id
+            if self._project_id is not None
+            else self.credentials.project_id
         )
 
     @staticmethod

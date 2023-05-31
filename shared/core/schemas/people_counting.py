@@ -38,6 +38,7 @@ class PeopleCounterInputData(BaseModel):
     job_id: str
     storage_path: str
     save_counted_video_in_storage: bool = False
+    enable_video_showing: bool = False
 
 
 class PeopleCounterInput(PubSubSubscriberPushMessage):

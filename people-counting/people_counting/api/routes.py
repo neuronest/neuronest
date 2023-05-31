@@ -1,9 +1,9 @@
-from core.routes.people_counting import route
+from core.routes.people_counting import people_counting_routes
 from fastapi import APIRouter
 
 from people_counting.api.people_counter import router as people_counter_router
 
-router = APIRouter(prefix=route.root)
+router = APIRouter(prefix=f"/{people_counting_routes.version_name}")
 
 router.include_router(people_counter_router)
 

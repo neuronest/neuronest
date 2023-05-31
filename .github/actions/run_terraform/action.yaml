@@ -18,11 +18,12 @@ inputs:
 outputs:
   base_project_builder_sa_key:
     description: 'base project builder service account key'
-    value: ${{ steps.terraform_with_retry.outputs.base_project_builder_sa_key }}
+    value: ${{ steps.get_base_project_builder_sa_key.outputs.value }}
 
 runs:
   using: "composite"
   steps:
+
     - run: echo "TF_VAR_image_name"="${{ inputs.image_name }}" >> $GITHUB_ENV
       shell: bash
 
@@ -37,13 +38,18 @@ runs:
 
     - run: |
         gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID 2>/dev/null || true
+        echo "Waiting for project creation..." && sleep 5
         gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
       shell: bash
 
-    - run: |
-        # create state bucket
-        gsutil ls -b gs://$STATE_BUCKET || gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
-      shell: bash
+    - id: create_state_bucket
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 30
+        max_attempts: 3
+        command: |
+          # the command may fail if the project is not actually created yet
+          gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET || true
 
     - id: add_iam_with_retry
       uses: nick-fields/retry@v2.8.2
@@ -62,13 +68,9 @@ runs:
         max_attempts: 5
         retry_wait_seconds: 120
         command: |
-          cd ${{ env.REPOSITORY_NAME }}/iac
-          
-          # run terraform init and create the terraform state locally
-          terraform init -input=false -backend-config="bucket=$STATE_BUCKET"
-  
-          terraform workspace select ${{ inputs.workspace }} || terraform workspace new ${{ inputs.workspace }}
-  
+          source ./.github/functions/initialize_terraform.sh
+          initialize_terraform ${{ env.REPOSITORY_NAME }} ${{ inputs.workspace }} $STATE_BUCKET
+
           # import the project in the terraform state
           terraform import google_project.project $PROJECT_ID 2>/dev/null || true
           
@@ -76,7 +78,7 @@ runs:
           terraform_vars=""
           # if inputs.vars is not empty
           if [ -n "${{ inputs.vars }}" ]; then
-            for input_var in "${{ inputs.vars }}"; do
+            for input_var in $(echo "${{ inputs.vars }}" | tr '\n' ' '); do
                 terraform_vars="$terraform_vars -var $input_var"
             done
           fi
@@ -89,22 +91,23 @@ runs:
                 terraform_targets="$terraform_targets -target $input_target"
             done
           fi
-  
+
           # run terraform plan
           bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
   
           # run terraform apply
           bash -c "terraform apply -input=false -auto-approve tfplan"
+          terraform_exit_status=$?
+          
+          # force script to terminate on terraform exit code to account for bug 
+          # where last command dictates that an error has occurred or not: https://github.com/nick-fields/retry/issues/53
+          exit $terraform_exit_status
 
-          # add the project builder key as the output of the action
-          if [ ${{ inputs.workspace }} = "base" ]; then
-            # get the key and remove the double quotes that create problems 
-            # when you want to activate the service account
-            base_project_builder_sa_key=$(terraform output base_project_builder_sa_key | tr -d '"')
-          else
-            base_project_builder_sa_key=""
-          fi
-          echo "base_project_builder_sa_key=$base_project_builder_sa_key" >> $GITHUB_OUTPUT
+    - id: get_base_project_builder_sa_key
+      uses: ./.github/actions/get_terraform_output
+      with:
+        workspace: ${{ inputs.workspace }}
+        terraform_output_name: base_project_builder_sa_key
 
     - id: release_terraform_lock
       if: ${{ failure() && steps.terraform_with_retry.conclusion == 'failure' }}

@@ -1,4 +1,5 @@
 import os
+from functools import wraps
 from typing import Any, Iterable, Iterator, List, Optional
 
 
@@ -45,3 +46,28 @@ def extract_file_extension(path: str) -> str:
         raise ValueError(f"Unable to get the file extension from '{path}'")
 
     return extension
+
+
+def maybe_async(condition):
+    """
+    Make a sync or async function dynamically.
+    Useful in some cases for debug where the
+    function must then be def or async def for example
+    """
+
+    def decorator(func):
+        if condition:
+
+            @wraps(func)
+            async def async_func(*args, **kwargs):
+                return await func(*args, **kwargs)
+
+            return async_func
+
+        @wraps(func)
+        def sync_func(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return sync_func
+
+    return decorator

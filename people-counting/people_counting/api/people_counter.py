@@ -1,31 +1,46 @@
 import os
 from typing import Tuple
 
-from core.routes.people_counting import route
+from core.routes.people_counting import people_counting_routes
 from core.schemas import people_counting as schemas
+from core.tools import maybe_async
 from fastapi import APIRouter, Body, Depends
 from google.cloud import firestore, storage
 from starlette import status
 
 from people_counting.api import dependencies
 from people_counting.common import Statistics
+from people_counting.config import config
 from people_counting.people_counter import PeopleCounter
 
-router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
+resource_name = os.path.splitext(os.path.basename(__file__))[0]
+router = APIRouter(prefix=f"/{resource_name}", tags=[resource_name])
 
 
 def count_people_and_make_video_from_local_path(
-    people_counter: PeopleCounter, video_path: str, write_video: bool = False
+    people_counter: PeopleCounter,
+    video_path: str,
+    write_video: bool = False,
+    enable_video_showing: bool = False,
 ) -> Tuple[Statistics, str]:
     counting_statistics, video_renderer = people_counter.run(
-        video_path, enable_video_writing=write_video, enable_video_showing=False
+        video_path,
+        enable_video_writing=write_video,
+        enable_video_showing=enable_video_showing,
     )
     counted_video_path = video_renderer.output_path if write_video else None
 
     return counting_statistics, counted_video_path
 
 
-@router.post(route.count_people_and_make_video, status_code=status.HTTP_201_CREATED)
+# if we want to show the video in case of debug we make the function async
+# so that fastapi does not place the path operation function in a thread,
+# which is a problem when showing the video
+@router.post(
+    people_counting_routes.count_people_and_make_video,
+    status_code=status.HTTP_201_CREATED,
+)
+@maybe_async(config.general.enable_video_showing)
 def count_people_and_make_video(
     *,
     input_of_people_counter: schemas.PeopleCounterInput = Body(..., embed=False),
@@ -53,6 +68,7 @@ def count_people_and_make_video(
         people_counter=people_counter,
         video_path=video_to_count_local_path,
         write_video=input_of_people_counter.data.save_counted_video_in_storage,
+        enable_video_showing=input_of_people_counter.data.enable_video_showing,
     )
     if input_of_people_counter.data.save_counted_video_in_storage:
         counted_video_storage_path = os.path.basename(video_to_count_local_path)

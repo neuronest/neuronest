@@ -5,46 +5,98 @@ on:
     branches:
       - main
       - develop
-    paths:
-      - .github/workflows/model_instantiator.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/model_instantiator.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
+#    paths:
+#      - .github/workflows/model_instantiator.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - model-instantiator/**
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/model_instantiator.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - model-instantiator/**
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      build:
+        required: false
+        type: string
+        default: true
+      deploy:
+        required: false
+        type: string
+        default: true
+      do_post_deployment:
+        required: false
+        type: string
+        default: true
+    outputs:
+      gcp_image_name:
+        description: "The gcp image name"
+        value: ${{ jobs.build_test_push.outputs.gcp_image_name }}
+
+env:
+  REPOSITORY_NAME: model-instantiator
 
 jobs:
+  run_base_terraform:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
+    container: google/cloud-sdk
+    outputs:
+      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - id: run_base_terraform
+        uses: ./.github/actions/run_base_terraform
+
   build_test_push:
     name: build_test_push
     runs-on: ubuntu-latest
+    needs: run_base_terraform
+    if: ${{ always() && (inputs.build == 'true' || inputs.build == '') }}
     container: google/cloud-sdk
+    outputs:
+      gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-
-      - id: set_variables
-        uses: ./.github/actions/set_variables
+      - uses: ./.github/actions/set_variables_gcloud_auth
         with:
-          repository_name: model-instantiator
-
-      - id: gcloud_auth
-        uses: ./.github/actions/gcloud_auth
-        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
 
-      - id: build_test_push_deploy
-        uses: ./.github/actions/build_test_push_deploy
+      - id: build_test_push
+        uses: ./.github/actions/build_test_push
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
+    container:
+      image: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+          workspace: ${{ env.REPOSITORY_NAME }}
+          image_name: ${{ needs.jobs.build_test_push.steps.build_test_push.outputs.gcp_image_name }}

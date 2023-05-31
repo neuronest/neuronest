@@ -32,12 +32,9 @@ jobs:
     container: python:3.8-buster
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set environment variables
-        uses: ./.github/actions/set_variables
+      - uses: ./.github/actions/set_variables
         with:
-          repository_name: shared
-
+          repository_name: ${{ env.REPOSITORY_NAME }}
       - run: apt update && apt install -y cmake ffmpeg git libsm6 libxext6
       - run: pip install --upgrade pip
       - run: pip install poetry==$POETRY_VERSION

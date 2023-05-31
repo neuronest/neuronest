@@ -6,4 +6,4 @@ class _PeopleCountingRoutes(_BaseRoutes):
     count_people_and_make_video: str = "/count_people_and_make_video"
 
 
-route: _PeopleCountingRoutes = _PeopleCountingRoutes()
+people_counting_routes: _PeopleCountingRoutes = _PeopleCountingRoutes()
