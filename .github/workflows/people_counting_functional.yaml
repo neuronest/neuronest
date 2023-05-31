@@ -51,6 +51,8 @@ jobs:
   run_base_terraform:
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     uses: ./.github/workflows/run_base_terraform.yaml
+    with:
+      repository_name: ${{ env.REPOSITORY_NAME }}
     secrets: inherit
 
   build_test_push_people_counting:
