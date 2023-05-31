@@ -71,11 +71,19 @@ env:
 
 jobs:
   run_base_terraform:
+    runs-on: ubuntu-latest
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
-    uses: ./.github/workflows/run_base_terraform.yaml
-    with:
-      repository_name: ${{ env.REPOSITORY_NAME }}
-    secrets: inherit
+    container: google/cloud-sdk
+    outputs:
+      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - id: run_base_terraform
+        uses: ./.github/actions/run_base_terraform
 
   build_test_push_training_image:
     name: build_test_push_training_image
