@@ -67,7 +67,8 @@ jobs:
     outputs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
-      - uses: ./.github/actions/initialize_job
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: build_test_push
@@ -83,7 +84,8 @@ jobs:
     container:
       image: google/cloud-sdk
     steps:
-      - uses: ./.github/actions/initialize_job
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: base_run_terraform

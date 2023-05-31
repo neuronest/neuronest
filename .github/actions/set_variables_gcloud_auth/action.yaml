@@ -1,4 +1,4 @@
-name: 'set_up_terraform'
+name: 'set_variables_gcloud_auth'
 description: 'Install utilities that terraform needs that we might not have in a given docker image'
 inputs:
   credentials_json:
@@ -7,7 +7,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-      - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
       - uses: ./.github/actions/gcloud_auth
         with:

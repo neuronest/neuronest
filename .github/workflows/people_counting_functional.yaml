@@ -14,6 +14,8 @@ on:
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
+      - object-detection/**
+      - model-instantiator/**
   pull_request:
     branches:
       - main
@@ -25,6 +27,8 @@ on:
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
+      - object-detection/**
+      - model-instantiator/**
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -89,7 +93,8 @@ jobs:
     container:
       image: google/cloud-sdk
     steps:
-      - uses: ./.github/actions/initialize_job
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: run_people_counting_functional_terraform

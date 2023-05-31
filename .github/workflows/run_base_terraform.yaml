@@ -14,7 +14,8 @@ jobs:
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
     steps:
-      - uses: ./.github/actions/initialize_job
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: run_base_terraform
