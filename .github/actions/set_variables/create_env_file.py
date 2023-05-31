@@ -79,7 +79,9 @@ class VariableLine:
             name = self.name
 
         if not add_to_value:
-            return VariableLine(line=f"{name}={self.value}")
+            return VariableLine(
+                line=f"{name}{self.NAME_AND_VALUE_SEPARATOR}{self.value}"
+            )
 
         if variable_inside_value_to_add_to is not None:
             # only add the namespace to this variable only within the value part
