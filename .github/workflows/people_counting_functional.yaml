@@ -102,8 +102,8 @@ jobs:
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
           workspace: ${{ env.REPOSITORY_NAME }}
-        # favor environment variables that show up clearly in github logs over var-like
-        # arguments to make it easier to reproduce errors locally
+        # favor environment variables that show up clearly in github logs over
+        # var-like arguments to make it easier to reproduce errors locally
         env:
           TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
           TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
