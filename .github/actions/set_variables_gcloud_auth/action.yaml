@@ -1,6 +1,10 @@
 name: 'set_variables_gcloud_auth'
 description: 'Install utilities that terraform needs that we might not have in a given docker image'
 inputs:
+  repository_name:
+    description: 'Whether to also create corresponding terraform variables'
+    required: true
+    default: 'true'
   credentials_json:
     description: 'Name of the repositories'
     required: false
@@ -8,6 +12,8 @@ runs:
   using: "composite"
   steps:
       - uses: ./.github/actions/set_variables
+        with:
+          repository_name: ${{ inputs.repository_name }}
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ inputs.credentials_json }}
