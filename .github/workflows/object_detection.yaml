@@ -195,6 +195,16 @@ jobs:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
     env:
+      # todo: sans doute changer le model/model.pt hardcodé, on n'a pas de raison de
+      # penser que cette valeur sera toujours la bonne. Le directory model est obtenu
+      # via une variable d'environnement dans un environnement vertex et qui pourra
+      # changer. La partie "model" du filename est une valeur par défaut du script
+      # python, tout comme l'extension ".pt" qui est une valeur par défaut
+      # Il suffit que vertex ou le code python ou les arguments du code python changent
+      # pour que "model/model.pt" ne fonctionne plus, il vaudrait mieux trouver $
+      # dynamiquement le path du model post training
+      # exemple :
+      #   model_gspath=$(gsutil ls -r "gs://${MODELS_BUCKET}/${PACKAGE_NAME}-${{ github.sha }}/**/*.pt")
       MODEL_WEIGHTS: model/model.pt
     outputs:
       model_gspath: ${{ steps.output_step.outputs.model_gspath }}
@@ -204,33 +214,18 @@ jobs:
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-#      - uses: actions/checkout@v3
-
-      - name: display dockerhub_training_image_name
-        run: echo "dockerhub_training_image_name ${{needs.get_dockerhub_training_image_name.outputs.value}}"
-
-#      - id: set_variables
-#        uses: ./.github/actions/set_variables
-
       - id: set_additional_variables
         run: |
-          echo "TRAINING_IMAGE_NAME"="${{ needs.get_gcp_training_image_name.outputs.value }}" | tee -a $GITHUB_ENV
           echo "MODEL_GSPATH"="gs://${MODELS_BUCKET}/${PACKAGE_NAME}-${{ github.sha }}" | tee -a $GITHUB_ENV
-
-      - name: display get_base_project_builder_sa_key
-        run: echo "dockerhub_training_image_name ${{ needs.get_base_project_builder_sa_key.outputs.value }}"
-
-#      - id: gcloud_auth
-#        uses: ./.github/actions/gcloud_auth
-#        with:
-#          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-
       - id: train
         run: |
           python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
         env:
+          TRAINING_IMAGE_NAME: ${{ needs.get_gcp_training_image_name.outputs.value }}
           SERVICE_ACCOUNT_EMAIL: ${{ env.PROJECT_BUILDER_SERVICE_ACCOUNT_EMAIL }}
-
+      # todo: il y a sûrement un premier problème de naming à corriger ici :
+      # model_gspath qui devient {model_gspath}/{$model_weights} ça ne parait pas
+      # logique.
       - id: output_step
         run: echo "model_gspath=$MODEL_GSPATH/$MODEL_WEIGHTS" | tee -a $GITHUB_OUTPUT
 
@@ -242,8 +237,6 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ always() && (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') }}
     container: google/cloud-sdk
-    env:
-      MODEL_PATH: model.pt
     outputs:
       dockerhub_serving_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
@@ -253,27 +246,18 @@ jobs:
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-#      - id: set_variables
-#        uses: ./.github/actions/set_variables
-
       - id: set_additional_variables
         run: |
-          echo "MODEL_GSPATH"="${{ needs.train.outputs.model_gspath }}" >> $GITHUB_ENV
-
-#      - id: gcloud_auth
-#        uses: ./.github/actions/gcloud_auth
-#        with:
-#          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-
+          echo "MODEL_PATH"="${{ env.REPOSITORY_NAME }}/model.pt" >> $GITHUB_ENV
       - id: download_model_weights
-        run: gsutil cp $MODEL_GSPATH ${{ env.REPOSITORY_NAME }}/$MODEL_PATH
+        run: gsutil cp ${{ needs.train.outputs.model_gspath }} $MODEL_PATH
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: serving
-          build_arguments: --build-arg MODEL_PATH=${{ env.REPOSITORY_NAME }}/${{ env.MODEL_PATH }}
+          build_arguments: --build-arg MODEL_PATH=$MODEL_PATH
 
   test_serving:
     name: test_serving
@@ -297,39 +281,23 @@ jobs:
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-#      - id: set_variables
-#        uses: ./.github/actions/set_variables
-#        with:
-#          repository_names: object-detection
-#          set_up_terraform_variables: false
-
-      - id: set_additional_variables
-        run: |
-          echo "SERVING_IMAGE_NAME"="${{ needs.build_test_push_serving_image.outputs.gcp_serving_image_name }}" >> $GITHUB_ENV
-
-#      - id: gcloud_auth
-#        uses: ./.github/actions/gcloud_auth
-#        with:
-#          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-
       - id: model_upload
         run: python -m object_detection.cli --actions model_upload
-
+        env:
+          SERVING_IMAGE_NAME: ${{ needs.build_test_push_serving_image.outputs.gcp_serving_image_name }}
       - id: deploy
         run: python -m object_detection.cli --actions deploy
         env:
           MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_url }}
-      - id: remove_last_model_version
+      - id: remove_last_model_version_if_deploy_has_failed
         if: ${{ failure() && steps.deploy.conclusion == 'failure' }}
         run: python -m object_detection.cli --actions remove_last_model_version
-
-      - id: poetry_install_with_test
-        run: poetry check && poetry install --with dev
-
       - id: test_integration
-        run: poetry run pytest -x tests/integration_tests -vv
+        run: |
+          poetry check && poetry install --with dev
+          poetry run pytest -x tests/integration_tests -vv
         env:
           MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_url }}
-      - id: undeploy_and_remove_last_model_version_and_redeploy
+      - id: undeploy_and_remove_last_model_version_and_redeploy_if_test_integration_has_failed
         if: ${{ failure() && steps.test_integration.conclusion == 'failure' }}
         run: python -m object_detection.cli --actions undeploy remove_last_model_version deploy

@@ -4,8 +4,8 @@ import os
 import re
 from typing import List, Optional, Tuple
 
-DEPENDENCY_REPOSITORIES_IAC_VARIABLE_NAME = "REPOSITORIES_DEPENDENCIES"
-ARRAY_ELEMENT_SEPARATOR = ","
+DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
+ARRAY_SEPARATOR = ","
 
 # create logger
 logger = logging.getLogger("my_logger")
@@ -167,10 +167,10 @@ class Repository:
             for var_line in self.get_static_env_file().read_variables_lines()
         }
         if dependency_repositories := static_var_name_value.get(
-            DEPENDENCY_REPOSITORIES_IAC_VARIABLE_NAME, ""
+            DEPENDENT_REPOSITORY_VAR_LINE_NAME, ""
         ):
             dependency_repositories = dependency_repositories.rstrip(os.linesep).split(
-                ARRAY_ELEMENT_SEPARATOR
+                ARRAY_SEPARATOR
             )
             return [
                 Repository(name=dependency_repository)
@@ -244,19 +244,16 @@ def get_static_and_dynamic_var_lines(
 
 
 if __name__ == "__main__":
-    # Define the command-line arguments
-    parser = argparse.ArgumentParser(description="Process some integers.")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--repository_name",
         type=str,
         required=True,
-        help="The first required integer argument.",
     )
     parser.add_argument(
         "--environment_variables_file_path",
         type=str,
         required=True,
-        help="The first required integer argument.",
     )
 
     def boolean_string(string):
@@ -272,7 +269,6 @@ if __name__ == "__main__":
         type=boolean_string,
         required=False,
         default=True,
-        help="The first required integer argument.",
     )
 
     args = parser.parse_args()

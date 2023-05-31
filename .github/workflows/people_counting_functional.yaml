@@ -118,7 +118,6 @@ jobs:
         env:
           TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
           TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
-
       - id: get_model_instantiator_url
         name: get_model_instantiator_url
         uses: ./.github/actions/get_terraform_output
