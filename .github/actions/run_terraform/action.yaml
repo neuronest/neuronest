@@ -15,6 +15,10 @@ inputs:
     description: 'Variables usually named -var found in the terraform plan and terraform apply commands'
     required: false
     default: ""
+  max_terraform_retry_wait_seconds:
+    description: 'Variables usually named -var found in the terraform plan and terraform apply commands'
+    required: false
+    default: "120"
 outputs:
   base_project_builder_sa_key:
     description: 'base project builder service account key'
@@ -68,12 +72,18 @@ runs:
             gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
           done
 
+    - name: set_terraform_retry_wait_seconds
+      # we wait a random number of seconds before retrying to prevent jobs targeting
+      # the same resources, like base, from retrying at the same time
+      run: echo "TERRAFORM_RETRY_WAIT_SECONDS=$((RANDOM % ${{ inputs.max_terraform_retry_wait_seconds }}))" >> $GITHUB_ENV
+      shell: bash
+
     - id: terraform_with_retry
       uses: nick-fields/retry@v2.8.2
       with:
         timeout_seconds: 1200
         max_attempts: 5
-        retry_wait_seconds: 120
+        retry_wait_seconds: ${{ env.TERRAFORM_RETRY_WAIT_SECONDS }}
         command: |
           source ./.github/functions/initialize_terraform.sh
           initialize_terraform ${{ env.REPOSITORY_NAME }} ${{ inputs.workspace }} $STATE_BUCKET
