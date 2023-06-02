@@ -100,4 +100,4 @@ jobs:
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
           workspace: ${{ env.REPOSITORY_NAME }}
-          image_name: ${{ jobs.build_test_push.outputs.gcp_image_name }}
+          image_name: ${{needs.build_test_push.outputs.gcp_image_name}}
