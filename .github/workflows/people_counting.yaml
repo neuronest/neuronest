@@ -86,7 +86,7 @@ jobs:
     name: deploy
     runs-on: ubuntu-latest
     needs: build_test_push
-    if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
     container:
       image: google/cloud-sdk
     steps:
