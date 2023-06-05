@@ -84,7 +84,7 @@ jobs:
         with:
           name: test-env
           path: ./test.env
-      - run: cat ./test.env
+      - run: cat ./test.env/test.env
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
