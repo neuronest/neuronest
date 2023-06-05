@@ -2,7 +2,6 @@ module "object_detection" {
   source                       = "../object-detection"
   project_id                   = var.project_id
   region                       = var.region
-  repository_name              = var.object_detection_repository_name
   service_account_name         = var.object_detection_service_account_name
   models_bucket                = var.object_detection_models_bucket
   package_name                 = var.object_detection_package_name
@@ -12,7 +11,6 @@ module "model_instantiator" {
   project_id                           = var.project_id
   region                               = var.region
   timezone                             = var.timezone
-  repository_name                      = var.model_instantiator_repository_name
   image_name                           = var.model_instantiator_image_name
   webapp_service_account_name          = var.model_instantiator_webapp_service_account_name
   cloud_scheduler_service_account_name = var.model_instantiator_cloud_scheduler_service_account_name
@@ -30,7 +28,6 @@ module "people_counting" {
   source                       = "../people-counting"
   project_id                   = var.project_id
   region                       = var.region
-  repository_name              = var.people_counting_repository_name
   image_name                   = var.people_counting_image_name
   webapp_service_account_name  = var.people_counting_webapp_service_account_name
   firestore_results_collection = var.people_counting_firestore_results_collection

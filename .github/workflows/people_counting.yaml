@@ -1,10 +1,10 @@
 name: people_counting
 
 on:
-  push:
-    branches:
-      - main
-      - develop
+#  push:
+#    branches:
+#      - main
+#      - develop
 #    paths:
 #      - .github/workflows/people_counting.yaml
 #      - .github/actions/**
@@ -38,6 +38,10 @@ on:
         required: false
         type: string
         default: true
+      inherited_env:
+        required: false
+        type: string
+        default: ""
     outputs:
       gcp_image_name:
         description: "The gcp image name"
@@ -57,6 +61,7 @@ jobs:
       - run: test=${{ inputs }} && echo $test
       - run: test=${{ inputs.* }} && echo $test
       - run: test=${{ inputs.deploy }} && echo $test
+      - run: test=${{ inputs.inherited_env }} && echo $test
       # je pense que cette syntaxe fonctionne, à tester dans un  workflow où le call est vraiment fait
       - run: test=${{ join(inputs.*, ',') }} && echo $test
       # - run: test=${{ fromJSON(inputs) }} && echo $test

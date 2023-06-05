@@ -4,9 +4,6 @@ variable "project_id" {
 variable "region" {
   type = string
 }
-variable "repository_name" {
-  type = string
-}
 variable "image_name" {
   type = string
 }
@@ -25,7 +22,6 @@ variable "counted_videos_bucket" {
 variable "model_instantiator_host" {
   type = string
 }
-
 variable "object_detection_model_name" {
   type = string
 }

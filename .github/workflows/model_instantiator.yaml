@@ -1,10 +1,10 @@
 name: model_instantiator
 
 on:
-  push:
-    branches:
-      - main
-      - develop
+#  push:
+#    branches:
+#      - main
+#      - develop
 #    paths:
 #      - .github/workflows/model_instantiator.yaml
 #      - .github/actions/**

@@ -1,10 +1,10 @@
 name: object_detection
 
 on:
-  push:
-    branches:
-      - main
-      - develop
+#  push:
+#    branches:
+#      - main
+#      - develop
 #    paths:
 #      - .github/workflows/object_detection.yaml
 #      - .github/actions/**

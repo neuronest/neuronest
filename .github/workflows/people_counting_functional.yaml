@@ -5,8 +5,6 @@ on:
     branches:
       - main
       - develop
-    tags:
-      - people-counting-functional*
     paths:
       - .github/workflows/people_counting_functional.yaml
       - .github/actions/**
@@ -70,6 +68,7 @@ jobs:
       build: true
       deploy: false
       do_post_deployment: false
+      inherited_env: ${{ join(env.*, ',') }}
     secrets: inherit
 
   build_test_push_object_detection:
