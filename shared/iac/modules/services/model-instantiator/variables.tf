@@ -40,3 +40,6 @@ variable "cloud_uninstantiate_route" {
 variable "cloud_scheduler_model_name" {
   type = string
 }
+variable "repository_name" {
+  type = string
+}
