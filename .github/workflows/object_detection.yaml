@@ -5,13 +5,13 @@ on:
     branches:
       - main
       - develop
-    paths:
-      - .github/workflows/object_detection.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - object-detection/**
+#    paths:
+#      - .github/workflows/object_detection.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - object-detection/**
   pull_request:
     branches:
       - main
@@ -100,7 +100,6 @@ jobs:
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-      - uses: ./.github/actions/run_base_terraform
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
