@@ -36,7 +36,6 @@ module "people_counting_functional" {
   region                                            = var.region
   timezone                                          = var.timezone
 
-  people_counting_repository_name                   = var.people_counting_repository_name
   people_counting_image_name                        = var.people_counting_image_name
   people_counting_webapp_service_account_name       = var.people_counting_webapp_service_account_name
   people_counting_firestore_results_collection      = var.people_counting_firestore_results_collection

@@ -27,9 +27,6 @@ variable "timezone" {
   type = string
 }
 # END OF SHARED VARIABLES
-variable "people_counting_repository_name" {
-  type = string
-}
 # default dummy value when running focusing on the base module
 variable "people_counting_image_name" {
   type = string
