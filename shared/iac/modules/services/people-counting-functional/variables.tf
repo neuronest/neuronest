@@ -49,6 +49,9 @@ variable "object_detection_models_bucket" {
 variable "object_detection_package_name" {
   type = string
 }
+variable "model_instantiator_repository_name" {
+  type = string
+}
 variable "model_instantiator_image_name" {
   type = string
 }
