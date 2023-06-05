@@ -56,7 +56,14 @@ jobs:
     steps:
       - run: test=${{ inputs }} && echo $test
       - run: test=${{ inputs.* }} && echo $test
-      - run: test=${{ fromJSON(inputs) }} && echo $test
+      - run: |
+          my_array=${{ inputs.* }}
+          for element in "${my_array[@]}"
+          do
+              echo "Current element: $element"
+              # Add your desired operations for each element here
+          done
+      # - run: test=${{ fromJSON(inputs) }} && echo $test
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
