@@ -16,13 +16,13 @@ on:
 #    branches:
 #      - main
 #      - develop
-    paths:
-      - .github/workflows/model_instantiator.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
+#    paths:
+#      - .github/workflows/model_instantiator.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - model-instantiator/**
   workflow_dispatch:
   workflow_call:
     inputs:

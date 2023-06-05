@@ -16,13 +16,13 @@ on:
 #    branches:
 #      - main
 #      - develop
-    paths:
-      - .github/workflows/people_counting.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - people-counting/**
+#    paths:
+#      - .github/workflows/people_counting.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - people-counting/**
   workflow_dispatch:
   workflow_call:
     inputs:
