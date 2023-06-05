@@ -7,6 +7,9 @@ variable "region" {
 variable "timezone" {
   type = string
 }
+variable "people_counting_repository_name" {
+  type = string
+}
 variable "people_counting_image_name" {
   type = string
 }
@@ -38,6 +41,9 @@ variable "people_counting_cloud_run_min_scale" {
   type = string
 }
 variable "people_counting_cloud_run_max_scale" {
+  type = string
+}
+variable "object_detection_repository_name" {
   type = string
 }
 variable "object_detection_service_account_name" {
