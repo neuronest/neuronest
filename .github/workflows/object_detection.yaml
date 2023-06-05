@@ -12,10 +12,10 @@ on:
 #      - .pre-commit-config.yaml
 #      - shared/**
 #      - object-detection/**
-  pull_request:
-    branches:
-      - main
-      - develop
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
     paths:
       - .github/workflows/object_detection.yaml
       - .github/actions/**

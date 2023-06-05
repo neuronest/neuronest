@@ -60,6 +60,22 @@ jobs:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: run_base_terraform
         uses: ./.github/actions/run_base_terraform
+      - run: echo "hello=you" > ./test.env
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-env
+          path: test.env
+
+#  upload_environment_variables_file_of_services
+#    :
+#    - uses: actions/checkout@v3
+#    - uses: ./.github/actions/set_variables
+#      with:
+#        repository_name: ${{ env.REPOSITORY_NAME }}
+#    ... >> people_counting.env
+#    ... >> object_detection.env
+#    ... >> model_instantiator.env
 
   build_test_push_people_counting:
     needs: run_base_terraform
@@ -68,7 +84,6 @@ jobs:
       build: true
       deploy: false
       do_post_deployment: false
-      inherited_env: ${{ join(env.*, ',') }}
     secrets: inherit
 
   build_test_push_object_detection:

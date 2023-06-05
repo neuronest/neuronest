@@ -12,10 +12,10 @@ on:
 #      - .pre-commit-config.yaml
 #      - shared/**
 #      - model-instantiator/**
-  pull_request:
-    branches:
-      - main
-      - develop
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
     paths:
       - .github/workflows/model_instantiator.yaml
       - .github/actions/**

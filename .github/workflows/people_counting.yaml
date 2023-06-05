@@ -12,10 +12,10 @@ on:
 #      - .pre-commit-config.yaml
 #      - shared/**
 #      - people-counting/**
-  pull_request:
-    branches:
-      - main
-      - develop
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
     paths:
       - .github/workflows/people_counting.yaml
       - .github/actions/**
@@ -38,10 +38,6 @@ on:
         required: false
         type: string
         default: true
-      inherited_env:
-        required: false
-        type: string
-        default: ""
     outputs:
       gcp_image_name:
         description: "The gcp image name"
@@ -66,6 +62,11 @@ jobs:
       - run: test=${{ join(inputs.*, ',') }} && echo $test
       # - run: test=${{ fromJSON(inputs) }} && echo $test
       - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: test-env
+          path: ./test.env
+      - run: cat ./test.env
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
