@@ -54,6 +54,8 @@ jobs:
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
     steps:
+      - run: echo ${{ inputs }}
+      - run: echo ${{ inputs.* }}
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
