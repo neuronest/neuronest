@@ -48,12 +48,10 @@ module "people_counting_functional" {
   people_counting_cloud_run_min_scale               = var.people_counting_cloud_run_min_scale
   people_counting_cloud_run_max_scale               = var.people_counting_cloud_run_max_scale
 
-  object_detection_repository_name                  = var.object_detection_repository_name
   object_detection_service_account_name             = var.object_detection_service_account_name
   object_detection_models_bucket                    = var.object_detection_models_bucket
   object_detection_package_name                     = var.object_detection_package_name
 
-  model_instantiator_repository_name                = var.model_instantiator_repository_name
   model_instantiator_image_name                     = var.model_instantiator_image_name
   model_instantiator_webapp_service_account_name    = var.model_instantiator_webapp_service_account_name
   model_instantiator_cloud_scheduler_service_account_name = var.model_instantiator_cloud_scheduler_service_account_name
