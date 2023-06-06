@@ -13,6 +13,10 @@ inputs:
     description: 'Whether to also create corresponding terraform variables'
     required: false
     default: 'false'
+outputs:
+  env_file_artifact_name:
+    description: 'base project builder service account key'
+    value: ${{ steps.set_env_file_artifact.outputs.name }}
 runs:
   using: "composite"
   steps:

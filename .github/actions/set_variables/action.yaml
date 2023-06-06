@@ -41,32 +41,32 @@ runs:
           --discard_shared_variables ${{ inputs.discard_shared_variables }}
       shell: bash
 
-#    - uses: actions/download-artifact@v3
-#      with:
-#        name: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}
-#        path: /tmp
-#      if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
-#
-#    - run: |
-#        repository_name=${{ inputs.repository_name }}
-#        caller_workflow_env_file_artifact_path=/tmp/${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}.env
-#        while IFS= read -r line; do
-#          # Extract the variable name and value
-#          var_name=$(echo "$line" | cut -d'=' -f1)
-#          var_value=$(echo "$line" | cut -d'=' -f2)
-#
-#          # remove the left part of the prefix which represents the variable definition
-#          # context from the perspective of the workflow caller, and replace dash with
-#          # underscore in the repository name
-#          # example: people_counting_tracker_object_detection_cloud_run_cpu becomes
-#          # cloud_run_cpu in repository "object-detection"
-#          var_name_with_correct_context_prefix=$(echo "$var_name" | sed "s/.*${repository_name//-/_}_//")
-#
-#          echo "$var_name_with_correct_context_prefix=$var_value" >> $PREPROCESSED_VARIABLES_PATH
-#
-#        done < $caller_workflow_env_file_artifact_path
-#      if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
-#      shell: bash
+    - uses: actions/download-artifact@v3
+      with:
+        name: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}
+        path: /tmp
+      if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
+
+    - run: |
+        repository_name=${{ inputs.repository_name }}
+        caller_workflow_env_file_artifact_path=/tmp/${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}.env
+        while IFS= read -r line; do
+          # Extract the variable name and value
+          var_name=$(echo "$line" | cut -d'=' -f1)
+          var_value=$(echo "$line" | cut -d'=' -f2)
+
+          # remove the left part of the prefix which represents the variable definition
+          # context from the perspective of the workflow caller, and replace dash with
+          # underscore in the repository name
+          # example: people_counting_tracker_object_detection_cloud_run_cpu becomes
+          # cloud_run_cpu in repository "object-detection"
+          var_name_with_correct_context_prefix=$(echo "$var_name" | sed "s/.*${repository_name//-/_}_//")
+
+          echo "$var_name_with_correct_context_prefix=$var_value" >> $PREPROCESSED_VARIABLES_PATH
+
+        done < $caller_workflow_env_file_artifact_path
+      if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
+      shell: bash
 
     - uses: cardinalby/export-env-action@v2
       with:

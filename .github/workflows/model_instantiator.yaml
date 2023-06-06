@@ -38,6 +38,10 @@ on:
         required: false
         type: string
         default: true
+      caller_workflow_env_file_artifact_name:
+        required: false
+        type: string
+        default: ''
     outputs:
       gcp_image_name:
         description: "The gcp image name"
@@ -45,6 +49,7 @@ on:
 
 env:
   REPOSITORY_NAME: model-instantiator
+  CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME: ${{ inputs.caller_workflow_env_file_artifact_name }}
 
 jobs:
   run_base_terraform:

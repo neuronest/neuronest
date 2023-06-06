@@ -59,13 +59,6 @@ jobs:
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
     steps:
-      - run: test=${{ inputs }} && echo $test
-      - run: test=${{ inputs.* }} && echo $test
-      - run: test=${{ inputs.deploy }} && echo $test
-      - run: test=${{ inputs.inherited_env }} && echo $test
-      # je pense que cette syntaxe fonctionne, à tester dans un  workflow où le call est vraiment fait
-      - run: test=${{ join(inputs.*, ',') }} && echo $test
-      # - run: test=${{ fromJSON(inputs) }} && echo $test
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
@@ -84,12 +77,6 @@ jobs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - run: test=${{ join(inputs.*, ',') }} && echo $test
-      - uses: actions/download-artifact@v3
-        with:
-          name: test-env
-          path: ./test.env
-      - run: cat ./test.env/test.env
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           repository_name: ${{ env.REPOSITORY_NAME }}
