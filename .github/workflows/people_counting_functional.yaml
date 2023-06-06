@@ -73,18 +73,19 @@ jobs:
       people_counting_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
       object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
       model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
-    - id: upload_people_counting_variables
-      uses: ./.github/actions/upload_variables
-        with:
-          variable_prefix_to_filter_on: PEOPLE_COUNTING
-    - id: upload_object_detection_variables
-      uses: ./.github/actions/upload_variables
-        with:
-          variable_prefix_to_filter_on: OBJECT_DETECTION
-    - id: upload_model_instantiator_variables
-      uses: ./.github/actions/upload_variables
-        with:
-          variable_prefix_to_filter_on: MODEL_INSTANTIATOR
+    steps:
+      - id: upload_people_counting_variables
+        uses: ./.github/actions/upload_variables
+          with:
+            variable_prefix_to_filter_on: PEOPLE_COUNTING
+      - id: upload_object_detection_variables
+        uses: ./.github/actions/upload_variables
+          with:
+            variable_prefix_to_filter_on: OBJECT_DETECTION
+      - id: upload_model_instantiator_variables
+        uses: ./.github/actions/upload_variables
+          with:
+            variable_prefix_to_filter_on: MODEL_INSTANTIATOR
 
   build_test_push_people_counting:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
