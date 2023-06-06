@@ -1,0 +1,39 @@
+name: 'set_variables'
+description: 'Configure environment variables for a workflow'
+inputs:
+  upload_terraform_variables:
+    description: 'Whether to also create corresponding terraform variables'
+    required: false
+    default: 'true'
+  variable_prefix_to_filter_on:
+    description: 'Whether to also create corresponding terraform variables'
+    required: false
+    default: ''
+  discard_shared_variables:
+    description: 'Whether to also create corresponding terraform variables'
+    required: false
+    default: 'false'
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+    - id: set_variables
+      uses: ./.github/actions/set_variables
+      with:
+        repository_name: ${{ env.REPOSITORY_NAME }}
+        set_up_terraform_variables: ${{ inputs.upload_terraform_variables }}
+        variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
+        discard_shared_variables: ${{ inputs.discard_shared_variables }}
+    - id: set_env_file_artifact
+      run: |
+        - env_file_hash=$(sha256sum "${{ steps.set_variables.outputs.created_env_file_path }}" | awk '{print $1}')
+        - env_file_artifact_name=${{ env.REPOSITORY_NAME }}_${env_file_hash}.env
+        - echo "name=$env_file_artifact_name" >> $GITHUB_OUTPUT
+        - env_file_artifact_path=/tmp/$env_file_artifact_name
+        - cp ${{ steps.set_variables.outputs.created_env_file_path }} $env_file_artifact_path
+        - echo "path=$env_file_artifact_path" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ${{ steps.set_env_file_artifact.outputs.name }}
+        path: ${{ steps.set_env_file_artifact.outputs.path }}

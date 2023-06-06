@@ -272,6 +272,18 @@ if __name__ == "__main__":
         required=False,
         default=True,
     )
+    parser.add_argument(
+        "--variable_prefix_to_filter_on",
+        type=str,
+        required=False,
+        default=None,
+    )
+    parser.add_argument(
+        "--discard_shared_variables",
+        type=boolean_string,
+        required=False,
+        default=False,
+    )
 
     args = parser.parse_args()
 
@@ -299,12 +311,29 @@ if __name__ == "__main__":
             f"needed to load variables"
         )
 
-    all_variables_lines = (
-        shared_static_variables_lines
-        + repository_static_variables_lines
-        + shared_dynamic_variables_lines
-        + repository_dynamic_variables_lines
-    )
+    all_variables_lines = []
+    if not args.discard_shared_variables:
+        all_variables_lines += shared_static_variables_lines
+    all_variables_lines += [
+        var_line
+        for var_line in repository_static_variables_lines
+        if args.variable_prefix_to_filter_on is None
+        or var_line.name.startswith(args.variable_prefix_to_filter_on)
+    ]
+    if not args.discard_shared_variables:
+        all_variables_lines += shared_dynamic_variables_lines
+    all_variables_lines += [
+        var_line
+        for var_line in repository_dynamic_variables_lines
+        if args.variable_prefix_to_filter_on is None
+        or var_line.name.startswith(args.variable_prefix_to_filter_on)
+    ]
+    # all_variables_lines = (
+    #     shared_static_variables_lines
+    #     + repository_static_variables_lines
+    #     + shared_dynamic_variables_lines
+    #     + repository_dynamic_variables_lines
+    # )
     if args.add_terraform_variables:
         # add the terraform variables and concatenate the list of lists
         # into a single list

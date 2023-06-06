@@ -67,8 +67,7 @@ jobs:
           name: test-env
           path: test.env
 
-#  upload_environment_variables_file_of_services
-#    :
+#  upload_environment_variables_files_of_services:
 #    - uses: actions/checkout@v3
 #    - uses: ./.github/actions/set_variables
 #      with:
@@ -84,6 +83,7 @@ jobs:
       build: true
       deploy: false
       do_post_deployment: false
+      caller_workflow_env_file_artifact_name: test_artifact_name
     secrets: inherit
 
   build_test_push_object_detection:
