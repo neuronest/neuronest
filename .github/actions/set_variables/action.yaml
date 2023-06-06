@@ -70,5 +70,5 @@ runs:
 
     - uses: cardinalby/export-env-action@v2
       with:
-        envFile: $PREPROCESSED_VARIABLES_PATH
+        envFile: ${{ env.PREPROCESSED_VARIABLES_PATH }}
         expand: 'true'
