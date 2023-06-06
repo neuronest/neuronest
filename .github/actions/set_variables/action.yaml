@@ -37,7 +37,7 @@ runs:
           --repository_name ${{ inputs.repository_name }} \
           --environment_variables_file_path $PREPROCESSED_VARIABLES_PATH \
           --add_terraform_variables ${{ inputs.set_up_terraform_variables }} \
-          --variable_prefix_to_filter_on ${{ inputs.variable_prefix_to_filter_on }} \
+          --variable_prefix_to_filter_on "${{ inputs.variable_prefix_to_filter_on }}" \
           --discard_shared_variables ${{ inputs.discard_shared_variables }}
       shell: bash
 
