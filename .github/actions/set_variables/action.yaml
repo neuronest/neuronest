@@ -52,7 +52,7 @@ runs:
 
     - run: |
         repository_name=${{ inputs.repository_name }}
-        caller_workflow_env_file_artifact_path=/tmp/${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}.env
+        caller_workflow_env_file_artifact_path=/tmp/${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}
         while IFS= read -r line; do
           # Extract the variable name and value
           var_name=$(echo "$line" | cut -d'=' -f1)
