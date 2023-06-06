@@ -76,16 +76,16 @@ jobs:
     steps:
       - id: upload_people_counting_variables
         uses: ./.github/actions/upload_variables
-          with:
-            variable_prefix_to_filter_on: PEOPLE_COUNTING
+        with:
+          variable_prefix_to_filter_on: PEOPLE_COUNTING
       - id: upload_object_detection_variables
         uses: ./.github/actions/upload_variables
-          with:
-            variable_prefix_to_filter_on: OBJECT_DETECTION
+        with:
+          variable_prefix_to_filter_on: OBJECT_DETECTION
       - id: upload_model_instantiator_variables
         uses: ./.github/actions/upload_variables
-          with:
-            variable_prefix_to_filter_on: MODEL_INSTANTIATOR
+        with:
+          variable_prefix_to_filter_on: MODEL_INSTANTIATOR
 
   build_test_push_people_counting:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
