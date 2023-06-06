@@ -74,6 +74,7 @@ jobs:
       object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
       model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
     steps:
+      - uses: actions/checkout@v3
       - id: upload_people_counting_variables
         uses: ./.github/actions/upload_variables
         with:
