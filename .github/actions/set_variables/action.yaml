@@ -64,7 +64,7 @@ runs:
           # example: people_counting_tracker_object_detection_cloud_run_cpu becomes
           # cloud_run_cpu in repository "object-detection"
           if [[ $var_name == TF_VAR_* ]]; then
-            var_name_with_correct_context_prefix=TF_VAR_$(echo "$var_name" | sed "s/.*${repository_name//-/_}_//")
+            var_name_with_correct_context_prefix=TF_VAR_$(echo "${var_name#TF_VAR_}" | sed "s/.*${repository_name//-/_}_//")
           else
             # uppercase repository name
             repository_name=${repository_name^^}
