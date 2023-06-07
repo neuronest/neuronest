@@ -162,7 +162,7 @@ class VariableLine:
             "\$\{([^\}]*)\}", self.value  # pylint: disable=W1401  # noqa: W605
         ):
             return list(variables_inside_value)
-        return None
+        return []
 
 
 class EnvFile:
