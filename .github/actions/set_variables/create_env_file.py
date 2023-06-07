@@ -311,29 +311,31 @@ if __name__ == "__main__":
             f"needed to load variables"
         )
 
-    all_variables_lines = []
-    if not args.discard_shared_variables:
-        all_variables_lines += shared_static_variables_lines
-    all_variables_lines += [
-        var_line
-        for var_line in repository_static_variables_lines
-        if args.variable_prefix_to_filter_on is None
-        or var_line.name.startswith(args.variable_prefix_to_filter_on)
-    ]
-    if not args.discard_shared_variables:
-        all_variables_lines += shared_dynamic_variables_lines
-    all_variables_lines += [
-        var_line
-        for var_line in repository_dynamic_variables_lines
-        if args.variable_prefix_to_filter_on is None
-        or var_line.name.startswith(args.variable_prefix_to_filter_on)
-    ]
-    # all_variables_lines = (
-    #     shared_static_variables_lines
-    #     + repository_static_variables_lines
-    #     + shared_dynamic_variables_lines
-    #     + repository_dynamic_variables_lines
-    # )
+    shared_variables_lines_names = set(
+        shared_var_line.name
+        for shared_var_line in shared_static_variables_lines
+        + shared_dynamic_variables_lines
+    )
+    all_variables_lines = (
+        shared_static_variables_lines
+        + repository_static_variables_lines
+        + shared_dynamic_variables_lines
+        + repository_dynamic_variables_lines
+    )
+    if args.discard_shared_variables:
+        all_variables_lines = [
+            var_line
+            for var_line in all_variables_lines
+            if var_line.name not in shared_variables_lines_names
+        ]
+    if args.variable_prefix_to_filter_on:
+        all_variables_lines = [
+            var_line
+            for var_line in all_variables_lines
+            if var_line.name.startswith(args.variable_prefix_to_filter_on)
+            or var_line.name in shared_variables_lines_names
+        ]
+
     if args.add_terraform_variables:
         # add the terraform variables and concatenate the list of lists
         # into a single list

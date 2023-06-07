@@ -63,8 +63,14 @@ runs:
           # underscore in the repository name
           # example: people_counting_tracker_object_detection_cloud_run_cpu becomes
           # cloud_run_cpu in repository "object-detection"
-          var_name_with_correct_context_prefix=$(echo "$var_name" | sed "s/.*${repository_name//-/_}_//")
-
+          if [[ $var_name == TF_VAR_* ]]; then
+            var_name_with_correct_context_prefix=TF_VAR_$(echo "$var_name" | sed "s/.*${repository_name//-/_}_//")
+          else
+            # uppercase repository name
+            repository_name=${repository_name^^}
+            var_name_with_correct_context_prefix=$(echo "$var_name" | sed "s/.*${repository_name^^//-/_}_//")
+          fi
+          
           echo "$var_name_with_correct_context_prefix=$var_value" >> $PREPROCESSED_VARIABLES_PATH
 
         done < $caller_workflow_env_file_artifact_path
