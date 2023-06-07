@@ -21,12 +21,6 @@ runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v3
-    - id: save_github_env
-      run: |
-        saved_github_env=$(mktemp)
-        cp $GITHUB_ENV $saved_github_env
-        echo "path=$saved_github_env" >> $GITHUB_OUTPUT
-      shell: bash
     - id: set_variables
       uses: ./.github/actions/set_variables
       with:
@@ -34,9 +28,6 @@ runs:
         set_up_terraform_variables: ${{ inputs.upload_terraform_variables }}
         variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
         discard_shared_variables: ${{ inputs.discard_shared_variables }}
-    - name: unset_variables_as_the_file_alone_is_needed
-      run: cp ${{ steps.save_github_env.outputs.path }} $GITHUB_ENV
-      shell: bash
     - id: set_env_file_artifact
       run: |
         env_file_hash=$(sha256sum "${{ steps.set_variables.outputs.created_env_file_path }}" | awk '{print $1}')
@@ -45,7 +36,6 @@ runs:
         env_file_artifact_path=/tmp/$env_file_artifact_name
         cp ${{ steps.set_variables.outputs.created_env_file_path }} $env_file_artifact_path
         echo "path=$env_file_artifact_path" >> $GITHUB_OUTPUT
-        cat $env_file_artifact_path
       shell: bash
     - uses: actions/upload-artifact@v3
       with:

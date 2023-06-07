@@ -31,7 +31,6 @@ runs:
         PREPROCESSED_VARIABLES_PATH=$(mktemp)
         echo "PREPROCESSED_VARIABLES_PATH=$PREPROCESSED_VARIABLES_PATH" >> $GITHUB_ENV
         echo "value=$PREPROCESSED_VARIABLES_PATH" >> $GITHUB_OUTPUT
-        echo "value=$PREPROCESSED_VARIABLES_PATH"
       shell: bash
     - run: echo "set_created_env_file_path ${{ steps.set_created_env_file_path.outputs.value }}"
       shell: bash
@@ -43,16 +42,11 @@ runs:
           --variable_prefix_to_filter_on "${{ inputs.variable_prefix_to_filter_on }}" \
           --discard_shared_variables ${{ inputs.discard_shared_variables }}
       shell: bash
-
-    - run: cat $PREPROCESSED_VARIABLES_PATH
-      shell: bash
-
     - uses: actions/download-artifact@v3
       with:
         name: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}
         path: /tmp
       if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
-
     - run: |
         caller_workflow_env_file_path=/tmp/${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}
         refactored_caller_workflow_env_file_path=${caller_workflow_env_file_path}_refactored
@@ -60,14 +54,9 @@ runs:
             --repository_where_variables_are_defined ${{ inputs.repository_name }} \
             --caller_workflow_env_file_path $caller_workflow_env_file_path \
             --refactored_caller_workflow_env_file_path $refactored_caller_workflow_env_file_path
-        
         cat $refactored_caller_workflow_env_file_path >> $PREPROCESSED_VARIABLES_PATH
       if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
       shell: bash
-
-    - run: cat $PREPROCESSED_VARIABLES_PATH
-      shell: bash
-
     - uses: cardinalby/export-env-action@v2
       with:
         envFile: ${{ env.PREPROCESSED_VARIABLES_PATH }}
