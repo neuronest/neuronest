@@ -44,11 +44,17 @@ runs:
           --discard_shared_variables ${{ inputs.discard_shared_variables }}
       shell: bash
 
+    - run: cat $PREPROCESSED_VARIABLES_PATH
+      shell: bash
+
     - uses: actions/download-artifact@v3
       with:
         name: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}
         path: /tmp
       if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
+
+    - run: cat $PREPROCESSED_VARIABLES_PATH
+      shell: bash
 
     - run: |
         repository_name=${{ inputs.repository_name }}
@@ -75,6 +81,9 @@ runs:
 
         done < $caller_workflow_env_file_artifact_path
       if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
+      shell: bash
+
+    - run: cat $PREPROCESSED_VARIABLES_PATH
       shell: bash
 
     - uses: cardinalby/export-env-action@v2
