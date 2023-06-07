@@ -70,11 +70,16 @@ runs:
           # example: people_counting_tracker_object_detection_cloud_run_cpu becomes
           # cloud_run_cpu in repository "object-detection"
           if [[ $var_name == TF_VAR_* ]]; then
+            echo "tf variable before: $var_name"
             var_name_with_correct_context_prefix=TF_VAR_$(echo "${var_name#TF_VAR_}" | sed "s/.*${repository_name//-/_}_//")
+            echo "tf variable before: $var_name_with_correct_context_prefix"
           else
             # uppercase repository name
+            echo "variable before: $var_name"
             repository_name=${repository_name^^}
+            echo "variable repository uppercased: $repository_name"
             var_name_with_correct_context_prefix=$(echo "$var_name" | sed "s/.*${repository_name^^//-/_}_//")
+            echo "variable before: $var_name_with_correct_context_prefix"
           fi
           
           echo "$var_name_with_correct_context_prefix=$var_value" >> $PREPROCESSED_VARIABLES_PATH
