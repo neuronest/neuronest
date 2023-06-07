@@ -28,6 +28,16 @@ runs:
         set_up_terraform_variables: ${{ inputs.upload_terraform_variables }}
         variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
         discard_shared_variables: ${{ inputs.discard_shared_variables }}
+    - name: unset_variables_as_the_file_alone_is_needed
+      run: |
+        while IFS= read -r line; do
+          # Extract the variable name and value
+          var_name=$(echo "$line" | cut -d'=' -f1)
+          # unset and forgets the environment variable which does not need to be set 
+          # in an action that uploads the variables
+          unset $var_name
+        done < ${{ steps.set_variables.outputs.created_env_file_path }}
+      shell: bash
     - id: set_env_file_artifact
       run: |
         env_file_hash=$(sha256sum "${{ steps.set_variables.outputs.created_env_file_path }}" | awk '{print $1}')
@@ -41,3 +51,4 @@ runs:
       with:
         name: ${{ steps.set_env_file_artifact.outputs.name }}
         path: ${{ steps.set_env_file_artifact.outputs.path }}
+

@@ -77,7 +77,7 @@ runs:
             # uppercase repository name
             echo "variable before: $var_name"
             upper_cased_repository_name=${repository_name^^}
-            echo "variable repository uppercased: upper_cased_repository_name"
+            echo "variable repository uppercased: $upper_cased_repository_name"
             var_name_with_correct_context_prefix=$(echo "$var_name" | sed "s/.*${upper_cased_repository_name//-/_}_//")
             echo "variable after: $var_name_with_correct_context_prefix"
           fi
