@@ -296,7 +296,7 @@ jobs:
       - get_dockerhub_training_image_name
       - get_base_project_builder_sa_key
     runs-on: ubuntu-latest
-    if: ${{ ${{ ${{ inputs.model_instantiator_url }} != '' }} && (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
+    if: ${{ inputs.model_instantiator_url != '' && (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
