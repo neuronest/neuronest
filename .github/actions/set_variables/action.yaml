@@ -54,32 +54,41 @@ runs:
       if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
 
     - run: |
-        repository_name=${{ inputs.repository_name }}
-        caller_workflow_env_file_artifact_path=/tmp/${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}
-        while IFS= read -r line; do
-          # Extract the variable name and value
-          var_name=$(echo "$line" | cut -d'=' -f1)
-          var_value=$(echo "$line" | cut -d'=' -f2)
-
-          # remove the left part of the prefix which represents the variable definition
-          # context from the perspective of the workflow caller, and replace dash with
-          # underscore in the repository name
-          # example: people_counting_tracker_object_detection_cloud_run_cpu becomes
-          # cloud_run_cpu in repository "object-detection"
-          if [[ $var_name == TF_VAR_* ]]; then
-            echo "tf variable before: $var_name"
-            var_name_with_correct_context_prefix=TF_VAR_$(echo "${var_name#TF_VAR_}" | sed "s/.*${repository_name//-/_}_//")
-            echo "tf variable after: $var_name_with_correct_context_prefix"
-          else
-            # uppercase repository name
-            echo "variable before: $var_name"
-            upper_cased_repository_name=${repository_name^^}
-            echo "variable repository uppercased: $upper_cased_repository_name"
-            var_name_with_correct_context_prefix=$(echo "$var_name" | sed "s/.*${upper_cased_repository_name//-/_}_//")
-            echo "variable after: $var_name_with_correct_context_prefix"
-          fi
-          
-          echo "$var_name_with_correct_context_prefix=$var_value" >> $PREPROCESSED_VARIABLES_PATH
+        caller_workflow_env_file_path=/tmp/${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}
+        refactored_caller_workflow_env_file_path=${caller_workflow_env_file_path}_refactored
+          python3 .github/actions/set_variables/refactor_caller_workflow_env_file.py \
+            --repository_where_variables_are_defined ${{ inputs.repository_name }} \
+            --caller_workflow_env_file_path $caller_workflow_env_file_path \
+            --refactored_caller_workflow_env_file_path $refactored_caller_workflow_env_file_path
+        
+        cat $refactored_caller_workflow_env_file_path >> $PREPROCESSED_VARIABLES_PATH
+#        upper_cased_repository_name=${repository_name^^}
+#        caller_workflow_env_file_artifact_path=/tmp/${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME }}
+        
+#        while IFS= read -r line; do
+#          # Extract the variable name and value
+#          var_name=$(echo "$line" | cut -d'=' -f1)
+#          var_value=$(echo "$line" | cut -d'=' -f2)
+#
+#          # remove the left part of the prefix which represents the variable definition
+#          # context from the perspective of the workflow caller, and replace dash with
+#          # underscore in the repository name
+#          # example: people_counting_tracker_object_detection_cloud_run_cpu becomes
+#          # cloud_run_cpu in repository "object-detection"
+#          if [[ $var_name == TF_VAR_* ]]; then
+#            echo "tf name variable before: $var_name"
+#            var_name_with_correct_context_prefix=TF_VAR_$(echo "${var_name#TF_VAR_}" | sed "s/.*${repository_name//-/_}_//")
+#            echo "tf name variable after: $var_name_with_correct_context_prefix"
+#          else
+#            # uppercase repository name
+#            echo "name variable before: $var_name"
+#            echo "variable repository uppercased: $upper_cased_repository_name"
+#            var_name_with_correct_context_prefix=$(echo "$var_name" | sed "s/.*${upper_cased_repository_name//-/_}_//")
+#            echo "name variable after: $var_name_with_correct_context_prefix"
+#          fi
+#          var_value_with_correct_context_prefix=$(echo "$var_value" | sed "s/.*${upper_cased_repository_name//-/_}_//")
+#
+#          echo "$var_name_with_correct_context_prefix=$var_value" >> $PREPROCESSED_VARIABLES_PATH
 
         done < $caller_workflow_env_file_artifact_path
       if: ${{ env.CALLER_WORKFLOW_ENV_FILE_ARTIFACT_NAME != '' }}
