@@ -21,6 +21,12 @@ runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v3
+    - id: save_github_env
+      run: |
+        saved_github_env=$(mktemp)
+        cp $GITHUB_ENV $saved_github_env
+        echo "path=$saved_github_env" >> $GITHUB_OUTPUT
+      shell: bash
     - id: set_variables
       uses: ./.github/actions/set_variables
       with:
@@ -29,14 +35,7 @@ runs:
         variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
         discard_shared_variables: ${{ inputs.discard_shared_variables }}
     - name: unset_variables_as_the_file_alone_is_needed
-      run: |
-        while IFS= read -r line; do
-          # Extract the variable name and value
-          var_name=$(echo "$line" | cut -d'=' -f1)
-          # unset and forgets the environment variable which does not need to be set 
-          # in an action that uploads the variables
-          unset $var_name
-        done < ${{ steps.set_variables.outputs.created_env_file_path }}
+      run: cp ${{ steps.save_github_env.outputs.path }} $GITHUB_ENV
       shell: bash
     - id: set_env_file_artifact
       run: |
@@ -46,9 +45,9 @@ runs:
         env_file_artifact_path=/tmp/$env_file_artifact_name
         cp ${{ steps.set_variables.outputs.created_env_file_path }} $env_file_artifact_path
         echo "path=$env_file_artifact_path" >> $GITHUB_OUTPUT
+        cat $env_file_artifact_path
       shell: bash
     - uses: actions/upload-artifact@v3
       with:
         name: ${{ steps.set_env_file_artifact.outputs.name }}
         path: ${{ steps.set_env_file_artifact.outputs.path }}
-
