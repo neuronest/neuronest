@@ -16,12 +16,12 @@ inputs:
     required: false
     default: ""
   max_terraform_retry_wait_seconds:
-    description: 'Variables usually named -var found in the terraform plan and terraform apply commands'
+    description: 'Terraform maximum wait time for retry after failure'
     required: false
     default: "120"
 outputs:
   base_project_builder_sa_key:
-    description: 'base project builder service account key'
+    description: 'The base64 encoded key of the IAC service account of the shared repository'
     value: ${{ steps.get_base_project_builder_sa_key.outputs.value }}
 
 runs:

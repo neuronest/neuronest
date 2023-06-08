@@ -60,13 +60,13 @@ on:
         default: ""
     outputs:
       gcp_training_image_name:
-        description: "The gcp image name"
+        description: "The gcp training image name"
         value: ${{ jobs.get_gcp_training_image_name.outputs.value }}
       dockerhub_training_image_name:
-        description: "The gcp image name"
+        description: "The dockerhub training image name"
         value: ${{ jobs.get_dockerhub_training_image_name.outputs.value }}
       base_project_builder_sa_key:
-        description: "The gcp image name"
+        description: 'The base64 encoded key of the IAC service account of the shared repository'
         value: ${{ jobs.get_base_project_builder_sa_key.outputs.value }}
 
 env:

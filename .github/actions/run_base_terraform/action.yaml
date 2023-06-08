@@ -1,8 +1,8 @@
-name: 'build_test_push_deploy'
-description: 'Build, test, push docker image, and deploy using terraform'
+name: 'run_base_terraform'
+description: 'Deploy the terraform part of the shared repository, common to all IACs of all repositories'
 outputs:
   base_project_builder_sa_key:
-    description: 'base project builder service account key'
+    description: 'The base64 encoded key of the IAC service account of the shared repository'
     value: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
 runs:
   using: "composite"

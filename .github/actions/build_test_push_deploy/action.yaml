@@ -29,7 +29,7 @@ outputs:
     description: 'Built and pushed image name to GCP'
     value: ${{ steps.gcp_output_step.outputs.gcp_image_name }}
   base_project_builder_sa_key:
-    description: 'base project builder service account key'
+    description: 'The base64 encoded key of the IAC service account of the shared repository'
     value: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
 runs:
   using: "composite"

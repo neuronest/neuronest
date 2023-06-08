@@ -1,15 +1,15 @@
-name: 'run_terraform'
-description: 'Create the base infrastructure components, initialize and apply terraform'
+name: 'get_terraform_output'
+description: 'Get one of the outputs of the terraform code of the current repository'
 inputs:
   workspace:
     description: 'Terraform workspace to use, can be either "base" or "$REPOSITORY_NAME"'
     required: true
   terraform_output_name:
-    description: 'terraform output name'
+    description: 'The name given to the output type variable in the terraform code'
     required: true
 outputs:
   value:
-    description: 'base project builder service account key'
+    description: 'The value of targeted the output type variable in the terraform code'
     value: ${{ steps.get_terraform_output.outputs.terraform_output_value }}
 
 

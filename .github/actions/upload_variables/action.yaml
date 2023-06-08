@@ -2,20 +2,20 @@ name: 'set_variables'
 description: 'Configure environment variables for a workflow'
 inputs:
   upload_terraform_variables:
-    description: 'Whether to also create corresponding terraform variables'
+    description: 'Whether to also upload corresponding terraform variables'
     required: false
     default: 'true'
   variable_prefix_to_filter_on:
-    description: 'Whether to also create corresponding terraform variables'
+    description: 'Prefix of variables to keep'
     required: false
     default: ''
   discard_shared_variables:
-    description: 'Whether to also create corresponding terraform variables'
+    description: 'Whether discard shared variables or not'
     required: false
     default: 'false'
 outputs:
   env_file_artifact_name:
-    description: 'base project builder service account key'
+    description: 'The name of the uploaded artifact and which must be used to be able to download it later'
     value: ${{ steps.set_env_file_artifact.outputs.name }}
 runs:
   using: "composite"

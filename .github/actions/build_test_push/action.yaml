@@ -13,7 +13,7 @@ inputs:
       (e.g.: "train")
   build_arguments:
     description: >
-      Docker build arguments 
+      Docker build arguments
       (e.g.: "--build-arg MODEL_PATH=model.pt --build-arg ARTIFACTS_PATH=artifacts")
   shared_repository_name:
     description: 'Shared repository name'
