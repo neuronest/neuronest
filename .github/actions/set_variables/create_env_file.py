@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple
 
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
+TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
 
 # create logger
 logger = logging.getLogger("my_logger")
@@ -55,16 +56,66 @@ class VariableLine:
         with open(file_path, "a") as file:
             file.write(f"{self.line}{os.linesep}")
 
+    def truncate_to_current_context(self, current_context: str):
+        """
+        Modifies the name and value parts so that they represent the current context,
+        that is to say, we remove from the names the coordinates which are used to
+        specify the origin of the variable from a broader context than currently.
+
+        For example: the variable
+        OBJECT_DETECTION_SERVICE_ACCOUNT_EMAIL=
+        ${OBJECT_DETECTION_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
+        becomes SERVICE_ACCOUNT_EMAIL=
+        ${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
+        and
+        TF_VAR_object_detection_service_account_email=
+        ${OBJECT_DETECTION_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
+        becomes TF_VAR_service_account_email=
+        ${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
+        in "object_detection" context.
+        """
+
+        for variable_inside_value in self.get_variables_inside_value():
+            if not current_context.lower() in variable_inside_value.lower():
+                continue
+            self.replace_variable_inside_value(
+                variable=variable_inside_value,
+                other_variable=variable_inside_value[
+                    variable_inside_value.rfind(current_context.upper())
+                    + len(current_context)
+                    + 1 :
+                ],
+                inplace=True,
+            )
+            if not current_context.lower() in self.name.lower():
+                continue
+            new_var_line_name = self.name.upper()[
+                self.name.upper().rfind(current_context.upper())
+                + len(current_context)
+                + 1 :
+            ]
+            if self.name.startswith(TERRAFORM_VARIABLES_PREFIX):
+                self.name = f"{TERRAFORM_VARIABLES_PREFIX}{new_var_line_name.lower()}"
+            else:
+                self.name = new_var_line_name
+
     def replace_variable_inside_value(
         self,
         variable: str,
         other_variable: str,
+        inplace: bool = False,
     ):
         variable_line_name = self.name
         variable_line_value = self.value.replace(
             "${" + variable + "}", "${" + other_variable + "}"
         )
-        return VariableLine(line=f"{variable_line_name}={variable_line_value}")
+        if not inplace:
+            return VariableLine(line=f"{variable_line_name}={variable_line_value}")
+
+        self.name = variable_line_name
+        self.value = variable_line_value
+
+        return None
 
     def add_namespace(
         self,
@@ -79,7 +130,9 @@ class VariableLine:
             name = self.name
 
         if not add_to_value:
-            return VariableLine(line=f"{name}={self.value}")
+            return VariableLine(
+                line=f"{name}{self.NAME_AND_VALUE_SEPARATOR}{self.value}"
+            )
 
         if variable_inside_value_to_add_to is not None:
             # only add the namespace to this variable only within the value part
@@ -109,7 +162,7 @@ class VariableLine:
             "\$\{([^\}]*)\}", self.value  # pylint: disable=W1401  # noqa: W605
         ):
             return list(variables_inside_value)
-        return None
+        return []
 
 
 class EnvFile:
@@ -270,6 +323,18 @@ if __name__ == "__main__":
         required=False,
         default=True,
     )
+    parser.add_argument(
+        "--variable_prefix_to_filter_on",
+        type=str,
+        required=False,
+        default=None,
+    )
+    parser.add_argument(
+        "--discard_shared_variables",
+        type=boolean_string,
+        required=False,
+        default=False,
+    )
 
     args = parser.parse_args()
 
@@ -297,12 +362,31 @@ if __name__ == "__main__":
             f"needed to load variables"
         )
 
+    shared_variables_lines_names = set(
+        shared_var_line.name
+        for shared_var_line in shared_static_variables_lines
+        + shared_dynamic_variables_lines
+    )
     all_variables_lines = (
         shared_static_variables_lines
         + repository_static_variables_lines
         + shared_dynamic_variables_lines
         + repository_dynamic_variables_lines
     )
+    if args.discard_shared_variables:
+        all_variables_lines = [
+            var_line
+            for var_line in all_variables_lines
+            if var_line.name not in shared_variables_lines_names
+        ]
+    if args.variable_prefix_to_filter_on:
+        all_variables_lines = [
+            var_line
+            for var_line in all_variables_lines
+            if var_line.name.startswith(args.variable_prefix_to_filter_on)
+            or var_line.name in shared_variables_lines_names
+        ]
+
     if args.add_terraform_variables:
         # add the terraform variables and concatenate the list of lists
         # into a single list

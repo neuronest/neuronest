@@ -1,10 +1,21 @@
 name: 'set_variables_gcloud_auth'
-description: 'Install utilities that terraform needs that we might not have in a given docker image'
+description: 'Execute in order the step set_variables and then the step gcloud_auth'
 inputs:
   repository_name:
-    description: 'Whether to also create corresponding terraform variables'
+    description: 'The name of the repository whose variables are loaded'
     required: true
+  set_up_terraform_variables:
+    description: 'Whether to also create corresponding terraform variables'
+    required: false
     default: 'true'
+  variable_prefix_to_filter_on:
+    description: 'Prefix of variables to keep'
+    required: false
+    default: ''
+  discard_shared_variables:
+    description: 'Whether discard shared variables or not'
+    required: false
+    default: 'false'
   credentials_json:
     description: 'Name of the repositories'
     required: false
@@ -14,6 +25,9 @@ runs:
       - uses: ./.github/actions/set_variables
         with:
           repository_name: ${{ inputs.repository_name }}
+          set_up_terraform_variables: ${{ inputs.set_up_terraform_variables }}
+          variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
+          discard_shared_variables: ${{ inputs.discard_shared_variables }}
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ inputs.credentials_json }}

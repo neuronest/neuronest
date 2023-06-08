@@ -7,9 +7,6 @@ variable "region" {
 variable "timezone" {
   type = string
 }
-variable "repository_name" {
-  type = string
-}
 variable "image_name" {
   type = string
 }
@@ -41,5 +38,8 @@ variable "cloud_uninstantiate_route" {
   type = string
 }
 variable "cloud_scheduler_model_name" {
+  type = string
+}
+variable "repository_name" {
   type = string
 }
