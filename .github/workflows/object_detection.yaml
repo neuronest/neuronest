@@ -1,28 +1,28 @@
 name: object_detection
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/object_detection.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - object-detection/**
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/object_detection.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - object-detection/**
+#  push:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/object_detection.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - object-detection/**
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/object_detection.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - object-detection/**
   workflow_dispatch:
   workflow_call:
     inputs:

@@ -1,28 +1,28 @@
 name: model_instantiator
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/model_instantiator.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/model_instantiator.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
+#  push:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/model_instantiator.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - model-instantiator/**
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/model_instantiator.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - model-instantiator/**
   workflow_dispatch:
   workflow_call:
     inputs:

@@ -1,0 +1,56 @@
+name: customer_dummy_project
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/people_counting_functional.yaml
+      - .github/actions/**
+      - .github/variables/**
+      - .pre-commit-config.yaml
+      - shared/**
+      - people-counting/**
+      - object-detection/**
+      - model-instantiator/**
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/people_counting_functional.yaml
+      - .github/actions/**
+      - .github/variables/**
+      - .pre-commit-config.yaml
+      - shared/**
+      - people-counting/**
+      - object-detection/**
+      - model-instantiator/**
+  workflow_dispatch:
+
+env:
+  REPOSITORY_NAME: customer-dummy-project
+
+jobs:
+
+  upload_variables_of_called_workflows:
+    runs-on: ubuntu-latest
+    container: google/cloud-sdk
+    outputs:
+      people_counting_functional_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: upload_people_counting_functional_variables
+        id: upload_people_counting_functional_variables
+        uses: ./.github/actions/upload_variables
+
+  people_counting_functional:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/people_counting_functional.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      caller_workflow_env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_functional_env_file_artifact_name }}
+    secrets: inherit
