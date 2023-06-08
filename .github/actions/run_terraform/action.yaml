@@ -47,7 +47,7 @@ runs:
     - id: link_billing_account_to_project
       uses: nick-fields/retry@v2.8.2
       with:
-        timeout_seconds: 30
+        timeout_seconds: 60
         max_attempts: 3
         command: |
           # the command may fail if the project is not actually created yet
@@ -56,7 +56,7 @@ runs:
     - id: create_state_bucket
       uses: nick-fields/retry@v2.8.2
       with:
-        timeout_seconds: 30
+        timeout_seconds: 60
         max_attempts: 3
         command: |
           # the command may fail if the project is not actually created yet
