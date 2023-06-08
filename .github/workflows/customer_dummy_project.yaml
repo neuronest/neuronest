@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      people_counting_functional_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
+      people_counting_functional_env_file_artifact_name: ${{ steps.upload_people_counting_functional_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
       - name: upload_people_counting_functional_variables
