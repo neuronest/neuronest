@@ -68,6 +68,7 @@ jobs:
 
   upload_variables_of_called_workflows:
     runs-on: ubuntu-latest
+    if: {{ !failure() }}
     container: google/cloud-sdk
     outputs:
       people_counting_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
