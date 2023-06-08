@@ -60,7 +60,13 @@ runs:
         max_attempts: 3
         command: |
           # the command may fail if the project is not actually created yet
-          gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
+          if echo "$(gsutil ls -p $PROJECT_ID)" | grep -q "gs://$STATE_BUCKET/"; then
+            :
+            # Bucket exists, do nothing
+          else
+            # Bucket does not exist, create it
+            gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
+          fi
 
     - id: add_iam_with_retry
       uses: nick-fields/retry@v2.8.2
