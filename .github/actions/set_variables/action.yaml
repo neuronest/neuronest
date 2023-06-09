@@ -31,9 +31,6 @@ runs:
         echo "PREPROCESSED_VARIABLES_PATH=$PREPROCESSED_VARIABLES_PATH" >> $GITHUB_ENV
         echo "value=$PREPROCESSED_VARIABLES_PATH" >> $GITHUB_OUTPUT
       shell: bash
-
-    - run: echo "set_created_env_file_path ${{ steps.set_created_env_file_path.outputs.value }}"
-      shell: bash
     - run: |
         python3 .github/actions/set_variables/create_env_file.py \
           --repository_name ${{ inputs.repository_name }} \
