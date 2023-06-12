@@ -78,6 +78,7 @@ runs:
         -t $GCP_IMAGE_NAME:$GITHUB_RUN_ID \
         -t $GCP_IMAGE_NAME:latest \
         $TARGET_ARGUMENTS \
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
         ${{ inputs.build_arguments }} \
         .
       shell: bash
