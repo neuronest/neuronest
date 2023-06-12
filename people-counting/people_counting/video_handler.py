@@ -102,6 +102,7 @@ class VideoRenderer:
 
     def _initialize_writer(self, width: int, height: int) -> cv.VideoWriter:
         fourcc = cv.VideoWriter_fourcc(*self.codec)
+
         return cv.VideoWriter(self.output_path, fourcc, self.fps, (width, height), True)
 
     def draw_border_line(
