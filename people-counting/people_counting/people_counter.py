@@ -1,10 +1,9 @@
 import logging
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import cv2 as cv
 import dlib
-import pandas as pd
 from core.client.object_detection import ObjectDetectionClient
 from omegaconf import DictConfig
 
@@ -53,8 +52,9 @@ class PeopleCounter:
         enable_video_writing: bool = False,
         enable_video_showing: bool = False,
         video_is_rgb_color: bool = True,
-    ) -> pd.DataFrame:
+    ) -> Tuple[Statistics, VideoRenderer]:
         video_output_path = self.get_video_output_path(video_input_path)
+
         vcap = cv.VideoCapture(video_input_path)
         video_renderer = VideoRenderer(
             line_placement_ratio=self.algorithm_config.line_placement_ratio,
