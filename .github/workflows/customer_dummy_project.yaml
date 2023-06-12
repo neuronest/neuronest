@@ -3,21 +3,7 @@ name: customer_dummy_project
 on:
   push:
     branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/people_counting_functional.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - people-counting/**
-      - object-detection/**
-      - model-instantiator/**
-  pull_request:
-    branches:
-      - main
-      - develop
+      - wip/dummy-project
     paths:
       - .github/workflows/people_counting_functional.yaml
       - .github/actions/**
