@@ -4,15 +4,6 @@ on:
   push:
     branches:
       - wip/dummy-project
-    paths:
-      - .github/workflows/people_counting_functional.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - people-counting/**
-      - object-detection/**
-      - model-instantiator/**
   workflow_dispatch:
 
 env:
