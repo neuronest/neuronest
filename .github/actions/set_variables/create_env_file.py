@@ -2,24 +2,27 @@ import argparse
 import logging
 import os
 import re
-from typing import List, Optional, Tuple
+from ast import literal_eval
+from typing import List, Optional, Tuple, Union
 
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
 
 # create logger
-logger = logging.getLogger("my_logger")
+logger = logging.getLogger(".github.actions.set_variables.create_env_file")
 
 
 class VariableLine:
     NAME_AND_VALUE_SEPARATOR = "="
+    REGEX_OF_VALUE_PART_VARIABLES = r"\$\{([^\}]*)\}"
 
     def __init__(self, line: str):
         if not (
-            self.NAME_AND_VALUE_SEPARATOR in line
+            line.count(self.NAME_AND_VALUE_SEPARATOR) == 1
             and not line.startswith(self.NAME_AND_VALUE_SEPARATOR)
             and not line.startswith("#")
+            and not line.endswith(os.linesep)
         ):
             raise ValueError("line structure is not good for being VariableLine")
         self._value = None
@@ -59,7 +62,7 @@ class VariableLine:
     def truncate_to_current_context(self, current_context: str):
         """
         Modifies the name and value parts so that they represent the current context,
-        that is to say, we remove from the names the coordinates which are used to
+        that is to say, we remove the coordinates which are used to
         specify the origin of the variable from a broader context than currently.
 
         For example: the variable
@@ -74,11 +77,13 @@ class VariableLine:
         ${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
         in "object_detection" context.
         """
-
-        for variable_inside_value in self.get_variables_inside_value():
+        truncated_variable_line = VariableLine(line=self.line)
+        for (
+            variable_inside_value
+        ) in truncated_variable_line.get_variables_inside_value():
             if not current_context.lower() in variable_inside_value.lower():
                 continue
-            self.replace_variable_inside_value(
+            truncated_variable_line.replace_variable_inside_value(
                 variable=variable_inside_value,
                 other_variable=variable_inside_value[
                     variable_inside_value.rfind(current_context.upper())
@@ -87,32 +92,60 @@ class VariableLine:
                 ],
                 inplace=True,
             )
-            if not current_context.lower() in self.name.lower():
+            if not current_context.lower() in truncated_variable_line.name.lower():
                 continue
-            new_var_line_name = self.name.upper()[
-                self.name.upper().rfind(current_context.upper())
+            new_var_line_name = truncated_variable_line.name.upper()[
+                truncated_variable_line.name.upper().rfind(current_context.upper())
                 + len(current_context)
                 + 1 :
             ]
-            if self.name.startswith(TERRAFORM_VARIABLES_PREFIX):
-                self.name = f"{TERRAFORM_VARIABLES_PREFIX}{new_var_line_name.lower()}"
+            if truncated_variable_line.name.startswith(TERRAFORM_VARIABLES_PREFIX):
+                truncated_variable_line.name = (
+                    f"{TERRAFORM_VARIABLES_PREFIX}{new_var_line_name.lower()}"
+                )
             else:
-                self.name = new_var_line_name
+                truncated_variable_line.name = new_var_line_name
+        return truncated_variable_line
 
     def replace_variable_inside_value(
         self,
         variable: str,
         other_variable: str,
         inplace: bool = False,
-    ):
-        variable_line_name = self.name
+    ) -> Union["VariableLine", None]:
+        """
+        Replaces a variable name that is in the value part with another variable name.
+
+        Args:
+            variable (str): The variable name to be replaced.
+            other_variable (str): The new variable name to replace the existing one.
+            inplace (bool, optional): Specifies whether to modify the variable in-place
+                or return a modified copy.
+                Defaults to False.
+
+        Returns:
+            str: The modified variable line with the updated variable name in the value part.
+
+        Example:
+            >>> var_line = VariableLine(
+            >>>                     "WEBAPP_SERVICE_ACCOUNT_EMAIL="
+            >>>                     "${WEBAPP_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam"
+            >>>                     ".gserviceaccount.com"
+            >>>                )
+            >>> var_line.replace_variable_inside_value(
+            ...     variable="WEBAPP_SERVICE_ACCOUNT_NAME",
+            ...     other_variable="PEOPLE_COUNTING_WEBAPP_SERVICE_ACCOUNT_NAME",
+            ...     inplace=True
+            ... )
+            'WEBAPP_SERVICE_ACCOUNT_EMAIL=${PEOPLE_COUNTING_WEBAPP_SERVICE_ACCOUNT_NAME}'
+            @${PROJECT_ID}.iam.gserviceaccount.com'
+        """
         variable_line_value = self.value.replace(
             "${" + variable + "}", "${" + other_variable + "}"
         )
         if not inplace:
-            return VariableLine(line=f"{variable_line_name}={variable_line_value}")
+            return VariableLine(line=f"{self.name}={variable_line_value}")
 
-        self.name = variable_line_name
         self.value = variable_line_value
 
         return None
@@ -129,29 +162,25 @@ class VariableLine:
         else:
             name = self.name
 
+        var_line = VariableLine(
+            line=f"{name}{self.NAME_AND_VALUE_SEPARATOR}{self.value}"
+        )
+
         if not add_to_value:
-            return VariableLine(
-                line=f"{name}{self.NAME_AND_VALUE_SEPARATOR}{self.value}"
-            )
+            return var_line
 
         if variable_inside_value_to_add_to is not None:
             # only add the namespace to this variable only within the value part
-            value = self.value.replace(
-                "${" + variable_inside_value_to_add_to + "}",
-                "${" + f"{namespace}_{variable_inside_value_to_add_to}" + "}",
-            )
+            all_variables_inside_value_to_add_to = [variable_inside_value_to_add_to]
         else:
-            # add the namespace to all variables within the value part
-            value = ""
-            i = 0
-            while i < len(self.value):
-                if self.value[i : i + 2] == "${":
-                    value += "${" + f"{namespace}_"
-                    i += 2
-                else:
-                    value += self.value[i]
-                    i += 1
-        return VariableLine(line=f"{name}={value}")
+            all_variables_inside_value_to_add_to = var_line.get_variables_inside_value()
+
+        for variable in all_variables_inside_value_to_add_to:
+            var_line = var_line.replace_variable_inside_value(
+                variable=variable,
+                other_variable=f"{namespace}_{variable}",
+            )
+        return var_line
 
     def __str__(self):
         return self.line
@@ -159,7 +188,7 @@ class VariableLine:
     def get_variables_inside_value(self):
 
         if variables_inside_value := re.findall(
-            "\$\{([^\}]*)\}", self.value  # pylint: disable=W1401  # noqa: W605
+            self.REGEX_OF_VALUE_PART_VARIABLES, self.value
         ):
             return list(variables_inside_value)
         return []
@@ -309,17 +338,9 @@ if __name__ == "__main__":
         required=True,
     )
 
-    def boolean_string(string):
-        string = string.lower()
-        boolean_string_true = "true"
-        boolean_string_false = "false"
-        if string not in {boolean_string_true, boolean_string_false}:
-            raise ValueError(f"{string} is not a valid boolean string")
-        return string == boolean_string_true
-
     parser.add_argument(
         "--add_terraform_variables",
-        type=boolean_string,
+        type=literal_eval,
         required=False,
         default=True,
     )
@@ -331,7 +352,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--discard_shared_variables",
-        type=boolean_string,
+        type=literal_eval,
         required=False,
         default=False,
     )
@@ -358,7 +379,8 @@ if __name__ == "__main__":
         repository_dynamic_variables_lines = []
         logger.warning(
             f"the repositories {main_repository.name} have none of the files "
-            f"{main_repository.static_env_file_path} and {main_repository.dynamic_env_file_path} "
+            f"{main_repository.static_env_file_path} and "
+            f"{main_repository.dynamic_env_file_path} "
             f"needed to load variables"
         )
 
@@ -391,8 +413,8 @@ if __name__ == "__main__":
         # add the terraform variables and concatenate the list of lists
         # into a single list
         tf_var_lines = []
-        for var_line in all_variables_lines:
-            tf_var_line = VariableLine(line=var_line.line)
+        for variable_line in all_variables_lines:
+            tf_var_line = VariableLine(line=variable_line.line)
             tf_var_line.name = f"TF_VAR_{tf_var_line.name.lower()}"
             tf_var_lines.append(tf_var_line)
         all_variables_lines += tf_var_lines

@@ -1,12 +1,12 @@
 name: 'set_variables'
-description: 'Configure environment variables for a workflow'
+description: 'Upload the environment variables of a workflow and modify the names so that they are adequate in another workflow'
 inputs:
   upload_terraform_variables:
     description: 'Whether to also upload corresponding terraform variables'
     required: false
     default: 'true'
   variable_prefix_to_filter_on:
-    description: 'Prefix of variables to keep'
+    description: 'Prefix of variables to keep, for example if people-counting is built from people-counting-functional, we only keep the corresponding variables, prefixed PEOPLE_COUNTING'
     required: false
     default: ''
   discard_shared_variables:
@@ -24,7 +24,6 @@ runs:
     - id: set_variables
       uses: ./.github/actions/set_variables
       with:
-        repository_name: ${{ env.REPOSITORY_NAME }}
         set_up_terraform_variables: ${{ inputs.upload_terraform_variables }}
         variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
         discard_shared_variables: ${{ inputs.discard_shared_variables }}
