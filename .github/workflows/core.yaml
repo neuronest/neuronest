@@ -1,24 +1,24 @@
 name: core
 
 on:
-#  push:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/core.yaml
-#      - .github/actions/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#  pull_request:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/core.yaml
-#      - .github/actions/**
-#      - .pre-commit-config.yaml
-#      - shared/**
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/core.yaml
+      - .github/actions/**
+      - .pre-commit-config.yaml
+      - shared/**
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/core.yaml
+      - .github/actions/**
+      - .pre-commit-config.yaml
+      - shared/**
   workflow_dispatch:
 
 env:
