@@ -95,7 +95,6 @@ runs:
     - id: set_terraform_retry_wait_seconds
       # we wait a random number of seconds before retrying to prevent jobs targeting
       # the same resources, like base, from retrying at the same time
-      # run: echo "TERRAFORM_RETRY_WAIT_SECONDS=$((RANDOM % ${{ inputs.max_terraform_retry_wait_seconds }}))" >> $GITHUB_ENV
       run: |
         max_wait_seconds=${{ inputs.max_terraform_retry_wait_seconds }}
         min_wait_seconds=${{ inputs.min_terraform_retry_wait_seconds }}

@@ -28,6 +28,6 @@ def hyphen_to_underscore(string: str):
 def string_to_boolean(string: str) -> bool:
     boolean_string_true = "true"
     boolean_string_false = "false"
-    if lower_string := string.lower() in {boolean_string_true, boolean_string_false}:
+    if (lower_string := string.lower()) in {boolean_string_true, boolean_string_false}:
         return lower_string == boolean_string_true
     return literal_eval(string)
