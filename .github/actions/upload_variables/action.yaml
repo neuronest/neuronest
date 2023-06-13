@@ -1,4 +1,4 @@
-name: 'set_variables'
+name: 'upload_variables'
 description: 'Upload the environment variables of a workflow and modify the names so that they are adequate in another workflow'
 inputs:
   upload_terraform_variables:
