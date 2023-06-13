@@ -46,7 +46,8 @@ runs:
         timeout_seconds: 60
         retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
         max_attempts: 3
-        command: gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID 2>/dev/null
+        command: |
+          gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID 2>/dev/null
 
     - id: link_billing_account_to_project
       uses: nick-fields/retry@v2.8.2
