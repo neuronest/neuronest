@@ -74,6 +74,7 @@ class PeopleCounter:
         trackable_objects: Dict[int, TrackableObject] = {}
         trackers: List[dlib.correlation_tracker] = []
         video_rendering_enabled = enable_video_writing or enable_video_showing
+
         for frame_number, (time_offset, frame) in enumerate(
             read_video_as_frames(video_input_path, resized_width=self.image_width)
         ):
