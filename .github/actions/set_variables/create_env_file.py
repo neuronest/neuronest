@@ -2,9 +2,14 @@ import argparse
 import logging
 import os
 import re
+import sys
 from typing import List, Optional, Tuple, Union
 
-from core.utils import string_to_boolean
+# the script is used with python for which the core package is not installed,
+# so we modify sys.path at runtime to be able to import code from core
+# this also results in conflicts between black and flake8/pylint
+sys.path.append("shared")
+from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
