@@ -139,8 +139,10 @@ runs:
       with:
         workspace: ${{ inputs.workspace }}
         terraform_output_name: base_project_builder_sa_key
-
+    # the "not success" condition is better because it also involves jobs that have
+    # failed because they were interrupted because they took too long or because a
+    # terraform variable was missing and it was waiting indefinitely for example
     - id: release_terraform_lock
-      if: ${{ failure() && steps.terraform_with_retry.conclusion == 'failure' }}
+      if: ${{ !success() && steps.terraform_with_retry.conclusion != 'success' }}
       run: gcloud storage rm gs://$STATE_BUCKET/terraform/state/${{ inputs.workspace }}.tflock || true
       shell: bash
