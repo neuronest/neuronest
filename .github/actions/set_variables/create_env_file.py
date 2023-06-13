@@ -2,8 +2,9 @@ import argparse
 import logging
 import os
 import re
-from ast import literal_eval
 from typing import List, Optional, Tuple, Union
+
+from core.utils import string_to_boolean
 
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
@@ -18,12 +19,7 @@ class VariableLine:
     REGEX_OF_VALUE_PART_VARIABLES = r"\$\{([^\}]*)\}"
 
     def __init__(self, line: str):
-        if not (
-            line.count(self.NAME_AND_VALUE_SEPARATOR) == 1
-            and not line.startswith(self.NAME_AND_VALUE_SEPARATOR)
-            and not line.startswith("#")
-            and not line.endswith(os.linesep)
-        ):
+        if not self.can_be_built_from_string(line):
             raise ValueError("line structure is not good for being VariableLine")
         self._value = None
         self._name = None
@@ -54,6 +50,15 @@ class VariableLine:
         name, value = new_line.split(self.NAME_AND_VALUE_SEPARATOR)
         self.name = name
         self.value = value
+
+    @classmethod
+    def can_be_built_from_string(cls, string: str) -> bool:
+        return (
+            string.count(cls.NAME_AND_VALUE_SEPARATOR) == 1
+            and not string.startswith(cls.NAME_AND_VALUE_SEPARATOR)
+            and not string.startswith("#")
+            and not string.endswith(os.linesep)
+        )
 
     def to_file(self, file_path: str):
         with open(file_path, "a") as file:
@@ -208,13 +213,11 @@ class EnvFile:
         return lines
 
     def read_variables_lines(self):
-        variables_lines = []
-        for line in self.readlines():
-            try:
-                variables_lines.append(VariableLine(line=line.rstrip(os.linesep)))
-            except ValueError:
-                pass
-        return variables_lines
+        return [
+            VariableLine(line=line.rstrip(os.linesep))
+            for line in self.readlines()
+            if VariableLine.can_be_built_from_string(line.rstrip(os.linesep))
+        ]
 
 
 class Repository:
@@ -232,8 +235,8 @@ class Repository:
     def dynamic_env_file_path(self):
         return f"{self.name}/{self.DYNAMIC_VARIABLES_FILE_PATH}"
 
-    def has_env_files(self):
-        return os.path.isfile(self.static_env_file_path) or os.path.isfile(
+    def has_all_env_files(self):
+        return os.path.isfile(self.static_env_file_path) and os.path.isfile(
             self.dynamic_env_file_path
         )
 
@@ -248,9 +251,11 @@ class Repository:
             var_line.name: var_line.value
             for var_line in self.get_static_env_file().read_variables_lines()
         }
-        if dependency_repositories := static_var_name_value.get(
-            DEPENDENT_REPOSITORY_VAR_LINE_NAME, ""
-        ):
+        if (
+            dependency_repositories := static_var_name_value.get(
+                DEPENDENT_REPOSITORY_VAR_LINE_NAME
+            )
+        ) is not None:
             dependency_repositories = dependency_repositories.rstrip(os.linesep).split(
                 ARRAY_SEPARATOR
             )
@@ -337,10 +342,9 @@ if __name__ == "__main__":
         type=str,
         required=True,
     )
-
     parser.add_argument(
         "--add_terraform_variables",
-        type=literal_eval,
+        type=string_to_boolean,
         required=False,
         default=True,
     )
@@ -352,7 +356,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--discard_shared_variables",
-        type=literal_eval,
+        type=string_to_boolean,
         required=False,
         default=False,
     )
@@ -367,7 +371,7 @@ if __name__ == "__main__":
     ).read_variables_lines()
 
     main_repository = Repository(name=args.repository_name)
-    if main_repository.has_env_files():
+    if main_repository.has_all_env_files():
         (
             repository_static_variables_lines,
             repository_dynamic_variables_lines,
