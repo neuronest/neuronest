@@ -25,4 +25,5 @@ if __name__ == "__main__":
             os.path.join(config.paths.videos_directory, dataset_name, file),
             os.path.join(config.paths.videos_directory, file),
         )
+
     shutil.rmtree(os.path.join(config.paths.videos_directory, dataset_name))
