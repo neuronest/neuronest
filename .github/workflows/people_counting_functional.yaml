@@ -1,32 +1,32 @@
 name: people_counting_functional
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/people_counting_functional.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - people-counting/**
-      - object-detection/**
-      - model-instantiator/**
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/people_counting_functional.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - people-counting/**
-      - object-detection/**
-      - model-instantiator/**
+#  push:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/people_counting_functional.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - people-counting/**
+#      - object-detection/**
+#      - model-instantiator/**
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/people_counting_functional.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - people-counting/**
+#      - object-detection/**
+#      - model-instantiator/**
   workflow_dispatch:
   workflow_call:
     inputs:
