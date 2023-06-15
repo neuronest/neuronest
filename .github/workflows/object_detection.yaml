@@ -71,7 +71,6 @@ on:
 
 env:
   REPOSITORY_NAME: object-detection
-  ENV_FILE_ARTIFACT_NAME: ${{ inputs.env_file_artifact_name }}
 
 jobs:
   run_base_terraform:
@@ -85,6 +84,7 @@ jobs:
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: run_base_terraform
         uses: ./.github/actions/run_base_terraform
 
@@ -102,6 +102,7 @@ jobs:
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
@@ -155,6 +156,7 @@ jobs:
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: base_run_terraform
         uses: ./.github/actions/run_base_terraform
       - uses: ./.github/actions/run_terraform
@@ -213,6 +215,7 @@ jobs:
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: set_additional_variables
         run: |
           echo "MODEL_GSPATH"="gs://${MODELS_BUCKET}/${PACKAGE_NAME}-${{ github.sha }}" | tee -a $GITHUB_ENV
@@ -244,6 +247,7 @@ jobs:
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: set_additional_variables
         run: |
           echo "MODEL_PATH"="${{ env.REPOSITORY_NAME }}/model.pt" >> $GITHUB_ENV
@@ -278,6 +282,7 @@ jobs:
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: model_upload
         run: python -m object_detection.cli --actions model_upload
         env:
@@ -304,6 +309,7 @@ jobs:
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: deploy
         run: python -m object_detection.cli --actions deploy
         env:

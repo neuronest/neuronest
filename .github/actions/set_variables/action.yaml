@@ -13,6 +13,10 @@ inputs:
     description: 'Whether discard shared variables or not'
     required: false
     default: 'false'
+  env_file_artifact_name:
+    description: 'An environment variable file to load'
+    required: false
+    default: ''
 outputs:
   created_env_file_path:
     description: 'The environment variables file to load'
@@ -37,11 +41,11 @@ runs:
       shell: bash
     - uses: actions/download-artifact@v3
       with:
-        name: ${{ env.ENV_FILE_ARTIFACT_NAME }}
+        name: ${{ inputs.env_file_artifact_name }}
         path: /tmp
       if: ${{ env.ENV_FILE_ARTIFACT_NAME != '' }}
     - run: |
-        caller_workflow_env_file_path=/tmp/${{ env.ENV_FILE_ARTIFACT_NAME }}
+        caller_workflow_env_file_path=/tmp/${{ inputs.env_file_artifact_name }}
         refactored_caller_workflow_env_file_path=${caller_workflow_env_file_path}_refactored
           python3 .github/actions/set_variables/refactor_caller_workflow_env_file.py \
             --repository_where_variables_are_defined ${{ env.REPOSITORY_NAME }} \
