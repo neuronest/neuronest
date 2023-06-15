@@ -43,7 +43,7 @@ runs:
       with:
         name: ${{ inputs.env_file_artifact_name }}
         path: /tmp
-      if: ${{ env.ENV_FILE_ARTIFACT_NAME != '' }}
+      if: ${{ inputs.env_file_artifact_name != '' }}
     - run: |
         caller_workflow_env_file_path=/tmp/${{ inputs.env_file_artifact_name }}
         refactored_caller_workflow_env_file_path=${caller_workflow_env_file_path}_refactored
@@ -52,7 +52,7 @@ runs:
             --caller_workflow_env_file_path $caller_workflow_env_file_path \
             --refactored_caller_workflow_env_file_path $refactored_caller_workflow_env_file_path
         cat $refactored_caller_workflow_env_file_path >> $PREPROCESSED_VARIABLES_PATH
-      if: ${{ env.ENV_FILE_ARTIFACT_NAME != '' }}
+      if: ${{ inputs.env_file_artifact_name != '' }}
       shell: bash
     - uses: cardinalby/export-env-action@v2
       with:
