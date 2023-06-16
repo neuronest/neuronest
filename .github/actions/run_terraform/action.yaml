@@ -11,10 +11,10 @@ inputs:
     description: 'Docker image name built'
     required: false
     default: ""  # can only be empty for partial terraform runs, aka runs that don't use "image_name"
-  vars:
-    description: 'Variables usually named -var found in the terraform plan and terraform apply commands'
+  min_terraform_retry_wait_seconds:
+    description: 'Terraform maximum wait time for retry after failure'
     required: false
-    default: ""
+    default: "60"
   max_terraform_retry_wait_seconds:
     description: 'Terraform maximum wait time for retry after failure'
     required: false
@@ -40,14 +40,26 @@ runs:
         fi
       shell: bash
 
-    - run: |
-        gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID 2>/dev/null || true
-      shell: bash
+    - id: link_project_to_organization
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
+        max_attempts: 3
+        command: |
+          if gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
+              # Project exists, do nothing
+              :
+          else
+              # Project does not exist, create it
+              gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID
+          fi
 
     - id: link_billing_account_to_project
       uses: nick-fields/retry@v2.8.2
       with:
         timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
         max_attempts: 3
         command: |
           # the command may fail if the project is not actually created yet
@@ -57,12 +69,13 @@ runs:
       uses: nick-fields/retry@v2.8.2
       with:
         timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
         max_attempts: 3
         command: |
           # the command may fail if the project is not actually created yet
           if echo "$(gsutil ls -p $PROJECT_ID)" | grep -q "gs://$STATE_BUCKET/"; then
-            :
             # Bucket exists, do nothing
+            :
           else
             # Bucket does not exist, create it
             gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
@@ -71,17 +84,21 @@ runs:
     - id: add_iam_with_retry
       uses: nick-fields/retry@v2.8.2
       with:
-        timeout_seconds: 30
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
         max_attempts: 3
         command: |
           for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
             gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
           done
 
-    - name: set_terraform_retry_wait_seconds
+    - id: set_terraform_retry_wait_seconds
       # we wait a random number of seconds before retrying to prevent jobs targeting
       # the same resources, like base, from retrying at the same time
-      run: echo "TERRAFORM_RETRY_WAIT_SECONDS=$((RANDOM % ${{ inputs.max_terraform_retry_wait_seconds }}))" >> $GITHUB_ENV
+      run: |
+        max_wait_seconds=${{ inputs.max_terraform_retry_wait_seconds }}
+        min_wait_seconds=${{ inputs.min_terraform_retry_wait_seconds }}
+        echo "value=$((min_wait_seconds + RANDOM % (max_wait_seconds - min_wait_seconds + 1)))" >> $GITHUB_OUTPUT
       shell: bash
 
     - id: terraform_with_retry
@@ -89,22 +106,13 @@ runs:
       with:
         timeout_seconds: 1200
         max_attempts: 5
-        retry_wait_seconds: ${{ env.TERRAFORM_RETRY_WAIT_SECONDS }}
+        retry_wait_seconds: ${{ steps.set_terraform_retry_wait_seconds.outputs.value }}
         command: |
           source ./.github/functions/initialize_terraform.sh
           initialize_terraform ${{ env.REPOSITORY_NAME }} ${{ inputs.workspace }} $STATE_BUCKET
 
           # import the project in the terraform state
           terraform import google_project.project $PROJECT_ID 2>/dev/null || true
-          
-          # set up terraform -var arguments
-          terraform_vars=""
-          # if inputs.vars is not empty
-          if [ -n "${{ inputs.vars }}" ]; then
-            for input_var in $(echo "${{ inputs.vars }}" | tr '\n' ' '); do
-                terraform_vars="$terraform_vars -var $input_var"
-            done
-          fi
   
           # set up terraform -target arguments
           terraform_targets=""
@@ -116,7 +124,7 @@ runs:
           fi
 
           # run terraform plan
-          bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
+          bash -c "terraform plan $terraform_targets -input=false -out=tfplan"
   
           # run terraform apply
           bash -c "terraform apply -input=false -auto-approve tfplan"
@@ -131,8 +139,10 @@ runs:
       with:
         workspace: ${{ inputs.workspace }}
         terraform_output_name: base_project_builder_sa_key
-
+    # the "not success" condition is better because it also involves jobs that have
+    # failed because they were interrupted because they took too long or because a
+    # terraform variable was missing and it was waiting indefinitely for example
     - id: release_terraform_lock
-      if: ${{ failure() && steps.terraform_with_retry.conclusion == 'failure' }}
+      if: ${{ !success() && steps.terraform_with_retry.conclusion != 'success' }}
       run: gcloud storage rm gs://$STATE_BUCKET/terraform/state/${{ inputs.workspace }}.tflock || true
       shell: bash

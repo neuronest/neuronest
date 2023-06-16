@@ -11,7 +11,9 @@ sys.path.append(".github/actions/set_variables")
 from create_env_file import EnvFile  # pylint: disable=C0413  # noqa: E402
 
 # create logger
-logger = logging.getLogger("my_logger")
+logger = logging.getLogger(
+    ".github.actions.set_variables.refactor_caller_workflow_env_file"
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -40,10 +42,12 @@ if __name__ == "__main__":
     repository_name_to_search_in_variable = (
         args.repository_where_variables_are_defined.replace("-", "_")
     )
-    for var_line in caller_workflow_variables_lines:
+    caller_workflow_variables_lines = [
         var_line.truncate_to_current_context(
             current_context=repository_name_to_search_in_variable
         )
+        for var_line in caller_workflow_variables_lines
+    ]
 
     for var_line in caller_workflow_variables_lines:
         var_line.to_file(args.refactored_caller_workflow_env_file_path)

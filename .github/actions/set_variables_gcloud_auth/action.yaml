@@ -1,15 +1,12 @@
 name: 'set_variables_gcloud_auth'
 description: 'Execute in order the step set_variables and then the step gcloud_auth'
 inputs:
-  repository_name:
-    description: 'The name of the repository whose variables are loaded'
-    required: true
   set_up_terraform_variables:
     description: 'Whether to also create corresponding terraform variables'
     required: false
     default: 'true'
   variable_prefix_to_filter_on:
-    description: 'Prefix of variables to keep'
+    description: 'Prefix of variables to keep, for example if people-counting is built from people-counting-functional, we only keep the corresponding variables, prefixed PEOPLE_COUNTING'
     required: false
     default: ''
   discard_shared_variables:
@@ -19,15 +16,19 @@ inputs:
   credentials_json:
     description: 'Name of the repositories'
     required: false
+  env_file_artifact_name:
+    description: 'An environment variable file to load'
+    required: false
+    default: ''
 runs:
   using: "composite"
   steps:
       - uses: ./.github/actions/set_variables
         with:
-          repository_name: ${{ inputs.repository_name }}
           set_up_terraform_variables: ${{ inputs.set_up_terraform_variables }}
           variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
           discard_shared_variables: ${{ inputs.discard_shared_variables }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ inputs.credentials_json }}

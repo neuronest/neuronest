@@ -1,5 +1,6 @@
 import functools
 import time
+from ast import literal_eval
 from typing import Any, Callable, Tuple, Union
 
 
@@ -22,3 +23,11 @@ def underscore_to_hyphen(string: str):
 
 def hyphen_to_underscore(string: str):
     return string.replace("-", "_")
+
+
+def string_to_boolean(string: str) -> bool:
+    boolean_string_true = "true"
+    boolean_string_false = "false"
+    if (lower_string := string.lower()) in {boolean_string_true, boolean_string_false}:
+        return lower_string == boolean_string_true
+    return literal_eval(string)

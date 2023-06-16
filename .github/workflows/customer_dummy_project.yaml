@@ -33,7 +33,6 @@ env:
   REPOSITORY_NAME: customer-dummy-project
 
 jobs:
-
   upload_variables_of_called_workflows:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
@@ -52,5 +51,5 @@ jobs:
       build: true
       deploy: true
       do_post_deployment: true
-      caller_workflow_env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_functional_env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_functional_env_file_artifact_name }}
     secrets: inherit
