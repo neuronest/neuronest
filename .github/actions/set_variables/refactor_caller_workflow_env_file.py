@@ -11,9 +11,7 @@ sys.path.append(".github/actions/set_variables")
 from create_env_file import EnvFile  # pylint: disable=C0413  # noqa: E402
 
 # create logger
-logger = logging.getLogger(
-    ".github.actions.set_variables.refactor_caller_workflow_env_file"
-)
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

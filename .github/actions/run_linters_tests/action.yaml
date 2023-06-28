@@ -15,22 +15,24 @@ runs:
       - run: docker cp ./. $CONTAINER_ID:$MONO_REPOSITORY_PATH
         shell: bash
       - run: |
-            docker exec \
-            --workdir $MONO_REPOSITORY_PATH \
-            $CONTAINER_ID \
-            /bin/bash -c "
-              # to handle detected dubious ownership git issue
-              git config --global --add safe.directory $MONO_REPOSITORY_PATH \
-              && cd $REPOSITORY_NAME \
-              && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
-              && pip install -r requirements.txt \
-              && cd $MONO_REPOSITORY_PATH \
-              && pre-commit install \
-              && pre-commit run \
-                --show-diff-on-failure \
-                --files $REPOSITORY_NAME/**/* \
-              && pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv
-            "
+          docker exec \
+          --workdir $MONO_REPOSITORY_PATH \
+          $CONTAINER_ID \
+          /bin/bash -c "
+            # to handle detected dubious ownership git issue
+            git config --global --add safe.directory $MONO_REPOSITORY_PATH \
+            && source ./.github/functions/intall_terraform.sh
+            && intall_terraform
+            && cd $REPOSITORY_NAME \
+            && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
+            && pip install -r requirements.txt \
+            && cd $MONO_REPOSITORY_PATH \
+            && pre-commit install \
+            && pre-commit run \
+              --show-diff-on-failure \
+              --files $REPOSITORY_NAME/**/* \
+            && pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv
+          "
         shell: bash
       - run: docker rm -f $CONTAINER_ID
         shell: bash

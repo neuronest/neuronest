@@ -32,7 +32,7 @@ variable "people_counting_repository_name" {
   type = string
 }
 variable "people_counting_image_name" {
-  type = string
+  type    = string
   default = "people_counting_image_name_dummy"
 }
 variable "people_counting_webapp_service_account_name" {
@@ -82,7 +82,7 @@ variable "model_instantiator_repository_name" {
 }
 # default dummy value when running focusing on the base module
 variable "model_instantiator_image_name" {
-  type = string
+  type    = string
   default = "model_instantiator_image_name_dummy"
 }
 variable "model_instantiator_webapp_service_account_name" {
@@ -112,3 +112,4 @@ variable "model_instantiator_cloud_scheduler_schedule" {
 variable "model_instantiator_cloud_uninstantiate_route" {
   type = string
 }
+

@@ -61,10 +61,10 @@ on:
     outputs:
       gcp_training_image_name:
         description: "The gcp training image name"
-        value: ${{ jobs.get_gcp_training_image_name.outputs.value }}
+        value: ${{ jobs.get_training_images.outputs.gcp_image }}
       dockerhub_training_image_name:
         description: "The dockerhub training image name"
-        value: ${{ jobs.get_dockerhub_training_image_name.outputs.value }}
+        value: ${{ jobs.get_training_images.outputs.dockerhub_image }}
       base_project_builder_sa_key:
         description: 'The base64 encoded key of the IAC service account of the shared repository'
         value: ${{ jobs.get_base_project_builder_sa_key.outputs.value }}
@@ -75,7 +75,8 @@ env:
 jobs:
   run_base_terraform:
     runs-on: ubuntu-latest
-    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '')  && !failure() }}
+    # If the workflow isn't called, inputs are blank and all jobs should run
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') }}
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
@@ -92,6 +93,11 @@ jobs:
     name: build_test_push_training_image
     runs-on: ubuntu-latest
     needs: run_base_terraform
+    # the documentation specifies that if only one job is skipped
+    # in a series of jobs dependencies defined by the "needs: ", all subsequent jobs are
+    # skipped. To allow jobs to run despite a skip in the series,
+    # we use the !failure() condition
+    # see: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
     container: google/cloud-sdk
     outputs:
@@ -110,43 +116,64 @@ jobs:
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: training
 
-  get_gcp_training_image_name:
-    runs-on: ubuntu-latest
-    needs: build_test_push_training_image
-    if: ${{ !failure() }}
-    outputs:
-      value: ${{ steps.get_gcp_training_image_name.outputs.gcp_training_image_name }}
-    steps:
-      - id: get_gcp_training_image_name
-        run: |
-          job_gcp_training_image_name=${{ needs.build_test_push_training_image.outputs.gcp_training_image_name }}
-          input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
-          gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
-          echo "gcp_training_image_name=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
+#  get_gcp_training_image_name:
+#    runs-on: ubuntu-latest
+#    needs: build_test_push_training_image
+#    if: ${{ !failure() }}
+#    outputs:
+#      value: ${{ steps.get_gcp_training_image_name.outputs.gcp_training_image_name }}
+#    steps:
+#      - id: get_gcp_training_image_name
+#        run: |
+#          job_gcp_training_image_name=${{ needs.build_test_push_training_image.outputs.gcp_training_image_name }}
+#          input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
+#          gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
+#          echo "gcp_training_image_name=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
+#
+#  get_dockerhub_training_image_name:
+#    runs-on: ubuntu-latest
+#    needs: build_test_push_training_image
+#    if: ${{ !failure() }}
+#    outputs:
+#      value: ${{ steps.get_dockerhub_training_image_name.outputs.dockerhub_training_image_name }}
+#    steps:
+#      - id: get_dockerhub_training_image_name
+#        run: |
+#          job_dockerhub_training_image_name=${{ needs.build_test_push_training_image.outputs.dockerhub_training_image_name }}
+#          input_dockerhub_training_image_name=${{ inputs.dockerhub_training_image_name }}
+#          dockerhub_training_image_name=${job_dockerhub_training_image_name:-$input_dockerhub_training_image_name}
+#          echo "dockerhub_training_image_name=$dockerhub_training_image_name" | tee -a $GITHUB_OUTPUT
+#
+#          job_gcp_training_image_name=${{ needs.build_test_push_training_image.outputs.gcp_training_image_name }}
+#          input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
+#          gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
+#          echo "gcp_training_image_name=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
 
-  get_dockerhub_training_image_name:
+  get_training_images:
     runs-on: ubuntu-latest
     needs: build_test_push_training_image
     if: ${{ !failure() }}
     outputs:
-      value: ${{ steps.get_dockerhub_training_image_name.outputs.dockerhub_training_image_name }}
+      dockerhub_image: ${{ steps.get_dockerhub_and_gcp_training_images.outputs.dockerhub_image }}
+      gcp_image: ${{ steps.get_dockerhub_and_gcp_training_images.outputs.gcp_image }}
     steps:
-      - id: get_dockerhub_training_image_name
+      - id: get_dockerhub_and_gcp_training_images
         run: |
           job_dockerhub_training_image_name=${{ needs.build_test_push_training_image.outputs.dockerhub_training_image_name }}
           input_dockerhub_training_image_name=${{ inputs.dockerhub_training_image_name }}
           dockerhub_training_image_name=${job_dockerhub_training_image_name:-$input_dockerhub_training_image_name}
-          echo "dockerhub_training_image_name=$dockerhub_training_image_name" | tee -a $GITHUB_OUTPUT
+          echo "dockerhub_image=$dockerhub_training_image_name" | tee -a $GITHUB_OUTPUT
+          
+          job_gcp_training_image_name=${{ needs.build_test_push_training_image.outputs.gcp_training_image_name }}
+          input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
+          gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
+          echo "gcp_image=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
 
   deploy_with_training_image:
     name: deploy_with_training_image
     runs-on: ubuntu-latest
-    needs: get_dockerhub_training_image_name
-    # the documentation specifies that if only one job is skipped
-    # in a series of jobs dependencies defined by the "needs: ", all subsequent jobs are
-    # skipped. To allow jobs to run despite a skip in the series,
-    # we use the !failure() condition
-    # see: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds
+    needs: get_training_images
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
     container: google/cloud-sdk
     outputs:
@@ -163,7 +190,7 @@ jobs:
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
           workspace: ${{ env.REPOSITORY_NAME }}
-          image_name: ${{ needs.get_dockerhub_training_image_name.outputs.value }}
+          image_name: ${{ needs.get_training_images.outputs.dockerhub_image }}
 
   get_base_project_builder_sa_key:
     runs-on: ubuntu-latest
@@ -183,16 +210,16 @@ jobs:
   train:
     name: train
     needs:
-      - get_gcp_training_image_name
-      - get_dockerhub_training_image_name
+      - get_training_images
       - get_base_project_builder_sa_key
     runs-on: ubuntu-latest
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.get_dockerhub_training_image_name.outputs.value}}
+      image: ${{needs.get_training_images.outputs.dockerhub_image}}
       credentials:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -223,7 +250,7 @@ jobs:
         run: |
           python -m object_detection.cli --model-gspath $MODEL_GSPATH --actions train
         env:
-          TRAINING_IMAGE_NAME: ${{ needs.get_gcp_training_image_name.outputs.value }}
+          TRAINING_IMAGE_NAME: ${{ needs.get_training_images.outputs.gcp_image }}
           SERVICE_ACCOUNT_EMAIL: ${{ env.PROJECT_BUILDER_SERVICE_ACCOUNT_EMAIL }}
       # todo: il y a sûrement un premier problème de naming à corriger ici :
       # model_gspath qui devient {model_gspath}/{$model_weights} ça ne parait pas
@@ -237,6 +264,7 @@ jobs:
       - get_base_project_builder_sa_key
       - train
     runs-on: ubuntu-latest
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     container: google/cloud-sdk
     outputs:
@@ -264,16 +292,17 @@ jobs:
   model_upload:
     name: model_upload
     needs:
-      - get_dockerhub_training_image_name
+      - get_training_images
       - get_base_project_builder_sa_key
       - build_test_push_serving_image
     runs-on: ubuntu-latest
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.get_dockerhub_training_image_name.outputs.value}}
+      image: ${{needs.get_training_images.outputs.dockerhub_image}}
       credentials:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -292,15 +321,16 @@ jobs:
     name: deploy_test_serving
     needs:
       - model_upload
-      - get_dockerhub_training_image_name
+      - get_training_images
       - get_base_project_builder_sa_key
     runs-on: ubuntu-latest
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ inputs.model_instantiator_url != '' && (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
     container:
-      image: ${{needs.get_dockerhub_training_image_name.outputs.value}}
+      image: ${{needs.get_training_images.outputs.dockerhub_image}}
       credentials:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
