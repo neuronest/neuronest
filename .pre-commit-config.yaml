@@ -52,5 +52,4 @@ repos:
     name: terraform fmt
     entry: terraform fmt
     language: system
-    types:
-      - terraform
+    types: [terraform]
