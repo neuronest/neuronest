@@ -21,8 +21,8 @@ runs:
           /bin/bash -c "
             # to handle detected dubious ownership git issue
             git config --global --add safe.directory $MONO_REPOSITORY_PATH \
-            && source ./.github/functions/intall_terraform.sh
-            && intall_terraform
+            && source ./.github/functions/install_terraform.sh
+            && install_terraform
             && cd $REPOSITORY_NAME \
             && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
             && pip install -r requirements.txt \

@@ -13,8 +13,8 @@ runs:
 #          node-version: 16
       - name: install terraform
         run: |
-          source ./.github/functions/intall_terraform.sh
-          intall_terraform
+          source ./.github/functions/install_terraform.sh
+          install_terraform
         shell: bash
 #      - uses: hashicorp/setup-terraform@v2.0.3
 #        with:
