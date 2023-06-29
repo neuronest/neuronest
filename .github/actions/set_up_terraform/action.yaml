@@ -3,21 +3,9 @@ description: 'Install utilities that terraform needs that we might not have in a
 runs:
   using: "composite"
   steps:
-#      - name: Install terraform setup utilities
-#        run: |
-#          apt-get -y install zip unzip wget
-#        shell: bash
-#      - name: Install node for terraform
-#        uses: actions/setup-node@v3
-#        with:
-#          node-version: 16
       - name: install terraform
         run: |
           source ./.github/functions/install_terraform.sh
           install_terraform
         shell: bash
-#      - uses: hashicorp/setup-terraform@v2.0.3
-#        with:
-#          # underworld demon bug where terraform command name is appended to usual
-#          # command substitution. See: https://stackoverflow.com/questions/66496105/how-can-i-remove-all-the-extraneous-output-from-redirected-output-in-github-acti
-#          terraform_wrapper: false
+
