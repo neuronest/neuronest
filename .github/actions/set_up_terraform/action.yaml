@@ -8,4 +8,3 @@ runs:
           source ./.github/functions/install_terraform.sh
           install_terraform
         shell: bash
-
