@@ -48,3 +48,8 @@ repos:
       - --rcfile=.pylintrc
       - -j 0
       - --reports=n
+  - id: terraform fmt
+    name: terraform fmt
+    entry: terraform fmt
+    language: system
+    types: [terraform]

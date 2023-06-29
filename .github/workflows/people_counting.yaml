@@ -53,6 +53,7 @@ env:
 jobs:
   run_base_terraform:
     runs-on: ubuntu-latest
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
     outputs:
@@ -70,6 +71,7 @@ jobs:
     name: build_test_push
     runs-on: ubuntu-latest
     needs: run_base_terraform
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
     container: google/cloud-sdk
     outputs:
@@ -90,6 +92,7 @@ jobs:
     name: deploy
     runs-on: ubuntu-latest
     needs: build_test_push
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
     container:
       image: google/cloud-sdk

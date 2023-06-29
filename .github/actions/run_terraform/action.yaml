@@ -47,10 +47,7 @@ runs:
         retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
         max_attempts: 3
         command: |
-          if gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
-              # Project exists, do nothing
-              :
-          else
+          if ! gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
               # Project does not exist, create it
               gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID
           fi
@@ -73,10 +70,7 @@ runs:
         max_attempts: 3
         command: |
           # the command may fail if the project is not actually created yet
-          if echo "$(gsutil ls -p $PROJECT_ID)" | grep -q "gs://$STATE_BUCKET/"; then
-            # Bucket exists, do nothing
-            :
-          else
+          if ! echo "$(gsutil ls -p $PROJECT_ID)" | grep -q "gs://$STATE_BUCKET/"; then
             # Bucket does not exist, create it
             gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
           fi

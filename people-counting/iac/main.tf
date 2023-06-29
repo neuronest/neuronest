@@ -22,12 +22,12 @@ resource "google_project" "project" {
 }
 
 module "base" {
-  source                       = "../../shared/iac/modules/services/base"
-  project_id                   = var.project_id
-  region                       = var.region
-  firestore_region             = var.firestore_region
+  source                               = "../../shared/iac/modules/services/base"
+  project_id                           = var.project_id
+  region                               = var.region
+  firestore_region                     = var.firestore_region
   project_builder_service_account_name = var.project_builder_service_account_name
-  mono_repository_name = var.mono_repository_name
+  mono_repository_name                 = var.mono_repository_name
 }
 
 module "people_counting" {
