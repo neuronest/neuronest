@@ -64,10 +64,6 @@ def maybe_async(condition):
 
             return async_func
 
-        @wraps(func)
-        def sync_func(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        return sync_func
+        return func
 
     return decorator

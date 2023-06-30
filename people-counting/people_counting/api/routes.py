@@ -3,7 +3,7 @@ from fastapi import APIRouter
 
 from people_counting.api.people_counter import router as people_counter_router
 
-router = APIRouter(prefix=f"/{people_counting_routes.version_name}")
+router = APIRouter(prefix=people_counting_routes.root)
 
 router.include_router(people_counter_router)
 
