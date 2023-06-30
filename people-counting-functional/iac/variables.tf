@@ -1,36 +1,7 @@
-# SHARED VARIABLES
-variable "project_id" {
-  type = string
-}
-variable "region" {
-  type = string
-}
-variable "zone" {
-  type = string
-}
-variable "organization_id" {
-  type = string
-}
-variable "billing_account" {
-  type = string
-}
-variable "firestore_region" {
-  type = string
-}
-variable "project_builder_service_account_name" {
-  type = string
-}
-variable "mono_repository_name" {
-  type = string
-}
-variable "timezone" {
-  type = string
-}
-# END OF SHARED VARIABLES
-# default dummy value when running focusing on the base module
 variable "people_counting_repository_name" {
   type = string
 }
+# default dummy value when running focusing on the base module
 variable "people_counting_image_name" {
   type    = string
   default = "people_counting_image_name_dummy"
@@ -112,4 +83,3 @@ variable "model_instantiator_cloud_scheduler_schedule" {
 variable "model_instantiator_cloud_uninstantiate_route" {
   type = string
 }
-
