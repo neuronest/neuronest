@@ -1,0 +1,28 @@
+repository_variables:
+  # general repository
+  - REPOSITORY_NAME=people-counting
+  - REPOSITORY_CODE=pc
+  - PACKAGE_NAME=people_counting
+  - BASE_IMAGE_NAME=people-counting
+  - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
+multi_instance_resource_names:
+  # service account names
+  - SERVICE_ACCOUNT_NAME=webapp
+  # firestore
+  - FIRESTORE_RESULTS_COLLECTION=counts
+  # cloud run
+  - CLOUD_RUN_NAME=webapp
+  # storage
+  - VIDEOS_TO_COUNT_BUCKET=videos-to-count-${PROJECT_ID}
+  - COUNTED_VIDEOS_BUCKET=counted-videos-${PROJECT_ID}
+other_variables:
+  # cloud run
+  - CLOUD_RUN_MEMORY=4Gi
+  - CLOUD_RUN_CPU=1000m
+  - CLOUD_RUN_MIN_SCALE=0
+  - CLOUD_RUN_MAX_SCALE=1
+  # communications between services
+  - MODEL_INSTANTIATOR_HOST=dummy_model_instantiator_host
+  - OBJECT_DETECTION_MODEL_NAME=dummy_object_detection_model_name
+  # GCP project
+  - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}

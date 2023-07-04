@@ -1,0 +1,42 @@
+name: 'make_space_for_docker'
+description: 'make space for docker'
+inputs:
+  docker_space_gb:
+    description: 'Additional memory allocated to build and pull docker images, in GB'
+    required: false
+    default: '40'
+  remove_codeql:
+    description: 'Free up memory space by removing codeql related items'
+    required: false
+    default: 'true'
+  remove_haskell:
+    description: 'Free up memory space by removing haskell related items'
+    required: false
+    default: 'true'
+  remove_dotnet:
+    description: 'Free up memory space by removing dotnet related items'
+    required: false
+    default: 'true'
+  remove_android:
+    description: 'Free up memory space by removing android related items'
+    required: false
+    default: 'true'
+  checkout_after_making_space:
+    description: 'Free up memory space by removing android related items'
+    required: false
+    default: 'true'
+runs:
+  using: "composite"
+  steps:
+    - id: set_docker_space_mb
+      run: echo "value=$((${{ inputs.docker_space_gb }} * 1024))" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: easimon/maximize-build-space@v7
+      with:
+        remove-android: ${{ inputs.remove_android }}
+        remove-dotnet: ${{ inputs.remove_dotnet }}
+        remove-haskell: ${{ inputs.remove_haskell }}
+        remove-codeql: ${{ inputs.remove_codeql }}
+        root-reserve-mb: ${{ steps.set_docker_space_mb.outputs.value }}
+    - uses: actions/checkout@v3
+      if: ${{ inputs.checkout_after_making_space == 'true' }}

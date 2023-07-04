@@ -35,10 +35,10 @@ module "model_instantiator" {
   project_id                           = var.project_id
   region                               = var.region
   timezone                             = var.timezone
-  repository_name                      = var.repository_name
   image_name                           = var.image_name
   webapp_service_account_name          = var.webapp_service_account_name
   cloud_scheduler_service_account_name = var.cloud_scheduler_service_account_name
+  cloud_run_name                       = var.cloud_run_name
   cloud_run_memory                     = var.cloud_run_memory
   cloud_run_cpu                        = var.cloud_run_cpu
   cloud_run_min_scale                  = var.cloud_run_min_scale

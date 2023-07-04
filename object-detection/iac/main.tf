@@ -34,8 +34,7 @@ module "object_detection" {
   source               = "../../shared/iac/modules/services/object-detection"
   project_id           = var.project_id
   region               = var.region
-  repository_name      = var.repository_name
   service_account_name = var.service_account_name
   models_bucket        = var.models_bucket
-  package_name         = var.package_name
+  model_name           = var.model_name
 }

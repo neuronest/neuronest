@@ -1,12 +1,3 @@
-variable "project_id" {
-  type = string
-}
-variable "region" {
-  type = string
-}
-variable "timezone" {
-  type = string
-}
 variable "image_name" {
   type = string
 }
@@ -14,6 +5,9 @@ variable "webapp_service_account_name" {
   type = string
 }
 variable "cloud_scheduler_service_account_name" {
+  type = string
+}
+variable "cloud_run_name" {
   type = string
 }
 variable "cloud_run_memory" {
@@ -38,8 +32,5 @@ variable "cloud_uninstantiate_route" {
   type = string
 }
 variable "cloud_scheduler_model_name" {
-  type = string
-}
-variable "repository_name" {
   type = string
 }

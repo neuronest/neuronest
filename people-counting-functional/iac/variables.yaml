@@ -1,0 +1,10 @@
+repository_variables:
+  # general repository
+  - REPOSITORY_NAME=people-counting-functional
+  - REPOSITORY_CODE=pc-functional
+  - MAIN_TERRAFORM_MODULE_NAME=people_counting_functional
+  - REPOSITORIES_DEPENDENCIES=people-counting,object-detection-functional
+multi_instance_resource_names: []
+other_variables:
+  # GCP project
+  - PROJECT_ID=${FUNCTIONAL_SERVICES_PROJECT_ID}

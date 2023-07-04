@@ -11,6 +11,8 @@ inputs:
     description: >
       Docker target in case of a multi-stage build
       (e.g.: "train")
+    required: false
+    default: ''
   build_arguments:
     description: >
       Docker build arguments
@@ -31,9 +33,15 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - run: echo "IMAGE_NAME_SUFFIX"="$([[ ! -z '${{ inputs.target }}' ]] && echo '-${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
+    - run: |
+        ACCESS_TOKEN=$(gcloud auth print-access-token)
+        echo "::add-mask::$ACCESS_TOKEN"
+        echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV
       shell: bash
-    - run: echo "IMAGE_NAME"="$REPOSITORY_NAME$IMAGE_NAME_SUFFIX" >> $GITHUB_ENV
+    - run: | 
+        echo "IMAGE_NAME_SUFFIX"="$([[ ! -z '${{ inputs.target }}' ]] && echo '-${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
+      shell: bash
+    - run: echo "IMAGE_NAME"="$BASE_IMAGE_NAME$IMAGE_NAME_SUFFIX" >> $GITHUB_ENV
       shell: bash
     - run: echo "DOCKERHUB_IMAGE_NAME"="$DOCKER_REPOSITORY_NAME/$IMAGE_NAME" >> $GITHUB_ENV
       shell: bash
@@ -43,21 +51,12 @@ runs:
       shell: bash
     - run: echo "TARGET_ARGUMENTS"="$([[ ! -z '${{ inputs.target }}' ]] && echo '--target ${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
       shell: bash
-    - run: |
-        ACCESS_TOKEN=$(gcloud auth print-access-token)
-        echo "::add-mask::$ACCESS_TOKEN"
-        echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV
+    - run: echo "GITHUB_RUN_ID"="$GITHUB_RUN_ID" >> $GITHUB_ENV
       shell: bash
-
     - run: echo ${{ inputs.dockerhub_password }} | docker login -u ${{ inputs.dockerhub_username }} --password-stdin
       shell: bash
-
     - run: gcloud auth configure-docker $GCP_REGISTRY
       shell: bash
-
-    - run: docker pull $DOCKERHUB_IMAGE_NAME:latest || true
-      shell: bash
-
     - run: touch $REPOSITORY_NAME/.dockerignore
       shell: bash
     - run: |
@@ -69,18 +68,18 @@ runs:
       shell: bash
     - run: cp $REPOSITORY_NAME/Dockerfile $REPOSITORY_NAME/.dockerignore .
       shell: bash
-
     - run: |
         export DOCKER_BUILDKIT=0
+        docker pull $DOCKERHUB_IMAGE_NAME:latest || true
         docker build \
-        --cache-from $DOCKERHUB_IMAGE_NAME:latest \
-        -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
-        -t $DOCKERHUB_IMAGE_NAME:latest \
-        -t $GCP_IMAGE_NAME:$GITHUB_RUN_ID \
-        -t $GCP_IMAGE_NAME:latest \
-        $TARGET_ARGUMENTS \
-        ${{ inputs.build_arguments }} \
-        .
+          --cache-from $DOCKERHUB_IMAGE_NAME:latest \
+          -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
+          -t $DOCKERHUB_IMAGE_NAME:latest \
+          -t $GCP_IMAGE_NAME:$GITHUB_RUN_ID \
+          -t $GCP_IMAGE_NAME:latest \
+          $TARGET_ARGUMENTS \
+          ${{ inputs.build_arguments }} \
+          .
       shell: bash
 
     - run: docker push $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID && docker push $DOCKERHUB_IMAGE_NAME:latest

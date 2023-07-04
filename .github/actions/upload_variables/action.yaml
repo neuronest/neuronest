@@ -17,6 +17,10 @@ inputs:
     description: 'An environment variable file to load'
     required: false
     default: ''
+  upload_repository_variables:
+    description: 'Whether to upload repository variables or not'
+    required: false
+    default: 'false'
 outputs:
   env_file_artifact_name:
     description: 'The name of the uploaded artifact and which must be used to be able to download it later'
@@ -32,6 +36,7 @@ runs:
         variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
         discard_shared_variables: ${{ inputs.discard_shared_variables }}
         env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+        keep_repository_variables: ${{ inputs.upload_repository_variables }}
     - id: set_env_file_artifact
       run: |
         env_file_hash=$(sha256sum "${{ steps.set_variables.outputs.created_env_file_path }}" | awk '{print $1}')

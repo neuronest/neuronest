@@ -13,6 +13,10 @@ inputs:
     description: 'Whether discard shared variables or not'
     required: false
     default: 'false'
+  keep_repository_variables:
+    description: 'Whether discard shared variables or not'
+    required: false
+    default: 'true'
   env_file_artifact_name:
     description: 'An environment variable file to load'
     required: false
@@ -28,6 +32,29 @@ runs:
       run: |
         # temporary file that will be generated
         echo "value=$(mktemp)" >> $GITHUB_OUTPUT
+        PREPROCESSED_VARIABLES_PATH=$(mktemp)
+        echo "PREPROCESSED_VARIABLES_PATH=$PREPROCESSED_VARIABLES_PATH" >> $GITHUB_ENV
+        echo "value=$PREPROCESSED_VARIABLES_PATH" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: ./.github/actions/set_up_poetry
+    - name: install python dependencies
+      run: |
+        working_dir=$(pwd)
+        cd .github/actions/set_variables
+        poetry export \
+          --without-hashes \
+          -f requirements.txt \
+          --output requirements.txt \
+        && pip install \
+          -r requirements.txt\
+        && rm requirements.txt
+        cd $working_dir
+      shell: bash
+    - run: |
+        # prevent generation of __pycache__ and Python bytecode files created while 
+        # running python code. These items can end up in docker context and 
+        # invalidate docker cache during build
+        echo "PYTHONDONTWRITEBYTECODE=1" >> $GITHUB_ENV
       shell: bash
     - run: |
         python3 .github/actions/set_variables/create_env_file.py \
@@ -35,7 +62,8 @@ runs:
           --environment_variables_file_path ${{ steps.set_created_env_file_path.outputs.value }} \
           --add_terraform_variables ${{ inputs.set_up_terraform_variables }} \
           --variable_prefix_to_filter_on "${{ inputs.variable_prefix_to_filter_on }}" \
-          --discard_shared_variables ${{ inputs.discard_shared_variables }}
+          --discard_shared_variables ${{ inputs.discard_shared_variables }} \
+          --keep_repository_variables ${{ inputs.keep_repository_variables }}
       shell: bash
     - uses: actions/download-artifact@v3
       with:
@@ -45,10 +73,10 @@ runs:
     - run: |
         caller_workflow_env_file_path=/tmp/${{ inputs.env_file_artifact_name }}
         refactored_caller_workflow_env_file_path=${caller_workflow_env_file_path}_refactored
-          python3 .github/actions/set_variables/refactor_caller_workflow_env_file.py \
-            --repository_where_variables_are_defined ${{ env.REPOSITORY_NAME }} \
-            --caller_workflow_env_file_path $caller_workflow_env_file_path \
-            --refactored_caller_workflow_env_file_path $refactored_caller_workflow_env_file_path
+        python3 .github/actions/set_variables/refactor_caller_workflow_env_file.py \
+          --repository_where_variables_are_defined ${{ env.REPOSITORY_NAME }} \
+          --caller_workflow_env_file_path $caller_workflow_env_file_path \
+          --refactored_caller_workflow_env_file_path $refactored_caller_workflow_env_file_path
         cat $refactored_caller_workflow_env_file_path >> ${{ steps.set_created_env_file_path.outputs.value }}
       if: ${{ inputs.env_file_artifact_name != '' }}
       shell: bash

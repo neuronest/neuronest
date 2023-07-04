@@ -13,6 +13,10 @@ inputs:
     description: 'Whether discard shared variables or not'
     required: false
     default: 'false'
+  keep_repository_variables:
+    description: 'Whether discard shared variables or not'
+    required: false
+    default: 'true'
   credentials_json:
     description: 'Name of the repositories'
     required: false
@@ -29,6 +33,7 @@ runs:
           variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
           discard_shared_variables: ${{ inputs.discard_shared_variables }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          keep_repository_variables: ${{ inputs.keep_repository_variables }}
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ inputs.credentials_json }}
