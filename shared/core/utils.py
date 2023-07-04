@@ -1,6 +1,5 @@
 import functools
 import time
-from ast import literal_eval
 from typing import Any, Callable, Tuple, Union
 
 
@@ -30,4 +29,5 @@ def string_to_boolean(string: str) -> bool:
     boolean_string_false = "false"
     if (lower_string := string.lower()) in {boolean_string_true, boolean_string_false}:
         return lower_string == boolean_string_true
-    return literal_eval(string)
+
+    raise ValueError(f"Invalid string to interpolate: {string}")
