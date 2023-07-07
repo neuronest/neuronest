@@ -11,14 +11,23 @@ inputs:
     description: 'Docker image name built'
     required: false
     default: ""  # can only be empty for partial terraform runs, aka runs that don't use "image_name"
-  vars:
-    description: 'Variables usually named -var found in the terraform plan and terraform apply commands'
+  min_terraform_retry_wait_seconds:
+    description: 'Terraform maximum wait time for retry after failure'
     required: false
-    default: ""
+    default: "60"
+  max_terraform_retry_wait_seconds:
+    description: 'Terraform maximum wait time for retry after failure'
+    required: false
+    default: "120"
+outputs:
+  base_project_builder_sa_key:
+    description: 'The base64 encoded key of the IAC service account of the shared repository'
+    value: ${{ steps.get_base_project_builder_sa_key.outputs.value }}
 
 runs:
   using: "composite"
   steps:
+
     - run: echo "TF_VAR_image_name"="${{ inputs.image_name }}" >> $GITHUB_ENV
       shell: bash
 
@@ -31,55 +40,73 @@ runs:
         fi
       shell: bash
 
-    - run: |
-        gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID 2>/dev/null || true
-        gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
-      shell: bash
+    - id: link_project_to_organization
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
+        max_attempts: 3
+        command: |
+          if ! gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
+              # Project does not exist, create it
+              gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID
+          fi
 
-    - run: |
-        # create state bucket
-        gsutil ls -b gs://$STATE_BUCKET || gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
-      shell: bash
+    - id: link_billing_account_to_project
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
+        max_attempts: 3
+        command: |
+          # the command may fail if the project is not actually created yet
+          gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
+
+    - id: create_state_bucket
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
+        max_attempts: 3
+        command: |
+          # the command may fail if the project is not actually created yet
+          if ! echo "$(gsutil ls -p $PROJECT_ID)" | grep -q "gs://$STATE_BUCKET/"; then
+            # Bucket does not exist, create it
+            gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
+          fi
 
     - id: add_iam_with_retry
       uses: nick-fields/retry@v2.8.2
       with:
-        timeout_seconds: 30
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
         max_attempts: 3
         command: |
           for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
             gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
           done
 
+    - id: set_terraform_retry_wait_seconds
+      # we wait a random number of seconds before retrying to prevent jobs targeting
+      # the same resources, like base, from retrying at the same time
+      run: |
+        max_wait_seconds=${{ inputs.max_terraform_retry_wait_seconds }}
+        min_wait_seconds=${{ inputs.min_terraform_retry_wait_seconds }}
+        echo "value=$((min_wait_seconds + RANDOM % (max_wait_seconds - min_wait_seconds + 1)))" >> $GITHUB_OUTPUT
+      shell: bash
+
     - id: terraform_with_retry
       uses: nick-fields/retry@v2.8.2
       with:
-        timeout_seconds: 600
-        max_attempts: 3
-        retry_wait_seconds: 60
+        timeout_seconds: 1200
+        max_attempts: 5
+        retry_wait_seconds: ${{ steps.set_terraform_retry_wait_seconds.outputs.value }}
         command: |
-          cd ${{ env.REPOSITORY_NAME }}/iac
-          
-          # run terraform init and create the terraform state locally
-          terraform init -input=false -backend-config="bucket=$STATE_BUCKET"
-  
-          workspace=$REPOSITORY_NAME
-          if [ -n "${{ inputs.workspace }}" ]; then
-            workspace=${{ inputs.workspace }}
-          fi
-          terraform workspace select $workspace || terraform workspace new $workspace
-  
+          source ./.github/functions/initialize_terraform.sh
+          initialize_terraform ${{ env.REPOSITORY_NAME }} ${{ inputs.workspace }} $STATE_BUCKET
+
           # import the project in the terraform state
           terraform import google_project.project $PROJECT_ID 2>/dev/null || true
-          
-          # set up terraform -var arguments
-          terraform_vars=""
-          # if inputs.vars is not empty
-          if [ -n "${{ inputs.vars }}" ]; then
-            for input_var in "${{ inputs.vars }}"; do
-                terraform_vars="$terraform_vars -var $input_var"
-            done
-          fi
   
           # set up terraform -target arguments
           terraform_targets=""
@@ -89,9 +116,27 @@ runs:
                 terraform_targets="$terraform_targets -target $input_target"
             done
           fi
-  
+
           # run terraform plan
-          bash -c "terraform plan $terraform_vars $terraform_targets -input=false -out=tfplan"
+          bash -c "terraform plan $terraform_targets -input=false -out=tfplan"
   
           # run terraform apply
           bash -c "terraform apply -input=false -auto-approve tfplan"
+          terraform_exit_status=$?
+          
+          # force script to terminate on terraform exit code to account for bug 
+          # where last command dictates that an error has occurred or not: https://github.com/nick-fields/retry/issues/53
+          exit $terraform_exit_status
+
+    - id: get_base_project_builder_sa_key
+      uses: ./.github/actions/get_terraform_output
+      with:
+        workspace: ${{ inputs.workspace }}
+        terraform_output_name: base_project_builder_sa_key
+    # the "not success" condition is better because it also involves jobs that have
+    # failed because they were interrupted because they took too long or because a
+    # terraform variable was missing and it was waiting indefinitely for example
+    - id: release_terraform_lock
+      if: ${{ !success() && steps.terraform_with_retry.conclusion != 'success' }}
+      run: gcloud storage rm gs://$STATE_BUCKET/terraform/state/${{ inputs.workspace }}.tflock || true
+      shell: bash

@@ -15,27 +15,28 @@ provider "google-beta" {
   zone    = var.zone
 }
 resource "google_project" "project" {
-  name            = var.project_name
+  name            = var.project_id
   project_id      = var.project_id
   org_id          = var.organization_id
   billing_account = var.billing_account
 }
 
 module "base" {
-  source                       = "../../shared/iac/modules/services/base"
-  project_id                   = var.project_id
-  project_name                 = var.project_name
-  region                       = var.region
-  firestore_region             = var.firestore_region
+  source                               = "../../shared/iac/modules/services/base"
+  project_id                           = var.project_id
+  region                               = var.region
+  firestore_region                     = var.firestore_region
+  project_builder_service_account_name = var.project_builder_service_account_name
+  mono_repository_name                 = var.mono_repository_name
 }
 
 module "people_counting" {
   source                       = "../../shared/iac/modules/services/people-counting"
   project_id                   = var.project_id
-  project_name                 = var.project_name
   region                       = var.region
   repository_name              = var.repository_name
   image_name                   = var.image_name
+  webapp_service_account_name  = var.webapp_service_account_name
   firestore_results_collection = var.firestore_results_collection
   videos_to_count_bucket       = var.videos_to_count_bucket
   counted_videos_bucket        = var.counted_videos_bucket

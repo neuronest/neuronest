@@ -3,12 +3,8 @@ description: 'Install utilities that terraform needs that we might not have in a
 runs:
   using: "composite"
   steps:
-      - name: Install terraform setup utilities
+      - name: install terraform
         run: |
-          apt-get -y install zip
+          source ./.github/functions/install_terraform.sh
+          install_terraform
         shell: bash
-      - name: Install node for terraform
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-      - uses: hashicorp/setup-terraform@v2.0.3

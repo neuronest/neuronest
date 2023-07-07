@@ -1,0 +1,14 @@
+name: 'run_base_terraform'
+description: 'Deploy the terraform part of the shared repository, common to all IACs of all repositories'
+outputs:
+  base_project_builder_sa_key:
+    description: 'The base64 encoded key of the IAC service account of the shared repository'
+    value: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+runs:
+  using: "composite"
+  steps:
+    - id: run_base_terraform
+      uses: ./.github/actions/run_terraform
+      with:
+        targets: ${{ env.BASE_TERRAFORM_RESOURCES }}
+        workspace: base

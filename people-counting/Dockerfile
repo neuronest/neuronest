@@ -11,6 +11,7 @@ COPY $PEOPLE_COUNTING_REPOSITORY/pyproject.toml $PEOPLE_COUNTING_REPOSITORY/poet
 COPY $SHARED_REPOSITORY /$APP_DIRECTORY/$SHARED_REPOSITORY
 
 RUN apt update && apt install -y cmake
+
 RUN pip install --upgrade pip \
     && pip install poetry \
     && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \

@@ -1,24 +1,24 @@
 name: core
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/core.yaml
-      - .github/actions/**
-      - .pre-commit-config.yaml
-      - shared/**
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/core.yaml
-      - .github/actions/**
-      - .pre-commit-config.yaml
-      - shared/**
+#  push:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/core.yaml
+#      - .github/actions/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/core.yaml
+#      - .github/actions/**
+#      - .pre-commit-config.yaml
+#      - shared/**
   workflow_dispatch:
 
 env:
@@ -32,12 +32,7 @@ jobs:
     container: python:3.8-buster
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set environment variables
-        uses: ./.github/actions/set_variables
-        with:
-          repository_name: shared
-
+      - uses: ./.github/actions/set_variables
       - run: apt update && apt install -y cmake ffmpeg git libsm6 libxext6
       - run: pip install --upgrade pip
       - run: pip install poetry==$POETRY_VERSION

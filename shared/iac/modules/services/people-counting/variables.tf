@@ -1,16 +1,13 @@
 variable "project_id" {
   type = string
 }
-variable "project_name" {
-  type = string
-}
 variable "region" {
   type = string
 }
-variable "repository_name" {
+variable "image_name" {
   type = string
 }
-variable "image_name" {
+variable "webapp_service_account_name" {
   type = string
 }
 variable "firestore_results_collection" {
@@ -38,5 +35,8 @@ variable "cloud_run_min_scale" {
   type = string
 }
 variable "cloud_run_max_scale" {
+  type = string
+}
+variable "repository_name" {
   type = string
 }

@@ -1,9 +1,10 @@
 project_id: '${oc.env:PROJECT_ID}'
 region: '${oc.env:REGION}'
+service_account: '${oc.env:SERVICE_ACCOUNT_EMAIL}'
 name: 'object-detection'
 
 model:
-  name: "object_detection"
+  name: '${oc.env:PACKAGE_NAME}'
   inner_model_type: "ultralytics/yolov5"
   inner_model_name: "yolov5x6"
   image_width: 400

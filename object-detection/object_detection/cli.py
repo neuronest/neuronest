@@ -68,7 +68,12 @@ class RunnableAction(abc.ABC):
 
 class LaunchTrainingJobAction(RunnableAction):
     action = Action.TRAIN
-    kwargs = ("config", "vertex_ai_manager", "model_name", "model_gspath")
+    kwargs = (
+        "config",
+        "vertex_ai_manager",
+        "model_name",
+        "model_gspath",
+    )
 
     @classmethod
     # pylint: disable=arguments-differ
@@ -108,6 +113,7 @@ class LaunchTrainingJobAction(RunnableAction):
 
         # will raise a RuntimeError if the job itself crashed
         training_job.run(
+            service_account=config.service_account,
             model_display_name=model_display_name,
             replica_count=training_config.replica_count,
             machine_type=training_config.machine_type,
@@ -246,9 +252,12 @@ def main(config: DictConfig, model_gspath: Optional[GSPath], actions: List[Actio
     vertex_ai_manager = VertexAIManager(
         key_path=GOOGLE_APPLICATION_CREDENTIALS, location=config.region
     )
-    model_instantiator_client = ModelInstantiatorClient(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, host=MODEL_INSTANTIATOR_HOST
-    )
+    if MODEL_INSTANTIATOR_HOST is not None:
+        model_instantiator_client = ModelInstantiatorClient(
+            key_path=GOOGLE_APPLICATION_CREDENTIALS, host=MODEL_INSTANTIATOR_HOST
+        )
+    else:
+        model_instantiator_client = None
     model_name = config.model.name
 
     parameters = {

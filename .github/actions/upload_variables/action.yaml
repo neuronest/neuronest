@@ -1,0 +1,47 @@
+name: 'upload_variables'
+description: 'Upload the environment variables of a workflow and modify the names so that they are adequate in another workflow'
+inputs:
+  upload_terraform_variables:
+    description: 'Whether to also upload corresponding terraform variables'
+    required: false
+    default: 'true'
+  variable_prefix_to_filter_on:
+    description: 'Prefix of variables to keep, for example if people-counting is built from people-counting-functional, we only keep the corresponding variables, prefixed PEOPLE_COUNTING'
+    required: false
+    default: ''
+  discard_shared_variables:
+    description: 'Whether discard shared variables or not'
+    required: false
+    default: 'false'
+  env_file_artifact_name:
+    description: 'An environment variable file to load'
+    required: false
+    default: ''
+outputs:
+  env_file_artifact_name:
+    description: 'The name of the uploaded artifact and which must be used to be able to download it later'
+    value: ${{ steps.set_env_file_artifact.outputs.name }}
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+    - id: set_variables
+      uses: ./.github/actions/set_variables
+      with:
+        set_up_terraform_variables: ${{ inputs.upload_terraform_variables }}
+        variable_prefix_to_filter_on: ${{ inputs.variable_prefix_to_filter_on }}
+        discard_shared_variables: ${{ inputs.discard_shared_variables }}
+        env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+    - id: set_env_file_artifact
+      run: |
+        env_file_hash=$(sha256sum "${{ steps.set_variables.outputs.created_env_file_path }}" | awk '{print $1}')
+        env_file_artifact_name=${{ env.REPOSITORY_NAME }}_${env_file_hash}.env
+        echo "name=$env_file_artifact_name" >> $GITHUB_OUTPUT
+        env_file_artifact_path=/tmp/$env_file_artifact_name
+        cp ${{ steps.set_variables.outputs.created_env_file_path }} $env_file_artifact_path
+        echo "path=$env_file_artifact_path" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ${{ steps.set_env_file_artifact.outputs.name }}
+        path: ${{ steps.set_env_file_artifact.outputs.path }}

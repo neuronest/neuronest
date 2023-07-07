@@ -1,5 +1,6 @@
 import os
-from typing import Any, Iterable, Iterator, List, Optional
+from functools import wraps
+from typing import Any, Callable, Iterable, Iterator, List, Optional
 
 
 def get_chunks_from_iterable(
@@ -45,3 +46,24 @@ def extract_file_extension(path: str) -> str:
         raise ValueError(f"Unable to get the file extension from '{path}'")
 
     return extension
+
+
+def maybe_async(convert_to_async: bool) -> Callable:
+    """
+    Make a sync or async function dynamically.
+    Useful in some cases for debug where the
+    function must then be def or async def for example
+    """
+
+    def decorator(func):
+        if convert_to_async is True:
+
+            @wraps(func)
+            async def async_func(*args, **kwargs):
+                return await func(*args, **kwargs)
+
+            return async_func
+
+        return func
+
+    return decorator

@@ -7,6 +7,7 @@ from people_counting.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
     OBJECT_DETECTION_MODEL_NAME,
+    PROJECT_ID,
     REGION,
 )
 from people_counting.people_counter import PeopleCounter
@@ -17,6 +18,7 @@ def get_object_detection_client() -> ObjectDetectionClient:
         vertex_ai_manager=VertexAIManager(
             key_path=GOOGLE_APPLICATION_CREDENTIALS,
             location=REGION,
+            project_id=PROJECT_ID,
         ),
         model_instantiator_client=ModelInstantiatorClient(
             key_path=GOOGLE_APPLICATION_CREDENTIALS,
