@@ -1,6 +1,6 @@
 import os
 from functools import wraps
-from typing import Any, Iterable, Iterator, List, Optional
+from typing import Any, Callable, Iterable, Iterator, List, Optional
 
 
 def get_chunks_from_iterable(
@@ -48,7 +48,7 @@ def extract_file_extension(path: str) -> str:
     return extension
 
 
-def maybe_async(condition):
+def maybe_async(convert_to_async: bool) -> Callable:
     """
     Make a sync or async function dynamically.
     Useful in some cases for debug where the
@@ -56,7 +56,7 @@ def maybe_async(condition):
     """
 
     def decorator(func):
-        if condition:
+        if convert_to_async is True:
 
             @wraps(func)
             async def async_func(*args, **kwargs):

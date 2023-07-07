@@ -1,7 +1,7 @@
 import os
 from typing import Tuple
 
-from core.routes.people_counting import people_counting_routes
+from core.routes.people_counting import routes
 from core.schemas import people_counting as schemas
 from core.tools import maybe_async
 from fastapi import APIRouter, Body, Depends
@@ -37,7 +37,7 @@ def count_people_and_make_video_from_local_path(
 # so that fastapi does not place the path operation function in a thread,
 # which is a problem when showing the video
 @router.post(
-    people_counting_routes.count_people_and_make_video,
+    routes.count_people_and_make_video,
     status_code=status.HTTP_201_CREATED,
 )
 @maybe_async(config.general.enable_video_showing)
