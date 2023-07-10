@@ -4,7 +4,7 @@
 # Deploy image to Cloud Run
 resource "google_cloud_run_service" "people_counting_api" {
   provider                   = google-beta
-  name                       = var.repository_name
+  name                       = var.cloud_run_name
   location                   = var.region
   autogenerate_revision_name = true
   template {
@@ -24,10 +24,6 @@ resource "google_cloud_run_service" "people_counting_api" {
         env {
           name  = "REGION"
           value = var.region
-        }
-        env {
-          name  = "REPOSITORY_NAME"
-          value = var.repository_name
         }
         env {
           name  = "COUNTED_VIDEOS_BUCKET"

@@ -1,0 +1,14 @@
+[build-system]
+build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+
+[tool.poetry]
+authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
+description = "Github action set_variables dependencies"
+name = "set_variables"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+PyYAML = "6.0"
+pydantic = "^1.10.9"
+python = ">=3.7"

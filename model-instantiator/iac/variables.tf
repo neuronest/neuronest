@@ -1,9 +1,6 @@
 variable "state_bucket" {
   type = string
 }
-variable "repository_name" {
-  type = string
-}
 variable "image_name" {
   type = string
 }
@@ -11,6 +8,9 @@ variable "webapp_service_account_name" {
   type = string
 }
 variable "cloud_scheduler_service_account_name" {
+  type = string
+}
+variable "cloud_run_name" {
   type = string
 }
 variable "cloud_run_memory" {
