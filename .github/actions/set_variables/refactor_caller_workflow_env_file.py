@@ -5,10 +5,10 @@ import sys
 sys.path.append(".github/actions/set_variables")
 
 # we need to modify sys.path at runtime because the syntax
-# "import from .github.actions.set_variables.create_env_file import EnvFile"
+# "from .github.actions.set_variables.create_env_file import EnvFile"
 # does not work because of "." at the beginning
 # this also results in conflicts between black and flake8/pylint
-from create_env_file import EnvFile  # pylint: disable=C0413  # noqa: E402
+import create_env_file  # pylint: disable=C0413  # noqa: E402
 
 # create logger
 logger = logging.getLogger(__name__)
@@ -33,16 +33,15 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    caller_workflow_variables_lines = EnvFile(
+    caller_workflow_variables_lines = create_env_file.EnvFile(
         path=args.caller_workflow_env_file_path
     ).read_variables_lines()
 
-    repository_name_to_search_in_variable = (
-        args.repository_where_variables_are_defined.replace("-", "_")
-    )
     caller_workflow_variables_lines = [
         var_line.truncate_to_current_context(
-            current_context=repository_name_to_search_in_variable
+            current_context=args.repository_where_variables_are_defined.replace(
+                "-", "_"
+            )
         )
         for var_line in caller_workflow_variables_lines
     ]

@@ -68,7 +68,7 @@ def main(
         training_metrics=training_metrics,
         project_id=config.project_id,
         location=config.region,
-        bigquery_dataset_name=config.bigquery.dataset,
+        bigquery_dataset_name=config.bigquery.dataset.name,
     )
 
 

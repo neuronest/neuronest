@@ -115,6 +115,11 @@ jobs:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: training
+          # todo: consider whether the default behavior should be to pass the arguments
+          # REPOSITORY_NAME and PACKAGE_NAME during all docker builds. It would make
+          # things less verbose, with almost only advantages: either the dockerfile
+          # uses them, or docker ignores them
+          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }}
 
   get_training_images:
     runs-on: ubuntu-latest
@@ -233,13 +238,19 @@ jobs:
     runs-on: ubuntu-latest
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
-    container: google/cloud-sdk
     outputs:
       dockerhub_serving_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/set_variables_gcloud_auth
+      - uses: ./.github/actions/make_space_for_docker
+      - uses: ./.github/actions/set_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
@@ -254,7 +265,7 @@ jobs:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: serving
-          build_arguments: --build-arg MODEL_PATH=$MODEL_PATH
+          build_arguments: --build-arg MODEL_PATH=$MODEL_PATH --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }}
 
   model_upload:
     name: model_upload

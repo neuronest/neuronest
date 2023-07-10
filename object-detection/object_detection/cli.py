@@ -108,7 +108,7 @@ class LaunchTrainingJobAction(RunnableAction):
             location=vertex_ai_manager.location,
             staging_bucket=models_bucket_name,
             container_uri=training_config.container_uri,
-            command=["python3", "-m", f"{model_name}.train"],
+            command=["python3", "-m", f"{config.package_name}.train"],
         )
 
         # will raise a RuntimeError if the job itself crashed

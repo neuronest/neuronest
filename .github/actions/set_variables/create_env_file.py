@@ -3,7 +3,11 @@ import logging
 import os
 import re
 import sys
-from typing import List, Optional, Tuple, Union
+from enum import Enum
+from typing import List, Optional, Set, Union
+
+import yaml
+from pydantic import BaseModel
 
 # the script is used with python for which the core package is not installed,
 # so we modify sys.path at runtime to be able to import code from core
@@ -11,24 +15,58 @@ from typing import List, Optional, Tuple, Union
 sys.path.append("shared")
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
+SUFFIX_OF_FUNCTIONAL_REPOSITORIES = "-functional"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
 
 # create logger
-logger = logging.getLogger(".github.actions.set_variables.create_env_file")
+logger = logging.getLogger(__name__)
+
+
+class NameSpaceError(Exception):
+    pass
+
+
+def add_namespace_to_string(
+    string: str,
+    namespace: str,
+    already_added_ok: bool = False,
+    namespace_and_string_binding_character: str = "_",
+):
+    for binding_character in list({"_", "-", namespace_and_string_binding_character}):
+        if namespace.endswith(binding_character):
+            namespace_and_string_binding_character = binding_character
+            namespace = namespace[:-1]
+    if not string.startswith(namespace):
+        string = f"{namespace}{namespace_and_string_binding_character}{string}"
+    elif not already_added_ok:
+        raise NameSpaceError(
+            f"The string {string} is already in " f"the namespace {namespace}"
+        )
+    else:
+        pass
+    return string
+
+
+class VariableType(str, Enum):
+    REPOSITORY = "REPOSITORY"
+    MULTI_INSTANCE_RESOURCE = "MULTI_INSTANCE_RESOURCE"
+    OTHER = "OTHER"
 
 
 class VariableLine:
     NAME_AND_VALUE_SEPARATOR = "="
     REGEX_OF_VALUE_PART_VARIABLES = r"\$\{([^\}]*)\}"
+    REPOSITORY_CODE_VARIABLE_NAME = "REPOSITORY_CODE"
 
-    def __init__(self, line: str):
+    def __init__(self, line: str, variable_type: Optional[VariableType] = None):
         if not self.can_be_built_from_string(line):
             raise ValueError("line structure is not good for being VariableLine")
         self._value = None
         self._name = None
         self.line = line
+        self.variable_type = variable_type
 
     @property
     def name(self):
@@ -102,19 +140,21 @@ class VariableLine:
                 ],
                 inplace=True,
             )
-            if not current_context.lower() in truncated_variable_line.name.lower():
-                continue
-            new_var_line_name = truncated_variable_line.name.upper()[
-                truncated_variable_line.name.upper().rfind(current_context.upper())
-                + len(current_context)
-                + 1 :
-            ]
-            if truncated_variable_line.name.startswith(TERRAFORM_VARIABLES_PREFIX):
-                truncated_variable_line.name = (
-                    f"{TERRAFORM_VARIABLES_PREFIX}{new_var_line_name.lower()}"
-                )
-            else:
-                truncated_variable_line.name = new_var_line_name
+
+        if not current_context.lower() in truncated_variable_line.name.lower():
+            return truncated_variable_line
+
+        new_var_line_name = truncated_variable_line.name.upper()[
+            truncated_variable_line.name.upper().rfind(current_context.upper())
+            + len(current_context)
+            + 1 :
+        ]
+        if truncated_variable_line.name.startswith(TERRAFORM_VARIABLES_PREFIX):
+            truncated_variable_line.name = (
+                f"{TERRAFORM_VARIABLES_PREFIX}{new_var_line_name.lower()}"
+            )
+        else:
+            truncated_variable_line.name = new_var_line_name
         return truncated_variable_line
 
     def replace_variable_inside_value(
@@ -160,24 +200,46 @@ class VariableLine:
 
         return None
 
-    def add_namespace(
+    def add_namespace_to_name(
         self,
         namespace: str,
-        add_to_name: bool = True,
-        add_to_value: bool = False,
-        variable_inside_value_to_add_to: Optional[str] = None,
+        already_added_ok: bool = False,
     ):
-        if add_to_name:
-            name = f"{namespace}_{self.name}"
-        else:
-            name = self.name
+        var_line = VariableLine(self.line)
+        namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
-        var_line = VariableLine(
-            line=f"{name}{self.NAME_AND_VALUE_SEPARATOR}{self.value}"
+        var_line.name = add_namespace_to_string(
+            string=var_line.name,
+            namespace=namespace,
+            already_added_ok=already_added_ok,
         )
 
-        if not add_to_value:
-            return var_line
+        return var_line
+
+    def add_namespace_to_value(
+        self,
+        namespace: str,
+        already_added_ok: bool = False,
+    ):
+        var_line = VariableLine(self.line)
+        namespace = f"{namespace.replace('_', '-').lower()}{'-'}"
+
+        var_line.value = add_namespace_to_string(
+            string=var_line.value,
+            namespace=namespace,
+            already_added_ok=already_added_ok,
+        )
+
+        return var_line
+
+    def add_namespace_to_value_variables(
+        self,
+        namespace: str,
+        variable_inside_value_to_add_to: Optional[str] = None,
+        already_added_ok: bool = False,
+    ):
+        var_line = VariableLine(self.line)
+        namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
         if variable_inside_value_to_add_to is not None:
             # only add the namespace to this variable only within the value part
@@ -188,9 +250,48 @@ class VariableLine:
         for variable in all_variables_inside_value_to_add_to:
             var_line = var_line.replace_variable_inside_value(
                 variable=variable,
-                other_variable=f"{namespace}_{variable}",
+                other_variable=add_namespace_to_string(
+                    string=variable,
+                    namespace=namespace,
+                    already_added_ok=already_added_ok,
+                ),
             )
+
         return var_line
+
+    def add_namespace(
+        self,
+        namespace: str,
+        add_to_name: bool = True,
+        add_to_value: bool = False,
+        add_to_value_variables: bool = False,
+        variable_inside_value_to_add_to: Optional[str] = None,
+        inplace: bool = False,
+        already_added_ok: bool = False,
+    ):
+        var_line = VariableLine(self.line)
+        if add_to_name:
+            var_line = var_line.add_namespace_to_name(
+                namespace=namespace, already_added_ok=already_added_ok
+            )
+        if add_to_value:
+            var_line = var_line.add_namespace_to_value(
+                namespace=namespace, already_added_ok=already_added_ok
+            )
+        if add_to_value_variables:
+            var_line = var_line.add_namespace_to_value_variables(
+                namespace=namespace,
+                already_added_ok=already_added_ok,
+                variable_inside_value_to_add_to=variable_inside_value_to_add_to,
+            )
+
+        if not inplace:
+            return var_line
+
+        self.name = var_line.name
+        self.value = var_line.value
+
+        return None
 
     def __str__(self):
         return self.line
@@ -202,6 +303,45 @@ class VariableLine:
         ):
             return list(variables_inside_value)
         return []
+
+    def is_a_multi_instance_resource(self):
+        return self.variable_type == VariableType.MULTI_INSTANCE_RESOURCE
+
+    def is_a_repository_variable(self):
+        return self.variable_type == VariableType.REPOSITORY
+
+    def is_a_repository_code(self):
+        return self.name == self.REPOSITORY_CODE_VARIABLE_NAME
+
+
+class YamlEnvFile(BaseModel):
+    repository_variables: List[str]
+    multi_instance_resource_names: List[str]
+    other_variables: List[str]
+
+    @classmethod
+    def read_file(cls, file_path: str) -> "YamlEnvFile":
+        with open(file_path, "r") as self_reader:
+            yaml_data = yaml.safe_load(self_reader)
+        return cls.parse_obj(yaml_data)
+
+    def to_variables_lines(self):
+        return (
+            [
+                VariableLine(line=variable, variable_type=VariableType.REPOSITORY)
+                for variable in self.repository_variables
+            ]
+            + [
+                VariableLine(
+                    line=variable, variable_type=VariableType.MULTI_INSTANCE_RESOURCE
+                )
+                for variable in self.multi_instance_resource_names
+            ]
+            + [
+                VariableLine(line=variable, variable_type=VariableType.OTHER)
+                for variable in self.other_variables
+            ]
+        )
 
 
 class EnvFile:
@@ -226,38 +366,29 @@ class EnvFile:
 
 
 class Repository:
-    STATIC_VARIABLES_FILE_PATH = "iac/static_variables.env"
-    DYNAMIC_VARIABLES_FILE_PATH = "iac/dynamic_variables.env"
+    VARIABLES_FILE_PATH = "iac/variables.yaml"
+    SUFFIX_OF_FUNCTIONAL_REPOSITORIES = SUFFIX_OF_FUNCTIONAL_REPOSITORIES
 
     def __init__(self, name: str):
         self.name = name
 
     @property
-    def static_env_file_path(self):
-        return f"{self.name}/{self.STATIC_VARIABLES_FILE_PATH}"
+    def yaml_env_file_path(self):
+        return f"{self.name}/{self.VARIABLES_FILE_PATH}"
 
-    @property
-    def dynamic_env_file_path(self):
-        return f"{self.name}/{self.DYNAMIC_VARIABLES_FILE_PATH}"
+    def has_yaml_env_file(self):
+        return os.path.isfile(self.yaml_env_file_path)
 
-    def has_all_env_files(self):
-        return os.path.isfile(self.static_env_file_path) and os.path.isfile(
-            self.dynamic_env_file_path
-        )
-
-    def get_static_env_file(self):
-        return EnvFile(path=self.static_env_file_path)
-
-    def get_dynamic_env_file(self):
-        return EnvFile(path=self.dynamic_env_file_path)
+    def get_yaml_env_file(self) -> YamlEnvFile:
+        return YamlEnvFile.read_file(self.yaml_env_file_path)
 
     def get_dependency_repositories(self):
-        static_var_name_value = {
+        variable_name_value = {
             var_line.name: var_line.value
-            for var_line in self.get_static_env_file().read_variables_lines()
+            for var_line in self.get_yaml_env_file().to_variables_lines()
         }
         if (
-            dependency_repositories := static_var_name_value.get(
+            dependency_repositories := variable_name_value.get(
                 DEPENDENT_REPOSITORY_VAR_LINE_NAME
             )
         ) is not None:
@@ -270,69 +401,82 @@ class Repository:
             ]
         return []
 
+    def get_base_name_without_functional(self):
+        if self.name.endswith(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES):
+            return self.name[: -len(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES)]
+        return self.name
 
-def get_static_and_dynamic_var_lines(
+    def get_base_code_without_functional(self):
+        code = [
+            var_line
+            for var_line in self.get_yaml_env_file().to_variables_lines()
+            if var_line.is_a_repository_code()
+        ][0].value
+        if code.endswith(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES):
+            return code[: -len(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES)]
+        return code
+
+
+def get_all_repository_var_lines(
     repository: Repository,
     add_namespace: bool = True,
-) -> Tuple[List[VariableLine], List[VariableLine]]:
+    variables_to_which_not_add_namespace: Optional[Set[str]] = None,
+    add_namespace_to_name_of_multi_instance_resource: bool = True,
+) -> List[VariableLine]:
 
-    all_repository_static_var_lines = []
-    all_repository_dynamic_var_lines = []
+    if variables_to_which_not_add_namespace is None:
+        variables_to_which_not_add_namespace = {}
 
-    repository_level_static_var_lines = (
-        repository.get_static_env_file().read_variables_lines()
-    )
-    repository_level_dynamic_var_lines = (
-        repository.get_dynamic_env_file().read_variables_lines()
-    )
+    all_repository_var_lines = []
+
+    repository_code_without_functional = repository.get_base_code_without_functional()
+    repository_name_without_functional = repository.get_base_name_without_functional()
 
     for dependency_repository in repository.get_dependency_repositories():
-        (
-            dependency_repository_static_var_lines,
-            dependency_repository_dynamic_var_lines,
-        ) = get_static_and_dynamic_var_lines(
+        dependency_repository_var_lines = get_all_repository_var_lines(
             repository=dependency_repository,
             add_namespace=True,
+            variables_to_which_not_add_namespace=variables_to_which_not_add_namespace,
         )
+        all_repository_var_lines += dependency_repository_var_lines
 
-        all_repository_static_var_lines += dependency_repository_static_var_lines
-        all_repository_dynamic_var_lines += dependency_repository_dynamic_var_lines
+    all_repository_var_lines += repository.get_yaml_env_file().to_variables_lines()
 
-    all_repository_static_var_lines += repository_level_static_var_lines
-    all_repository_dynamic_var_lines += repository_level_dynamic_var_lines
-
-    if add_namespace:
-        repository_name_as_namespace = repository.name.replace("-", "_").upper()
-        repository_static_var_lines_names = set(
-            static_var.name for static_var in all_repository_static_var_lines
-        )
-        for i, _ in enumerate(all_repository_dynamic_var_lines):
-            all_repository_dynamic_var_lines[i] = all_repository_dynamic_var_lines[
-                i
-            ].add_namespace(
-                repository_name_as_namespace, add_to_name=True, add_to_value=False
-            )
-            variables_inside_value = all_repository_dynamic_var_lines[
-                i
-            ].get_variables_inside_value()
+    for var_line in all_repository_var_lines:
+        if add_namespace:
+            variables_inside_value = var_line.get_variables_inside_value()
             for variable_inside_value in variables_inside_value:
-                if variable_inside_value in repository_static_var_lines_names:
-                    all_repository_dynamic_var_lines[
-                        i
-                    ] = all_repository_dynamic_var_lines[i].add_namespace(
-                        repository_name_as_namespace,
+                if variable_inside_value not in variables_to_which_not_add_namespace:
+                    var_line.add_namespace(
+                        repository_name_without_functional,
+                        add_to_value_variables=True,
                         add_to_name=False,
-                        add_to_value=True,
                         variable_inside_value_to_add_to=variable_inside_value,
+                        inplace=True,
+                        already_added_ok=True,
                     )
-        for i, _ in enumerate(all_repository_static_var_lines):
-            all_repository_static_var_lines[i] = all_repository_static_var_lines[
-                i
-            ].add_namespace(
-                repository_name_as_namespace, add_to_name=True, add_to_value=False
+            var_line.add_namespace(
+                repository_name_without_functional,
+                add_to_name=True,
+                add_to_value_variables=False,
+                inplace=True,
+                already_added_ok=True,
+            )
+        if (
+            add_namespace_to_name_of_multi_instance_resource
+            and var_line.is_a_multi_instance_resource()
+            and not var_line.value.startswith(repository_name_without_functional)
+        ):
+            var_line.add_namespace(
+                repository_code_without_functional,
+                add_to_value=True,
+                add_to_name=False,
+                add_to_value_variables=False,
+                inplace=True,
+                already_added_ok=True,
             )
 
-    return all_repository_static_var_lines, all_repository_dynamic_var_lines
+    return all_repository_var_lines
 
 
 if __name__ == "__main__":
@@ -365,45 +509,49 @@ if __name__ == "__main__":
         required=False,
         default=False,
     )
+    parser.add_argument(
+        "--keep_repository_variables",
+        type=string_to_boolean,
+        required=False,
+        default=True,
+    )
 
     args = parser.parse_args()
 
-    shared_static_variables_lines = EnvFile(
-        path=".github/variables/static_variables.env"
-    ).read_variables_lines()
-    shared_dynamic_variables_lines = EnvFile(
-        path=".github/variables/dynamic_variables.env"
-    ).read_variables_lines()
+    shared_variables_lines = YamlEnvFile.read_file(
+        file_path=".github/variables/variables.yaml"
+    ).to_variables_lines()
 
     main_repository = Repository(name=args.repository_name)
-    if main_repository.has_all_env_files():
-        (
-            repository_static_variables_lines,
-            repository_dynamic_variables_lines,
-        ) = get_static_and_dynamic_var_lines(
-            repository=main_repository, add_namespace=False
+
+    if main_repository.has_yaml_env_file():
+        repository_variables_lines = get_all_repository_var_lines(
+            repository=main_repository,
+            add_namespace=False,
+            add_namespace_to_name_of_multi_instance_resource=True,
+            variables_to_which_not_add_namespace=set(
+                shared_var_line.name for shared_var_line in shared_variables_lines
+            ),
         )
     else:
-        repository_static_variables_lines = []
-        repository_dynamic_variables_lines = []
+        repository_variables_lines = []
         logger.warning(
-            f"the repositories {main_repository.name} have none of the files "
-            f"{main_repository.static_env_file_path} and "
-            f"{main_repository.dynamic_env_file_path} "
+            f"the repository {main_repository.name} has no file "
+            f"{main_repository.yaml_env_file_path} "
             f"needed to load variables"
         )
 
     shared_variables_lines_names = set(
-        shared_var_line.name
-        for shared_var_line in shared_static_variables_lines
-        + shared_dynamic_variables_lines
+        shared_var_line.name for shared_var_line in shared_variables_lines
     )
-    all_variables_lines = (
-        shared_static_variables_lines
-        + repository_static_variables_lines
-        + shared_dynamic_variables_lines
-        + repository_dynamic_variables_lines
-    )
+    all_variables_lines = shared_variables_lines + repository_variables_lines
+    if not args.keep_repository_variables:
+        all_variables_lines = [
+            var_line
+            for var_line in all_variables_lines
+            if not var_line.is_a_repository_variable()
+        ]
+
     if args.discard_shared_variables:
         all_variables_lines = [
             var_line
@@ -426,6 +574,7 @@ if __name__ == "__main__":
             tf_var_line = VariableLine(line=variable_line.line)
             tf_var_line.name = f"TF_VAR_{tf_var_line.name.lower()}"
             tf_var_lines.append(tf_var_line)
+
         all_variables_lines += tf_var_lines
 
     for variable_line in all_variables_lines:

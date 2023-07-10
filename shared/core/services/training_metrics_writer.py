@@ -18,6 +18,16 @@ class MetricsWriter:
         self.location = location
         self.timeout = timeout
 
+    @property
+    def project_id(self) -> str:
+        return self.big_query_client.project
+
+    @property
+    def project_id_dot_dataset_name(self) -> str:
+        # we explicitly create a variable {PROJECT_ID}.{DATASET_NAME}
+        # rather than calling it DATASET_NAME, which is confusing
+        return f"{self.project_id}.{self.dataset_name}"
+
     @staticmethod
     def _load_job_config_from_schema(
         schema: List[bigquery.SchemaField],
@@ -29,7 +39,7 @@ class MetricsWriter:
 
     def get_or_create_dataset(self) -> bigquery.Dataset:
         # noinspection PyTypeChecker
-        dataset = bigquery.Dataset(self.dataset_name)
+        dataset = bigquery.Dataset(dataset_ref=self.project_id_dot_dataset_name)
         dataset.location = self.location
 
         return self.big_query_client.create_dataset(
@@ -50,7 +60,7 @@ class MetricsWriter:
 
         self.big_query_client.load_table_from_json(
             json_rows=[training_metrics.dict()],
-            destination=f"{self.dataset_name}."
+            destination=f"{self.project_id_dot_dataset_name}."
             f"{training_metrics.__bigquery_tablename__}",
             job_config=self._load_job_config_from_schema(
                 training_metrics.to_big_query_fields()

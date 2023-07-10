@@ -37,11 +37,11 @@ jobs:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      people_counting_functional_env_file_artifact_name: ${{ steps.upload_people_counting_functional_variables.outputs.env_file_artifact_name }}
+      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
-      - name: upload_people_counting_functional_variables
-        id: upload_people_counting_functional_variables
+      - name: upload_variables
+        id: upload_variables
         uses: ./.github/actions/upload_variables
 
   people_counting_functional:
@@ -51,5 +51,15 @@ jobs:
       build: true
       deploy: true
       do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_functional_env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+    secrets: inherit
+
+  object_detection_functional:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/object_detection_functional.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit

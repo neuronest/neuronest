@@ -1,9 +1,6 @@
 variable "state_bucket" {
   type = string
 }
-variable "repository_name" {
-  type = string
-}
 variable "image_name" {
   type = string
 }
@@ -23,6 +20,9 @@ variable "model_instantiator_host" {
   type = string
 }
 variable "object_detection_model_name" {
+  type = string
+}
+variable "cloud_run_name" {
   type = string
 }
 variable "cloud_run_memory" {

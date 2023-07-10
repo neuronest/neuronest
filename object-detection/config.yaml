@@ -2,9 +2,10 @@ project_id: '${oc.env:PROJECT_ID}'
 region: '${oc.env:REGION}'
 service_account: '${oc.env:SERVICE_ACCOUNT_EMAIL}'
 name: 'object-detection'
+package_name: '${oc.env:PACKAGE_NAME}'
 
 model:
-  name: '${oc.env:PACKAGE_NAME}'
+  name: '${oc.env:MODEL_NAME}'
   inner_model_type: "ultralytics/yolov5"
   inner_model_name: "yolov5x6"
   image_width: 400
@@ -30,7 +31,10 @@ serving_deployment:
   max_replica_count: 1
 
 bigquery:
-  dataset: '${project_id}.${model.name}_training'
+  dataset:
+    name: '${model.name}_training'
+    forbidden_characters: ['-']
+    replacement_characters_of_forbidden_characters: ['_']
 
 storage:
   models_bucket_name: '${name}-models'

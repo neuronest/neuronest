@@ -25,16 +25,18 @@ RUN apt -qqy update  \
         x264 \
         zip
 
+ARG REPOSITORY_NAME
+ARG PACKAGE_NAME
+ARG MODEL_NAME
 ARG ROOT_DIRECTORY="/app"
-ARG REPOSITORY_NAME="object-detection"
-ARG PACKAGE_NAME="object_detection"
 ARG SHARED_REPOSITORY_NAME="shared"
 ARG POETRY_VERSION="1.3.2"
 
 ENV PIP_ROOT_USER_ACTION=ignore
-ENV ROOT_DIRECTORY=$ROOT_DIRECTORY
 ENV REPOSITORY_NAME=$REPOSITORY_NAME
 ENV PACKAGE_NAME=$PACKAGE_NAME
+ENV MODEL_NAME=$MODEL_NAME
+ENV ROOT_DIRECTORY=$ROOT_DIRECTORY
 ENV SHARED_REPOSITORY_NAME=$SHARED_REPOSITORY_NAME
 ENV POETRY_VERSION=$POETRY_VERSION
 
@@ -90,8 +92,6 @@ RUN cp -r \
     config.yaml \
     $MODEL_PACKAGE_NAME
 
-COPY $MODEL_PATH $LOCAL_MODEL_PATH
-
 WORKDIR $MODEL_PACKAGE_PATH
 
 # create torchserve configuration file
@@ -105,22 +105,26 @@ EXPOSE 7081
 
 RUN mkdir -p $MODEL_STORE_NAME
 
+COPY $MODEL_PATH $LOCAL_MODEL_PATH
+
 # create model archive file packaging model artifacts and dependencies
 RUN torch-model-archiver -f \
-  --model-name=$PACKAGE_NAME \
+  --model-name=$MODEL_NAME \
   --version=1.0 \
   --serialized-file=$LOCAL_MODEL_PATH \
   --handler=model_handler.py \
   --extra-files=modules,config.py,config.yaml \
   --export-path=$MODEL_STORE_NAME
 
-RUN zip -ur $MODEL_STORE_NAME/$PACKAGE_NAME.mar models \
-  && zip -ur $MODEL_STORE_NAME/$PACKAGE_NAME.mar utils
+ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
+
+RUN zip -ur $TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH models \
+  && zip -ur $TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH utils
 
 # run Torchserve HTTP serve to respond to prediction requests
 ENTRYPOINT torchserve \
     --start \
     --ts-config=config.properties \
-    --models $PACKAGE_NAME=$PACKAGE_NAME.mar \
+    --models $MODEL_NAME=$MODEL_NAME.mar \
     --model-store $MODEL_STORE_NAME \
     && tail -f /dev/null  # to prevent docker exit, as torchserve runs in background
