@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import abc
 import json
+import logging
 from enum import Enum
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 import requests
 
-from core.auth import generate_identity_token
+from core.auth import generate_identity_token, get_credentials
 
 
 class Protocol(str, Enum):
@@ -24,17 +25,32 @@ class Protocol(str, Enum):
 
 
 class APIClient(abc.ABC):
-    def __init__(self, key_path: str, host: str, root: str, ssl: bool = True):
+    def __init__(self, host: str, root: str, key_path: Optional[str], ssl: bool = True):
         self.key_path = key_path
         self.host = host
         self.root = root
         self.protocol_with_host = self._build_host_with_protocol(host=host, ssl=ssl)
         self.endpoint = f"{self.protocol_with_host}{root}"
+        self.credentials = get_credentials(key_path=self.key_path)
 
     @staticmethod
     def _build_host_with_protocol(host: str, ssl: bool) -> str:
-        parsed_host = urlparse(host)
         constructed_protocol = Protocol.from_ssl(ssl=ssl)
+        # Check if the host already contains a protocol
+        # If it does, we detect it and avoid rebuilding it
+        # This is important to prevent conflicts with the ssl flag (True or False)
+        if any(
+            host.startswith(f"{protocol}://")
+            for protocol in [Protocol.HTTP, Protocol.HTTPS]
+        ):
+            if not host.startswith(constructed_protocol):
+                logging.warning(
+                    f"A host with protocol {constructed_protocol} was requested, "
+                    f"but the host {host} has a conflicting protocol already present"
+                )
+            return host
+
+        parsed_host = urlparse(host)
 
         if parsed_host.scheme == "":
             return f"{constructed_protocol}://{host}"
@@ -51,7 +67,6 @@ class APIClient(abc.ABC):
         identity_token = generate_identity_token(
             key_path=self.key_path, target_audience=self.protocol_with_host
         )
-
         return {"Authorization": f"Bearer {identity_token}"}
 
     # noinspection PyMethodMayBeStatic

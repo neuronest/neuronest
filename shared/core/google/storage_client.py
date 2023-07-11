@@ -22,12 +22,15 @@ logger = logging.getLogger(__name__)
 
 
 class StorageClient:
-    def __init__(self, key_path: Optional[str] = None):
+    def __init__(
+        self, key_path: Optional[str] = None, project_id: Optional[str] = None
+    ):
         self.client = (
             storage.Client()
             if key_path is None
             else storage.Client.from_service_account_json(key_path)
         )
+        self.project_id = project_id
 
     @staticmethod
     def generate_gs_link(bucket_name: str, blob_name: str) -> GSPath:
@@ -189,7 +192,11 @@ class StorageClient:
         :param source_blob_name: The source blob name.
         :param destination_file_name: The local destination file.
         """
-        os.makedirs(os.path.dirname(destination_file_name), exist_ok=True)
+        # Handle the case where the destination_file_name is a standalone filename,
+        # such as "test.jpg", which indicates downloading to the working directory
+        # level. dir variable is then an empty string, and os.makedirs(dir) fails
+        if path_dirname_destination_file_name := os.path.dirname(destination_file_name):
+            os.makedirs(path_dirname_destination_file_name, exist_ok=True)
         bucket: Bucket = self.client.bucket(bucket_name)
         blob = bucket.blob(source_blob_name)
         try:
@@ -248,6 +255,8 @@ class StorageClient:
         :return: The blob found content as NumPy array image.
         """
         raw_image = self.download_blob(bucket_name, blob_name)
+        # fixme: replace with from # pylint: disable=W0511
+        #  core.serialization.image import image_from_binary  # pylint: disable=W0511
         image = cv.imdecode(np.frombuffer(raw_image, np.uint8), cv.IMREAD_UNCHANGED)
 
         if image is None:

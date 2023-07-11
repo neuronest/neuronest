@@ -1,6 +1,8 @@
 import os
 from typing import Tuple
 
+from core.google.storage_client import StorageClient
+from core.path import GSPath
 from core.routes.people_counting import routes
 from core.schemas import people_counting as schemas
 from core.tools import maybe_async
@@ -14,7 +16,7 @@ from people_counting.config import config
 from people_counting.people_counter import PeopleCounter
 
 resource_name = os.path.splitext(os.path.basename(__file__))[0]
-router = APIRouter(prefix=f"/{resource_name}", tags=[resource_name])
+router = APIRouter(prefix=f"/{routes.PeopleCounter.prefix}", tags=[resource_name])
 
 
 def count_people_and_make_video_from_local_path(
@@ -37,7 +39,7 @@ def count_people_and_make_video_from_local_path(
 # so that fastapi does not place the path operation function in a thread,
 # which is a problem when showing the video
 @router.post(
-    routes.count_people_and_make_video,
+    routes.PeopleCounter.count_people_and_make_video,
     status_code=status.HTTP_201_CREATED,
 )
 @maybe_async(config.general.enable_video_showing)
@@ -48,19 +50,25 @@ def count_people_and_make_video(
     collection_of_people_counter_output: firestore.CollectionReference = Depends(
         dependencies.get_firestore_results_collection
     ),
-    bucket_of_videos_to_count: storage.Bucket = Depends(
-        dependencies.get_bucket_of_videos_to_count
-    ),
     bucket_of_counted_videos: storage.Bucket = Depends(
         dependencies.get_bucket_of_counted_videos
     ),
+    storage_client: StorageClient = Depends(dependencies.get_storage_client),
 ) -> schemas.PeopleCounterOutput:
+    input_of_people_counter.data.storage_path = GSPath(
+        input_of_people_counter.data.storage_path
+    )
     video_to_count_local_path = os.path.basename(
         input_of_people_counter.data.storage_path
     )
-    bucket_of_videos_to_count.blob(
-        input_of_people_counter.data.storage_path
-    ).download_to_filename(video_to_count_local_path)
+    # bucket_of_videos_to_count.blob(
+    #     input_of_people_counter.data.storage_path
+    # ).download_to_filename(video_to_count_local_path)
+    storage_client.download_blob_to_file(
+        bucket_name=input_of_people_counter.data.storage_path.bucket,
+        source_blob_name=input_of_people_counter.data.storage_path.blob_name,
+        destination_file_name=video_to_count_local_path,
+    )
     (
         counting_statistics,
         counted_video_local_path,

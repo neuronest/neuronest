@@ -38,6 +38,10 @@ on:
         required: false
         type: string
         default: 'true'
+      run_integration_tests:
+        required: false
+        type: string
+        default: 'true'
       env_file_artifact_name:
         required: false
         type: string
@@ -75,7 +79,7 @@ env:
 jobs:
   run_base_terraform:
     runs-on: ubuntu-latest
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') }}
     container: google/cloud-sdk
     outputs:
@@ -145,7 +149,7 @@ jobs:
     name: deploy_with_training_image
     runs-on: ubuntu-latest
     needs: get_training_images
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
     container: google/cloud-sdk
     outputs:
@@ -185,7 +189,7 @@ jobs:
       - get_training_images
       - get_base_project_builder_sa_key
     runs-on: ubuntu-latest
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     defaults:
       run:
@@ -236,7 +240,7 @@ jobs:
       - get_base_project_builder_sa_key
       - train
     runs-on: ubuntu-latest
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     outputs:
       dockerhub_serving_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
@@ -274,7 +278,7 @@ jobs:
       - get_base_project_builder_sa_key
       - build_test_push_serving_image
     runs-on: ubuntu-latest
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     defaults:
       run:
@@ -302,7 +306,7 @@ jobs:
       - get_training_images
       - get_base_project_builder_sa_key
     runs-on: ubuntu-latest
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ inputs.model_instantiator_url != '' && (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     defaults:
       run:
@@ -334,3 +338,25 @@ jobs:
       - id: undeploy_and_remove_last_model_version_and_redeploy_if_test_integration_has_failed
         if: ${{ failure() && steps.test_integration.conclusion == 'failure' }}
         run: python -m object_detection.cli --actions undeploy remove_last_model_version deploy
+
+  run_integration_tests:
+    name: run_integration_tests
+    runs-on: ubuntu-latest
+    needs: build_test_push
+    # If the workflow isn't called, inputs are blank and job should NOT run
+    if: ${{ (inputs.do_post_deployment == 'true' && inputs.run_integration_tests == 'true') && !failure() }}
+    container:
+      image: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - uses: ./.github/actions/run_linters_tests
+        with:
+          image_name: ${{ needs.build_test_push.outputs.dockerhub_image_name }}
+          run_linters: 'false'
+          run_unit_tests: 'false'
+          run_integration_tests: 'true'
+          environment_variables: -e PEOPLE_COUNTING_URL=${{ (inputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }}

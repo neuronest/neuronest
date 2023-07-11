@@ -89,6 +89,8 @@ runs:
       uses: ./.github/actions/run_linters_tests
       with:
         image_name: ${{ env.DOCKERHUB_IMAGE_NAME }}:$GITHUB_RUN_ID
+        run_unit_tests: true
+        run_integration_tests: false
 
     - run: docker push $GCP_IMAGE_NAME:$GITHUB_RUN_ID && docker push $GCP_IMAGE_NAME:latest
       shell: bash
