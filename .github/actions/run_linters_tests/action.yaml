@@ -78,29 +78,10 @@ runs:
 
         shell: bash
       - run: |
-#          docker exec \
-#            --workdir $MONO_REPOSITORY_PATH \
-#            $CONTAINER_ID \
-#            /bin/bash -c "
-#              # to handle detected dubious ownership git issue
-#              git config --global --add safe.directory $MONO_REPOSITORY_PATH \
-#              && source ./.github/functions/install_terraform.sh \
-#              && install_terraform \
-#              && cd $REPOSITORY_NAME \
-#              && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
-#              && pip install -r requirements.txt \
-#              && cd $MONO_REPOSITORY_PATH \
-#              && pre-commit install \
-#              && pre-commit run \
-#                --show-diff-on-failure \
-#                --files $REPOSITORY_NAME/**/* \
-#              && pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv
-#          "
           docker exec \
             --workdir ${{ steps.set_container_mono_repository_path.outputs.value }} \
             ${{ steps.run_background_container.outputs.container_id }} \
             /bin/bash -c ${{ steps.set_run_linters_tests_cmd.outputs.value }}
         shell: bash
-      # - run: docker rm -f $CONTAINER_ID
       - run: docker rm -f ${{ steps.run_background_container.outputs.container_id }}
         shell: bash
