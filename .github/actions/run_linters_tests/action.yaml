@@ -40,14 +40,13 @@ runs:
             --global \
             --add safe.directory ${{ steps.set_container_mono_repository_path.outputs.value }} \
           && cd $REPOSITORY_NAME \
-          && poetry export \
+          && pip install poetry && poetry export \
             --without-hashes \
             --with dev -f requirements.txt \
             --output requirements.txt \
           && pip install -r requirements.txt \
           && cd ${{ steps.set_container_mono_repository_path.outputs.value }} \
-          && source ./.github/functions/install_terraform.sh \
-          && install_terraform \
+          && source ./.github/functions/install_terraform.sh && install_terraform \
           && pre-commit install \
           && pre-commit run \
             --show-diff-on-failure \
