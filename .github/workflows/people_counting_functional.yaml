@@ -181,16 +181,16 @@ jobs:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: people_counting_url
 
-#  post_deploy_people_counting:
-#    needs: [deploy_people_counting_functional, upload_variables_of_called_workflows]
-#    uses: ./.github/workflows/people_counting.yaml
-#    with:
-#      build: false
-#      deploy: false
-#      do_post_deployment: true
-#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
-#      people_counting_url: ${{ needs.deploy_people_counting_functional.outputs.people_counting_url }}
-#    secrets: inherit
+  post_deploy_people_counting:
+    needs: [deploy_people_counting_functional, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/people_counting.yaml
+    with:
+      build: false
+      deploy: false
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
+      people_counting_url: ${{ needs.deploy_people_counting_functional.outputs.people_counting_url }}
+    secrets: inherit
 #
 #  post_deploy_object_detection:
 #    # the job in the needs section is necessary to recover its output
