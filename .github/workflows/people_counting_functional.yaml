@@ -189,56 +189,55 @@ jobs:
       deploy: false
       do_post_deployment: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
-      people_counting_url: ${{ needs.deploy_people_counting_functional.outputs.people_counting_url }}
     secrets: inherit
-#
-#  post_deploy_object_detection:
-#    # the job in the needs section is necessary to recover its output
-#    needs:
-#      - run_base_terraform
-#      - deploy_people_counting_functional
-#      - build_test_push_object_detection
-#      - upload_variables_of_called_workflows
-#    uses: ./.github/workflows/object_detection.yaml
-#    with:
-#      build: false
-#      deploy: false
-#      do_post_deployment: true
-#      gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
-#      dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
-#      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
-#      model_instantiator_url: ${{ needs.deploy_people_counting_functional.outputs.object_detection_model_instantiator_url }}
-#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
-#    secrets: inherit
-#
-#  post_deploy_model_instantiator:
-#    needs: [deploy_people_counting_functional, upload_variables_of_called_workflows]
-#    uses: ./.github/workflows/model_instantiator.yaml
-#    with:
-#      build: false
-#      deploy: false
-#      do_post_deployment: true
-#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
-#    secrets: inherit
-#
-#  run_integration_tests:
-#    runs-on: ubuntu-latest
-#    needs:
-#      - post_deploy_people_counting
-#      - post_deploy_object_detection
-#      - post_deploy_model_instantiator
-#    container: google/cloud-sdk
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: ./.github/actions/set_variables_gcloud_auth
-#        with:
-#          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-#          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-#      - uses: ./.github/actions/run_linters_tests
-#        with:
-#          image: python:3.9.17-slim-buster
-#          run_integration_tests: true
-#          run_unit_tests: false
-#        env:
-#          environment_variables: PEOPLE_COUNTING_URL=https://pc-webapp-bhx24dnmnq-ew.a.run.app
-#          # environment_variables: PEOPLE_COUNTING_URL=${{ needs.deploy_people_counting_functional.outputs.people_counting_url }}
+
+  post_deploy_object_detection:
+    # the job in the needs section is necessary to recover its output
+    needs:
+      - run_base_terraform
+      - deploy_people_counting_functional
+      - build_test_push_object_detection
+      - upload_variables_of_called_workflows
+    uses: ./.github/workflows/object_detection.yaml
+    with:
+      build: false
+      deploy: false
+      do_post_deployment: true
+      gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
+      dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
+      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+      model_instantiator_url: ${{ needs.deploy_people_counting_functional.outputs.object_detection_model_instantiator_url }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
+    secrets: inherit
+
+  post_deploy_model_instantiator:
+    needs: [deploy_people_counting_functional, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/model_instantiator.yaml
+    with:
+      build: false
+      deploy: false
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
+    secrets: inherit
+
+  run_integration_tests:
+    runs-on: ubuntu-latest
+    needs:
+      - post_deploy_people_counting
+      - post_deploy_object_detection
+      - post_deploy_model_instantiator
+    container: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - uses: ./.github/actions/run_linters_tests
+        with:
+          image: python:3.9.17-slim-buster
+          run_integration_tests: true
+          run_unit_tests: false
+        env:
+          environment_variables: PEOPLE_COUNTING_URL=https://pc-webapp-bhx24dnmnq-ew.a.run.app
+          # environment_variables: PEOPLE_COUNTING_URL=${{ needs.deploy_people_counting_functional.outputs.people_counting_url }}
