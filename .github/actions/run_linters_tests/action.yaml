@@ -37,7 +37,7 @@ runs:
       - run: |
           # handle detected dubious ownership git issue
           run_linters_tests_cmd="
-          git config \
+          apt update && apt install -y git && git config \
             --global \
             --add safe.directory ${{ steps.set_container_mono_repository_path.outputs.value }} \
           && cd $REPOSITORY_NAME \
@@ -66,7 +66,7 @@ runs:
               && pytest -x -n auto $REPOSITORY_NAME/tests/integration_tests -vv
             "
           fi
-          
+          echo "run_linters_tests_cmd=$run_linters_tests_cmd"
           docker exec \
             --workdir ${{ steps.set_container_mono_repository_path.outputs.value }} \
             ${{ steps.run_background_container.outputs.container_id }} \
