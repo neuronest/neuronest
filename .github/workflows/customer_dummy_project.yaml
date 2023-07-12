@@ -44,15 +44,15 @@ jobs:
         id: upload_variables
         uses: ./.github/actions/upload_variables
 
-  people_counting_functional:
-    needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/people_counting_functional.yaml
-    with:
-      build: true
-      deploy: true
-      do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
-    secrets: inherit
+#  people_counting_functional:
+#    needs: upload_variables_of_called_workflows
+#    uses: ./.github/workflows/people_counting_functional.yaml
+#    with:
+#      build: true
+#      deploy: true
+#      do_post_deployment: true
+#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+#    secrets: inherit
 
   object_detection_functional:
     needs: upload_variables_of_called_workflows
