@@ -141,46 +141,46 @@ jobs:
       do_post_deployment: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
-#
-#  deploy_people_counting_functional:
-#    needs:
-#     - build_test_push_people_counting
-#     - build_test_push_object_detection
-#     - build_test_push_model_instantiator
-#     - run_base_terraform
-#    outputs:
-#      object_detection_model_instantiator_url: ${{ steps.get_object_detection_model_instantiator_url.outputs.value }}
-#      people_counting_url: ${{ steps.get_people_counting_url.outputs.value }}
-#    runs-on: ubuntu-latest
-#    container:
-#      image: google/cloud-sdk
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: ./.github/actions/set_variables_gcloud_auth
-#        with:
-#          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-#          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-#      - id: run_people_counting_functional_terraform
-#        uses: ./.github/actions/run_terraform
-#        with:
-#          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
-#          workspace: ${{ env.REPOSITORY_NAME }}
-#        # favor environment variables that show up clearly in github logs over
-#        # var-like arguments to make it easier to reproduce errors locally
-#        env:
-#          TF_VAR_object_detection_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
-#          TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
-#      - id: get_object_detection_model_instantiator_url
-#        uses: ./.github/actions/get_terraform_output
-#        with:
-#          workspace: ${{ env.REPOSITORY_NAME }}
-#          terraform_output_name: object_detection_model_instantiator_url
-#      - id: get_people_counting_url
-#        uses: ./.github/actions/get_terraform_output
-#        with:
-#          workspace: ${{ env.REPOSITORY_NAME }}
-#          terraform_output_name: people_counting_url
-#
+
+  deploy_people_counting_functional:
+    needs:
+     - build_test_push_people_counting
+     - build_test_push_object_detection
+     - build_test_push_model_instantiator
+     - run_base_terraform
+    outputs:
+      object_detection_model_instantiator_url: ${{ steps.get_object_detection_model_instantiator_url.outputs.value }}
+      people_counting_url: ${{ steps.get_people_counting_url.outputs.value }}
+    runs-on: ubuntu-latest
+    container:
+      image: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - id: run_people_counting_functional_terraform
+        uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+          workspace: ${{ env.REPOSITORY_NAME }}
+        # favor environment variables that show up clearly in github logs over
+        # var-like arguments to make it easier to reproduce errors locally
+        env:
+          TF_VAR_object_detection_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
+          TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
+      - id: get_object_detection_model_instantiator_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: object_detection_model_instantiator_url
+      - id: get_people_counting_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: people_counting_url
+
 #  post_deploy_people_counting:
 #    needs: [deploy_people_counting_functional, upload_variables_of_called_workflows]
 #    uses: ./.github/workflows/people_counting.yaml
