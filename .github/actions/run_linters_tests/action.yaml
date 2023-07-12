@@ -38,33 +38,33 @@ runs:
         run: |
           # handle detected dubious ownership git issue
           run_linters_tests_cmd="
-            git config \
-              --global \
-              --add safe.directory ${{ steps.set_container_mono_repository_path.outputs.value }} \
-            && cd $REPOSITORY_NAME \
-            && poetry export \
-              --without-hashes \
-              --with dev -f requirements.txt \
-              --output requirements.txt \
-            && pip install -r requirements.txt \
-            && cd ${{ steps.set_container_mono_repository_path.outputs.value }} \
-            && source ./.github/functions/install_terraform.sh \
-            && install_terraform \
-            && pre-commit install \
-            && pre-commit run \
-              --show-diff-on-failure \
-              --files $REPOSITORY_NAME/**/* \
+          git config \
+            --global \
+            --add safe.directory ${{ steps.set_container_mono_repository_path.outputs.value }} \
+          && cd $REPOSITORY_NAME \
+          && poetry export \
+            --without-hashes \
+            --with dev -f requirements.txt \
+            --output requirements.txt \
+          && pip install -r requirements.txt \
+          && cd ${{ steps.set_container_mono_repository_path.outputs.value }} \
+          && source ./.github/functions/install_terraform.sh \
+          && install_terraform \
+          && pre-commit install \
+          && pre-commit run \
+            --show-diff-on-failure \
+            --files $REPOSITORY_NAME/**/*
           "
           # run unit tests
-          if [[ ${{ inputs.run_unit_tests }} == "true" ]]; then
+          if [[ "${{ inputs.run_unit_tests }}" == "true" ]]; then
             run_linters_tests_cmd+="
-              && pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv \
+              && pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv
             "
           fi
           # run integration tests
-          if [[ ${{ inputs.run_integration_tests }} == "true" ]]; then
+          if [[ "${{ inputs.run_integration_tests }}" == "true" ]]; then
             run_linters_tests_cmd+="
-              && pytest -x -n auto $REPOSITORY_NAME/tests/integration_tests -vv \
+              && pytest -x -n auto $REPOSITORY_NAME/tests/integration_tests -vv
             "
           fi
           
