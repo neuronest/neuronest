@@ -34,8 +34,7 @@ runs:
         shell: bash
       - run: docker cp ./. ${{ steps.run_background_container.outputs.container_id }}:${{ steps.set_container_mono_repository_path.outputs.value }}
         shell: bash
-      - id: set_run_linters_tests_cmd
-        run: |
+      - run: |
           # handle detected dubious ownership git issue
           run_linters_tests_cmd="
           git config \
@@ -68,14 +67,10 @@ runs:
             "
           fi
           
-          echo "value=$run_linters_tests_cmd" >> $GITHUB_OUTPUT
-
-        shell: bash
-      - run: |
           docker exec \
             --workdir ${{ steps.set_container_mono_repository_path.outputs.value }} \
             ${{ steps.run_background_container.outputs.container_id }} \
-            /bin/bash -c ${{ steps.set_run_linters_tests_cmd.outputs.value }}
+            /bin/bash -c $run_linters_tests_cmd
         shell: bash
       - run: docker rm -f ${{ steps.run_background_container.outputs.container_id }}
         shell: bash
