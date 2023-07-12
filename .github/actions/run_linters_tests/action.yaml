@@ -20,10 +20,10 @@ runs:
   using: "composite"
   steps:
       - id: set_container_mono_repository_path
-        run: echo "value"="/mono_repository" >> $GITHUB_OUTPUT
+        run: echo "value=/mono_repository" >> $GITHUB_OUTPUT
         shell: bash
       - id: set_container_google_application_credentials
-        run: echo "value"="/tmp/credentials.json >> $GITHUB_OUTPUT
+        run: echo "value=/tmp/credentials.json" >> $GITHUB_OUTPUT
         shell: bash
       - id: run_background_container
         run: |
@@ -32,12 +32,6 @@ runs:
         shell: bash
       - run: docker cp $GOOGLE_APPLICATION_CREDENTIALS ${{ steps.run_background_container.outputs.container_id }}:${{ steps.set_container_google_application_credentials.outputs.value }}
         shell: bash
-#      - run: |
-#          CONTAINER_ID=$(docker run -dit ${{ inputs.environment_variables }} --entrypoint /bin/bash ${{ inputs.image_name }})
-#          echo "CONTAINER_ID"="$CONTAINER_ID" >> $GITHUB_ENV
-#          echo "MONO_REPOSITORY_PATH"="/mono_repository" >> $GITHUB_ENV
-#        shell: bash
-      # - run: docker cp ./. $CONTAINER_ID:$MONO_REPOSITORY_PATH
       - run: docker cp ./. ${{ steps.run_background_container.outputs.container_id }}:${{ steps.set_container_mono_repository_path.outputs.value }}
         shell: bash
       - id: set_run_linters_tests_cmd

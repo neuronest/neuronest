@@ -69,6 +69,7 @@ jobs:
           # environment_variables: PEOPLE_COUNTING_URL=${{ needs.deploy_people_counting_functional.outputs.people_counting_url }}
 
   run_base_terraform:
+    needs: run_integration_testss
     runs-on: ubuntu-latest
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
