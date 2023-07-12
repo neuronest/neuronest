@@ -188,7 +188,6 @@ jobs:
       build: false
       deploy: false
       do_post_deployment: true
-      run_integration_tests: 'true'
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
       people_counting_url: ${{ needs.deploy_people_counting_functional.outputs.people_counting_url }}
     secrets: inherit
@@ -205,7 +204,6 @@ jobs:
       build: false
       deploy: false
       do_post_deployment: true
-      run_integration_tests: 'true'
       gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
       dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
@@ -220,7 +218,6 @@ jobs:
       build: false
       deploy: false
       do_post_deployment: true
-      run_integration_tests: 'true'
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
 
