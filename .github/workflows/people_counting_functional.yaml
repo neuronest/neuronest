@@ -121,17 +121,17 @@ jobs:
       do_post_deployment: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
     secrets: inherit
-#
-#  build_test_push_object_detection:
-#    needs: [run_base_terraform, upload_variables_of_called_workflows]
-#    uses: ./.github/workflows/object_detection.yaml
-#    with:
-#      build: true
-#      deploy: false
-#      do_post_deployment: false
-#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
-#    secrets: inherit
-#
+
+  build_test_push_object_detection:
+    needs: [run_base_terraform, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/object_detection.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
+    secrets: inherit
+
 #  build_test_push_model_instantiator:
 #    needs: [run_base_terraform, upload_variables_of_called_workflows]
 #    uses: ./.github/workflows/model_instantiator.yaml
