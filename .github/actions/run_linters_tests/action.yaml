@@ -65,7 +65,7 @@ runs:
           docker exec \
             --workdir ${{ steps.set_container_mono_repository_path.outputs.value }} \
             ${{ steps.run_background_container.outputs.container_id }} \
-            /bin/bash -c $run_linters_tests_cmd
+            /bin/bash -c "$run_linters_tests_cmd"
         shell: bash
       - run: docker rm -f ${{ steps.run_background_container.outputs.container_id }}
         shell: bash
