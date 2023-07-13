@@ -250,7 +250,7 @@ jobs:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - uses: ./.github/actions/run_linters_tests
         with:
-          image: python:3.9.17-slim-buster
+          image_name: python:3.9.17-slim-buster
           run_integration_tests: true
           run_unit_tests: false
           environment_variables: -e PEOPLE_COUNTING_URL=${{ needs.deploy_people_counting_functional.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }}
