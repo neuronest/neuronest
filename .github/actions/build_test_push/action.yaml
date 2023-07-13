@@ -68,10 +68,12 @@ runs:
       shell: bash
     - run: cp $REPOSITORY_NAME/Dockerfile $REPOSITORY_NAME/.dockerignore .
       shell: bash
-    - run: |
+    - id: build_image
+      run: |
         export DOCKER_BUILDKIT=0
         docker pull $DOCKERHUB_IMAGE_NAME:latest || true
         docker build \
+          --iidfile=image_id.txt \
           --cache-from $DOCKERHUB_IMAGE_NAME:latest \
           -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
           -t $DOCKERHUB_IMAGE_NAME:latest \
@@ -80,6 +82,9 @@ runs:
           $TARGET_ARGUMENTS \
           ${{ inputs.build_arguments }} \
           .
+        sha256_digest=$(cat image_id.txt | cut -d ":" -f 2)
+        echo "sha256_digest=$sha256_digest"
+        echo "sha256_digest=$sha256_digest" >> $GITHUB_OUTPUT
       shell: bash
 
     - run: docker push $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID && docker push $DOCKERHUB_IMAGE_NAME:latest
@@ -105,8 +110,12 @@ runs:
           -keep=${{ inputs.maximum_number_images_to_keep }}
 
     - id: dockerhub_output_step
-      run: echo "dockerhub_image_name=$DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+      # we prefer the sha256 to identify the image. The workflow id as identifier is
+      # subject to unexpected behaviors, collisions and other bugs if 2 jobs of the
+      # same workflow build the same image with different arguments and push the same
+      # IMAGE_NAME:TAG in GCP
+      run: echo "dockerhub_image_name=$DOCKERHUB_IMAGE_NAME@sha256:${{ steps.build_image.outputs.sha256_digest }}" >> $GITHUB_OUTPUT
       shell: bash
     - id: gcp_output_step
-      run: echo "gcp_image_name=$GCP_IMAGE_NAME:$GITHUB_RUN_ID" >> $GITHUB_OUTPUT
+      run: echo "gcp_image_name=$GCP_IMAGE_NAME@sha256:${{ steps.build_image.outputs.sha256_digest }}" >> $GITHUB_OUTPUT
       shell: bash
