@@ -2,15 +2,20 @@ from typing import Optional, Union
 
 from google.auth import default
 from google.auth.transport.requests import Request
+from google.oauth2 import id_token
 from google.oauth2.service_account import Credentials, IDTokenCredentials
 
 
 def _get_id_token_credentials(
-    key_path: str, target_audience: str
+    target_audience: str,
+    key_path: Optional[str] = None,
 ) -> IDTokenCredentials:
-    return IDTokenCredentials.from_service_account_file(
-        key_path, target_audience=target_audience
-    )
+    if key_path is not None:
+        return IDTokenCredentials.from_service_account_file(
+            key_path, target_audience=target_audience
+        )
+    # create IDTokenCredentials from current environment
+    return id_token.fetch_id_token_credentials(audience=target_audience)
 
 
 def _generate_token_from_credentials(
@@ -37,16 +42,12 @@ def get_credentials(
 def generate_identity_token(
     target_audience: str,
     key_path: Optional[str] = None,
-    token_uri: str = "https://oauth2.googleapis.com/token",
 ) -> str:
-    credentials: Credentials = get_credentials(key_path=key_path)
-    id_token_credentials = IDTokenCredentials(
-        signer=credentials.signer,
-        service_account_email=credentials.service_account_email,
-        target_audience=target_audience,
-        token_uri=token_uri,
+    return _generate_token_from_credentials(
+        credentials=_get_id_token_credentials(
+            target_audience=target_audience, key_path=key_path
+        )
     )
-    return _generate_token_from_credentials(credentials=id_token_credentials)
 
 
 def generate_access_token(key_path: str) -> str:
