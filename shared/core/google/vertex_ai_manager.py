@@ -65,12 +65,12 @@ class VertexAIManager:
             order_by="create_time desc",
         )
 
-    def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
+    def _get_all_endpoints_by_name(self, model_name: str) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
             location=self.location,
             credentials=self.credentials,
             project=self.project_id,
-            filter=f"display_name={self._model_to_endpoint_name(name)}",
+            filter=f"display_name={self._model_to_endpoint_name(model_name)}",
             order_by="create_time desc",
         )
 
