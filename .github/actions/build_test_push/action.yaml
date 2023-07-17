@@ -73,7 +73,6 @@ runs:
         export DOCKER_BUILDKIT=0
         docker pull $DOCKERHUB_IMAGE_NAME:latest || true
         docker build \
-          --iidfile=image_id.txt \
           --cache-from $DOCKERHUB_IMAGE_NAME:latest \
           -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
           -t $DOCKERHUB_IMAGE_NAME:latest \
@@ -82,7 +81,8 @@ runs:
           $TARGET_ARGUMENTS \
           ${{ inputs.build_arguments }} \
           .
-        sha256_digest=$(cat image_id.txt | cut -d ":" -f 2)
+        # sha256_digest=$(cat image_id.txt | cut -d ":" -f 2)
+        sha256_digest=$(docker inspect --format='{{index .RepoDigests 0}}' $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID | cut -d ":" -f 2)
         echo "sha256_digest=$sha256_digest"
         echo "sha256_digest=$sha256_digest" >> $GITHUB_OUTPUT
       shell: bash
