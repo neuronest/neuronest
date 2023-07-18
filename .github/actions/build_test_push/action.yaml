@@ -81,8 +81,9 @@ runs:
           $TARGET_ARGUMENTS \
           ${{ inputs.build_arguments }} \
           .
-        # sha256_digest=$(cat image_id.txt | cut -d ":" -f 2)
-        sha256_digest=$(docker inspect --format='{{index .RepoDigests 0}}' $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID | cut -d ":" -f 2)
+        sha256=$(docker inspect --format='{{.Id}}' $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID | cut -d ":" -f 2)
+        docker tag $DOCKERHUB_IMAGE_NAME:latest $DOCKERHUB_IMAGE_NAME:$sha256_digest
+        docker tag $GCP_IMAGE_NAME:latest $GCP_IMAGE_NAME:$sha256_digest
         echo "sha256_digest=$sha256_digest"
         echo "sha256_digest=$sha256_digest" >> $GITHUB_OUTPUT
       shell: bash
@@ -114,8 +115,8 @@ runs:
       # subject to unexpected behaviors, collisions and other bugs if 2 jobs of the
       # same workflow build the same image with different arguments and push the same
       # IMAGE_NAME:TAG in GCP
-      run: echo "dockerhub_image_name=$DOCKERHUB_IMAGE_NAME@sha256:${{ steps.build_image.outputs.sha256_digest }}" >> $GITHUB_OUTPUT
+      run: echo "dockerhub_image_name=$DOCKERHUB_IMAGE_NAME:${{ steps.build_image.outputs.sha256_digest }}" >> $GITHUB_OUTPUT
       shell: bash
     - id: gcp_output_step
-      run: echo "gcp_image_name=$GCP_IMAGE_NAME@sha256:${{ steps.build_image.outputs.sha256_digest }}" >> $GITHUB_OUTPUT
+      run: echo "gcp_image_name=$GCP_IMAGE_NAME:${{ steps.build_image.outputs.sha256_digest }}" >> $GITHUB_OUTPUT
       shell: bash
