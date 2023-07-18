@@ -187,6 +187,7 @@ jobs:
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: people_counting_url
+      - run: echo "people_counting_url=${{ steps.get_people_counting_url.outputs.value }}"
 
   post_deploy_people_counting:
     needs: [deploy_people_counting_functional, upload_variables_of_called_workflows]
