@@ -89,7 +89,10 @@ runs:
         echo "sha256_digest=$sha256_digest" >> $GITHUB_OUTPUT
       shell: bash
 
-    - run: docker push $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID && docker push $DOCKERHUB_IMAGE_NAME:latest
+    - run: |
+      docker push $DOCKERHUB_IMAGE_NAME:latest
+      docker push $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID
+      docker push $DOCKERHUB_IMAGE_NAME:${{ steps.build_image.outputs.sha256_digest }}
       shell: bash
 
     - name: Run linters and tests
@@ -99,7 +102,10 @@ runs:
         run_unit_tests: true
         run_integration_tests: false
 
-    - run: docker push $GCP_IMAGE_NAME:$GITHUB_RUN_ID && docker push $GCP_IMAGE_NAME:latest
+    - run: |
+        docker push $GCP_IMAGE_NAME:latest
+        docker push $GCP_IMAGE_NAME:$GITHUB_RUN_ID
+        docker push $GCP_IMAGE_NAME:${{ steps.build_image.outputs.sha256_digest }}
       shell: bash
 
     - name: Clean old docker images
