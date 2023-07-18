@@ -24,3 +24,7 @@ runs:
           echo "terraform_output_value=$(terraform output ${{ inputs.terraform_output_name }} | tr -d '"')" >> $GITHUB_OUTPUT
           echo "${{ inputs.terraform_output_name }}=$(terraform output ${{ inputs.terraform_output_name }} | tr -d '"')"
       shell: bash
+
+    - id: echo_terraform_output
+      run: echo "${{ inputs.terraform_output_name }}=${{ steps.get_terraform_output.outputs.terraform_output_value }}"
+      shell: bash
