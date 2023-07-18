@@ -38,12 +38,15 @@ class BaseImageName(PartImageName):
 
 class Tag(PartImageName):
     """
-    Example: '565726992'
+    Examples:
+        '565726992'
+        'f92caee9107a288aa535166334e599e69b0d87119e8d0d147b66877e8f1d3890'
     """
 
     @classmethod
     def is_valid(cls, name: str) -> bool:
-        regex = r"(^latest$|^\d+$)"
+        # sha256 type image identifier and workflow identifier tags are allowed
+        regex = r"(^latest$|^[0-9a-z]+$)"
 
         return super().is_valid(name) and bool(re.fullmatch(regex, name))
 
