@@ -52,15 +52,17 @@ runs:
             --show-diff-on-failure \
             --files $REPOSITORY_NAME/**/* \
           "
+          
           # run unit tests
           if [[ "${{ inputs.run_unit_tests }}" == "true" ]]; then
             run_linters_tests_cmd+="&& pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv"
           fi
+          
           # run integration tests
           if [[ "${{ inputs.run_integration_tests }}" == "true" ]]; then
             run_linters_tests_cmd+="&& pytest -x -n auto $REPOSITORY_NAME/tests/integration_tests -vv"
           fi
-          echo "run_linters_tests_cmd=$run_linters_tests_cmd"
+          
           docker exec \
             --workdir ${{ steps.set_container_mono_repository_path.outputs.value }} \
             ${{ steps.run_background_container.outputs.container_id }} \

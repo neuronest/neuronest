@@ -50,15 +50,25 @@ class ObjectDetectionClient:
             # If the endpoint is well deployed, but with a model that is not that of
             # the largest version id, the function does not return the endpoint and
             # does an instantiate, which does not make sense in a "_try_get_endpoint"
-            # function " which should just return the deployed endpoint
-            # model = self.vertex_ai_manager.get_model_by_name(
-            #     self.model_name, version_aliases=("default",)
-            # )
-            #
-            # if endpoint is not None and self.vertex_ai_manager.is_model_deployed(
-            #     model=model, endpoint=endpoint
-            # ):
-            #     return endpoint
+            # function which should just return the deployed endpoint
+            # the logic could be replaced by this block, which returns the endpoint
+            # if it is deployed
+
+            # def endpoint_is_deployed(endpoint: aiplatform.Endpoint) -> bool:
+            #     try:
+            #         endpoint_gca_resource: proto.Message = endpoint.gca_resource
+            #     except RuntimeError:
+            #         return False
+            #     return len(list(endpoint_gca_resource.deployed_models)) >= 1
+
+            model = self.vertex_ai_manager.get_model_by_name(
+                self.model_name, version_aliases=("default",)
+            )
+
+            if endpoint is not None and self.vertex_ai_manager.is_model_deployed(
+                model=model, endpoint=endpoint
+            ):
+                return endpoint
 
             self._create_endpoint()
             time.sleep(self.endpoint_retry_wait_time)
