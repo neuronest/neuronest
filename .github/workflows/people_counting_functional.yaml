@@ -50,22 +50,22 @@ env:
   REPOSITORY_NAME: people-counting-functional
 
 jobs:
-#  run_integration_testss:
-#    runs-on: ubuntu-latest
-#    container: google/cloud-sdk
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: ./.github/actions/set_variables_gcloud_auth
-#        with:
-#          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-#          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-#      - uses: ./.github/actions/run_linters_tests
-#        with:
-#          image_name: python:3.9.17-slim-buster
-#          run_integration_tests: true
-#          run_unit_tests: false
-#          environment_variables: -e PEOPLE_COUNTING_URL=https://pc-webapp-bhx24dnmnq-ew.a.run.app -e PROJECT_ID=${{ env.PROJECT_ID }}
-#          # environment_variables: PEOPLE_COUNTING_URL=${{ needs.deploy_people_counting_functional.outputs.people_counting_url }}
+  run_integration_testss:
+    runs-on: ubuntu-latest
+    container: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - uses: ./.github/actions/run_linters_tests
+        with:
+          image_name: python:3.9.17-slim-buster
+          run_integration_tests: true
+          run_unit_tests: false
+          environment_variables: -e PEOPLE_COUNTING_URL=https://pc-webapp-bhx24dnmnq-ew.a.run.app -e PROJECT_ID=${{ env.PROJECT_ID }}
+          # environment_variables: PEOPLE_COUNTING_URL=${{ needs.deploy_people_counting_functional.outputs.people_counting_url }}
 
   run_base_terraform:
     runs-on: ubuntu-latest
@@ -189,6 +189,7 @@ jobs:
           terraform_output_name: people_counting_url
       - run: echo "people_counting_url=${{ steps.get_people_counting_url.outputs.value }}"
 
+
   post_deploy_people_counting:
     needs: [deploy_people_counting_functional, upload_variables_of_called_workflows]
     # If the workflow isn't called, inputs are blank and job should run
@@ -240,6 +241,7 @@ jobs:
       - post_deploy_people_counting
       - post_deploy_object_detection
       - post_deploy_model_instantiator
+      - deploy_people_counting_functional
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     container: google/cloud-sdk
