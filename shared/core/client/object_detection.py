@@ -44,8 +44,6 @@ class ObjectDetectionClient:
 
         while total_waited_time < self.endpoint_retry_timeout:
             endpoint = self.vertex_ai_manager.get_endpoint_by_name(self.model_name)
-            if self.vertex_ai_manager.endpoint_is_deployed(endpoint):
-                return endpoint
             # model as described is the registry model that has the largest version_id.
             # If the endpoint is well deployed, but with a model that is not that of
             # the largest version id, the function does not return the endpoint and
