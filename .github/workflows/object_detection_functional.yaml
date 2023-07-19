@@ -64,7 +64,7 @@ jobs:
           image_name: python:3.9.17-slim-buster
           run_integration_tests: true
           run_unit_tests: false
-          environment_variables: -e MODEL_NAME=${{ env.MODEL_NAME }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}
+          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}
 
   run_base_terraform:
     runs-on: ubuntu-latest
