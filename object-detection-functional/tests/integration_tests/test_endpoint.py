@@ -41,7 +41,7 @@ def test_endpoint_inference(vertex_ai_manager: VertexAIManager, image: np.ndarra
         key_path=GOOGLE_APPLICATION_CREDENTIALS, host="fake_model_instantiator_host"
     )
     vertex_ai_manager = VertexAIManager(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, location=REGION
+        key_path=GOOGLE_APPLICATION_CREDENTIALS, location=REGION, project_id=PROJECT_ID
     )
     object_detection_client = ObjectDetectionClient(
         vertex_ai_manager=vertex_ai_manager,
