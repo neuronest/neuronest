@@ -1,0 +1,54 @@
+name: customer_dummy_project
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/people_counting_functional.yaml
+      - .github/actions/**
+      - .github/variables/**
+      - .pre-commit-config.yaml
+      - shared/**
+      - model-instantiator/**
+      - video-comparator/**
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/people_counting_functional.yaml
+      - .github/actions/**
+      - .github/variables/**
+      - .pre-commit-config.yaml
+      - shared/**
+      - model-instantiator/**
+      - video-comparator/**
+  workflow_dispatch:
+
+env:
+  REPOSITORY_NAME: customer-dummy-project
+
+jobs:
+  upload_variables_of_called_workflows:
+    runs-on: ubuntu-latest
+    container: google/cloud-sdk
+    outputs:
+      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: upload_variables
+        id: upload_variables
+        uses: ./.github/actions/upload_variables
+
+  object_detection_functional:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/abstract/online_prediction_model_functional.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      online_prediction_model_repository: object-detection-functional
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+    secrets: inherit

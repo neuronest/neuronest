@@ -3,9 +3,9 @@ module "object_detection_functional" {
   project_id                                              = var.project_id
   region                                                  = var.region
   timezone                                                = var.timezone
-  object_detection_service_account_name                   = var.object_detection_service_account_name
-  object_detection_models_bucket                          = var.object_detection_models_bucket
-  object_detection_model_name                             = var.object_detection_model_name
+  online_prediction_model_service_account_name            = var.object_detection_service_account_name
+  online_prediction_model_models_bucket                   = var.object_detection_models_bucket
+  online_prediction_model_model_name                      = var.object_detection_model_name
   model_instantiator_image_name                           = var.object_detection_model_instantiator_image_name
   model_instantiator_webapp_service_account_name          = var.object_detection_model_instantiator_webapp_service_account_name
   model_instantiator_cloud_scheduler_service_account_name = var.object_detection_model_instantiator_cloud_scheduler_service_account_name

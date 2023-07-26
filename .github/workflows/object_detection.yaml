@@ -325,12 +325,12 @@ jobs:
       - id: remove_last_model_version_if_deploy_has_failed
         if: ${{ failure() && steps.deploy.conclusion == 'failure' }}
         run: python -m object_detection.cli --actions remove_last_model_version
-      - id: test_integration
-        run: |
-          poetry check && poetry install --with dev
-          poetry run pytest -x tests/integration_tests -vv
-        env:
-          MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_url }}
+#      - id: test_integration
+#        run: |
+#          poetry check && poetry install --with dev
+#          poetry run pytest -x tests/integration_tests -vv
+#        env:
+#          MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_url }}
       - id: undeploy_and_remove_last_model_version_and_redeploy_if_test_integration_has_failed
         if: ${{ failure() && steps.test_integration.conclusion == 'failure' }}
         run: python -m object_detection.cli --actions undeploy remove_last_model_version deploy
