@@ -44,7 +44,7 @@ jobs:
 
   object_detection_functional:
     needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/abstract/online_prediction_model_functional.yaml
+    uses: ./.github/workflows/abstract_online_prediction_model_functional.yaml
     with:
       build: true
       deploy: true
