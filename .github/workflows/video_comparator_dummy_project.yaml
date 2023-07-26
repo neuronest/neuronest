@@ -52,3 +52,4 @@ jobs:
       online_prediction_model_repository: object-detection-functional
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit
+
