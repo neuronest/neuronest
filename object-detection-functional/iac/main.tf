@@ -36,9 +36,9 @@ module "object_detection_functional" {
   region     = var.region
   timezone   = var.timezone
 
-  online_prediction_model_service_account_name = var.object_detection_service_account_name
-  online_prediction_model_models_bucket        = var.object_detection_models_bucket
-  online_prediction_model_model_name           = var.object_detection_model_name
+  object_detection_service_account_name = var.object_detection_service_account_name
+  object_detection_models_bucket        = var.object_detection_models_bucket
+  object_detection_model_name           = var.object_detection_model_name
 
   model_instantiator_image_name                           = var.model_instantiator_image_name
   model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name

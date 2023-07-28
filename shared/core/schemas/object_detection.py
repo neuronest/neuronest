@@ -3,6 +3,8 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, validator
 
+from core.schemas.abstract import online_prediction_model
+
 PREDICTION_COLUMNS = [
     "x_min",
     "y_min",
@@ -19,8 +21,8 @@ class Device(str, Enum):
     CUDA = "cuda"
 
 
-class InputSampleSchema(BaseModel):
-    data: str
+class InputSampleSchema(online_prediction_model.InputSampleSchema):
+    # data: str
     labels_to_predict: Optional[List[str]] = None
     confidence_threshold: Optional[float] = None
     overridden_image_width: Optional[int] = None
@@ -44,8 +46,8 @@ class InputSampleSchema(BaseModel):
         }
 
 
-class InputSchema(BaseModel):
-    samples: List[InputSampleSchema]
+class InputSchema(online_prediction_model.InputSchema):
+    # samples: List[InputSampleSchema]
 
     @validator("samples")
     # pylint: disable=no-self-argument
