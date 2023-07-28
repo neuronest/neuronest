@@ -61,7 +61,7 @@ RUN poetry config virtualenvs.in-project true \
     && poetry check  \
     && poetry install
 
-COPY $REPOSITORY_NAME/config.yaml .
+# COPY $REPOSITORY_NAME/config.yaml .
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 
