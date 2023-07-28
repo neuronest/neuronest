@@ -22,24 +22,22 @@ on:
       online_prediction_model_repository:
         required: true
         type: string
-#env:
-#  REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
+
+env:
+  REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
 
 jobs:
-  set_up_repository_variables:
+  set_up_non_functional_repository_name:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      repository_name: ${{ env.REPOSITORY_NAME }}
-      non_functional_repository_name: ${{ env.NON_FUNCTIONAL_REPOSITORY_NAME }}
+      value: ${{ steps.set_up_non_functional_repository_name.outputs.value }}
     steps:
-      - run: echo REPOSITORY_NAME=${{ inputs.online_prediction_model_repository }} >> $GITHUB_ENV
-        shell: bash
-      - run: echo NON_FUNCTIONAL_REPOSITORY_NAME=${REPOSITORY_NAME%-functional} >> $GITHUB_ENV
+      - id: set_up_non_functional_repository_name
+        run: echo value=${REPOSITORY_NAME%-functional} >> $GITHUB_OUTPUT
         shell: bash
 
   run_base_terraform:
-    needs: set_up_repository_variables
     runs-on: ubuntu-latest
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
@@ -55,7 +53,6 @@ jobs:
         uses: ./.github/actions/run_base_terraform
 
   upload_variables_of_called_workflows:
-    needs: set_up_repository_variables
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
@@ -89,14 +86,14 @@ jobs:
 
 
   build_test_push_online_prediction_model:
-    needs: [set_up_repository_variables, run_base_terraform, upload_variables_of_called_workflows]
+    needs: [set_up_non_functional_repository_name, run_base_terraform, upload_variables_of_called_workflows]
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: true
       deploy: false
       do_post_deployment: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
-      online_prediction_model_repository: ${{ needs.set_up_repository_variables.outputs.non_functional_repository_name }}
+      online_prediction_model_repository: ${{ needs.set_up_non_functional_repository_name.outputs.value }}
     secrets: inherit
 
   build_test_push_model_instantiator:
@@ -147,6 +144,7 @@ jobs:
       - deploy_online_prediction_model_functional
       - build_test_push_online_prediction_model
       - upload_variables_of_called_workflows
+      - set_up_non_functional_repository_name
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: false
@@ -157,7 +155,7 @@ jobs:
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       model_instantiator_url: ${{ needs.deploy_online_prediction_model_functional.outputs.model_instantiator_url }}
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
-      online_prediction_model_repository: ${{ needs.set_up_repository_variables.outputs.non_functional_repository_name }}
+      online_prediction_model_repository: ${{ needs.set_up_non_functional_repository_name.outputs.value }}
     secrets: inherit
 
   post_deploy_model_instantiator:

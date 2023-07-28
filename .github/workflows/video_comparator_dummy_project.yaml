@@ -7,6 +7,8 @@ on:
       - develop
     paths:
       - .github/workflows/video_comparator_dummy_project.yaml
+      - .github/workflows/abstract_online_prediction_model_functional.yaml
+      - .github/workflows/abstract_online_prediction_model.yaml
       - .github/actions/**
       - .github/variables/**
       - .pre-commit-config.yaml
