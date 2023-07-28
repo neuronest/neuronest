@@ -22,12 +22,24 @@ on:
       online_prediction_model_repository:
         required: true
         type: string
-env:
-  REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
+#env:
+#  REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
 
 jobs:
+  set_up_repository_variables:
+    runs-on: ubuntu-latest
+    container: google/cloud-sdk
+    outputs:
+      repository_name: ${{ env.REPOSITORY_NAME }}
+      non_functional_repository_name: ${{ env.NON_FUNCTIONAL_REPOSITORY_NAME }}
+    steps:
+      - run: echo REPOSITORY_NAME=${{ inputs.online_prediction_model_repository }} >> $GITHUB_ENV
+        shell: bash
+      - run: echo NON_FUNCTIONAL_REPOSITORY_NAME=${REPOSITORY_NAME%-functional} >> $GITHUB_ENV
+        shell: bash
 
   run_base_terraform:
+    needs: set_up_repository_variables
     runs-on: ubuntu-latest
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
@@ -43,6 +55,7 @@ jobs:
         uses: ./.github/actions/run_base_terraform
 
   upload_variables_of_called_workflows:
+    needs: set_up_repository_variables
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
@@ -52,14 +65,14 @@ jobs:
       - uses: actions/checkout@v3
       - id: set_repository_variables_prefix
         run: |
-          repository_name=${{ env.REPOSITORY_NAME }}
+          repository_variables_prefix=${{ env.REPOSITORY_NAME }}
           # remove "-functional" part if exists
-          repository_name=${repository_name%-functional}
+          repository_variables_prefix=${repository_variables_prefix%-functional}
           # replace - by _
-          repository_name=${repository_name//-/_}
+          repository_variables_prefix=${repository_variables_prefix//-/_}
           # uppercase
-          repository_name=${repository_name^^}
-          echo "value=$repository_name" >> $GITHUB_OUTPUT
+          repository_variables_prefix=${repository_variables_prefix^^}
+          echo "value=${repository_variables_prefix}" >> $GITHUB_OUTPUT
         shell: bash
       - name: upload_online_prediction_model_variables
         id: upload_online_prediction_model_variables
@@ -76,15 +89,14 @@ jobs:
 
 
   build_test_push_online_prediction_model:
-    needs: [run_base_terraform, upload_variables_of_called_workflows]
+    needs: [set_up_repository_variables, run_base_terraform, upload_variables_of_called_workflows]
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: true
       deploy: false
       do_post_deployment: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
-      # env not available in workflow call, must use inputs section instead of ${{ env.REPOSITORY_NAME }} variable
-      online_prediction_model_repository: ${{ inputs.online_prediction_model_repository }}
+      online_prediction_model_repository: ${{ needs.set_up_repository_variables.outputs.non_functional_repository_name }}
     secrets: inherit
 
   build_test_push_model_instantiator:
@@ -145,8 +157,7 @@ jobs:
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       model_instantiator_url: ${{ needs.deploy_online_prediction_model_functional.outputs.model_instantiator_url }}
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
-      # env not available in workflow call, must use inputs section instead of ${{ env.REPOSITORY_NAME }} variable
-      online_prediction_model_repository: ${{ inputs.online_prediction_model_repository }}
+      online_prediction_model_repository: ${{ needs.set_up_repository_variables.outputs.non_functional_repository_name }}
     secrets: inherit
 
   post_deploy_model_instantiator:
