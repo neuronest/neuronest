@@ -20,9 +20,8 @@ on:
         type: string
         default: ''
       online_prediction_model_repository:
-        required: false
+        required: true
         type: string
-        default: ''
 env:
   REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
 
@@ -77,7 +76,7 @@ jobs:
       deploy: false
       do_post_deployment: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
-      online_prediction_model_repository: ${{ env.REPOSITORY_NAME }}
+      online_prediction_model_repository: ${{ inputs.online_prediction_model_repository }}
     secrets: inherit
 
   build_test_push_model_instantiator:
@@ -138,7 +137,7 @@ jobs:
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       model_instantiator_url: ${{ needs.deploy_online_prediction_model_functional.outputs.model_instantiator_url }}
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
-      online_prediction_model_repository: ${{ env.REPOSITORY_NAME }}
+      online_prediction_model_repository: ${{ inputs.online_prediction_model_repository }}
     secrets: inherit
 
   post_deploy_model_instantiator:
