@@ -50,15 +50,22 @@ jobs:
       model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
-      - id: set_upper_repository_name
+      - id: set_repository_variables_prefix
         run: |
           repository_name=${{ env.REPOSITORY_NAME }}
-          echo "value=${repository_name^^}" >> $GITHUB_OUTPUT
+          # remove "-functional" part if exists
+          repository_name=${repository_name%-functional}
+          # replace - by _
+          repository_name=${repository_name//-/_}
+          # uppercase
+          repository_name=${repository_name^^}
+          echo "value=$repository_name" >> $GITHUB_OUTPUT
+        shell: bash
       - name: upload_online_prediction_model_variables
         id: upload_online_prediction_model_variables
         uses: ./.github/actions/upload_variables
         with:
-          variable_prefix_to_filter_on: ${{ steps.set_upper_repository_name.outputs.value }}
+          variable_prefix_to_filter_on: ${{ steps.set_repository_variables_prefix.outputs.value }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - name: upload_model_instantiator_variables
         id: upload_model_instantiator_variables
@@ -76,6 +83,7 @@ jobs:
       deploy: false
       do_post_deployment: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
+      # env not available in workflow call, must use inputs section instead of ${{ env.REPOSITORY_NAME }} variable
       online_prediction_model_repository: ${{ inputs.online_prediction_model_repository }}
     secrets: inherit
 
@@ -137,6 +145,7 @@ jobs:
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       model_instantiator_url: ${{ needs.deploy_online_prediction_model_functional.outputs.model_instantiator_url }}
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
+      # env not available in workflow call, must use inputs section instead of ${{ env.REPOSITORY_NAME }} variable
       online_prediction_model_repository: ${{ inputs.online_prediction_model_repository }}
     secrets: inherit
 
