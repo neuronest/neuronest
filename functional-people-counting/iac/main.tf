@@ -42,6 +42,7 @@ module "functional_people_counting" {
   people_counting_videos_to_count_bucket       = var.people_counting_videos_to_count_bucket
   people_counting_counted_videos_bucket        = var.people_counting_counted_videos_bucket
   people_counting_model_instantiator_host      = var.people_counting_model_instantiator_host
+  people_counting_object_detection_model_name  = var.people_counting_object_detection_model_name
   people_counting_cloud_run_name               = var.people_counting_cloud_run_name
   people_counting_cloud_run_memory             = var.people_counting_cloud_run_memory
   people_counting_cloud_run_cpu                = var.people_counting_cloud_run_cpu
