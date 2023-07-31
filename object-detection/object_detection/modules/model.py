@@ -19,9 +19,10 @@ class ObjectDetectionModel(OnlinePredictionModel):
         # model_extension: str = ".pt",
         # retrieve_remote_model: bool = False,
     ):
-        super().__init__(*args, **kwargs)
+        print()
         self.model_type = model_type
         self.model_name = model_name
+        super().__init__(*args, **kwargs)
         # self.model_extension = model_extension
         #
         # self._model: Optional[nn.Module] = None
@@ -38,10 +39,10 @@ class ObjectDetectionModel(OnlinePredictionModel):
     # @abstractmethod
     # def __call__(self, *args, **kwargs) -> List[pd.DataFrame]:
     #     raise NotImplementedError
-
+    #
     # def _load_hub_pretrained_model(self):
     #     return torch.hub.load(self.model_type, self.model_name, pretrained=True)
-
+    #
     def _retrieve_remote_model(self):
         return torch.hub.load(self.model_type, self.model_name, pretrained=True)
 

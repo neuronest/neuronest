@@ -1,9 +1,8 @@
 import logging
 from typing import List, Optional
 
-import yaml
-
-# from omegaconf import OmegaConf
+import pkg_resources
+from omegaconf import OmegaConf
 from pydantic import BaseModel, validator
 
 logging.basicConfig(level="INFO")
@@ -79,13 +78,17 @@ class Config(BaseModel):
 
     @classmethod
     def read_yaml_file(cls, file_path: str):
-        with open(file_path, "r") as self_reader:
-            yaml_data = yaml.safe_load(self_reader)
-        return cls.parse_obj(yaml_data)
+        return cls.parse_obj(
+            OmegaConf.to_container(cfg=OmegaConf.load(file_path), resolve=True)
+        )
 
 
 # cfg = OmegaConf.load("config.yaml")
-cfg = Config.read_yaml_file("core/packages/online_prediction_model/config.yaml")
+cfg = Config.read_yaml_file(
+    pkg_resources.resource_filename(
+        "core", "packages/abstract/online_prediction_model/config.yaml"
+    )
+)
 
 # for forbidden_character, replacement_character in zip(
 #     cfg.bigquery.dataset.forbidden_characters,

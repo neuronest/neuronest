@@ -9,11 +9,11 @@ from enum import Enum
 from typing import Dict, Optional, Tuple, Type
 
 from google.cloud import aiplatform
-from omegaconf import DictConfig
 
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import VertexAIManager
+from core.packages.abstract.online_prediction_model.config import Config
 from core.packages.abstract.online_prediction_model.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
@@ -43,18 +43,18 @@ class RunnableAction(abc.ABC):
     kwargs: Tuple[str, ...] = tuple()
 
     @staticmethod
-    def build_training_config(config: DictConfig) -> TrainingConfig:
-        return TrainingConfig(**config.training)
+    def build_training_config(config: Config) -> TrainingConfig:
+        return TrainingConfig(**config.training.dict())
 
     @staticmethod
     def build_serving_model_upload_config(
-        config: DictConfig,
+        config: Config,
     ) -> ServingModelUploadConfig:
-        return ServingModelUploadConfig(**config.serving_model_upload)
+        return ServingModelUploadConfig(**config.serving_model_upload.dict())
 
     @staticmethod
-    def build_serving_deployment_config(config: DictConfig) -> ServingDeploymentConfig:
-        return ServingDeploymentConfig(**config.serving_deployment)
+    def build_serving_deployment_config(config: Config) -> ServingDeploymentConfig:
+        return ServingDeploymentConfig(**config.serving_deployment.dict())
 
     @classmethod
     @abc.abstractmethod
@@ -78,7 +78,7 @@ class LaunchTrainingJobAction(RunnableAction):
     # pylint: disable=arguments-differ
     def run(
         cls,
-        config: DictConfig,
+        config: Config,
         vertex_ai_manager: VertexAIManager,
         model_name: str,
         model_gspath: GSPath,
@@ -139,7 +139,7 @@ class UploadModelAction(RunnableAction):
     # pylint: disable=arguments-differ
     def run(
         cls,
-        config: DictConfig,
+        config: Config,
         vertex_ai_manager: VertexAIManager,
         model_name: str,
         **kwargs,
@@ -247,7 +247,7 @@ class ActionFactory:
         return cls._actions[action]
 
 
-def main(config: DictConfig):
+def main(config: Config):
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-gspath", dest="model_gspath")
     parser.add_argument(

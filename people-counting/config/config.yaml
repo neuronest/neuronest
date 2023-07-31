@@ -1,6 +1,6 @@
-project_id: '${oc.env:PROJECT_ID}'
-region: '${oc.env:REGION}'
-name: '${oc.env:REPOSITORY_NAME}'
+project_id: '${oc.env:PROJECT_ID,null}'
+region: '${oc.env:REGION,null}'
+name: '${oc.env:REPOSITORY_NAME,null}'
 
 general:
   verbosity: True

@@ -1,13 +1,13 @@
 name: 'model-instantiator'
 package_name: 'model_instantiator'
-project_id: '${oc.env:PROJECT_ID}'
-region: '${oc.env:REGION}'
+project_id: '${oc.env:PROJECT_ID,null}'
+region: '${oc.env:REGION,null}'
 
 firestore:
   deployment_status_collection_name: deployment-status
 
 job:
-  container_uri: '${oc.env:IMAGE_NAME}'
+  container_uri: '${oc.env:IMAGE_NAME,null}'
   cpu: '1.0'
   memory: '1Gi'
 
