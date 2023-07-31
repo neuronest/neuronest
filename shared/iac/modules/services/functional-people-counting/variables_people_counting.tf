@@ -1,3 +1,6 @@
+variable "object_detection_model_name" {
+  type = string
+}
 variable "people_counting_image_name" {
   type = string
 }
@@ -14,9 +17,6 @@ variable "people_counting_counted_videos_bucket" {
   type = string
 }
 variable "people_counting_model_instantiator_host" {
-  type = string
-}
-variable "people_counting_object_detection_model_name" {
   type = string
 }
 variable "people_counting_cloud_run_name" {

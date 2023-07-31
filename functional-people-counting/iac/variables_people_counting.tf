@@ -21,7 +21,7 @@ variable "people_counting_counted_videos_bucket" {
 variable "people_counting_model_instantiator_host" {
   type = string
 }
-variable "people_counting_object_detection_model_name" {
+variable "object_detection_model_name" {
   type = string
 }
 variable "people_counting_cloud_run_name" {

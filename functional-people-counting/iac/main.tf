@@ -42,25 +42,25 @@ module "functional_people_counting" {
   people_counting_videos_to_count_bucket       = var.people_counting_videos_to_count_bucket
   people_counting_counted_videos_bucket        = var.people_counting_counted_videos_bucket
   people_counting_model_instantiator_host      = var.people_counting_model_instantiator_host
-  people_counting_object_detection_model_name  = var.people_counting_object_detection_model_name
   people_counting_cloud_run_name               = var.people_counting_cloud_run_name
   people_counting_cloud_run_memory             = var.people_counting_cloud_run_memory
   people_counting_cloud_run_cpu                = var.people_counting_cloud_run_cpu
   people_counting_cloud_run_min_scale          = var.people_counting_cloud_run_min_scale
   people_counting_cloud_run_max_scale          = var.people_counting_cloud_run_max_scale
 
-  object_detection_service_account_name                                    = var.object_detection_service_account_name
-  object_detection_models_bucket                                           = var.object_detection_models_bucket
-  object_detection_model_name                                              = var.object_detection_model_name
-  object_detection_model_instantiator_image_name                           = var.object_detection_model_instantiator_image_name
-  object_detection_model_instantiator_webapp_service_account_name          = var.object_detection_model_instantiator_webapp_service_account_name
-  object_detection_model_instantiator_cloud_scheduler_service_account_name = var.object_detection_model_instantiator_cloud_scheduler_service_account_name
-  object_detection_model_instantiator_cloud_run_name                       = var.object_detection_model_instantiator_cloud_run_name
-  object_detection_model_instantiator_cloud_run_memory                     = var.object_detection_model_instantiator_cloud_run_memory
-  object_detection_model_instantiator_cloud_run_cpu                        = var.object_detection_model_instantiator_cloud_run_cpu
-  object_detection_model_instantiator_cloud_run_min_scale                  = var.object_detection_model_instantiator_cloud_run_min_scale
-  object_detection_model_instantiator_cloud_run_max_scale                  = var.object_detection_model_instantiator_cloud_run_max_scale
-  object_detection_model_instantiator_cloud_scheduler_job_name             = var.object_detection_model_instantiator_cloud_scheduler_job_name
-  object_detection_model_instantiator_cloud_scheduler_schedule             = var.object_detection_model_instantiator_cloud_scheduler_schedule
-  object_detection_model_instantiator_cloud_uninstantiate_route            = var.object_detection_model_instantiator_cloud_uninstantiate_route
+  object_detection_service_account_name = var.object_detection_service_account_name
+  object_detection_models_bucket        = var.object_detection_models_bucket
+  object_detection_model_name           = var.object_detection_model_name
+
+  model_instantiator_image_name                           = var.model_instantiator_image_name
+  model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name
+  model_instantiator_cloud_scheduler_service_account_name = var.model_instantiator_cloud_scheduler_service_account_name
+  model_instantiator_cloud_run_name                       = var.model_instantiator_cloud_run_name
+  model_instantiator_cloud_run_memory                     = var.model_instantiator_cloud_run_memory
+  model_instantiator_cloud_run_cpu                        = var.model_instantiator_cloud_run_cpu
+  model_instantiator_cloud_run_min_scale                  = var.model_instantiator_cloud_run_min_scale
+  model_instantiator_cloud_run_max_scale                  = var.model_instantiator_cloud_run_max_scale
+  model_instantiator_cloud_scheduler_job_name             = var.model_instantiator_cloud_scheduler_job_name
+  model_instantiator_cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
+  model_instantiator_cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
 }

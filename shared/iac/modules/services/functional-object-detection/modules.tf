@@ -25,4 +25,3 @@ module "model_instantiator" {
 
   cloud_scheduler_model_name = module.object_detection.model_name
 }
-

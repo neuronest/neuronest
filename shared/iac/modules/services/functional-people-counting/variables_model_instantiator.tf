@@ -1,7 +1,5 @@
-# default dummy value when running focusing on the base module
 variable "model_instantiator_image_name" {
-  type    = string
-  default = "model_instantiator_image_name_dummy"
+  type = string
 }
 variable "model_instantiator_webapp_service_account_name" {
   type = string
