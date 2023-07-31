@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import os
@@ -15,7 +17,7 @@ from pydantic import BaseModel
 sys.path.append("shared")
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
-SUFFIX_OF_FUNCTIONAL_REPOSITORIES = "-functional"
+FUNCTIONAL_REPOSITORIES_PREFIX = "functional-"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
@@ -38,6 +40,7 @@ def add_namespace_to_string(
         if namespace.endswith(binding_character):
             namespace_and_string_binding_character = binding_character
             namespace = namespace[:-1]
+
     if not string.startswith(namespace):
         string = f"{namespace}{namespace_and_string_binding_character}{string}"
     elif not already_added_ok:
@@ -367,7 +370,7 @@ class EnvFile:
 
 class Repository:
     VARIABLES_FILE_PATH = "iac/variables.yaml"
-    SUFFIX_OF_FUNCTIONAL_REPOSITORIES = SUFFIX_OF_FUNCTIONAL_REPOSITORIES
+    FUNCTIONAL_REPOSITORIES_PREFIX = FUNCTIONAL_REPOSITORIES_PREFIX
 
     def __init__(self, name: str):
         self.name = name
@@ -382,7 +385,7 @@ class Repository:
     def get_yaml_env_file(self) -> YamlEnvFile:
         return YamlEnvFile.read_file(self.yaml_env_file_path)
 
-    def get_dependency_repositories(self):
+    def get_dependency_repositories(self) -> List[Repository]:
         variable_name_value = {
             var_line.name: var_line.value
             for var_line in self.get_yaml_env_file().to_variables_lines()
@@ -399,21 +402,33 @@ class Repository:
                 Repository(name=dependency_repository)
                 for dependency_repository in dependency_repositories
             ]
+
         return []
 
-    def get_base_name_without_functional(self):
-        if self.name.endswith(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES):
-            return self.name[: -len(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES)]
+    def get_base_name_without_functional(self) -> str:
+        if self.name.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
+            return self.name[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
+
         return self.name
 
-    def get_base_code_without_functional(self):
-        code = [
+    def get_base_code_without_functional(self) -> str:
+        codes = [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
             if var_line.is_a_repository_code()
-        ][0].value
-        if code.endswith(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES):
-            return code[: -len(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES)]
+        ]
+
+        if len(codes) == 0:
+            raise ValueError("No repository code variable found")
+
+        if len(codes) > 1:
+            raise ValueError("Multiple repository code variables found")
+
+        code = codes[0].value
+
+        if code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
+            return code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
+
         return code
 
 
@@ -521,6 +536,9 @@ if __name__ == "__main__":
     shared_variables_lines = YamlEnvFile.read_file(
         file_path=".github/variables/variables.yaml"
     ).to_variables_lines()
+    shared_variables_lines_names = set(
+        shared_var_line.name for shared_var_line in shared_variables_lines
+    )
 
     main_repository = Repository(name=args.repository_name)
 
@@ -529,9 +547,7 @@ if __name__ == "__main__":
             repository=main_repository,
             add_namespace=False,
             add_namespace_to_name_of_multi_instance_resource=True,
-            variables_to_which_not_add_namespace=set(
-                shared_var_line.name for shared_var_line in shared_variables_lines
-            ),
+            variables_to_which_not_add_namespace=shared_variables_lines_names,
         )
     else:
         repository_variables_lines = []
@@ -541,9 +557,6 @@ if __name__ == "__main__":
             f"needed to load variables"
         )
 
-    shared_variables_lines_names = set(
-        shared_var_line.name for shared_var_line in shared_variables_lines
-    )
     all_variables_lines = shared_variables_lines + repository_variables_lines
     if not args.keep_repository_variables:
         all_variables_lines = [

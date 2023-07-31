@@ -6,7 +6,7 @@ on:
       - main
       - develop
     paths:
-      - .github/workflows/people_counting_functional.yaml
+      - .github/workflows/functional_people_counting.yaml
       - .github/actions/**
       - .github/variables/**
       - .pre-commit-config.yaml
@@ -19,7 +19,7 @@ on:
       - main
       - develop
     paths:
-      - .github/workflows/people_counting_functional.yaml
+      - .github/workflows/functional_people_counting.yaml
       - .github/actions/**
       - .github/variables/**
       - .pre-commit-config.yaml
@@ -44,9 +44,9 @@ jobs:
         id: upload_variables
         uses: ./.github/actions/upload_variables
 
-  people_counting_functional:
+  functional_people_counting:
     needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/people_counting_functional.yaml
+    uses: ./.github/workflows/functional_people_counting.yaml
     with:
       build: true
       deploy: true
@@ -54,9 +54,9 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit
 
-  object_detection_functional:
+  functional_object_detection:
     needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/object_detection_functional.yaml
+    uses: ./.github/workflows/functional_object_detection.yaml
     with:
       build: true
       deploy: true

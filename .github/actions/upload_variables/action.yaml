@@ -6,7 +6,7 @@ inputs:
     required: false
     default: 'true'
   variable_prefix_to_filter_on:
-    description: 'Prefix of variables to keep, for example if people-counting is built from people-counting-functional, we only keep the corresponding variables, prefixed PEOPLE_COUNTING'
+    description: 'Prefix of variables to keep, for example if people-counting is built from functional-people-counting, we only keep the corresponding variables, prefixed PEOPLE_COUNTING'
     required: false
     default: ''
   discard_shared_variables:

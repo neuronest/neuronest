@@ -30,8 +30,8 @@ module "base" {
   mono_repository_name                 = var.mono_repository_name
 }
 
-module "object_detection_functional" {
-  source     = "../../shared/iac/modules/services/object-detection-functional"
+module "functional_object_detection" {
+  source     = "../../shared/iac/modules/services/functional-object-detection"
   project_id = var.project_id
   region     = var.region
   timezone   = var.timezone

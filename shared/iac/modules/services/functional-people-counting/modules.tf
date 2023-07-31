@@ -1,5 +1,5 @@
-module "object_detection_functional" {
-  source                                                  = "../object-detection-functional"
+module "functional_object_detection" {
+  source                                                  = "../functional-object-detection"
   project_id                                              = var.project_id
   region                                                  = var.region
   timezone                                                = var.timezone
@@ -34,6 +34,6 @@ module "people_counting" {
   cloud_run_min_scale          = var.people_counting_cloud_run_min_scale
   cloud_run_max_scale          = var.people_counting_cloud_run_max_scale
 
-  model_instantiator_host     = module.object_detection_functional.model_instantiator_url
-  object_detection_model_name = module.object_detection_functional.model_name
+  model_instantiator_host     = module.functional_object_detection.model_instantiator_url
+  object_detection_model_name = module.functional_object_detection.model_name
 }

@@ -30,8 +30,8 @@ module "base" {
   mono_repository_name                 = var.mono_repository_name
 }
 
-module "people_counting_functional" {
-  source     = "../../shared/iac/modules/services/people-counting-functional"
+module "functional_people_counting" {
+  source     = "../../shared/iac/modules/services/functional-people-counting"
   project_id = var.project_id
   region     = var.region
   timezone   = var.timezone
