@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from google.cloud import bigquery
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 
 from core.google.storage_client import StorageClient
 from core.packages.abstract.online_prediction_model.modules.model import (
@@ -82,7 +82,7 @@ def main(
         model_name=config.model.name,
         training_duration=training_duration,
         metrics={},
-        parameters=OmegaConf.to_container(config),
+        parameters=config.dict(),
         model_path=model_directory,
         image_name=image_name,
     )
