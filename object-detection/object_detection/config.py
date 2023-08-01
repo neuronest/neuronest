@@ -8,6 +8,7 @@ from core.packages.abstract.online_prediction_model import config
 class Model(config.Model):
     inner_model_type: str
     inner_model_name: str
+    inner_model_tag: str
     image_width: int
 
 

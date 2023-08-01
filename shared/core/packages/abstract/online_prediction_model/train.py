@@ -70,7 +70,6 @@ def main(
         *online_prediction_model_training_args,
         **online_prediction_model_training_kwargs,
     )
-    image_name = ImageNameWithTag(os.environ["IMAGE_NAME"])
 
     storage_client = StorageClient()
 
@@ -78,6 +77,7 @@ def main(
         storage_client=storage_client, directory_path=model_directory
     )
 
+    image_name = ImageNameWithTag(os.environ["IMAGE_NAME"])
     training_metrics = TrainingMetrics(
         model_name=config.model.name,
         training_duration=training_duration,

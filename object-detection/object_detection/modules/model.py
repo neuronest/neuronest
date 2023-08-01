@@ -14,6 +14,7 @@ class ObjectDetectionModel(OnlinePredictionModel):
         self,
         model_type: str,
         model_name: str,
+        model_tag: str,
         *args,
         **kwargs,
         # model_extension: str = ".pt",
@@ -22,6 +23,7 @@ class ObjectDetectionModel(OnlinePredictionModel):
         print()
         self.model_type = model_type
         self.model_name = model_name
+        self.model_tag = model_tag
         super().__init__(*args, **kwargs)
         # self.model_extension = model_extension
         #
@@ -44,7 +46,9 @@ class ObjectDetectionModel(OnlinePredictionModel):
     #     return torch.hub.load(self.model_type, self.model_name, pretrained=True)
     #
     def _retrieve_remote_model(self):
-        return torch.hub.load(self.model_type, self.model_name, pretrained=True)
+        return torch.hub.load(
+            f"{self.model_type}:{self.model_tag}", self.model_name, pretrained=True
+        )
 
     def fit(self, *args, **kwargs):
         # pylint: disable=attribute-defined-outside-init

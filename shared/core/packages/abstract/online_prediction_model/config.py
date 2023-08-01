@@ -1,7 +1,6 @@
 import logging
 from typing import List, Optional
 
-import pkg_resources
 from omegaconf import OmegaConf
 from pydantic import BaseModel, validator
 
@@ -67,9 +66,9 @@ class Bigquery(BaseModel):
 class Config(BaseModel):
     project_id: str
     region: str
-    service_account: str
+    service_account: Optional[str]
     name: str
-    package_name: str
+    package_name: Optional[str]
     model: Model
     training: Training
     serving_model_upload: ServingModelUpload
@@ -82,13 +81,6 @@ class Config(BaseModel):
             OmegaConf.to_container(cfg=OmegaConf.load(file_path), resolve=True)
         )
 
-
-# cfg = OmegaConf.load("config.yaml")
-cfg = Config.read_yaml_file(
-    pkg_resources.resource_filename(
-        "core", "packages/abstract/online_prediction_model/config.yaml"
-    )
-)
 
 # for forbidden_character, replacement_character in zip(
 #     cfg.bigquery.dataset.forbidden_characters,

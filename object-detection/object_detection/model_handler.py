@@ -30,6 +30,7 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         self,
         inner_model_type: str,
         inner_model_name: str,
+        inner_model_tag: str,
         image_width: int,
         *args,
         **kwargs,
@@ -44,6 +45,7 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         #     self.device = device.value
         self.inner_model_type = inner_model_type
         self.inner_model_name = inner_model_name
+        self.inner_model_tag = inner_model_tag
         self.image_width = image_width
         # self._context = None
         # self.initialized = False
@@ -152,7 +154,9 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
 
     def initialize_new_model(self):
         return ObjectDetectionModel(
-            model_type=self.inner_model_type, model_name=self.inner_model_name
+            model_type=self.inner_model_type,
+            model_name=self.inner_model_name,
+            model_tag=self.inner_model_tag,
         )
 
     # def initialize(self, context: Context):

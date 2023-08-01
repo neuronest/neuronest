@@ -7,6 +7,7 @@ if __name__ == "__main__":
     model = ObjectDetectionModel(
         model_type=cfg.model.inner_model_type,
         model_name=cfg.model.inner_model_name,
+        model_tag=cfg.model.inner_model_tag,
         retrieve_remote_model=True,
     )
     train_main(online_prediction_model=model, config=cfg)
