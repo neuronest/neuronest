@@ -125,7 +125,8 @@ RUN torch-model-archiver -f \
   --handler=model_handler.py \
   --extra-files=$TEMP_PACKAGE_DIR \
   # --extra-files=modules,config.py,config.yaml \
-  --export-path=$MODEL_STORE_NAME \
+  --export-path=$MODEL_STORE_NAME
+
 RUN rm -rf $TEMP_PACKAGE_DIR
 
 ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar

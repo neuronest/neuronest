@@ -89,7 +89,9 @@ class ObjectDetectionModel(OnlinePredictionModel):
     #             blob_name=blob_name,
     #         )
     #
-    # def load(self, path: str) -> OnlinePredictionModel:
-    #     self._model = torch.load(path)
-    #
-    #     return self
+    def load(self, path: str) -> OnlinePredictionModel:
+        # loads in memory the project architecture of the model so that it is visible
+        # to the interpreter when loading the MODEL.pt
+        self._retrieve_remote_model()
+        self._model = torch.load(path)
+        return self
