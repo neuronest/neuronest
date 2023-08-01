@@ -33,8 +33,11 @@ class ObjectDetectionModel:
 
         return list(predictions.pandas().xyxy)
 
+    def _load_hub_model(self, pretrained: bool = False):
+        return torch.hub.load(self.model_type, self.model_name, pretrained=pretrained)
+
     def _load_hub_pretrained_model(self):
-        return torch.hub.load(self.model_type, self.model_name, pretrained=True)
+        return self._load_hub_model(pretrained=True)
 
     # pylint: disable=invalid-name
     def to(self, device: str):
@@ -69,6 +72,8 @@ class ObjectDetectionModel:
             )
 
     def load(self, path: str) -> ObjectDetectionModel:
+        # loads in memory the project architecture of the model so that it is visible
+        # to the interpreter when loading the MODEL.pt
+        self._load_hub_model(pretrained=False)
         self._model = torch.load(path)
-
         return self

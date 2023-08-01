@@ -79,11 +79,11 @@ ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
 RUN mkdir $MODEL_PACKAGE_NAME
 
-RUN mkdir tmp \
-    && wget -O master.zip https://github.com/ultralytics/yolov5/zipball/master \
-    && bsdtar --strip-components=1 -xvf master.zip -C tmp \
-    && mv tmp/models tmp/utils $MODEL_PACKAGE_NAME \
-    && rm -r master.zip tmp
+#RUN mkdir tmp \
+#    && wget -O master.zip https://github.com/ultralytics/yolov5/zipball/master \
+#    && bsdtar --strip-components=1 -xvf master.zip -C tmp \
+#    && mv tmp/models tmp/utils $MODEL_PACKAGE_NAME \
+#    && rm -r master.zip tmp
 
 RUN cp -r \
     $PACKAGE_NAME/model_handler.py  \
@@ -118,8 +118,8 @@ RUN torch-model-archiver -f \
 
 ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
 
-RUN zip -ur $TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH models \
-  && zip -ur $TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH utils
+#RUN zip -ur $TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH models \
+#  && zip -ur $TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH utils
 
 # run Torchserve HTTP serve to respond to prediction requests
 ENTRYPOINT torchserve \
