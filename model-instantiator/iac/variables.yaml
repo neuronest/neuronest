@@ -3,9 +3,10 @@ repository_variables:
   - REPOSITORY_NAME=model-instantiator
   - REPOSITORY_CODE=mi
   - PACKAGE_NAME=model_instantiator
-  - BASE_IMAGE_NAME=model-instantiator
   - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
 multi_instance_resource_names:
+  # docker image
+  - BASE_IMAGE_NAME=model-instantiator
   # service account names
   - WEBAPP_SERVICE_ACCOUNT_NAME=webapp
   - CLOUD_SCHEDULER_SERVICE_ACCOUNT_NAME=cloud-scheduler

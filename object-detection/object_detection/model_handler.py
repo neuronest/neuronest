@@ -10,6 +10,8 @@ from core.serialization.array import array_to_string
 from core.serialization.image import image_from_string
 from imutils import resize
 
+from object_detection.config import cfg
+
 from object_detection.modules.model import ObjectDetectionModel  # isort:skip
 
 # a relative import should be done here as this module is intended to be used with
@@ -28,11 +30,11 @@ logger = logging.getLogger(__name__)
 class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
     def __init__(
         self,
-        inner_model_type: str,
-        inner_model_name: str,
-        inner_model_tag: str,
-        image_width: int,
         *args,
+        inner_model_type: Optional[str] = None,
+        inner_model_name: Optional[str] = None,
+        inner_model_tag: Optional[str] = None,
+        image_width: Optional[int] = None,
         **kwargs,
         # device: Device = Device.CUDA,
     ):
@@ -43,10 +45,14 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         #     self.device = Device.CPU.value
         # else:
         #     self.device = device.value
-        self.inner_model_type = inner_model_type
-        self.inner_model_name = inner_model_name
-        self.inner_model_tag = inner_model_tag
-        self.image_width = image_width
+
+        # used with torchserve, torchserve has no way of knowing what values to pass
+        # for these arguments, so it does not pass anything and in this case we source
+        # ourselves explicitly in the config
+        self.inner_model_tag = inner_model_tag or cfg.model.inner_model_tag
+        self.inner_model_type = inner_model_type or cfg.model.inner_model_type
+        self.inner_model_name = inner_model_name or cfg.model.inner_model_name
+        self.image_width = image_width or cfg.model.image_width
         # self._context = None
         # self.initialized = False
         # self.model: Optional[OnlinePredictionModel] = None

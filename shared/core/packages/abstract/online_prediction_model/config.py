@@ -64,8 +64,8 @@ class Bigquery(BaseModel):
 
 
 class Config(BaseModel):
-    project_id: str
-    region: str
+    project_id: Optional[str]
+    region: Optional[str]
     service_account: Optional[str]
     name: str
     package_name: Optional[str]

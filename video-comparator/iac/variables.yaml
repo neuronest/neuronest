@@ -1,13 +1,14 @@
 repository_variables:
   # general repository
-  - REPOSITORY_NAME=object-detection
-  - REPOSITORY_CODE=od
+  - REPOSITORY_NAME=video-comparator
+  - REPOSITORY_CODE=vc
   - PACKAGE_NAME=video_comparator
-  - BASE_IMAGE_NAME=object-detection
   - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
 multi_instance_resource_names:
+  # docker image
+  - BASE_IMAGE_NAME=video-comparator
   # service account names
-  - SERVICE_ACCOUNT_NAME=online-prediction-model
+  - SERVICE_ACCOUNT_NAME=video-comparator
   # vertex
   - MODEL_NAME=model
   # storage

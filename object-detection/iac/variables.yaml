@@ -3,10 +3,11 @@ repository_variables:
   - REPOSITORY_NAME=object-detection
   - REPOSITORY_CODE=od
   - PACKAGE_NAME=object_detection
-  - BASE_IMAGE_NAME=object-detection
   - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
   - CONFIG_MODULE_PATH=${PACKAGE_NAME}/config.py
 multi_instance_resource_names:
+  # docker image
+  - BASE_IMAGE_NAME=object-detection
   # service account names
   - SERVICE_ACCOUNT_NAME=online-prediction-model
   # vertex

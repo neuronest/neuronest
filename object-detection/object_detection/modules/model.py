@@ -45,9 +45,11 @@ class ObjectDetectionModel(OnlinePredictionModel):
     # def _load_hub_pretrained_model(self):
     #     return torch.hub.load(self.model_type, self.model_name, pretrained=True)
     #
-    def _retrieve_remote_model(self):
+    def _retrieve_remote_model(self, pretrained: bool = True):
         return torch.hub.load(
-            f"{self.model_type}:{self.model_tag}", self.model_name, pretrained=True
+            f"{self.model_type}:{self.model_tag}",
+            self.model_name,
+            pretrained=pretrained,
         )
 
     def fit(self, *args, **kwargs):
@@ -92,6 +94,6 @@ class ObjectDetectionModel(OnlinePredictionModel):
     def load(self, path: str) -> OnlinePredictionModel:
         # loads in memory the project architecture of the model so that it is visible
         # to the interpreter when loading the MODEL.pt
-        self._retrieve_remote_model()
-        self._model = torch.load(path)
+        self._retrieve_remote_model(pretrained=False)
+        super().load(path=path)
         return self

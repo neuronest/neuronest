@@ -92,5 +92,4 @@ class OnlinePredictionModel(ABC):
 
     def load(self, path: str) -> OnlinePredictionModel:
         self._model = self.get_model_pt_from_path(path)
-
         return self

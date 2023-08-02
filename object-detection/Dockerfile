@@ -88,12 +88,14 @@ RUN mkdir $MODEL_PACKAGE_NAME
 #    && mv tmp/models tmp/utils $MODEL_PACKAGE_NAME \
 #    && rm -r master.zip tmp
 
-RUN cp -r \
-    $PACKAGE_NAME/model_handler.py  \
-    $PACKAGE_NAME/modules  \
-    $PACKAGE_NAME/config.py \
-    $PACKAGE_NAME/config.yaml \
-    $MODEL_PACKAGE_NAME
+#RUN cp -r \
+#    $PACKAGE_NAME/model_handler.py  \
+#    $PACKAGE_NAME/modules  \
+#    $PACKAGE_NAME/config.py \
+#    $PACKAGE_NAME/config.yaml \
+#    $MODEL_PACKAGE_NAME
+
+RUN cp -r $PACKAGE_NAME $MODEL_PACKAGE_NAME
 
 WORKDIR $MODEL_PACKAGE_PATH
 
@@ -114,22 +116,23 @@ COPY $MODEL_PATH $LOCAL_MODEL_PATH
 # project, whereas by default all the files are placed at the same level in the archive,
 # leading to a break in the import logic between the package vs what happens
 # when from torchserve. See: https://github.com/pytorch/serve/issues/566#issuecomment-964340770
-RUN TEMP_DIR=$(mktemp -d)
-RUN ln -s $MODEL_PACKAGE_PATH $TEMP_PACKAGE_DIR
+ENV TMP_PACKAGE_DIR=/tmp/${PACKAGE_NAME}_tmp
+RUN mkdir $TMP_PACKAGE_DIR
+RUN cp -r $PACKAGE_NAME $TMP_PACKAGE_DIR
+# RUN ln -s $MODEL_PACKAGE_PATH $TEMP_PACKAGE_DIR
 
 # create model archive file packaging model artifacts and dependencies
 RUN torch-model-archiver -f \
   --model-name=$MODEL_NAME \
   --version=1.0 \
   --serialized-file=$LOCAL_MODEL_PATH \
-  --handler=model_handler.py \
-  --extra-files=$TEMP_PACKAGE_DIR \
-  # --extra-files=modules,config.py,config.yaml \
+  --handler=$MODEL_PACKAGE_PATH/$PACKAGE_NAME/model_handler.py \
+  --extra-files=$TMP_PACKAGE_DIR \
   --export-path=$MODEL_STORE_NAME
 
-RUN rm -rf $TEMP_PACKAGE_DIR
+# RUN rm -rf $TEMP_PACKAGE_DIR
 
-ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
+# ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
 
 # I think it is no more used, since _load_hub_pretrained_model is used instead
 #RUN zip -ur $TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH models \

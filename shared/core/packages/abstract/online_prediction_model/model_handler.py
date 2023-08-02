@@ -203,8 +203,11 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         :param context: Initial context contains model server system properties.
         :return:
         """
+        self._context = context
         self.model = self.initialize_new_model()
-        self.model.set_model(model=self.initialize_model_pt(context=context))
+        # self.model.set_model(model=self.initialize_model_pt(context=context))
+        self.model.load(path=self._retrieve_model_path())
+        self.model.to(self.device)
 
     def handle(
         self, data: List[Dict[str, str]], context: Context
