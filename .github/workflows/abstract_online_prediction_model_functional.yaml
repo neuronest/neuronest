@@ -34,7 +34,9 @@ jobs:
       value: ${{ steps.set_up_non_functional_repository_name.outputs.value }}
     steps:
       - id: set_up_non_functional_repository_name
-        run: echo value=${REPOSITORY_NAME%-functional} >> $GITHUB_OUTPUT
+        run: |
+          value=${REPOSITORY_NAME%-functional}
+          echo value=$value >> $GITHUB_OUTPUT
         shell: bash
 
   run_base_terraform:
@@ -60,22 +62,11 @@ jobs:
       model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
-      - id: set_repository_variables_prefix
-        run: |
-          repository_variables_prefix=${{ env.REPOSITORY_NAME }}
-          # remove "-functional" part if exists
-          repository_variables_prefix=${repository_variables_prefix%-functional}
-          # replace - by _
-          repository_variables_prefix=${repository_variables_prefix//-/_}
-          # uppercase
-          repository_variables_prefix=${repository_variables_prefix^^}
-          echo "value=${repository_variables_prefix}" >> $GITHUB_OUTPUT
-        shell: bash
       - name: upload_online_prediction_model_variables
         id: upload_online_prediction_model_variables
         uses: ./.github/actions/upload_variables
         with:
-          variable_prefix_to_filter_on: ${{ steps.set_repository_variables_prefix.outputs.value }}
+          variable_prefix_to_filter_on: ${{ env.REPOSITORY_VARIABLES_PREFIX }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - name: upload_model_instantiator_variables
         id: upload_model_instantiator_variables
@@ -188,4 +179,4 @@ jobs:
           image_name: python:3.9.17-slim-buster
           run_integration_tests: true
           run_unit_tests: false
-          environment_variables: -e MODEL_NAME=${{ env.MODEL_NAME }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}
+          environment_variables: -e MODEL_NAME=${{ env.REPOSITORY_VARIABLES_PREFIX }}MODEL_NAME -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}

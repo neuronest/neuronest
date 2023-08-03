@@ -57,6 +57,9 @@ class VariableType(str, Enum):
 
 class VariableLine:
     NAME_AND_VALUE_SEPARATOR = "="
+    NAMESPACE_OF_NAME_WORDS_SEPARATOR = "_"
+    NAMESPACE_OF_VALUE_WORDS_SEPARATOR = "-"
+    NAMESPACE_OF_VALUE_VARIABLES_WORDS_SEPARATOR = "_"
     REGEX_OF_VALUE_PART_VARIABLES = r"\$\{([^\}]*)\}"
     REPOSITORY_CODE_VARIABLE_NAME = "REPOSITORY_CODE"
 
@@ -125,6 +128,10 @@ class VariableLine:
         ${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
         in "object_detection" context.
         """
+        if current_context.endswith(self.NAMESPACE_OF_NAME_WORDS_SEPARATOR):
+            current_context = current_context[
+                : -len(self.NAMESPACE_OF_NAME_WORDS_SEPARATOR)
+            ]
         truncated_variable_line = VariableLine(line=self.line)
         for (
             variable_inside_value
@@ -200,17 +207,28 @@ class VariableLine:
 
         return None
 
+    @staticmethod
+    def build_namespace_of_name_from_string(string: str) -> str:
+        return f"{string.replace('-', '_').upper()}{'_'}"
+
+    @staticmethod
+    def build_namespace_of_value_from_string(string: str) -> str:
+        return f"{string.replace('_', '-').lower()}{'-'}"
+
+    @staticmethod
+    def build_namespace_of_value_variables_from_string(string: str) -> str:
+        return f"{string.replace('_', '-').lower()}{'-'}"
+
     def add_namespace_to_name(
         self,
         namespace: str,
         already_added_ok: bool = False,
     ):
         var_line = VariableLine(self.line)
-        namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
         var_line.name = add_namespace_to_string(
             string=var_line.name,
-            namespace=namespace,
+            namespace=self.build_namespace_of_name_from_string(namespace),
             already_added_ok=already_added_ok,
         )
 
@@ -222,11 +240,10 @@ class VariableLine:
         already_added_ok: bool = False,
     ):
         var_line = VariableLine(self.line)
-        namespace = f"{namespace.replace('_', '-').lower()}{'-'}"
 
         var_line.value = add_namespace_to_string(
             string=var_line.value,
-            namespace=namespace,
+            namespace=self.build_namespace_of_value_from_string(namespace),
             already_added_ok=already_added_ok,
         )
 
@@ -239,7 +256,6 @@ class VariableLine:
         already_added_ok: bool = False,
     ):
         var_line = VariableLine(self.line)
-        namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
         if variable_inside_value_to_add_to is not None:
             # only add the namespace to this variable only within the value part
@@ -252,7 +268,9 @@ class VariableLine:
                 variable=variable,
                 other_variable=add_namespace_to_string(
                     string=variable,
-                    namespace=namespace,
+                    namespace=self.build_namespace_of_value_variables_from_string(
+                        namespace
+                    ),
                     already_added_ok=already_added_ok,
                 ),
             )
@@ -579,3 +597,9 @@ if __name__ == "__main__":
 
     for variable_line in all_variables_lines:
         variable_line.to_file(args.environment_variables_file_path)
+    VariableLine(
+        line="REPOSITORY_VARIABLES_PREFIX="
+        + VariableLine.build_namespace_of_name_from_string(
+            main_repository.get_base_name_without_functional()
+        )
+    ).to_file(args.environment_variables_file_path)
