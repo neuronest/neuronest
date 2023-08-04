@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      object_detection_functional_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.upload_object_detection_functional_variables }}
+      object_detection_functional_env_file_artifact_name: ${{ steps.upload_object_detection_functional_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
       - name: upload_object_detection_functional_variables
