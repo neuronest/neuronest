@@ -58,6 +58,8 @@ jobs:
       - name: upload_variables
         id: upload_variables
         uses: ./.github/actions/upload_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
   object_detection_functional:
     needs: upload_variables_of_called_workflows
