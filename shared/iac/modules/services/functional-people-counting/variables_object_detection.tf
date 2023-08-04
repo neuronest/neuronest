@@ -7,4 +7,3 @@ variable "object_detection_models_bucket" {
 variable "object_detection_model_name" {
   type = string
 }
-

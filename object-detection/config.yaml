@@ -6,7 +6,7 @@ package_name: '${oc.env:PACKAGE_NAME}'
 
 model:
   name: '${oc.env:MODEL_NAME}'
-  inner_model_type: "ultralytics/yolov5"
+  inner_model_type: "ultralytics/yolov5:v7.0"
   inner_model_name: "yolov5x6"
   image_width: 400
 

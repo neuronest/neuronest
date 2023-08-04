@@ -99,12 +99,18 @@ jobs:
     # we use the !failure() condition
     # see: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
-    container: google/cloud-sdk
     outputs:
       dockerhub_training_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_training_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/make_space_for_docker
+      - uses: ./.github/actions/set_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
