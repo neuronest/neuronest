@@ -217,7 +217,7 @@ class VariableLine:
 
     @staticmethod
     def build_namespace_of_value_variables_from_string(string: str) -> str:
-        return f"{string.replace('_', '-').lower()}{'-'}"
+        return f"{string.replace('-', '_').upper()}{'_'}"
 
     def add_namespace_to_name(
         self,
@@ -562,7 +562,19 @@ if __name__ == "__main__":
     shared_variables_lines_names = set(
         shared_var_line.name for shared_var_line in shared_variables_lines
     )
-    all_variables_lines = shared_variables_lines + repository_variables_lines
+    all_variables_lines = (
+        shared_variables_lines
+        + repository_variables_lines
+        + [
+            VariableLine(
+                line="REPOSITORY_VARIABLES_PREFIX="
+                + VariableLine.build_namespace_of_name_from_string(
+                    main_repository.get_base_name_without_functional(),
+                ),
+                variable_type=VariableType.REPOSITORY,
+            )
+        ]
+    )
     if not args.keep_repository_variables:
         all_variables_lines = [
             var_line
@@ -597,9 +609,3 @@ if __name__ == "__main__":
 
     for variable_line in all_variables_lines:
         variable_line.to_file(args.environment_variables_file_path)
-    VariableLine(
-        line="REPOSITORY_VARIABLES_PREFIX="
-        + VariableLine.build_namespace_of_name_from_string(
-            main_repository.get_base_name_without_functional()
-        )
-    ).to_file(args.environment_variables_file_path)
