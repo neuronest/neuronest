@@ -6,7 +6,7 @@ import os
 import re
 import sys
 from enum import Enum
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set
 
 import yaml
 from pydantic import BaseModel
@@ -35,20 +35,20 @@ def add_namespace_to_string(
     namespace: str,
     already_added_ok: bool = False,
     namespace_and_string_binding_character: str = "_",
-):
+) -> str:
     for binding_character in list({"_", "-", namespace_and_string_binding_character}):
         if namespace.endswith(binding_character):
             namespace_and_string_binding_character = binding_character
             namespace = namespace[:-1]
 
     if not string.startswith(namespace):
-        string = f"{namespace}{namespace_and_string_binding_character}{string}"
-    elif not already_added_ok:
+        return f"{namespace}{namespace_and_string_binding_character}{string}"
+
+    if not already_added_ok:
         raise NameSpaceError(
             f"The string {string} is already in " f"the namespace {namespace}"
         )
-    else:
-        pass
+
     return string
 
 
@@ -72,27 +72,27 @@ class VariableLine:
         self.variable_type = variable_type
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, new_name):
+    def name(self, new_name: str):
         self._name = new_name
 
     @property
-    def value(self):
+    def value(self) -> str:
         return self._value
 
     @value.setter
-    def value(self, new_value):
+    def value(self, new_value: str):
         self._value = new_value
 
     @property
-    def line(self):
+    def line(self) -> str:
         return f"{self.name}{self.NAME_AND_VALUE_SEPARATOR}{self.value}"
 
     @line.setter
-    def line(self, new_line):
+    def line(self, new_line: str):
         name, value = new_line.split(self.NAME_AND_VALUE_SEPARATOR)
         self.name = name
         self.value = value
@@ -110,7 +110,7 @@ class VariableLine:
         with open(file_path, "a") as file:
             file.write(f"{self.line}{os.linesep}")
 
-    def truncate_to_current_context(self, current_context: str):
+    def truncate_to_current_context(self, current_context: str) -> VariableLine:
         """
         Modifies the name and value parts so that they represent the current context,
         that is to say, we remove the coordinates which are used to
@@ -129,6 +129,7 @@ class VariableLine:
         in "object_detection" context.
         """
         truncated_variable_line = VariableLine(line=self.line)
+
         for (
             variable_inside_value
         ) in truncated_variable_line.get_variables_inside_value():
@@ -158,6 +159,7 @@ class VariableLine:
             )
         else:
             truncated_variable_line.name = new_var_line_name
+
         return truncated_variable_line
 
     def replace_variable_inside_value(
@@ -165,7 +167,7 @@ class VariableLine:
         variable: str,
         other_variable: str,
         inplace: bool = False,
-    ) -> Union["VariableLine", None]:
+    ) -> Optional[VariableLine]:
         """
         Replaces a variable name that is in the value part with another variable name.
 
@@ -177,7 +179,8 @@ class VariableLine:
                 Defaults to False.
 
         Returns:
-            str: The modified variable line with the updated variable name in the value part.
+            str: The modified variable line with the updated variable name in the value
+            part.
 
         Example:
             >>> var_line = VariableLine(
@@ -207,7 +210,7 @@ class VariableLine:
         self,
         namespace: str,
         already_added_ok: bool = False,
-    ):
+    ) -> VariableLine:
         var_line = VariableLine(self.line)
         namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
@@ -223,7 +226,7 @@ class VariableLine:
         self,
         namespace: str,
         already_added_ok: bool = False,
-    ):
+    ) -> VariableLine:
         var_line = VariableLine(self.line)
         namespace = f"{namespace.replace('_', '-').lower()}{'-'}"
 
@@ -240,7 +243,7 @@ class VariableLine:
         namespace: str,
         variable_inside_value_to_add_to: Optional[str] = None,
         already_added_ok: bool = False,
-    ):
+    ) -> VariableLine:
         var_line = VariableLine(self.line)
         namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
@@ -271,7 +274,7 @@ class VariableLine:
         variable_inside_value_to_add_to: Optional[str] = None,
         inplace: bool = False,
         already_added_ok: bool = False,
-    ):
+    ) -> Optional[VariableLine]:
         var_line = VariableLine(self.line)
         if add_to_name:
             var_line = var_line.add_namespace_to_name(
@@ -299,21 +302,21 @@ class VariableLine:
     def __str__(self):
         return self.line
 
-    def get_variables_inside_value(self):
-
+    def get_variables_inside_value(self) -> List[str]:
         if variables_inside_value := re.findall(
             self.REGEX_OF_VALUE_PART_VARIABLES, self.value
         ):
             return list(variables_inside_value)
+
         return []
 
-    def is_a_multi_instance_resource(self):
+    def is_a_multi_instance_resource(self) -> bool:
         return self.variable_type == VariableType.MULTI_INSTANCE_RESOURCE
 
-    def is_a_repository_variable(self):
+    def is_a_repository_variable(self) -> bool:
         return self.variable_type == VariableType.REPOSITORY
 
-    def is_a_repository_code(self):
+    def is_a_repository_code(self) -> bool:
         return self.name == self.REPOSITORY_CODE_VARIABLE_NAME
 
 
@@ -323,12 +326,13 @@ class YamlEnvFile(BaseModel):
     other_variables: List[str]
 
     @classmethod
-    def read_file(cls, file_path: str) -> "YamlEnvFile":
+    def read_file(cls, file_path: str) -> YamlEnvFile:
         with open(file_path, "r") as self_reader:
             yaml_data = yaml.safe_load(self_reader)
+
         return cls.parse_obj(yaml_data)
 
-    def to_variables_lines(self):
+    def to_variables_lines(self) -> List[VariableLine]:
         return (
             [
                 VariableLine(line=variable, variable_type=VariableType.REPOSITORY)
@@ -355,12 +359,11 @@ class EnvFile:
             raise ValueError(f"path should end with {self.EXTENSION} extension")
         self.path = path
 
-    def readlines(self):
+    def readlines(self) -> List[str]:
         with open(self.path, "r") as self_reader:
-            lines = self_reader.readlines()
-        return lines
+            return self_reader.readlines()
 
-    def read_variables_lines(self):
+    def read_variables_lines(self) -> List[VariableLine]:
         return [
             VariableLine(line=line.rstrip(os.linesep))
             for line in self.readlines()
@@ -376,10 +379,10 @@ class Repository:
         self.name = name
 
     @property
-    def yaml_env_file_path(self):
+    def yaml_env_file_path(self) -> str:
         return f"{self.name}/{self.VARIABLES_FILE_PATH}"
 
-    def has_yaml_env_file(self):
+    def has_yaml_env_file(self) -> bool:
         return os.path.isfile(self.yaml_env_file_path)
 
     def get_yaml_env_file(self) -> YamlEnvFile:
@@ -438,7 +441,6 @@ def get_all_repository_var_lines(
     variables_to_which_not_add_namespace: Optional[Set[str]] = None,
     add_namespace_to_name_of_multi_instance_resource: bool = True,
 ) -> List[VariableLine]:
-
     if variables_to_which_not_add_namespace is None:
         variables_to_which_not_add_namespace = {}
 
