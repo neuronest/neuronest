@@ -3,9 +3,9 @@ repository_variables:
   - REPOSITORY_NAME=people-counting
   - REPOSITORY_CODE=pc
   - PACKAGE_NAME=people_counting
-  - BASE_IMAGE_NAME=people-counting
   - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
 multi_instance_resource_names:
+  - BASE_IMAGE_NAME=people-counting
   # service account names
   - SERVICE_ACCOUNT_NAME=webapp
   # firestore
