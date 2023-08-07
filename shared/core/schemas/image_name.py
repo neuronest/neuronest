@@ -38,12 +38,15 @@ class BaseImageName(PartImageName):
 
 class Tag(PartImageName):
     """
-    Example: '565726992'
+    Examples:
+        '565726992' (e.g. github run id)
+        'f92caee9' (e.g. first 8 characters of sha256 digest)
     """
 
     @classmethod
     def is_valid(cls, name: str) -> bool:
-        regex = r"(^latest$|^\d+$)"
+        # sha256 type image identifier and workflow identifier tags are allowed
+        regex = r"(^latest$|^[0-9a-f]+$)"
 
         return super().is_valid(name) and bool(re.fullmatch(regex, name))
 
