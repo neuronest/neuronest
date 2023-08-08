@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - *
     paths:
       - .github/workflows/people_counting_functional.yaml
       - .github/actions/**
