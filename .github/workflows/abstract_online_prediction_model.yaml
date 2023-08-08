@@ -51,6 +51,7 @@ on:
 
 env:
   REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
+  DOCKERFILE_PATH: shared/core/dockerfiles/abstract/online_prediction_model.Dockerfile
 
 jobs:
   run_base_terraform:
@@ -106,6 +107,7 @@ jobs:
           # things less verbose, with almost only advantages: either the dockerfile
           # uses them, or docker ignores them
           build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }}
+          dockerfile_path: ${{ env.DOCKERFILE_PATH }}
 
   get_training_images:
     runs-on: ubuntu-latest
@@ -252,6 +254,7 @@ jobs:
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: serving
           build_arguments: --build-arg MODEL_PATH=$MODEL_PATH --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }}
+          dockerfile_path: ${{ env.DOCKERFILE_PATH }}
 
   model_upload:
     name: model_upload

@@ -80,23 +80,7 @@ ENV MODEL_PACKAGE_NAME=$MODEL_PACKAGE_NAME
 ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
 RUN mkdir $MODEL_PACKAGE_NAME
-
-# I think it is no more used, see _load_hub_pretrained_model instead
-#RUN mkdir tmp \
-#    && wget -O master.zip https://github.com/ultralytics/yolov5/zipball/master \
-#    && bsdtar --strip-components=1 -xvf master.zip -C tmp \
-#    && mv tmp/models tmp/utils $MODEL_PACKAGE_NAME \
-#    && rm -r master.zip tmp
-
-#RUN cp -r \
-#    $PACKAGE_NAME/model_handler.py  \
-#    $PACKAGE_NAME/modules  \
-#    $PACKAGE_NAME/config.py \
-#    $PACKAGE_NAME/config.yaml \
-#    $MODEL_PACKAGE_NAME
-
 RUN cp -r $PACKAGE_NAME $MODEL_PACKAGE_NAME
-
 WORKDIR $MODEL_PACKAGE_PATH
 
 # create torchserve configuration file
@@ -112,14 +96,9 @@ RUN mkdir -p $MODEL_STORE_NAME
 
 COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
-# copy of the solution proposed so that the archive respects the hierarchy of the
-# project, whereas by default all the files are placed at the same level in the archive,
-# leading to a break in the import logic between the package vs what happens
-# when from torchserve. See: https://github.com/pytorch/serve/issues/566#issuecomment-964340770
-ENV TMP_PACKAGE_DIR=/tmp/${PACKAGE_NAME}_tmp
+ENV TMP_PACKAGE_DIR=/tmp/$PACKAGE_NAME
 RUN mkdir $TMP_PACKAGE_DIR
 RUN cp -r $PACKAGE_NAME $TMP_PACKAGE_DIR
-# RUN ln -s $MODEL_PACKAGE_PATH $TEMP_PACKAGE_DIR
 
 # create model archive file packaging model artifacts and dependencies
 RUN torch-model-archiver -f \
@@ -129,14 +108,6 @@ RUN torch-model-archiver -f \
   --handler=$MODEL_PACKAGE_PATH/$PACKAGE_NAME/model_handler.py \
   --extra-files=$TMP_PACKAGE_DIR \
   --export-path=$MODEL_STORE_NAME
-
-# RUN rm -rf $TEMP_PACKAGE_DIR
-
-# ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
-
-# I think it is no more used, since _load_hub_pretrained_model is used instead
-#RUN zip -ur $TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH models \
-#  && zip -ur $TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH utils
 
 # run Torchserve HTTP serve to respond to prediction requests
 ENTRYPOINT torchserve \
