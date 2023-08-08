@@ -5,34 +5,10 @@ on:
     branches:
       - main
       - develop
-    paths:
-      - .github/workflows/video_comparator_dummy_project.yaml
-      - .github/workflows/object_detection_functional.yaml
-      - .github/workflows/abstract_online_prediction_model_functional.yaml
-      - .github/workflows/abstract_online_prediction_model.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
-      - video-comparator/**
-      - object-detection/**
   pull_request:
     branches:
       - main
       - develop
-    paths:
-      - .github/workflows/video_comparator_dummy_project.yaml
-      - .github/workflows/object_detection_functional.yaml
-      - .github/workflows/abstract_online_prediction_model_functional.yaml
-      - .github/workflows/abstract_online_prediction_model.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
-      - video-comparator/**
-      - object-detection/**
   workflow_dispatch:
 
 env:
@@ -43,23 +19,5 @@ jobs:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      object_detection_functional_env_file_artifact_name: ${{ steps.upload_object_detection_functional_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
-      - name: upload_object_detection_functional_variables
-        id: upload_object_detection_functional_variables
-        uses: ./.github/actions/upload_variables
-        with:
-          variable_prefix_to_filter_on: OBJECT_DETECTION
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-
-
-  object_detection_functional:
-    needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/object_detection_functional.yaml
-    with:
-      build: true
-      deploy: true
-      do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_functional_env_file_artifact_name }}
-    secrets: inherit
