@@ -1,4 +1,4 @@
-name: customer_dummy_project
+name: video_comparator_dummy_project
 
 on:
   push:
