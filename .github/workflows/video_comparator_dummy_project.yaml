@@ -2,9 +2,6 @@ name: customer_dummy_project
 
 on:
   push:
-    branches:
-      - main
-      - develop
     paths:
       - .github/workflows/video_comparator_dummy_project.yaml
       - .github/workflows/abstract_online_prediction_model_functional.yaml
@@ -59,3 +56,4 @@ jobs:
       do_post_deployment: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_functional_env_file_artifact_name }}
     secrets: inherit
+
