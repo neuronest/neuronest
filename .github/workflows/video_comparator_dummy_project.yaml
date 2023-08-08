@@ -7,6 +7,7 @@ on:
       - develop
     paths:
       - .github/workflows/video_comparator_dummy_project.yaml
+      - .github/workflows/object_detection_functional.yaml
       - .github/workflows/abstract_online_prediction_model_functional.yaml
       - .github/workflows/abstract_online_prediction_model.yaml
       - .github/actions/**
@@ -22,6 +23,7 @@ on:
       - develop
     paths:
       - .github/workflows/video_comparator_dummy_project.yaml
+      - .github/workflows/object_detection_functional.yaml
       - .github/workflows/abstract_online_prediction_model_functional.yaml
       - .github/workflows/abstract_online_prediction_model.yaml
       - .github/actions/**
