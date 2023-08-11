@@ -68,6 +68,6 @@ jobs:
       build: true
       deploy: true
       do_post_deployment: true
-      online_prediction_model_repository: ${{ env.REPOSITORY_NAME }}
+      online_prediction_model_repository: video-comparator-functional
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit
