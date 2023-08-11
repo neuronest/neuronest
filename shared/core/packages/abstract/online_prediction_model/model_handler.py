@@ -1,9 +1,8 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Type
 
-import numpy as np
 import torch
 from ts.context import Context
 from ts.torch_handler.base_handler import BaseHandler
@@ -11,12 +10,14 @@ from ts.torch_handler.base_handler import BaseHandler
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
-from core.schemas.object_detection import (
-    Device,
-    InputSampleSchema,
-    InputSchema,
-    OutputSchema,
-)
+from core.schemas.abstract.online_prediction_model import Device, OutputSchema
+
+# from core.schemas.object_detection import (
+#     Device,
+#     InputSampleSchema,
+#     InputSchema,
+#     OutputSchema,
+# )
 
 # a relative import should be done here as this module is intended to be used with
 # torchserve
@@ -56,15 +57,6 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         # self.labels_to_predict: Optional[List[str]] = None
         # self.confidence_threshold: Optional[float] = None
 
-    def _retrieve_model_path(self) -> str:
-        properties = self._context.system_properties
-        manifest = self._context.manifest
-
-        model_dir = properties.get("model_dir")
-        serialized_file = manifest["model"]["serializedFile"]
-
-        return os.path.join(model_dir, serialized_file)
-
     # def _fill_labels_to_predict(self, labels_to_predict: Optional[List[str]]):
     #     self.labels_to_predict = labels_to_predict
 
@@ -75,15 +67,48 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     #     if overridden_image_width is not None:
     #         self.image_width = overridden_image_width
 
-    def preprocess(self, data: List[Dict[str, str]]) -> List[Any]:
-        validated_data = InputSchema(
-            samples=[InputSampleSchema.parse_obj(sample) for sample in data]
+    @staticmethod
+    def get_input_schema_sample_class() -> Type:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_inference_data_and_other_args_kwargs_from_input_schema_samples(
+        self,
+        input_schema_samples: List[Any],
+    ) -> Tuple[Tuple, dict]:
+        """
+        Returns the data in the format expected by the model to predict,
+        the arguments and the key arguments of the prediction function
+        """
+        raise NotImplementedError
+
+    def preprocess(self, data: List) -> Tuple[Tuple, dict]:
+        # pylint: disable=invalid-name
+        InputSchemaSample = self.get_input_schema_sample_class()
+        validated_input_schema_samples = [
+            InputSchemaSample.parse_obj(sample) for sample in data
+        ]
+
+        # validated_data = InputSchema(
+        #     samples=[InputSampleSchema.parse_obj(sample) for sample in data]
+        # )
+
+        # if len(validated_data.samples) == 0:
+        #     return []
+
+        # return validated_data.samples
+        return self.get_inference_data_and_other_args_kwargs_from_input_schema_samples(
+            validated_input_schema_samples
         )
 
-        if len(validated_data.samples) == 0:
-            return []
+    def _retrieve_model_path(self) -> str:
+        properties = self._context.system_properties
+        manifest = self._context.manifest
 
-        return validated_data.samples
+        model_dir = properties.get("model_dir")
+        serialized_file = manifest["model"]["serializedFile"]
+
+        return os.path.join(model_dir, serialized_file)
 
         # first_sample = validated_data.samples[0]
 
@@ -96,11 +121,10 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         #     for sample in validated_data.samples
         # ]
 
-    def inference(self, data: List[np.ndarray], *args, **kwargs) -> List[Any]:
+    def inference(self, *args, **kwargs) -> List[Any]:
         with torch.no_grad():
             self.model.eval()
-            results = self.model(data, *args, **kwargs)
-
+            results = self.model(*args, **kwargs)
         return results
 
     # def _filter_predictions(
@@ -209,9 +233,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         self.model.load(path=self._retrieve_model_path())
         self.model.to(self.device)
 
-    def handle(
-        self, data: List[Dict[str, str]], context: Context
-    ) -> List[Dict[str, str]]:
+    def handle(self, data: List[Dict], context: Context) -> List[Dict[str, str]]:
         """
         Invoke by TorchServe for prediction request.
         Do pre-processing of data, prediction using model and postprocessing of
@@ -224,17 +246,9 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         if len(data) == 0:
             return []
 
-        preprocessed_data = self.preprocess(data)
-        predictions = self.inference(preprocessed_data)
+        inference_data_and_other_args, inference_kwargs = self.preprocess(data=data)
+        predictions = self.inference(*inference_data_and_other_args, **inference_kwargs)
         post_processed_predictions = self.postprocess(predictions)
-
-        if any(
-            not isinstance(output, OutputSchema)
-            for output in post_processed_predictions
-        ):
-            raise ValueError(
-                f"Each output must be of type {OutputSchema.__name__} "
-                f"or inherit from type {OutputSchema.__name__}"
-            )
-
+        if not isinstance(post_processed_predictions, list):
+            post_processed_predictions = [post_processed_predictions]
         return [output.dict() for output in post_processed_predictions]

@@ -27,11 +27,22 @@ if __name__ == "__main__":
     model = ViSiL(pretrained=True).to("cuda")  # pylint: disable=invalid-name
     model.eval()
 
+    from video_comparator.evaluation import extract_features
+
     # Extract features of the two videos
-    query_features = model.extract_features(query_video.to("cuda"))
-    target_features = model.extract_features(target_video.to("cuda"))
+    # query_features = model.extract_features(query_video.to("cuda"))
+    # target_features = model.extract_features(target_video.to("cuda"))
+
+    query_features = extract_features(model=model, frames=query_video, device="cuda")
+    target_features = extract_features(model=model, frames=target_video, device="cuda")
 
     # Calculate similarity between the two videos
     similarity = model.calculate_video_similarity(query_features, target_features)
+
+    # similarity = calculate_similarities_to_queries(
+    #     model=...,
+    #     queries=...,
+    #
+    # )
 
     print(similarity)

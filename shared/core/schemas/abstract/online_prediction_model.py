@@ -19,7 +19,7 @@ class Device(str, Enum):
     CUDA = "cuda"
 
 
-class InputSampleSchema(BaseModel):
+class InputSchemaSample(BaseModel):
     data: str
     # labels_to_predict: Optional[List[str]] = None
     # confidence_threshold: Optional[float] = None
@@ -45,7 +45,7 @@ class InputSampleSchema(BaseModel):
 
 
 class InputSchema(BaseModel):
-    samples: List[InputSampleSchema]
+    samples: List[InputSchemaSample]
 
     # @validator("samples")
     # # pylint: disable=no-self-argument

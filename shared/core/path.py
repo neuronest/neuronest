@@ -47,6 +47,23 @@ class Path(str, ABC):
 
         return str.__new__(cls, path, *args, **kwargs)
 
+    @classmethod
+    def validate(cls, value):
+        if not cls.is_valid(value):
+            raise ValueError(f"Path {value} is invalid")
+
+        return cls(value)
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    def get_file_extension(self):
+        _, file_extension = os.path.splitext(self)
+        if file_extension:
+            return file_extension.lower()
+        return None
+
     # fixme: LocalPath class should override self.PREFIX  # pylint: disable=W0511
     #  to avoid method crashing.  # pylint: disable=W0511
     #  Besides, does a from_bucket_and_blob_names  # pylint: disable=W0511

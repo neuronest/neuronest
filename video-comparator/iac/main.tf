@@ -30,8 +30,8 @@ module "base" {
   mono_repository_name                 = var.mono_repository_name
 }
 
-module "object_detection" {
-  source               = "../../shared/iac/modules/services/object-detection"
+module "video_comparator" {
+  source               = "../../shared/iac/modules/services/video-comparator"
   project_id           = var.project_id
   region               = var.region
   service_account_name = var.service_account_name

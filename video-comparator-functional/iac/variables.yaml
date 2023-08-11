@@ -1,9 +1,9 @@
 repository_variables:
   # general repository
-  - REPOSITORY_NAME=object-detection-functional
-  - REPOSITORY_CODE=od-functional
-  - MAIN_TERRAFORM_MODULE_NAME=object_detection_functional
-  - REPOSITORIES_DEPENDENCIES=object-detection,model-instantiator
+  - REPOSITORY_NAME=video-comparator-functional
+  - REPOSITORY_CODE=vc-functional
+  - MAIN_TERRAFORM_MODULE_NAME=video_comparator_functional
+  - REPOSITORIES_DEPENDENCIES=video-comparator,model-instantiator
 multi_instance_resource_names: []
 other_variables:
   # GCP project

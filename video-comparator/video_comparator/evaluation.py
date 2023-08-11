@@ -1,4 +1,5 @@
 import argparse
+from typing import Union
 
 import torch
 from torch.utils.data import DataLoader
@@ -9,12 +10,16 @@ from video_comparator.model.visil import ViSiL
 
 
 @torch.no_grad()
-def extract_features(model, frames, args):
+def extract_features(
+    model, frames, batch_sz: int = 128, device: Union[int, str] = None
+):
     features = []
-    for i in range(frames.shape[0] // args.batch_sz + 1):
-        batch = frames[i * args.batch_sz : (i + 1) * args.batch_sz]
+    for i in range(frames.shape[0] // batch_sz + 1):
+        batch = frames[i * batch_sz : (i + 1) * batch_sz]
         if batch.shape[0] > 0:
-            features.append(model.extract_features(batch.to(args.gpu_id).float()))
+            if device is not None:
+                batch = batch.to(device).float()
+            features.append(model.extract_features(batch))
     features = torch.cat(features, 0)
     while features.shape[0] < 4:
         features = torch.cat([features, features], 0)
@@ -22,15 +27,18 @@ def extract_features(model, frames, args):
 
 
 @torch.no_grad()
-def calculate_similarities_to_queries(model, queries, target, args):
+def calculate_similarities_to_queries(
+    model, queries, target, batch_sz_sim: int = 2048, device: Union[int, str] = None
+):
     similarities = []
     for _, query in enumerate(queries):
         if query.device.type == "cpu":
-            query = query.to(args.gpu_id)
+            if device is not None:
+                query = query.to(device)
         sim = []
-        for batch_index in range(target.shape[0] // args.batch_sz_sim + 1):
+        for batch_index in range(target.shape[0] // batch_sz_sim + 1):
             batch = target[
-                batch_index * args.batch_sz_sim : (batch_index + 1) * args.batch_sz_sim
+                batch_index * batch_sz_sim : (batch_index + 1) * batch_sz_sim
             ]
             if batch.shape[0] >= 4:
                 sim.append(model.calculate_video_similarity(query, batch))

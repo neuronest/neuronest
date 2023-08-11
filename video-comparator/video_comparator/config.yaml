@@ -6,10 +6,7 @@ package_name: '${oc.env:PACKAGE_NAME,null}'
 
 model:
   name: '${oc.env:MODEL_NAME,null}'
-  inner_model_type: "ultralytics/yolov5"
-  inner_model_name: "yolov5x6"
-  inner_model_tag: "v7.0"
-  image_width: 400
+  batch_size: 128
 
 training:
   container_uri: "${oc.env:TRAINING_IMAGE_NAME,null}"
@@ -34,5 +31,4 @@ serving_deployment:
 bigquery:
   dataset:
     name: '${model.name}_training'
-
 

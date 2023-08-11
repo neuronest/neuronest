@@ -35,7 +35,8 @@ def load_video(video, all_frames=False, fps=1, cc_size=224, rs_size=256):
     count = 0
     while cap.isOpened():
         if int(count % round(fps / fps_div)) == 0 or all_frames:
-            _, frame = cap.retrieve()
+            # _, frame = cap.retrieve()
+            _, frame = cap.read()
             if isinstance(frame, np.ndarray):
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 if rs_size is not None:

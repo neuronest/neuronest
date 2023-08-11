@@ -1,4 +1,4 @@
-name: customer_dummy_project
+name: video_comparator_dummy_project
 
 on:
   push:
@@ -37,6 +37,7 @@ jobs:
     container: google/cloud-sdk
     outputs:
       object_detection_functional_env_file_artifact_name: ${{ steps.upload_object_detection_functional_variables.outputs.env_file_artifact_name }}
+      video_comparator_functional_env_file_artifact_name: ${{ steps.upload_video_comparator_functional_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
       - name: upload_object_detection_functional_variables
@@ -44,6 +45,12 @@ jobs:
         uses: ./.github/actions/upload_variables
         with:
           variable_prefix_to_filter_on: OBJECT_DETECTION
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - name: upload_video_comparator_functional_variables
+        id: upload_video_comparator_functional_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: VIDEO_COMPARATOR
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
 
@@ -57,3 +64,12 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_functional_env_file_artifact_name }}
     secrets: inherit
 
+  video_comparator_functional:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/video_comparator_functional.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.video_comparator_functional_env_file_artifact_name }}
+    secrets: inherit

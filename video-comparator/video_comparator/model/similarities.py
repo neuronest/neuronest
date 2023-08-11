@@ -23,24 +23,34 @@ class ChamferSimilarity(nn.Module):
     def __init__(self, symmetric=False, axes=None):
         if axes is None:
             axes = [1, 0]
+        self.axes = axes
+        self.max_axis = axes[0]
+        self.mean_axis = axes[1]
         super().__init__()
         if symmetric:
-            self.sim_fun = lambda x: self.symmetric_chamfer_similarity(x, axes=axes)
+            # self.sim_fun = lambda x: self.symmetric_chamfer_similarity(x, axes=axes)
+            self.sim_fun = self.symmetric_chamfer_similarity
         else:
-            self.sim_fun = lambda x: self.chamfer_similarity(
-                x, max_axis=axes[0], mean_axis=axes[1]
-            )
+            # self.sim_fun = lambda x: self.chamfer_similarity(
+            #     x, max_axis=axes[0], mean_axis=axes[1]
+            # )
+            self.sim_fun = self.chamfer_similarity
 
-    def chamfer_similarity(self, similarity, max_axis=1, mean_axis=0):
+    # def chamfer_similarity(self, similarity, max_axis=1, mean_axis=0):
+    def chamfer_similarity(self, similarity, max_axis=None, mean_axis=None):
+        max_axis = max_axis or self.max_axis
+        mean_axis = mean_axis or self.mean_axis
         similarity = torch.max(similarity, max_axis, keepdim=True)[0]
         similarity = torch.mean(similarity, mean_axis, keepdim=True)
         return similarity.squeeze(max(max_axis, mean_axis)).squeeze(
             min(max_axis, mean_axis)
         )
 
+    # def symmetric_chamfer_similarity(self, similarity, axes=None):
     def symmetric_chamfer_similarity(self, similarity, axes=None):
-        if axes is None:
-            axes = [0, 1]
+        axes = axes or self.axes
+        # if axes is None:
+        #     axes = [0, 1]
         return (
             self.chamfer_similarity(similarity, max_axis=axes[0], mean_axis=axes[1])
             + self.chamfer_similarity(similarity, max_axis=axes[1], mean_axis=axes[0])
