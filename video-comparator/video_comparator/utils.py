@@ -1,5 +1,8 @@
+from typing import Union
+
 import cv2
 import numpy as np
+import torch
 
 
 def center_crop(frame, desired_size):
@@ -50,3 +53,41 @@ def load_video(video, all_frames=False, fps=1, cc_size=224, rs_size=256):
     if cc_size is not None:
         frames = center_crop(frames, cc_size)
     return frames
+
+
+@torch.no_grad()
+def calculate_similarities_to_queries(
+    model, queries, target, batch_sz_sim: int = 2048, device: Union[int, str] = None
+):
+    similarities = []
+    for _, query in enumerate(queries):
+        if query.device.type == "cpu":
+            if device is not None:
+                query = query.to(device)
+        sim = []
+        for batch_index in range(target.shape[0] // batch_sz_sim + 1):
+            batch = target[
+                batch_index * batch_sz_sim : (batch_index + 1) * batch_sz_sim
+            ]
+            if batch.shape[0] >= 4:
+                sim.append(model.calculate_video_similarity(query, batch))
+        sim = torch.mean(torch.cat(sim, 0))
+        similarities.append(sim.cpu().numpy())
+    return similarities
+
+
+@torch.no_grad()
+def extract_features(
+    model, frames, batch_sz: int = 128, device: Union[int, str] = None
+):
+    features = []
+    for i in range(frames.shape[0] // batch_sz + 1):
+        batch = frames[i * batch_sz : (i + 1) * batch_sz]
+        if batch.shape[0] > 0:
+            if device is not None:
+                batch = batch.to(device).float()
+            features.append(model.extract_features(batch))
+    features = torch.cat(features, 0)
+    while features.shape[0] < 4:
+        features = torch.cat([features, features], 0)
+    return features

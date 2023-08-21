@@ -9,8 +9,8 @@ from core.packages.abstract.online_prediction_model.modules.model import (
 from core.schemas.abstract.online_prediction_model import Device
 from core.schemas.video_comparator import PredictionType
 
-from video_comparator.evaluation import extract_features
 from video_comparator.model.visil import ViSiL
+from video_comparator.utils import extract_features
 from video_comparator.utils import load_video as visil_video_load
 
 

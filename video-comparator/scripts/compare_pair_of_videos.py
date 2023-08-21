@@ -3,7 +3,7 @@ import argparse
 import torch
 
 from video_comparator.model.visil import ViSiL
-from video_comparator.utils import load_video
+from video_comparator.utils import extract_features, load_video
 
 if __name__ == "__main__":
     # Create an argument parser
@@ -26,8 +26,6 @@ if __name__ == "__main__":
     # Initialize pretrained ViSiL model
     model = ViSiL(pretrained=True).to("cuda")  # pylint: disable=invalid-name
     model.eval()
-
-    from video_comparator.evaluation import extract_features
 
     # Extract features of the two videos
     # query_features = model.extract_features(query_video.to("cuda"))

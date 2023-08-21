@@ -73,4 +73,3 @@ jobs:
       do_post_deployment: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.video_comparator_functional_env_file_artifact_name }}
     secrets: inherit
-
