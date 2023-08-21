@@ -4,7 +4,7 @@ import json
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from video_comparator.datasets.generators import VideoGenerator
+from video_comparator.generators import VideoGenerator
 from video_comparator.model.visil import ViSiL
 from video_comparator.utils import calculate_similarities_to_queries, extract_features
 
