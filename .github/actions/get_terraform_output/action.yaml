@@ -30,7 +30,7 @@ runs:
               # the output is in the state and we get its value
               terraform_output_value=$(terraform output ${{ inputs.terraform_output_name }} | tr -d '"')
           fi
-          echo "terraform_output_value=$terraform_output_value >> $GITHUB_OUTPUT
+          echo "terraform_output_value=$terraform_output_value" >> $GITHUB_OUTPUT
           echo "${{ inputs.terraform_output_name }}=$terraform_output_value"
       shell: bash
 
