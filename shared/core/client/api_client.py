@@ -9,7 +9,8 @@ from urllib.parse import urlparse
 
 import requests
 
-from core.auth import generate_identity_token, get_credentials
+from core.auth import generate_identity_token
+from core.client.base_client import BaseClient
 
 
 class Protocol(str, Enum):
@@ -24,14 +25,22 @@ class Protocol(str, Enum):
         return cls.HTTP
 
 
-class APIClient(abc.ABC):
-    def __init__(self, host: str, root: str, key_path: Optional[str], ssl: bool = True):
-        self.key_path = key_path
+class APIClient(BaseClient, abc.ABC):
+    def __init__(
+        self,
+        host: str,
+        root: str,
+        key_path: Optional[str],
+        ssl: bool = True,
+        project_id: Optional[str] = None,
+    ):
+        super().__init__(key_path=key_path, project_id=project_id)
+        # self.key_path = key_path
         self.host = host
         self.root = root
         self.protocol_with_host = self._build_host_with_protocol(host=host, ssl=ssl)
         self.endpoint = f"{self.protocol_with_host}{root}"
-        self.credentials = get_credentials(key_path=self.key_path)
+        # self.credentials = get_credentials(key_path=self.key_path)
 
     @staticmethod
     def _build_host_with_protocol(host: str, ssl: bool) -> str:

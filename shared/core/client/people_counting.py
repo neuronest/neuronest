@@ -1,11 +1,9 @@
 import datetime
-import hashlib
 import json
-import os
 import uuid
 from typing import Optional
 
-from core.client.base import APIClient
+from core.client.api_client import APIClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.routes.people_counting import routes
@@ -14,16 +12,7 @@ from core.schemas.people_counting import (
     PeopleCounterInputData,
     PeopleCounterOutput,
 )
-
-
-def get_file_id(file_path: str):
-    file_path_without_extension, extension = os.path.splitext(file_path)
-    with open(file_path, "rb") as file_reader:
-        file_id = hashlib.sha256(file_reader.read()).hexdigest()
-    file_id = f"{os.path.basename(file_path_without_extension)}_{file_id}"
-    if extension:
-        file_id += extension
-    return file_id
+from core.tools import get_file_id_from_path
 
 
 class PeopleCountingClient(APIClient):
@@ -37,24 +26,24 @@ class PeopleCountingClient(APIClient):
         key_path: Optional[str] = None,
     ):
         super().__init__(host=host, key_path=key_path, root=routes.root)
-        self._project_id = project_id
+        # self._project_id = project_id
         self.storage_client = StorageClient(
             key_path=key_path, project_id=self.project_id
         )
 
-    # fixme: this is a duplicate code from  # pylint: disable=W0511
-    #  core/google/vertex_ai_manager.py  # pylint: disable=W0511
-    #  find a way to mutualize  # pylint: disable=W0511
-    @property
-    def project_id(self) -> str:
-        # we give priority on the project_id which was passed explicitly to the
-        # instantiation rather than to the project id to which the service account
-        # of the credentials is attached
-        return (
-            self._project_id
-            if self._project_id is not None
-            else self.credentials.project_id
-        )
+    # # fixme: this is a duplicate code from  # pylint: disable=W0511
+    # #  core/google/vertex_ai_manager.py  # pylint: disable=W0511
+    # #  find a way to mutualize  # pylint: disable=W0511
+    # @property
+    # def project_id(self) -> str:
+    #     # we give priority on the project_id which was passed explicitly to the
+    #     # instantiation rather than to the project id to which the service account
+    #     # of the credentials is attached
+    #     return (
+    #         self._project_id
+    #         if self._project_id is not None
+    #         else self.credentials.project_id
+    #     )
 
     @property
     def videos_to_count_bucket(self) -> str:
@@ -63,10 +52,10 @@ class PeopleCountingClient(APIClient):
     def _upload_video_to_storage(self, video_path: str) -> GSPath:
         bucket = self.storage_client.client.bucket(self.videos_to_count_bucket)
 
-        if not bucket.exists:
+        if not bucket.exists():
             bucket.create()
 
-        video_blob_name = get_file_id(file_path=video_path)
+        video_blob_name = get_file_id_from_path(file_path=video_path)
 
         self.storage_client.upload_blob(
             source_file_name=video_path,
@@ -82,7 +71,9 @@ class PeopleCountingClient(APIClient):
         now = datetime.datetime.now().strftime(
             self.PREDICTION_INSTANCE_ID_DATETIME_FORMAT
         )
-        return f"{now}_{get_file_id(file_path=video_path)}_{str(uuid.uuid4())}"
+        return (
+            f"{now}_{get_file_id_from_path(file_path=video_path)}_{str(uuid.uuid4())}"
+        )
 
     def predict(
         self, video_path: str, save_counted_video_in_storage: bool = False

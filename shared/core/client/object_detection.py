@@ -1,81 +1,64 @@
-import time
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
-import requests
-from cachetools.func import ttl_cache
-from google.cloud import aiplatform
 from imutils import resize
 
-from core.client.model_instantiator import ModelInstantiatorClient
-from core.exceptions import DependencyError
-from core.google.vertex_ai_manager import VertexAIManager
+from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
 from core.schemas.object_detection import PREDICTION_COLUMNS, OutputSchema
 from core.serialization.array import array_from_string
 from core.serialization.image import image_to_string
 
 
-class ObjectDetectionClient:
+class ObjectDetectionClient(OnlinePredictionModelClient):
     PREPROCESSING_IMAGE_TYPE = ".jpg"
     MAX_SIZE = (640, 640)
     MAX_BYTES = 1.5e6
 
-    def __init__(
-        self,
-        vertex_ai_manager: VertexAIManager,
-        model_instantiator_client: ModelInstantiatorClient,
-        model_name: str,
-        endpoint_retry_wait_time: int = 30,
-        endpoint_retry_timeout: int = 2700,
-    ):
-        self.vertex_ai_manager = vertex_ai_manager
-        self.model_instantiator_client = model_instantiator_client
-        self.model_name = model_name
-        self.endpoint_retry_wait_time = endpoint_retry_wait_time
-        self.endpoint_retry_timeout = endpoint_retry_timeout
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def _create_endpoint(self) -> Optional[requests.Response]:
-        return self.model_instantiator_client.instantiate(self.model_name)
+    # def _create_endpoint(self) -> Optional[requests.Response]:
+    #     return self.model_instantiator_client.instantiate(self.model_name)
 
-    @ttl_cache(ttl=600)
-    def _try_get_endpoint(self) -> aiplatform.Endpoint:
-        total_waited_time = 0
-
-        while total_waited_time < self.endpoint_retry_timeout:
-            endpoint = self.vertex_ai_manager.get_endpoint_by_name(self.model_name)
-            # model as described is the registry model that has the largest version_id.
-            # If the endpoint is well deployed, but with a model that is not that of
-            # the largest version id, the function does not return the endpoint and
-            # does an instantiate, which does not make sense in a "_try_get_endpoint"
-            # function which should just return the deployed endpoint
-            # the logic could be replaced by this block, which returns the endpoint
-            # if it is deployed
-
-            # def endpoint_is_deployed(endpoint: aiplatform.Endpoint) -> bool:
-            #     try:
-            #         endpoint_gca_resource: proto.Message = endpoint.gca_resource
-            #     except RuntimeError:
-            #         return False
-            #     return len(list(endpoint_gca_resource.deployed_models)) >= 1
-
-            model = self.vertex_ai_manager.get_model_by_name(
-                self.model_name, version_aliases=("default",)
-            )
-
-            if endpoint is not None and self.vertex_ai_manager.is_model_deployed(
-                model=model, endpoint=endpoint
-            ):
-                return endpoint
-
-            self._create_endpoint()
-            time.sleep(self.endpoint_retry_wait_time)
-            total_waited_time += self.endpoint_retry_wait_time
-
-        raise DependencyError(
-            f"Failed to deploy an endpoint for model_name={self.model_name}, "
-            f"giving up after {self.endpoint_retry_timeout // 60} minutes of trying"
-        )
+    # @ttl_cache(ttl=600)
+    # def _try_get_endpoint(self) -> aiplatform.Endpoint:
+    #     total_waited_time = 0
+    #
+    #     while total_waited_time < self.endpoint_retry_timeout:
+    #         endpoint = self.vertex_ai_manager.get_endpoint_by_name(self.model_name)
+    #         # model as described is the registry model that has the largest version_id.
+    #         # If the endpoint is well deployed, but with a model that is not that of
+    #         # the largest version id, the function does not return the endpoint and
+    #         # does an instantiate, which does not make sense in a "_try_get_endpoint"
+    #         # function which should just return the deployed endpoint
+    #         # the logic could be replaced by this block, which returns the endpoint
+    #         # if it is deployed
+    #
+    #         # def endpoint_is_deployed(endpoint: aiplatform.Endpoint) -> bool:
+    #         #     try:
+    #         #         endpoint_gca_resource: proto.Message = endpoint.gca_resource
+    #         #     except RuntimeError:
+    #         #         return False
+    #         #     return len(list(endpoint_gca_resource.deployed_models)) >= 1
+    #
+    #         model = self.vertex_ai_manager.get_model_by_name(
+    #             self.model_name, version_aliases=("default",)
+    #         )
+    #
+    #         if endpoint is not None and self.vertex_ai_manager.is_model_deployed(
+    #             model=model, endpoint=endpoint
+    #         ):
+    #             return endpoint
+    #
+    #         self._create_endpoint()
+    #         time.sleep(self.endpoint_retry_wait_time)
+    #         total_waited_time += self.endpoint_retry_wait_time
+    #
+    #     raise DependencyError(
+    #         f"Failed to deploy an endpoint for model_name={self.model_name}, "
+    #         f"giving up after {self.endpoint_retry_timeout // 60} minutes of trying"
+    #     )
 
     @staticmethod
     def _are_shapes_correct(images: List[np.ndarray]) -> bool:
@@ -146,6 +129,7 @@ class ObjectDetectionClient:
 
         return chunks
 
+    # pylint: disable=arguments-renamed
     def predict_batch(self, images: List[np.ndarray]) -> List[pd.DataFrame]:
         """
         images: List of RGB images as NumPy arrays
@@ -180,8 +164,9 @@ class ObjectDetectionClient:
             for prediction in predictions
         ]
 
-    def predict_single(self, image: np.ndarray) -> pd.DataFrame:
-        """
-        images: A RGB image as NumPy array
-        """
-        return self.predict_batch([image])[0]
+    #
+    # def predict_single(self, image: np.ndarray) -> pd.DataFrame:
+    #     """
+    #     images: A RGB image as NumPy array
+    #     """
+    #     return self.predict_batch([image])[0]

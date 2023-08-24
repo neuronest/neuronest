@@ -1,3 +1,4 @@
+import hashlib
 import os
 from functools import wraps
 from typing import Any, Callable, Iterable, Iterator, List, Optional
@@ -67,3 +68,23 @@ def maybe_async(convert_to_async: bool) -> Callable:
         return func
 
     return decorator
+
+
+def get_file_id_from_path(
+    file_path: str,
+    add_filename: bool = True,
+    add_extension: bool = True,
+):
+    file_path_without_extension, extension = os.path.splitext(file_path)
+    with open(file_path, "rb") as file_reader:
+        file_hash_hexdigest = hashlib.sha256(file_reader.read()).hexdigest()
+
+    if add_filename:
+        file_id = (
+            f"{os.path.basename(file_path_without_extension)}_{file_hash_hexdigest}"
+        )
+    else:
+        file_id = file_hash_hexdigest
+    if add_extension and extension:
+        file_id += extension
+    return file_id
