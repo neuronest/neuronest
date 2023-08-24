@@ -8,7 +8,7 @@ from core.packages.abstract.online_prediction_model.model_handler import (
 from core.schemas.object_detection import (
     InputSchemaSample as ObjectDetectionInputSchemaSample,
 )
-from core.schemas.object_detection import OutputSchema
+from core.schemas.object_detection import OutputSchemaSample
 from core.serialization.array import array_to_string
 from core.serialization.image import image_from_string
 from imutils import resize
@@ -152,11 +152,11 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
 
     def postprocess(
         self, predictions: List[Any]
-    ) -> List[OutputSchema]:  # -> List[Dict[str, str]]:
+    ) -> List[OutputSchemaSample]:  # -> List[Dict[str, str]]:
         filtered_predictions = self._filter_predictions(predictions)
 
         return [
-            OutputSchema(results=array_to_string(prediction.values))
+            OutputSchemaSample(results=array_to_string(prediction.values))
             for prediction in filtered_predictions
         ]
 

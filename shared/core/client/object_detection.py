@@ -5,7 +5,7 @@ import pandas as pd
 from imutils import resize
 
 from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
-from core.schemas.object_detection import PREDICTION_COLUMNS, OutputSchema
+from core.schemas.object_detection import PREDICTION_COLUMNS, OutputSchemaSample
 from core.serialization.array import array_from_string
 from core.serialization.image import image_to_string
 
@@ -154,7 +154,7 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
             for chunk_preprocessed_images in chunks_preprocessed_images
         ]
         predictions = [
-            array_from_string(OutputSchema.parse_obj(raw_prediction).results)
+            array_from_string(OutputSchemaSample.parse_obj(raw_prediction).results)
             for raw_predictions in raw_chunked_predictions
             for raw_prediction in raw_predictions
         ]

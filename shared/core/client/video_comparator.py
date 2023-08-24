@@ -6,7 +6,7 @@ from core.path import GSPath
 from core.schemas.video_comparator import (
     InputSchema,
     InputSchemaSample,
-    OutputSchema,
+    OutputSchemaSample,
     PredictionType,
 )
 from core.tools import get_file_id_from_path
@@ -184,8 +184,9 @@ class VideoComparatorClient(OnlinePredictionModelClient):
             )
             for video_path, other_video_path in video_path_pairs
         ]
-        return OutputSchema(
-            endpoint.predict(
+        return [
+            OutputSchemaSample.parse_obj(sample_prediction).results
+            for sample_prediction in endpoint.predict(
                 InputSchema(
                     samples=[
                         InputSchemaSample(
@@ -195,9 +196,9 @@ class VideoComparatorClient(OnlinePredictionModelClient):
                         )
                         for gs_video_path, gs_other_video_path in gs_video_path_pairs
                     ]
-                ).dict()
+                ).dict()["samples"]
             ).predictions
-        ).results
+        ]
         #
         # if not self._are_shapes_correct(images):
         #     raise ValueError("Incorrect received shapes")

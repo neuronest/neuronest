@@ -53,5 +53,5 @@ class InputSchema(online_prediction_model.InputSchema):
         return samples
 
 
-class OutputSchema(online_prediction_model.OutputSchema):
-    results: Union[List[float], List[List[float]]]
+class OutputSchemaSample(online_prediction_model.OutputSchemaSample):
+    results: Union[float, List[float]]

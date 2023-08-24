@@ -10,7 +10,9 @@ from core.packages.abstract.online_prediction_model.model_handler import (
 from core.schemas.video_comparator import (
     InputSchemaSample as VideoComparatorInputSchemaSample,
 )
-from core.schemas.video_comparator import OutputSchema as VideoComparatorOutputSchema
+from core.schemas.video_comparator import (
+    OutputSchemaSample as VideoComparatorOutputSchema,
+)
 
 from video_comparator.config import cfg
 from video_comparator.modules.model import VideoComparatorModel
@@ -141,7 +143,7 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         if delete_videos_after_inference:
             os.remove(video_path)
             os.remove(other_video_path)
-        return [prediction]
+        return prediction
 
     # @implements_abstract_method(OnlinePredictionModelHandler.preprocess)
     # def preprocess(self, data: List[Dict[str, str]]) -> List[Any]:

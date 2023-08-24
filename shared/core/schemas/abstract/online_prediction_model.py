@@ -78,5 +78,5 @@ class InputSchema(BaseModel):
     #     return samples
 
 
-class OutputSchema(BaseModel):
+class OutputSchemaSample(BaseModel):
     results: str

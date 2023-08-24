@@ -10,7 +10,7 @@ from ts.torch_handler.base_handler import BaseHandler
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
-from core.schemas.abstract.online_prediction_model import Device, OutputSchema
+from core.schemas.abstract.online_prediction_model import Device, OutputSchemaSample
 
 # from core.schemas.object_detection import (
 #     Device,
@@ -156,7 +156,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     @abstractmethod
     def postprocess(  # pylint: disable=arguments-renamed
         self, predictions: List[Any]
-    ) -> List[OutputSchema]:  # -> List[Dict[str, str]]:
+    ) -> List[OutputSchemaSample]:  # -> List[Dict[str, str]]:
         raise NotImplementedError
         # filtered_predictions = self._filter_predictions(data)
         #
