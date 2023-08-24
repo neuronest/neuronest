@@ -61,7 +61,9 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         # self.model: Optional[OnlinePredictionModel] = None
         # self.labels_to_predict: Optional[List[str]] = None
         # self.confidence_threshold: Optional[float] = None
+
         self.storage_client = StorageClient()
+        # self.storage_client = None
 
     # def _retrieve_model_path(self) -> str:
     #     properties = self._context.system_properties
