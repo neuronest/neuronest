@@ -38,3 +38,7 @@ variable "cloud_scheduler_model_name" {
   type    = string
   default = "cloud_scheduler_model_name_dummy"
 }
+variable "online_prediction_model_sa_name" {
+  type    = string
+  default = "online_prediction_model_sa_name_dummy"
+}

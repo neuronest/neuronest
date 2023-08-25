@@ -34,6 +34,7 @@ class ServingDeploymentConfig(BaseModel):
     max_replica_count: int = 1
     accelerator_type: Optional[str] = None
     accelerator_count: int = 0
+    service_account: Optional[str] = None
 
     @classmethod
     def from_labels(cls, config_as_labels: Dict[str, str]) -> ServingDeploymentConfig:

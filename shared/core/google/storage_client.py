@@ -26,9 +26,11 @@ class StorageClient:
         self, key_path: Optional[str] = None, project_id: Optional[str] = None
     ):
         self.client = (
-            storage.Client()
+            storage.Client(project=project_id)
             if key_path is None
-            else storage.Client.from_service_account_json(key_path)
+            else storage.Client.from_service_account_json(
+                json_credentials_path=key_path, project=project_id
+            )
         )
         self.project_id = project_id
 

@@ -45,13 +45,13 @@ def video_comparator_client():
     vertex_ai_manager = VertexAIManager(
         key_path=GOOGLE_APPLICATION_CREDENTIALS, location=REGION, project_id=PROJECT_ID
     )
-    object_detection_client = VideoComparatorClient(
+
+    return VideoComparatorClient(
         vertex_ai_manager=vertex_ai_manager,
         model_instantiator_client=fake_model_instantiator_client,
         model_name=MODEL_NAME,
+        project_id=PROJECT_ID,
     )
-
-    return object_detection_client
 
 
 @pytest.fixture

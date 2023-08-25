@@ -282,6 +282,7 @@ class VertexAIManager:
             max_replica_count=serving_deployment_config.max_replica_count,
             accelerator_type=serving_deployment_config.accelerator_type,
             accelerator_count=serving_deployment_config.accelerator_count,
+            service_account=serving_deployment_config.service_account,
             # sync=True doesn't seem to be trusted as it can timeout without being able
             # to do anything about it
             # (deploy_request_timeout parameter seems to be ineffective)
