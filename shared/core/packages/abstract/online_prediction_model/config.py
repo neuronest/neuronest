@@ -33,7 +33,7 @@ class ServingDeployment(BaseModel):
     accelerator_count: int
     min_replica_count: int
     max_replica_count: int
-    service_account: str
+    service_account: Optional[str]
 
 
 class Dataset(BaseModel):
