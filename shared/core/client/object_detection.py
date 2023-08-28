@@ -11,7 +11,11 @@ from imutils import resize
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.exceptions import DependencyError
 from core.google.vertex_ai_manager import VertexAIManager
-from core.schemas.object_detection import PREDICTION_COLUMNS, OutputSchema
+from core.schemas.object_detection import (
+    PREDICTION_COLUMNS,
+    InputSampleSchema,
+    OutputSchema,
+)
 from core.serialization.array import array_from_string
 from core.serialization.image import image_to_string
 
@@ -129,7 +133,12 @@ class ObjectDetectionClient:
 
         return chunks
 
-    def predict_batch(self, images: List[np.ndarray]) -> List[pd.DataFrame]:
+    def predict_batch(
+        self,
+        images: List[np.ndarray],
+        labels: Optional[List[str]] = None,
+        confidence_threshold: Optional[float] = None,
+    ) -> List[pd.DataFrame]:
         """
         images: List of RGB images as NumPy arrays
         """
@@ -137,12 +146,14 @@ class ObjectDetectionClient:
             raise ValueError("Incorrect received shapes")
 
         preprocessed_images = [
-            {
-                "data": image_to_string(
+            InputSampleSchema(
+                data=image_to_string(
                     frame=image,
                     extension=self.PREPROCESSING_IMAGE_TYPE,
-                )
-            }
+                ),
+                labels_to_predict=labels,
+                confidence_threshold=confidence_threshold,
+            ).dict(exclude_none=True)
             for image in self._resize_images(images=images)
         ]
         chunks_preprocessed_images = self._split_into_chunks(preprocessed_images)
@@ -163,8 +174,15 @@ class ObjectDetectionClient:
             for prediction in predictions
         ]
 
-    def predict_single(self, image: np.ndarray) -> pd.DataFrame:
+    def predict_single(
+        self,
+        image: np.ndarray,
+        labels: Optional[List[str]] = None,
+        confidence_threshold: Optional[float] = None,
+    ) -> pd.DataFrame:
         """
         images: A RGB image as NumPy array
         """
-        return self.predict_batch([image])[0]
+        return self.predict_batch(
+            images=[image], labels=labels, confidence_threshold=confidence_threshold
+        )[0]

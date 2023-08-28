@@ -1,6 +1,7 @@
 from __future__ import annotations as type_annotations
 
 import contextlib
+import hashlib
 import os
 import tempfile
 from abc import ABC
@@ -43,6 +44,14 @@ AUDIO_CODEC_TO_CONTAINER = {
     AudioCodec.WMAV2: AudioExtension.WMA,
     AudioCodec.OPUS: AudioExtension.OPUS,
 }
+
+
+def rgb_to_bgr(frame: np.ndarray) -> np.ndarray:
+    return cv.cvtColor(frame, cv.COLOR_RGB2BGR)
+
+
+def bgr_to_rgb(frame: np.ndarray) -> np.ndarray:
+    return cv.cvtColor(frame, cv.COLOR_BGR2RGB)
 
 
 class AssetMeta(ABC, BaseModel):
@@ -128,6 +137,15 @@ class AssetContent(BaseModel, ABC):
     def as_array_content(self) -> np.ndarray:
         raise NotImplementedError
 
+    def get_hash(self, buffer_size: int = 2**24) -> str:
+        hash_md5 = hashlib.md5()
+
+        with open(self.asset_path, "rb") as fp:
+            for chunk in iter(lambda: fp.read(buffer_size), b""):
+                hash_md5.update(chunk)
+
+        return hash_md5.hexdigest()
+
     def __del__(self):
         if self.delete and os.path.exists(self.asset_path):
             os.unlink(self.asset_path)
@@ -161,7 +179,7 @@ class ImageAssetContent(VisualAssetContent):
     @root_validator(pre=True)
     # pylint: disable=no-self-argument
     def fill_metadata(cls, values: dict) -> dict:
-        values["extension"] = os.path.splitext(values["asset_path"])[-1]
+        values["extension"] = extract_file_extension(values["asset_path"])
 
         values["asset_meta"] = ImageAssetMeta(
             width=values["image"].shape[1],
@@ -186,6 +204,7 @@ class ImageAssetContent(VisualAssetContent):
 class VideoAssetContent(VisualAssetContent):
     asset_meta: VideoAssetMeta
     time_step: float
+    to_rgb: bool = True
 
     @staticmethod
     def estimate_sampled_frames_number(
@@ -208,12 +227,16 @@ class VideoAssetContent(VisualAssetContent):
             video_capture.release()
 
     @classmethod
-    def _read(cls, asset_path: str) -> Iterator[np.ndarray]:
+    def _read(cls, asset_path: str, to_rgb: bool = False) -> Iterator[np.ndarray]:
         with cls._capture_video(asset_path) as video_capture:
             while video_capture.isOpened():
                 is_read, frame = video_capture.read()
                 if not is_read:
                     break
+
+                if to_rgb is True:
+                    frame = bgr_to_rgb(frame)
+
                 yield frame
             else:
                 raise ValueError(f"Could not open the following asset: {asset_path}")
@@ -269,7 +292,7 @@ class VideoAssetContent(VisualAssetContent):
         )
 
         sampled_frames_index = 0
-        for frame_number, frame in enumerate(self._read(self.asset_path)):
+        for frame_number, frame in enumerate(self._read(self.asset_path, self.to_rgb)):
             while (
                 sampled_frames_index < len(sampled_frames_offsets)
                 and frame_number == sampled_frames_offsets[sampled_frames_index]
