@@ -26,7 +26,7 @@ serving_deployment:
   accelerator_count: 1
   min_replica_count: 1
   max_replica_count: 1
-  service_account: "${oc.env:SERVICE_ACCOUNT_NAME,null}"
+  service_account: "${oc.env:SERVICE_ACCOUNT_EMAIL,null}"
 
 bigquery:
   dataset:
