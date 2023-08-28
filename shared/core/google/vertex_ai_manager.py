@@ -8,6 +8,7 @@ from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
 
 from core.exceptions import AlreadyExistingError
+from core.google.utils import get_service_account_email
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
@@ -272,7 +273,13 @@ class VertexAIManager:
             raise AlreadyExistingError(
                 "The last model version has already been deployed"
             )
-
+        if serving_deployment_config.service_account_name is not None:
+            service_account_email = get_service_account_email(
+                service_account_name=serving_deployment_config.service_account_name,
+                project_id=self.project_id,
+            )
+        else:
+            service_account_email = None
         endpoint = model.deploy(
             endpoint=endpoint,
             deployed_model_display_name=name,
@@ -282,7 +289,7 @@ class VertexAIManager:
             max_replica_count=serving_deployment_config.max_replica_count,
             accelerator_type=serving_deployment_config.accelerator_type,
             accelerator_count=serving_deployment_config.accelerator_count,
-            service_account=serving_deployment_config.service_account,
+            service_account=service_account_email,
             # sync=True doesn't seem to be trusted as it can timeout without being able
             # to do anything about it
             # (deploy_request_timeout parameter seems to be ineffective)

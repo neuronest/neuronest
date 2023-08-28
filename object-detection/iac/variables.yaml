@@ -9,8 +9,6 @@ multi_instance_resource_names:
   - BASE_IMAGE_NAME=object-detection
   # service account name
   - SERVICE_ACCOUNT_NAME=online-prediction-model
-  # service account email
-  - SERVICE_ACCOUNT_EMAIL=${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
   # vertex
   - MODEL_NAME=model
   # storage
