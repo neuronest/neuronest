@@ -7,7 +7,7 @@ repository_variables:
 multi_instance_resource_names:
   - BASE_IMAGE_NAME=object-detection
   # service account names
-  - SERVICE_ACCOUNT_NAME=online-prediction-model
+  - SERVICE_ACCOUNT_NAME=prediction-model
   # vertex
   - MODEL_NAME=model
   # storage
