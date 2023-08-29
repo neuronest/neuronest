@@ -17,7 +17,6 @@ from pydantic import BaseModel
 sys.path.append("shared")
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
-FUNCTIONAL_REPOSITORIES_PREFIX = "functional-"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
@@ -373,7 +372,6 @@ class EnvFile:
 
 class Repository:
     VARIABLES_FILE_PATH = "iac/variables.yaml"
-    FUNCTIONAL_REPOSITORIES_PREFIX = FUNCTIONAL_REPOSITORIES_PREFIX
 
     def __init__(self, name: str):
         self.name = name
@@ -408,13 +406,7 @@ class Repository:
 
         return []
 
-    def get_base_name_without_functional(self) -> str:
-        if self.name.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
-            return self.name[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
-
-        return self.name
-
-    def get_base_code_without_functional(self) -> str:
+    def get_base_code(self) -> str:
         codes = [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
@@ -427,12 +419,7 @@ class Repository:
         if len(codes) > 1:
             raise ValueError("Multiple repository code variables found")
 
-        code = codes[0].value
-
-        if code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
-            return code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
-
-        return code
+        return codes[0].value
 
 
 def get_all_repository_var_lines(
@@ -445,9 +432,6 @@ def get_all_repository_var_lines(
         variables_to_which_not_add_namespace = {}
 
     all_repository_var_lines = []
-
-    repository_code_without_functional = repository.get_base_code_without_functional()
-    repository_name_without_functional = repository.get_base_name_without_functional()
 
     for dependency_repository in repository.get_dependency_repositories():
         dependency_repository_var_lines = get_all_repository_var_lines(
@@ -465,7 +449,7 @@ def get_all_repository_var_lines(
             for variable_inside_value in variables_inside_value:
                 if variable_inside_value not in variables_to_which_not_add_namespace:
                     var_line.add_namespace(
-                        repository_name_without_functional,
+                        repository.name,
                         add_to_value_variables=True,
                         add_to_name=False,
                         variable_inside_value_to_add_to=variable_inside_value,
@@ -473,7 +457,7 @@ def get_all_repository_var_lines(
                         already_added_ok=True,
                     )
             var_line.add_namespace(
-                repository_name_without_functional,
+                repository.name,
                 add_to_name=True,
                 add_to_value_variables=False,
                 inplace=True,
@@ -482,10 +466,10 @@ def get_all_repository_var_lines(
         if (
             add_namespace_to_name_of_multi_instance_resource
             and var_line.is_a_multi_instance_resource()
-            and not var_line.value.startswith(repository_name_without_functional)
+            and not var_line.value.startswith(repository.name)
         ):
             var_line.add_namespace(
-                repository_code_without_functional,
+                repository.get_base_code(),
                 add_to_value=True,
                 add_to_name=False,
                 add_to_value_variables=False,

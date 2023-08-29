@@ -1,7 +1,7 @@
 repository_variables:
   # general repository
   - REPOSITORY_NAME=customer-dummy-project
-  - REPOSITORY_CODE=customer-dummy-project
+  - REPOSITORY_CODE=cdp
 multi_instance_resource_names: []
 other_variables:
   # GCP project
