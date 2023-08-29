@@ -17,6 +17,7 @@ from pydantic import BaseModel
 sys.path.append("shared")
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
+FUNCTIONAL_REPOSITORIES_PREFIX = "func-"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
@@ -227,7 +228,8 @@ class VariableLine:
         already_added_ok: bool = False,
     ) -> VariableLine:
         var_line = VariableLine(self.line)
-        namespace = f"{namespace.replace('_', '-').lower()}{'-'}"
+        namespace = namespace.replace("_", "-").lower()
+        namespace = f"{namespace}" if namespace.endswith("-") else f"{namespace}-"
 
         var_line.value = add_namespace_to_string(
             string=var_line.value,
@@ -406,7 +408,7 @@ class Repository:
 
         return []
 
-    def get_base_code(self) -> str:
+    def get_base_code(self, prefix_to_remove: Optional[str] = None) -> str:
         codes = [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
@@ -419,7 +421,12 @@ class Repository:
         if len(codes) > 1:
             raise ValueError("Multiple repository code variables found")
 
-        return codes[0].value
+        base_code = codes[0].value
+
+        if prefix_to_remove is None or not base_code.startswith(prefix_to_remove):
+            return base_code
+
+        return base_code[len(prefix_to_remove) :]
 
 
 def get_all_repository_var_lines(
@@ -466,10 +473,18 @@ def get_all_repository_var_lines(
         if (
             add_namespace_to_name_of_multi_instance_resource
             and var_line.is_a_multi_instance_resource()
-            and not var_line.value.startswith(repository.name)
         ):
+            if var_line.value.startswith(
+                repository.get_base_code(
+                    prefix_to_remove=FUNCTIONAL_REPOSITORIES_PREFIX
+                )
+            ):
+                namespace = FUNCTIONAL_REPOSITORIES_PREFIX
+            else:
+                namespace = repository.get_base_code()
+
             var_line.add_namespace(
-                repository.get_base_code(),
+                namespace,
                 add_to_value=True,
                 add_to_name=False,
                 add_to_value_variables=False,
