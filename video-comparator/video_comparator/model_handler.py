@@ -129,7 +129,7 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
     def inference(
         self,
         video_path: str,
-        other_video_path: str,
+        other_video_path: Optional[str],
         prediction_type: str,
         batch_size: int = 128,
         delete_videos_after_inference: bool = True,
@@ -140,8 +140,9 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
             prediction_type=prediction_type,
             batch_size=batch_size,
         )
-        if delete_videos_after_inference:
+        if video_path and delete_videos_after_inference:
             os.remove(video_path)
+        if other_video_path and delete_videos_after_inference:
             os.remove(other_video_path)
         return prediction
 
