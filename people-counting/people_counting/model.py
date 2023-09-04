@@ -27,15 +27,17 @@ class Model:
             confidence_threshold=self.confidence_threshold,
         )
 
+        # noinspection PyUnresolvedReferences
         return [
-            results.apply(
-                lambda row: BoundingBox(
+            [
+                BoundingBox(
                     x_min=int(row.x_min),
                     y_min=int(row.y_min),
                     x_max=int(row.x_max),
                     y_max=int(row.y_max),
                 )
-            ).tolist()
+                for row in results.itertuples()
+            ]
             for results in results_batch
         ]
 
