@@ -21,13 +21,19 @@ from starlette import status
 from people_counting.api.dependencies import (
     use_cloud_run_job_manager,
     use_config,
-    use_counted_videos_bucket,
-    use_firestore_results_collection,
     use_people_counter,
     use_storage_client,
-    use_videos_to_count_bucket,
 )
 from people_counting.common import Statistics
+from people_counting.environment_variables import (
+    COUNTED_VIDEOS_BUCKET,
+    FIRESTORE_RESULTS_COLLECTION,
+    MODEL_INSTANTIATOR_HOST,
+    OBJECT_DETECTION_MODEL_NAME,
+    PROJECT_ID,
+    REGION,
+    VIDEOS_TO_COUNT_BUCKET,
+)
 from people_counting.people_counter import PeopleCounter
 
 resource_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -99,9 +105,6 @@ def count_people(
     config: DictConfig = Depends(use_config),
     cloud_run_job_manager: CloudRunJobManager = Depends(use_cloud_run_job_manager),
     storage_client: StorageClient = Depends(use_storage_client),
-    firestore_results_collection: str = Depends(use_firestore_results_collection),
-    videos_to_count_bucket: str = Depends(use_videos_to_count_bucket),
-    counted_videos_bucket: str = Depends(use_counted_videos_bucket),
 ) -> PeopleCounterOutput:
     job_id = uuid.uuid4().hex
 
@@ -109,7 +112,7 @@ def count_people(
 
     _validate_video_storage_path(
         video_storage_path=video_storage_path,
-        expected_bucket_name=videos_to_count_bucket,
+        expected_bucket_name=VIDEOS_TO_COUNT_BUCKET,
     )
 
     video_asset_content = make_asset_content(
@@ -123,10 +126,10 @@ def count_people(
         asset_id=asset_id,
         save_counted_video=people_counter_input.save_counted_video,
         asset_path=video_asset_content.asset_path,
-        counted_videos_bucket=counted_videos_bucket,
+        counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
     )
 
-    job_name = f"count_people_{asset_id}"
+    job_name = f"count-people-{asset_id}"
     cloud_run_job_manager.create_job(
         job_name=job_name,
         job_config=JobConfig(
@@ -139,10 +142,14 @@ def count_people(
                 "people_counting.jobs.count_people",
             ],
             environment_variables={
+                "PROJECT_ID": PROJECT_ID,
+                "REGION": REGION,
+                "OBJECT_DETECTION_MODEL_NAME": OBJECT_DETECTION_MODEL_NAME,
+                "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
+                "FIRESTORE_RESULTS_COLLECTION": FIRESTORE_RESULTS_COLLECTION,
                 "JOB_ID": job_id,
                 "ASSET_ID": asset_id,
                 "VIDEO_STORAGE_PATH": people_counter_input.video_storage_path,
-                "FIRESTORE_RESULTS_COLLECTION": firestore_results_collection,
                 "COUNTED_VIDEO_STORAGE_PATH": counted_video_storage_path,
             },
         ),
@@ -169,13 +176,12 @@ def count_people_real_time_showing(
     response: Response,
     people_counter: PeopleCounter = Depends(use_people_counter),
     storage_client: StorageClient = Depends(use_storage_client),
-    videos_to_count_bucket: str = Depends(use_videos_to_count_bucket),
 ) -> PeopleCounterRealTimeOutput:
     video_storage_path = people_counter_input.video_storage_path
 
     _validate_video_storage_path(
         video_storage_path=video_storage_path,
-        expected_bucket_name=videos_to_count_bucket,
+        expected_bucket_name=VIDEOS_TO_COUNT_BUCKET,
     )
 
     video_asset_content = make_asset_content(

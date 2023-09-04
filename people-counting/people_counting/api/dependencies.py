@@ -11,14 +11,11 @@ from omegaconf import DictConfig
 
 from people_counting.config import config as cfg
 from people_counting.environment_variables import (
-    COUNTED_VIDEOS_BUCKET,
-    FIRESTORE_RESULTS_COLLECTION,
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
     OBJECT_DETECTION_MODEL_NAME,
     PROJECT_ID,
     REGION,
-    VIDEOS_TO_COUNT_BUCKET,
 )
 from people_counting.people_counter import PeopleCounter
 
@@ -26,21 +23,6 @@ from people_counting.people_counter import PeopleCounter
 @lru_cache
 def use_config() -> DictConfig:
     return cfg
-
-
-@lru_cache
-def use_firestore_results_collection() -> str:
-    return FIRESTORE_RESULTS_COLLECTION
-
-
-@lru_cache
-def use_videos_to_count_bucket() -> str:
-    return VIDEOS_TO_COUNT_BUCKET
-
-
-@lru_cache
-def use_counted_videos_bucket() -> str:
-    return COUNTED_VIDEOS_BUCKET
 
 
 @lru_cache
