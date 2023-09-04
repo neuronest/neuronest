@@ -41,7 +41,7 @@ def count_people(
         (
             counted_videos_bucket,
             counted_videos_blob_name,
-        ) = counted_video_storage_path.to_bucket_and_blob_names()
+        ) = GSPath(counted_video_storage_path).to_bucket_and_blob_names()
 
         with tempfile.NamedTemporaryFile(suffix=extension) as named_temporary_file:
             statistics = people_counter.run(
