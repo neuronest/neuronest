@@ -57,7 +57,7 @@ def count_people(
 
             return statistics
 
-    statistics, _ = people_counter.run(
+    statistics = people_counter.run(
         video_asset_content=video_asset_content,
     )
 
