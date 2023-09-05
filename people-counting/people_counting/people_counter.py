@@ -54,7 +54,7 @@ class PeopleCounter(metaclass=TimingMeta):
         if video_rendering_enabled is True:
             video_renderer = VideoRenderer(
                 line_placement_ratio=self.algorithm_config.line_placement_ratio,
-                fps=video_asset_content.asset_meta.fps,
+                fps=video_asset_content.asset_meta.sampled_fps,
                 output_path=video_output_path,
                 enable_video_writing=enable_video_writing,
                 enable_video_showing=enable_video_showing,

@@ -80,15 +80,24 @@ class VideoAssetMeta(AssetMeta):
     asset_type: AssetType = AssetType.VIDEO
     frames_number: int
     sampled_frames_number: int
-    fps: float
+    initial_fps: float
     time_step: float
     # do not specify the duration, because it can be deduced from the other fields
     duration: float
+    # custom fields
+    sampled_fps: float
 
     @root_validator(pre=True)
     # pylint: disable=no-self-argument
     def populate_duration(cls, values: dict) -> dict:
-        values["duration"] = values["frames_number"] / values["fps"]
+        values["duration"] = values["frames_number"] / values["initial_fps"]
+
+        return values
+
+    @root_validator(pre=True)
+    # pylint: disable=no-self-argument
+    def populate_sampled_fps(cls, values: dict) -> dict:
+        values["sampled_fps"] = 1 / values["time_step"]
 
         return values
 
@@ -276,7 +285,7 @@ class VideoAssetContent(VisualAssetContent):
             width=width,
             height=height,
             frames_number=frames_number,
-            fps=initial_fps,
+            initial_fps=initial_fps,
             sampled_frames_number=sampled_frames_number,
             time_step=targeted_time_step,
         )
@@ -284,10 +293,10 @@ class VideoAssetContent(VisualAssetContent):
         return values
 
     def _get_frames(self) -> Iterator[np.ndarray]:
-        duration = self.asset_meta.frames_number / self.asset_meta.fps
+        duration = self.asset_meta.frames_number / self.asset_meta.initial_fps
 
         sampled_frames_offsets = tuple(
-            int(time_offset * self.asset_meta.fps)
+            int(time_offset * self.asset_meta.initial_fps)
             for time_offset in np.arange(0, duration, self.time_step)
         )
 

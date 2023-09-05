@@ -65,19 +65,23 @@ def count_people(
 
 
 def main(
+    project_id: str,
+    region: str,
+    object_detection_model_name: str,
+    model_instantiator_host: str,
+    firestore_results_collection: str,
     job_id: str,
     asset_id: str,
-    video_storage_path: GSPath,
-    firestore_results_collection: str,
-    counted_video_storage_path: Optional[GSPath],
+    video_storage_path: str,
+    counted_video_storage_path: Optional[str],
 ):
     storage_client = create_storage_client()
     firestore_client = create_firestore_client()
     people_counter = create_people_counter(
-        project_id=PROJECT_ID,
-        region=REGION,
-        model_instantiator_host=MODEL_INSTANTIATOR_HOST,
-        object_detection_model_name=OBJECT_DETECTION_MODEL_NAME,
+        project_id=project_id,
+        region=region,
+        model_instantiator_host=model_instantiator_host,
+        object_detection_model_name=object_detection_model_name,
         config=cfg,
     )
 
@@ -108,9 +112,13 @@ def main(
 
 if __name__ == "__main__":
     main(
+        project_id=PROJECT_ID,
+        region=REGION,
+        object_detection_model_name=OBJECT_DETECTION_MODEL_NAME,
+        model_instantiator_host=MODEL_INSTANTIATOR_HOST,
+        firestore_results_collection=FIRESTORE_RESULTS_COLLECTION,
         job_id=JOB_ID,
         asset_id=ASSET_ID,
         video_storage_path=VIDEO_STORAGE_PATH,
-        firestore_results_collection=FIRESTORE_RESULTS_COLLECTION,
         counted_video_storage_path=COUNTED_VIDEO_STORAGE_PATH,
     )
