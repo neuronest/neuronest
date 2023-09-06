@@ -1,29 +1,43 @@
 FROM python:3.8.14-buster
 
-ARG APP_DIRECTORY="app"
-ARG PEOPLE_COUNTING_REPOSITORY="people-counting"
-ARG SHARED_REPOSITORY="shared"
+RUN apt -qqy update && apt install -y cmake ffmpeg python3-opencv
 
-WORKDIR /$APP_DIRECTORY/$PEOPLE_COUNTING_REPOSITORY
+ARG ROOT_DIRECTORY="/app"
+ARG REPOSITORY_NAME="people-counting"
+ARG PACKAGE_NAME="people_counting"
+ARG SHARED_REPOSITORY_NAME="shared"
+ARG PORT=80
+ARG WORKERS=4
+ARG TIMEOUT=300
 
-# Install python packages
-COPY $PEOPLE_COUNTING_REPOSITORY/pyproject.toml $PEOPLE_COUNTING_REPOSITORY/poetry.lock ./
-COPY $SHARED_REPOSITORY /$APP_DIRECTORY/$SHARED_REPOSITORY
-
-RUN apt update && apt install -y cmake ffmpeg
-
-RUN pip install --upgrade pip \
-    && pip install poetry \
-    && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
-    && pip install -r requirements.txt
-
-# Install opencv dependencies
-RUN apt-get install -y python3-opencv
-
-# Add code
-COPY $PEOPLE_COUNTING_REPOSITORY /$APP_DIRECTORY/$PEOPLE_COUNTING_REPOSITORY
-
-# Allow statements and log messages to immediately appear in the Knative logs
+ENV PIP_ROOT_USER_ACTION=ignore
+ENV ROOT_DIRECTORY=$ROOT_DIRECTORY
+ENV REPOSITORY_NAME=$REPOSITORY_NAME
+ENV PACKAGE_NAME=$PACKAGE_NAME
+ENV SHARED_REPOSITORY_NAME=$SHARED_REPOSITORY_NAME
+ENV PORT=$PORT
+ENV WORKERS=$WORKERS
+ENV TIMEOUT=$TIMEOUT
 ENV PYTHONUNBUFFERED True
 
-CMD exec uvicorn people_counting.api.main:app --host 0.0.0.0 --port 8080 --log-level info --reload
+COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
+WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
+
+COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
+RUN pip install --upgrade pip \
+  && pip install poetry \
+  && poetry export --without-hashes -f requirements.txt --output requirements.txt \
+  && pip install -r requirements.txt
+
+COPY $REPOSITORY_NAME/conf/ conf
+COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
+
+EXPOSE $PORT
+
+CMD gunicorn \
+    --workers $WORKERS \
+    --timeout $TIMEOUT \
+    --access-logfile - \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:$PORT \
+    $PACKAGE_NAME.api.main:app
