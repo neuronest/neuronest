@@ -35,7 +35,7 @@ class VideoRenderer:
             os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
 
     def _initialize_writer(
-        self, width: int, height: int, codec: str = "h264"
+        self, width: int, height: int, codec: str = "avc1"
     ) -> cv.VideoWriter:
         fourcc = cv.VideoWriter_fourcc(*codec)
 
