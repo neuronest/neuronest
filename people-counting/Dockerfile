@@ -10,7 +10,7 @@ WORKDIR /$APP_DIRECTORY/$PEOPLE_COUNTING_REPOSITORY
 COPY $PEOPLE_COUNTING_REPOSITORY/pyproject.toml $PEOPLE_COUNTING_REPOSITORY/poetry.lock ./
 COPY $SHARED_REPOSITORY /$APP_DIRECTORY/$SHARED_REPOSITORY
 
-RUN apt update && apt install -y cmake
+RUN apt update && apt install -y cmake ffmpeg
 
 RUN pip install --upgrade pip \
     && pip install poetry \
