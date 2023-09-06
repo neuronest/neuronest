@@ -10,7 +10,7 @@ multi_instance_resource_names:
   - WEBAPP_SERVICE_ACCOUNT_NAME=webapp
   - CLOUD_SCHEDULER_SERVICE_ACCOUNT_NAME=cloud-scheduler
   # cloud scheduler
-  - CLOUD_SCHEDULER_JOB_NAME=uninstantiate-model-schedule-temp
+  - CLOUD_SCHEDULER_JOB_NAME=uninstantiate-model-schedule
   # cloud run
   - CLOUD_RUN_NAME=webapp
 other_variables:
