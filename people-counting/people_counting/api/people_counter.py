@@ -88,7 +88,7 @@ def _maybe_create_counted_video_storage_path(
         return None
 
     extension = extract_file_extension(asset_path)
-    counted_videos_blob_name = os.path.join(job_id, asset_id) + extension
+    counted_videos_blob_name = os.path.join(asset_id, job_id) + extension
 
     return GSPath.from_bucket_and_blob_names(
         bucket_name=counted_videos_bucket, blob_name=counted_videos_blob_name
