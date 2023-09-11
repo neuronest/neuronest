@@ -52,7 +52,7 @@ env:
 
 jobs:
   run_base_terraform:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
@@ -69,7 +69,7 @@ jobs:
 
   build_test_push:
     name: build_test_push
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     needs: run_base_terraform
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
@@ -90,7 +90,7 @@ jobs:
 
   deploy:
     name: deploy
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     needs: build_test_push
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
