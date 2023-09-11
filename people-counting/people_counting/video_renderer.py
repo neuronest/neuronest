@@ -120,7 +120,7 @@ class VideoRenderer:
         return frame_copy
 
     @classmethod
-    def draw_bounding_box_id(
+    def draw_object_id(
         cls,
         frame: np.ndarray,
         object_id: int,

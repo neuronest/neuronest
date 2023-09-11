@@ -154,7 +154,7 @@ class PeopleCounter(metaclass=TimingMeta):
                 trackable_objects[object_id] = tracked_object
 
                 if video_rendering_enabled is True:
-                    drawn_frame = video_renderer.draw_bounding_box_id(
+                    drawn_frame = video_renderer.draw_object_id(
                         frame=drawn_frame,
                         object_id=object_id,
                         centroid_x=centroid[0],
