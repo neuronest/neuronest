@@ -3,9 +3,9 @@ from typing import Optional
 
 from core.google.storage_client import StorageClient
 from core.path import GSPath
-from core.schemas.asset import VideoAssetContent
+from core.schemas.asset import VideoAsset
 from core.schemas.people_counting import PeopleCounterDocument
-from core.services.asset_reader import make_asset_content
+from core.services.asset_reader import make_asset
 from core.tools import extract_file_extension
 
 from people_counting.common import Statistics
@@ -32,11 +32,11 @@ from people_counting.people_counter import PeopleCounter
 def count_people(
     people_counter: PeopleCounter,
     storage_client: StorageClient,
-    video_asset_content: VideoAssetContent,
+    video_asset: VideoAsset,
     counted_video_storage_path: Optional[GSPath],
 ) -> Statistics:
     if counted_video_storage_path is not None:
-        extension = extract_file_extension(video_asset_content.asset_path)
+        extension = extract_file_extension(video_asset.asset_path)
 
         (
             counted_videos_bucket,
@@ -45,7 +45,7 @@ def count_people(
 
         with tempfile.NamedTemporaryFile(suffix=extension) as named_temporary_file:
             statistics = people_counter.run(
-                video_asset_content=video_asset_content,
+                video_asset=video_asset,
                 video_output_path=named_temporary_file.name,
             )
 
@@ -58,7 +58,7 @@ def count_people(
             return statistics
 
     statistics = people_counter.run(
-        video_asset_content=video_asset_content,
+        video_asset=video_asset,
     )
 
     return statistics
@@ -85,14 +85,14 @@ def main(
         config=cfg,
     )
 
-    video_asset_content = make_asset_content(
+    video_asset = make_asset(
         asset_path=video_storage_path, storage_client=storage_client
     )
 
     statistics = count_people(
         people_counter=people_counter,
         storage_client=storage_client,
-        video_asset_content=video_asset_content,
+        video_asset=video_asset,
         counted_video_storage_path=counted_video_storage_path,
     )
 

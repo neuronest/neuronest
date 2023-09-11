@@ -12,7 +12,7 @@ from core.schemas.people_counting import (
     PeopleCounterOutput,
     PeopleCounterRealTimeOutput,
 )
-from core.services.asset_reader import make_asset_content
+from core.services.asset_reader import make_asset
 from core.tools import extract_file_extension
 from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
@@ -115,17 +115,17 @@ def count_people(
         expected_bucket_name=VIDEOS_TO_COUNT_BUCKET,
     )
 
-    video_asset_content = make_asset_content(
+    video_asset = make_asset(
         asset_path=people_counter_input.video_storage_path,
         storage_client=storage_client,
     )
-    asset_id = video_asset_content.get_hash()
+    asset_id = video_asset.get_hash()
 
     counted_video_storage_path = _maybe_create_counted_video_storage_path(
         job_id=job_id,
         asset_id=asset_id,
         save_counted_video=people_counter_input.save_counted_video,
-        asset_path=video_asset_content.asset_path,
+        asset_path=video_asset.asset_path,
         counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
     )
 
@@ -184,13 +184,11 @@ def count_people_real_time_showing(
         expected_bucket_name=VIDEOS_TO_COUNT_BUCKET,
     )
 
-    video_asset_content = make_asset_content(
+    video_asset = make_asset(
         asset_path=people_counter_input.video_storage_path,
         storage_client=storage_client,
     )
 
-    statistics = people_counter.run(
-        video_asset_content=video_asset_content, enable_video_showing=True
-    )
+    statistics = people_counter.run(video_asset=video_asset, enable_video_showing=True)
 
     return _real_time_response(response=response, statistics=statistics)

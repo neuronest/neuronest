@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 import dlib
 from core.client.object_detection import ObjectDetectionClient
-from core.schemas.asset import VideoAssetContent
+from core.schemas.asset import VideoAsset
 from core.timing import TimingMeta
 from imutils import resize
 from omegaconf import DictConfig
@@ -42,7 +42,7 @@ class PeopleCounter(metaclass=TimingMeta):
     # pylint: disable=too-many-branches,too-many-locals,too-many-statements
     def run(
         self,
-        video_asset_content: VideoAssetContent,
+        video_asset: VideoAsset,
         video_output_path: Optional[str] = None,
         enable_video_showing: bool = False,
         video_is_rgb_color: bool = True,
@@ -54,7 +54,7 @@ class PeopleCounter(metaclass=TimingMeta):
         if video_rendering_enabled is True:
             video_renderer = VideoRenderer(
                 line_placement_ratio=self.algorithm_config.line_placement_ratio,
-                fps=video_asset_content.asset_meta.sampled_fps,
+                fps=video_asset.asset_meta.sampled_fps,
                 output_path=video_output_path,
                 enable_video_writing=enable_video_writing,
                 enable_video_showing=enable_video_showing,
@@ -62,8 +62,8 @@ class PeopleCounter(metaclass=TimingMeta):
 
         centroid_tracker = CentroidTracker(
             max_disappeared=self.algorithm_config.centroid_tracker.max_disappeared,
-            max_distance=video_asset_content.asset_meta.height
-            / video_asset_content.asset_meta.width
+            max_distance=video_asset.asset_meta.height
+            / video_asset.asset_meta.width
             * self.image_width
             * self.algorithm_config.centroid_tracker.max_distance_height_ratio,
         )
@@ -72,8 +72,8 @@ class PeopleCounter(metaclass=TimingMeta):
         trackable_objects: Dict[int, TrackableObject] = {}
         trackers: List[dlib.correlation_tracker] = []
 
-        for frame_number, frame in enumerate(video_asset_content.content):
-            time_offset = frame_number * video_asset_content.time_step
+        for frame_number, frame in enumerate(video_asset.content):
+            time_offset = frame_number * video_asset.time_step
             frame = resize(frame, width=self.image_width)
             drawn_frame = frame.copy()
 

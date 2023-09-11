@@ -119,7 +119,7 @@ def build_asset_meta(
     raise ValueError(f"Unknown asset type: {asset_type}")
 
 
-class AssetContent(BaseModel, ABC):
+class Asset(BaseModel, ABC):
     asset_path: LocalPath
     delete: bool = False
 
@@ -160,7 +160,7 @@ class AssetContent(BaseModel, ABC):
             os.unlink(self.asset_path)
 
 
-class VisualAssetContent(AssetContent, ABC):
+class VisualAsset(Asset, ABC):
     asset_meta: AssetMeta
 
     @staticmethod
@@ -169,7 +169,7 @@ class VisualAssetContent(AssetContent, ABC):
         return cv.imencode(extension, frame)[1].tobytes()
 
 
-class ImageAssetContent(VisualAssetContent):
+class ImageAsset(VisualAsset):
     asset_meta: ImageAssetMeta
     # fields filled with validators
     image: np.ndarray
@@ -210,7 +210,7 @@ class ImageAssetContent(VisualAssetContent):
         return self.content
 
 
-class VideoAssetContent(VisualAssetContent):
+class VideoAsset(VisualAsset):
     asset_meta: VideoAssetMeta
     time_step: float
     to_rgb: bool = True
@@ -371,7 +371,7 @@ class VideoAssetContent(VisualAssetContent):
                     yield frame
 
 
-class AudioContent(AssetContent):
+class AudioContent(Asset):
     asset_path: LocalPath
     delete: bool = False
     # fields filled with validators
