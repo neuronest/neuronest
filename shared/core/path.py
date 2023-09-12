@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import re
 from abc import ABC
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 from urllib import parse
 
 
@@ -32,8 +32,10 @@ class Path(str, ABC):
         return False
 
     @classmethod
-    def is_valid(cls, path: str) -> bool:
-        return cls.has_valid_prefix(path) and cls.has_valid_regex(path)
+    def is_valid(cls, value: Any) -> bool:
+        if isinstance(value, str):
+            return cls.has_valid_prefix(value) and cls.has_valid_regex(value)
+        return False
 
     def __new__(cls, path, *args, **kwargs):
         if not cls.has_valid_prefix(path):
@@ -48,7 +50,7 @@ class Path(str, ABC):
         return str.__new__(cls, path, *args, **kwargs)
 
     @classmethod
-    def validate(cls, value):
+    def validate(cls, value: Any):
         if not cls.is_valid(value):
             raise ValueError(f"Path {value} is invalid")
 

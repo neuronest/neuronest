@@ -1,4 +1,3 @@
-from collections import abc
 from typing import Iterable, List, Union
 
 import numpy as np
@@ -6,8 +5,87 @@ import numpy as np
 from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
-from core.schemas.video_comparator import InputSchema, InputSchemaSample, PredictionType
+from core.schemas.video_comparator import (
+    InputSchema,
+    InputSchemaSample,
+    OutputSchemaSample,
+    PredictionType,
+)
 from core.tools import get_chunks_from_iterable, get_file_id_from_path
+
+Video = Union[str, np.ndarray]
+Sample = Union[Video, Iterable[Video]]
+
+
+# class ProcessingStrategy(OnlinePredictionModelClient):
+#     @abstractmethod
+#     def preprocess(self, input_data):
+#         pass
+#
+#     @abstractmethod
+#     def predict_preprocessed_data(self, preprocessed_data, batch_size: int):
+#         pass
+#
+#     def predict_batch(self, batch):
+#         return self.predict_preprocessed_data(self.preprocess(batch))
+#
+#
+# class SimilarityFromPaths(ProcessingStrategy):
+#     def preprocess(self, video_path_pairs):
+#         return [
+#             (
+#                 self._upload_video_to_storage(video_path=video_path),
+#                 self._upload_video_to_storage(video_path=other_video_path),
+#             )
+#             for video_path, other_video_path in video_path_pairs
+#         ]
+#
+#     def predict_preprocessed_data(self, gs_video_path_pairs, batch_size):
+#         endpoint = self._try_get_endpoint()
+#         predictions = []
+#         for video_pairs_batch in get_chunks_from_iterable(
+#             gs_video_path_pairs, chunk_size=batch_size
+#         ):
+#             predictions += endpoint.predict(
+#                 InputSchema(
+#                     samples=[
+#                         InputSchemaSample(
+#                             video=gs_video_path,
+#                             other_video=other_gs_video_path,
+#                             prediction_type=PredictionType.SIMILARITY,
+#                         )
+#                         for gs_video_path, other_gs_video_path in video_pairs_batch
+#                     ]
+#                 ).to_serialized_dict()["samples"]
+#             ).predictions
+#         return predictions
+#
+#
+# class SimilarityFromNumpyArrays(ProcessingStrategy):
+#     def preprocess(self, video_array_pairs):
+#         return video_array_pairs
+#
+#     def predict_preprocessed_data(self, preprocessed_video_array_pairs):
+#         pass
+#
+#
+# class VideoFeaturesFromPaths(ProcessingStrategy):
+#     def preprocess(self, video_paths):
+#         return [
+#             self._upload_video_to_storage(video_path=video_path)
+#             for video_path in video_paths
+#         ]
+#
+#     def predict_preprocessed_data(self, preprocessed_video_paths):
+#         pass
+#
+#
+# class VideoFeaturesFromNumpyArrays(ProcessingStrategy):
+#     def preprocess(self, video_arrays):
+#         return video_arrays
+#
+#     def predict_preprocessed_data(self, preprocessed_video_arrays):
+#         return preprocessed_video_arrays
 
 
 class VideoComparatorClient(OnlinePredictionModelClient):
@@ -156,134 +234,185 @@ class VideoComparatorClient(OnlinePredictionModelClient):
             bucket_name=bucket.name, blob_name=video_blob_name
         )
 
-    def _validate_video_features_prediction_type_batch(self, batch):
-        if not isinstance(batch, list):
-            raise ValueError(f"The batch should be a list, got {type(batch)}")
-        for sample in batch:
-            if not isinstance(sample, str):
-                raise ValueError(
-                    f"All the samples in the batch should be a path of type str,"
-                    f" got {sample} of type {type(sample)}"
-                )
+    # def _validate_video_features_prediction_type_batch(self, batch):
+    #     if not isinstance(batch, list):
+    #         raise ValueError(f"The batch should be a list, got {type(batch)}")
+    #     for sample in batch:
+    #         if not isinstance(sample, str):
+    #             raise ValueError(
+    #                 f"All the samples in the batch should be a path of type str,"
+    #                 f" got {sample} of type {type(sample)}"
+    #             )
+    #
+    # def _preprocess_video_features_prediction_type_batch(self, video_paths):
+    #     return [
+    #         self._upload_video_to_storage(video_path=video_path)
+    #         for video_path in video_paths
+    #     ]
+    #
+    # def _endpoint_predict_preprocessed_batch_video_features(self, gs_video_paths):
+    #     endpoint = self._try_get_endpoint()
+    #     predictions = []
+    #     for gs_video_path_batch in get_chunks_from_iterable(
+    #         gs_video_paths, chunk_size=self.MAX_BATCH_SIZE
+    #     ):
+    #         predictions += endpoint.predict(
+    #             InputSchema(
+    #                 samples=[
+    #                     InputSchemaSample(
+    #                         video_path=gs_video_path,
+    #                         prediction_type=PredictionType.VIDEO_FEATURES,
+    #                     )
+    #                     for gs_video_path in gs_video_path_batch
+    #                 ]
+    #             ).to_serialized_dict()["samples"]
+    #         ).predictions
+    #     return predictions
+    # return [
+    #     sample_prediction
+    #     for sample_prediction in endpoint.predict(
+    #         InputSchema(
+    #             samples=[
+    #                 InputSchemaSample(
+    #                     video_path=gs_video_path,
+    #                     prediction_type=PredictionType.VIDEO_FEATURES,
+    #                 )
+    #                 for gs_video_path in gs_video_paths
+    #             ]
+    #         ).dict()["samples"]
+    #     )
+    # ]
 
-    def _preprocess_video_features_prediction_type_batch(self, video_paths):
-        return [
-            self._upload_video_to_storage(video_path=video_path)
-            for video_path in video_paths
-        ]
+    # def _validate_similarity_prediction_type_batch(self, video_pairs):
+    #     if not isinstance(video_pairs, abc.Iterable):
+    #         raise ValueError(
+    #             f"The batch should be an iterable, got {type(video_pairs)}"
+    #         )
+    #
+    #     for sample in video_pairs:
+    #         if not isinstance(sample, abc.Iterable) or len(sample) != 2:
+    #             raise ValueError(
+    #                 f"All the samples in the batch should be an iterable with two elements,"
+    #                 f" got {sample} of type {type(sample)}"
+    #             )
+    #
+    #         video, other_video = sample
+    #
+    #         if not (
+    #             isinstance(video, np.ndarray) and isinstance(other_video, np.ndarray)
+    #         ) and not (isinstance(video, str) and isinstance(other_video, str)):
+    #             raise ValueError(
+    #                 "Each pair should either contain numpy arrays or strings."
+    #             )
+    #
+    # def _preprocess_similarity_prediction_type_batch(self, video_pairs):
+    #     preprocessed_batch = []
+    #     for video, other_video in video_pairs:
+    #         if isinstance(video, str):
+    #             preprocessed_sample = (
+    #                 self._upload_video_to_storage(video_path=video),
+    #                 self._upload_video_to_storage(video_path=other_video),
+    #             )
+    #         else:
+    #             preprocessed_sample = video, other_video
+    #         preprocessed_batch.append(preprocessed_sample)
+    #     return preprocessed_batch
+    #
+    # def _endpoint_predict_preprocessed_batch_similarities(self, video_pairs):
+    #     endpoint = self._try_get_endpoint()
+    #     predictions = []
+    #     for video_pairs_batch in get_chunks_from_iterable(
+    #         video_pairs, chunk_size=self.MAX_BATCH_SIZE
+    #     ):
+    #         predictions += endpoint.predict(
+    #             InputSchema(
+    #                 samples=[
+    #                     InputSchemaSample(
+    #                         video_path=video,
+    #                         other_video_path=other_video_path,
+    #                         prediction_type=PredictionType.SIMILARITY,
+    #                     )
+    #                     for video, other_video_path in video_pairs_batch
+    #                 ]
+    #             ).to_serialized_dict()["samples"]
+    #         ).predictions
+    #     return predictions
+    # return [
+    #     OutputSchemaSample.parse_obj(sample_prediction).results
+    #     for sample_prediction in endpoint.predict(
+    #         InputSchema(
+    #             samples=[
+    #                 InputSchemaSample(
+    #                     video_path=video,
+    #                     other_video_path=other_video,
+    #                     prediction_type=PredictionType.SIMILARITY,
+    #                 )
+    #                 for video, other_video in video_pairs
+    #             ]
+    #         ).dict()["samples"]
+    #     ).predictions
+    # ]
 
-    def _endpoint_predict_preprocessed_batch_video_features(self, gs_video_paths):
-        endpoint = self._try_get_endpoint()
-        predictions = []
-        for gs_video_path_batch in get_chunks_from_iterable(
-            gs_video_paths, chunk_size=self.MAX_BATCH_SIZE
-        ):
-            predictions += endpoint.predict(
-                InputSchema(
-                    samples=[
-                        InputSchemaSample(
-                            video_path=gs_video_path,
-                            prediction_type=PredictionType.VIDEO_FEATURES,
-                        )
-                        for gs_video_path in gs_video_path_batch
-                    ]
-                ).dict()["samples"]
+    def _preprocess_batch_sample_video(self, batch_sample_video: Video):
+        if isinstance(batch_sample_video, str):
+            return self._upload_video_to_storage(batch_sample_video)
+        if isinstance(batch_sample_video, np.ndarray):
+            return batch_sample_video
+        raise ValueError
+
+    def _preprocess_batch_sample(self, batch_sample: Sample) -> InputSchemaSample:
+        if isinstance(batch_sample, (np.ndarray, str)):
+            return InputSchemaSample(
+                video=self._preprocess_batch_sample_video(batch_sample),
+                other_video=None,
+                prediction_type=PredictionType.VIDEO_FEATURES,
             )
-        return predictions
-        # return [
-        #     sample_prediction
-        #     for sample_prediction in endpoint.predict(
-        #         InputSchema(
-        #             samples=[
-        #                 InputSchemaSample(
-        #                     video_path=gs_video_path,
-        #                     prediction_type=PredictionType.VIDEO_FEATURES,
-        #                 )
-        #                 for gs_video_path in gs_video_paths
-        #             ]
-        #         ).dict()["samples"]
-        #     )
-        # ]
+        if not isinstance(batch_sample, Iterable):
+            raise ValueError
+        if not len(batch_sample) == 2:
+            raise ValueError
+        video, other_video = tuple(batch_sample)
+        return InputSchemaSample(
+            video=self._preprocess_batch_sample_video(video),
+            other_video=self._preprocess_batch_sample_video(other_video),
+            prediction_type=PredictionType.SIMILARITY,
+        )
 
-    def _validate_similarity_prediction_type_batch(self, video_pairs):
-        if not isinstance(video_pairs, abc.Iterable):
-            raise ValueError(
-                f"The batch should be an iterable, got {type(video_pairs)}"
-            )
-
-        for sample in video_pairs:
-            if not isinstance(sample, abc.Iterable) or len(sample) != 2:
-                raise ValueError(
-                    f"All the samples in the batch should be an iterable with two elements,"
-                    f" got {sample} of type {type(sample)}"
-                )
-
-            video, other_video = sample
-
-            if not (
-                isinstance(video, np.ndarray) and isinstance(other_video, np.ndarray)
-            ) and not (isinstance(video, str) and isinstance(other_video, str)):
-                raise ValueError(
-                    "Each pair should either contain numpy arrays or strings."
-                )
-
-    def _preprocess_similarity_prediction_type_batch(self, video_pairs):
-        preprocessed_batch = []
-        for video, other_video in video_pairs:
-            if isinstance(video, str):
-                preprocessed_sample = (
-                    self._upload_video_to_storage(video_path=video),
-                    self._upload_video_to_storage(video_path=other_video),
-                )
-            else:
-                preprocessed_sample = video, other_video
-            preprocessed_batch.append(preprocessed_sample)
-        return preprocessed_batch
-
-    def _endpoint_predict_preprocessed_batch_similarities(self, video_pairs):
-        endpoint = self._try_get_endpoint()
-        predictions = []
-        for video_pairs_batch in get_chunks_from_iterable(
-            video_pairs, chunk_size=self.MAX_BATCH_SIZE
-        ):
-            predictions += endpoint.predict(
-                InputSchema(
-                    samples=[
-                        InputSchemaSample(
-                            video_path=video,
-                            other_video=other_video,
-                            prediction_type=PredictionType.SIMILARITY,
-                        )
-                        for video, other_video in video_pairs_batch
-                    ]
-                ).dict()["samples"]
-            )
-        return predictions
-        # return [
-        #     OutputSchemaSample.parse_obj(sample_prediction).results
-        #     for sample_prediction in endpoint.predict(
-        #         InputSchema(
-        #             samples=[
-        #                 InputSchemaSample(
-        #                     video_path=video,
-        #                     other_video_path=other_video,
-        #                     prediction_type=PredictionType.SIMILARITY,
-        #                 )
-        #                 for video, other_video in video_pairs
-        #             ]
-        #         ).dict()["samples"]
-        #     ).predictions
-        # ]
+    def preprocess_batch(self, batch: Iterable[Sample]) -> InputSchema:
+        return InputSchema(
+            samples=[self._preprocess_batch_sample(sample) for sample in batch]
+        )
 
     # pylint: disable=arguments-renamed
     def predict_batch(
         self,
-        batch: Iterable[Union[Iterable[str], str]],
-        prediction_type: PredictionType = PredictionType.SIMILARITY,
-    ) -> Union[List[float], List[List[float]]]:
+        batch: List[Sample],
+    ) -> List[np.ndarray]:
         """
         video_path_pairs: List of pairs of videos paths
         """
+        input_schema = self.preprocess_batch(batch)
+        endpoint = self._try_get_endpoint()
+        endpoint_predictions = []
+        for input_schema_samples_batch in get_chunks_from_iterable(
+            input_schema.samples, chunk_size=self.MAX_BATCH_SIZE
+        ):
+            endpoint_predictions += endpoint.predict(
+                InputSchema(samples=input_schema_samples_batch).to_serialized_dict()[
+                    "samples"
+                ]
+            ).predictions
+        return [
+            OutputSchemaSample.parse_obj(endpoint_prediction).results
+            for endpoint_prediction in endpoint_predictions
+        ]
+        # prediction_type = ...
+        # input_type = ...
+        # transform list of str into list od tuples
+        # batch = self.validate_input_schema = InputSchema(samples=batch)
+        # processing_strategy = self.create_strategy(batch=batch)
+        # return processing_strategy.predict_batch(batch)
+
         # list of str --> input paths output embeddings
         # list of tuples --> input paths or embeddings output similarities
         # if list of str:
@@ -292,30 +421,45 @@ class VideoComparatorClient(OnlinePredictionModelClient):
         #     video_path_pairs = data
         # else:
         #     raise ValueError("")
-        if prediction_type not in (
-            PredictionType.SIMILARITY,
-            PredictionType.VIDEO_FEATURES,
-        ):
-            raise ValueError(
-                f"Expected prediction type to be one of: "
-                f"{PredictionType.SIMILARITY}, {PredictionType.VIDEO_FEATURES}"
-            )
-        if prediction_type == PredictionType.VIDEO_FEATURES:
-            self._validate_video_features_prediction_type_batch(batch=batch)
-            gs_video_paths = self._preprocess_video_features_prediction_type_batch(
-                video_paths=batch
-            )
-            return self._endpoint_predict_preprocessed_batch_video_features(
-                gs_video_paths=gs_video_paths
-            )
+        # if prediction_type not in (
+        #     PredictionType.SIMILARITY,
+        #     PredictionType.VIDEO_FEATURES,
+        # ):
+        #     raise ValueError(
+        #         f"Expected prediction type to be one of: "
+        #         f"{PredictionType.SIMILARITY}, {PredictionType.VIDEO_FEATURES}"
+        #     )
+        # if prediction_type == PredictionType.VIDEO_FEATURES:
+        #     self._validate_video_features_prediction_type_batch(batch=batch)
+        #     gs_video_paths = self._preprocess_video_features_prediction_type_batch(
+        #         video_paths=batch
+        #     )
+        #     endpoint_predictions = (
+        #         self._endpoint_predict_preprocessed_batch_video_features(
+        #             gs_video_paths=gs_video_paths
+        #         )
+        #     )
+        # elif prediction_type == PredictionType.SIMILARITY:
+        #     self._validate_similarity_prediction_type_batch(video_pairs=batch)
+        #     video_pairs = self._preprocess_similarity_prediction_type_batch(
+        #         video_pairs=batch
+        #     )
+        #     endpoint_predictions = (
+        #         self._endpoint_predict_preprocessed_batch_similarities(
+        #             video_pairs=video_pairs
+        #         )
+        #     )
+        # else:
+        #     raise ValueError(
+        #         f"Prediction type has to be one of "
+        #         f"{PredictionType.SIMILARITY} or {PredictionType.VIDEO_FEATURES} but got "
+        #         f"{prediction_type}"
+        #     )
+        # return [
+        #     OutputSchemaSample.parse_obj(endpoint_prediction).results
+        #     for endpoint_prediction in endpoint_predictions
+        # ]
 
-        self._validate_similarity_prediction_type_batch(video_pairs=batch)
-        video_pairs = self._preprocess_similarity_prediction_type_batch(
-            video_pairs=batch
-        )
-        return self._endpoint_predict_preprocessed_batch_similarities(
-            video_pairs=video_pairs
-        )
         # else:
         #     raise ValueError(f"Expected prediction type to be one of: {...}")
         #

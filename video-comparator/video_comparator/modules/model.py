@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Union
 
+import numpy as np
 import torch
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
@@ -40,30 +41,35 @@ class VideoComparatorModel(OnlinePredictionModel):
     # pylint: disable=arguments-differ
     def __call__(
         self,
-        video_path: str,
-        other_video_path: Optional[str] = None,
+        video: Union[str, np.ndarray],
+        other_video: Optional[Union[str, np.ndarray]] = None,
         prediction_type: str = PredictionType.SIMILARITY,
         device: Device = Device.CUDA,
         batch_size: int = 128,
     ) -> Union[torch.Tensor, float]:
-        video_features = extract_features(
-            model=self._model,
-            frames=torch.from_numpy(visil_video_load(video_path)),
-            device=device,
-            batch_sz=batch_size,
-        )
+        if isinstance(video, np.ndarray):
+            video_features = torch.from_numpy(video).to(device)
+        else:
+            video_features = extract_features(
+                model=self._model,
+                frames=torch.from_numpy(visil_video_load(video)),
+                device=device,
+                batch_sz=batch_size,
+            )
         if prediction_type == PredictionType.VIDEO_FEATURES:
-            return video_features
-        other_video_features = extract_features(
-            model=self._model,
-            frames=torch.from_numpy(visil_video_load(other_video_path)),
-            device=device,
-            batch_sz=batch_size,
-        )
-        similarity = self._model.calculate_video_similarity(
+            return video_features.cpu().numpy()
+        if isinstance(other_video, np.ndarray):
+            other_video_features = torch.from_numpy(other_video).to(device)
+        else:
+            other_video_features = extract_features(
+                model=self._model,
+                frames=torch.from_numpy(visil_video_load(other_video)),
+                device=device,
+                batch_sz=batch_size,
+            )
+        return self._model.calculate_video_similarity(
             query=video_features, target=other_video_features
         )
-        return similarity
 
     # @abstractmethod
     # def __call__(self, *args, **kwargs) -> List[pd.DataFrame]:

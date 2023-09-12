@@ -85,9 +85,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     def preprocess(self, data: List) -> Tuple[Tuple, dict]:
         # pylint: disable=invalid-name
         InputSchemaSample = self.get_input_schema_sample_class()
-        validated_input_schema_samples = [
-            InputSchemaSample.parse_obj(sample) for sample in data
-        ]
+        input_schema_samples = [InputSchemaSample.parse_obj(sample) for sample in data]
 
         # validated_data = InputSchema(
         #     samples=[InputSampleSchema.parse_obj(sample) for sample in data]
@@ -98,7 +96,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
 
         # return validated_data.samples
         return self.get_inference_data_and_other_args_kwargs_from_input_schema_samples(
-            validated_input_schema_samples
+            input_schema_samples
         )
 
     def _retrieve_model_path(self) -> str:
