@@ -1,4 +1,4 @@
-name: object_detection_functional
+name: video_comparator_functional
 
 on:
 #  push:
@@ -6,7 +6,7 @@ on:
 #      - main
 #      - develop
 #    paths:
-#      - .github/workflows/object_detection_functional.yaml
+#      - .github/workflows/functional_video_comparator.yaml
 #      - .github/actions/**
 #      - .github/variables/**
 #      - .pre-commit-config.yaml
@@ -18,7 +18,7 @@ on:
 #      - main
 #      - develop
 #    paths:
-#      - .github/workflows/object_detection_functional.yaml
+#      - .github/workflows/functional_video_comparator.yaml
 #      - .github/actions/**
 #      - .github/variables/**
 #      - .pre-commit-config.yaml
@@ -45,7 +45,7 @@ on:
         type: string
         default: ''
 env:
-  REPOSITORY_NAME: object-detection-functional
+  REPOSITORY_NAME: functional-video-comparator
 
 jobs:
   upload_variables_of_called_workflows:
@@ -61,13 +61,13 @@ jobs:
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-  object_detection_functional:
+  video_comparator_functional:
     needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/abstract_online_prediction_model_functional.yaml
+    uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
     with:
       build: true
       deploy: true
       do_post_deployment: true
-      online_prediction_model_repository: object-detection-functional
+      online_prediction_model_repository: functional-video-comparator
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit

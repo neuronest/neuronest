@@ -31,7 +31,7 @@ module "base" {
 }
 
 module "people_counting_functional" {
-  source     = "../../shared/iac/modules/services/people-counting-functional"
+  source     = "../../shared/iac/modules/services/functional-people-counting"
   project_id = var.project_id
   region     = var.region
   timezone   = var.timezone

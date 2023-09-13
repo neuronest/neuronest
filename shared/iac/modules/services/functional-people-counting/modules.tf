@@ -1,5 +1,5 @@
 module "object_detection_functional" {
-  source                                                  = "../object-detection-functional"
+  source                                                  = "../functional-object-detection"
   project_id                                              = var.project_id
   region                                                  = var.region
   timezone                                                = var.timezone

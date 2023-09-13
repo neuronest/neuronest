@@ -1,6 +1,6 @@
 repository_variables:
   # general repository
-  - REPOSITORY_NAME=object-detection-functional
+  - REPOSITORY_NAME=functional-object-detection
   - REPOSITORY_CODE=od-functional
   - MAIN_TERRAFORM_MODULE_NAME=object_detection_functional
   - REPOSITORIES_DEPENDENCIES=object-detection,model-instantiator

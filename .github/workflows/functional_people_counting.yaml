@@ -6,7 +6,7 @@ on:
 #      - main
 #      - develop
 #    paths:
-#      - .github/workflows/people_counting_functional.yaml
+#      - .github/workflows/functional_people_counting.yaml
 #      - .github/actions/**
 #      - .github/variables/**
 #      - .pre-commit-config.yaml
@@ -19,7 +19,7 @@ on:
 #      - main
 #      - develop
 #    paths:
-#      - .github/workflows/people_counting_functional.yaml
+#      - .github/workflows/functional_people_counting.yaml
 #      - .github/actions/**
 #      - .github/variables/**
 #      - .pre-commit-config.yaml
@@ -47,7 +47,7 @@ on:
         type: string
         default: ''
 env:
-  REPOSITORY_NAME: people-counting-functional
+  REPOSITORY_NAME: functional-people-counting
 
 jobs:
 #  run_integration_testss:
