@@ -2,7 +2,7 @@ repository_variables:
   # general repository
   - REPOSITORY_NAME=functional-video-comparator
   - REPOSITORY_CODE=vc-functional
-  - MAIN_TERRAFORM_MODULE_NAME=video_comparator_functional
+  - MAIN_TERRAFORM_MODULE_NAME=functional_video_comparator
   - REPOSITORIES_DEPENDENCIES=video-comparator,model-instantiator
 multi_instance_resource_names: []
 other_variables:

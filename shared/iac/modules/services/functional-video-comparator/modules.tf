@@ -1,4 +1,4 @@
-module "video_comparator_functional" {
+module "functional_video_comparator" {
   source     = "../../abstract/functional-online-prediction-model"
   project_id = var.project_id
   region     = var.region

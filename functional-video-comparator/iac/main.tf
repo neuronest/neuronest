@@ -30,8 +30,8 @@ module "base" {
   mono_repository_name                 = var.mono_repository_name
 }
 
-module "video_comparator_functional" {
-  source     = "modules/services/functional-video-comparator"
+module "functional_video_comparator" {
+  source     = "../../shared/iac/modules/services/functional-video-comparator"
   project_id = var.project_id
   region     = var.region
   timezone   = var.timezone

@@ -36,40 +36,40 @@ jobs:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      object_detection_functional_env_file_artifact_name: ${{ steps.upload_object_detection_functional_variables.outputs.env_file_artifact_name }}
-      video_comparator_functional_env_file_artifact_name: ${{ steps.upload_video_comparator_functional_variables.outputs.env_file_artifact_name }}
+      functional_object_detection_env_file_artifact_name: ${{ steps.upload_functional_object_detection_variables.outputs.env_file_artifact_name }}
+      functional_video_comparator_env_file_artifact_name: ${{ steps.upload_functional_video_comparator_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
-      - name: upload_object_detection_functional_variables
-        id: upload_object_detection_functional_variables
+      - name: upload_functional_object_detection_variables
+        id: upload_functional_object_detection_variables
         uses: ./.github/actions/upload_variables
         with:
           variable_prefix_to_filter_on: OBJECT_DETECTION
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - name: upload_video_comparator_functional_variables
-        id: upload_video_comparator_functional_variables
+      - name: upload_functional_video_comparator_variables
+        id: upload_functional_video_comparator_variables
         uses: ./.github/actions/upload_variables
         with:
           variable_prefix_to_filter_on: VIDEO_COMPARATOR
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
 
-  object_detection_functional:
+  functional_object_detection:
     needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/functional_object_detection.yaml
     with:
       build: true
       deploy: true
       do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_functional_env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
     secrets: inherit
 
-  video_comparator_functional:
+  functional_video_comparator:
     needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/functional_video_comparator.yaml
     with:
       build: true
       deploy: true
       do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.video_comparator_functional_env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_video_comparator_env_file_artifact_name }}
     secrets: inherit

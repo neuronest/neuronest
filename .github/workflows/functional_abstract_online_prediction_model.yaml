@@ -1,4 +1,4 @@
-name: abstract_online_prediction_model_functional
+name: abstract_functional_online_prediction_model
 
 on:
   workflow_call:
@@ -97,7 +97,7 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
 
-  deploy_online_prediction_model_functional:
+  deploy_functional_online_prediction_model:
     needs:
      - build_test_push_online_prediction_model
      - build_test_push_model_instantiator
@@ -113,7 +113,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - id: run_online_prediction_model_functional_terraform
+      - id: run_functional_online_prediction_model_terraform
         uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
@@ -132,7 +132,7 @@ jobs:
     # the job in the needs section is necessary to recover its output
     needs:
       - run_base_terraform
-      - deploy_online_prediction_model_functional
+      - deploy_functional_online_prediction_model
       - build_test_push_online_prediction_model
       - upload_variables_of_called_workflows
       - set_up_non_functional_repository_name
@@ -144,13 +144,13 @@ jobs:
       gcp_training_image_name: ${{ needs.build_test_push_online_prediction_model.outputs.gcp_training_image_name }}
       dockerhub_training_image_name: ${{ needs.build_test_push_online_prediction_model.outputs.dockerhub_training_image_name }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
-      model_instantiator_url: ${{ needs.deploy_online_prediction_model_functional.outputs.model_instantiator_url }}
+      model_instantiator_url: ${{ needs.deploy_functional_online_prediction_model.outputs.model_instantiator_url }}
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
       online_prediction_model_repository: ${{ needs.set_up_non_functional_repository_name.outputs.value }}
     secrets: inherit
 
   post_deploy_model_instantiator:
-    needs: [deploy_online_prediction_model_functional, upload_variables_of_called_workflows]
+    needs: [deploy_functional_online_prediction_model, upload_variables_of_called_workflows]
     uses: ./.github/workflows/model_instantiator.yaml
     with:
       build: false
@@ -164,7 +164,7 @@ jobs:
     needs:
       - post_deploy_online_prediction_model
       - post_deploy_model_instantiator
-      - deploy_online_prediction_model_functional
+      - deploy_functional_online_prediction_model
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     container: google/cloud-sdk

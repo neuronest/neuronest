@@ -1,4 +1,4 @@
-name: video_comparator_functional
+name: functional_video_comparator
 
 on:
 #  push:
@@ -61,7 +61,7 @@ jobs:
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-  video_comparator_functional:
+  functional_video_comparator:
     needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
     with:

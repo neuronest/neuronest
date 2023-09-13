@@ -1,4 +1,4 @@
-name: object_detection_functional
+name: functional_object_detection
 
 on:
 #  push:

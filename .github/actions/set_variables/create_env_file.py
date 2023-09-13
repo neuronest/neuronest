@@ -438,9 +438,8 @@ class Repository:
         # rules, such as the absence of a code or the presence of several codes.
         # If we did so, we would also have to consider and handle any other such
         # scenarios that might arise e.g. code that does not have the prefix in a
-        # functional repo, code that does not follow naming conventions like size code,
-        # allowed characters, code without a prefix in a functional,
-        # with a bad prefix etc.
+        # functional repo code , code that does not follow naming conventions like
+        # code length, allowed characters, wrong prefix etc.
         code = [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
