@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import os
 import re
 import sys
 from enum import Enum
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set
 
 import yaml
 from pydantic import BaseModel
@@ -15,7 +17,7 @@ from pydantic import BaseModel
 sys.path.append("shared")
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
-SUFFIX_OF_FUNCTIONAL_REPOSITORIES = "-functional"
+FUNCTIONAL_REPOSITORIES_PREFIX = "functional-"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
@@ -33,19 +35,20 @@ def add_namespace_to_string(
     namespace: str,
     already_added_ok: bool = False,
     namespace_and_string_binding_character: str = "_",
-):
+) -> str:
     for binding_character in list({"_", "-", namespace_and_string_binding_character}):
         if namespace.endswith(binding_character):
             namespace_and_string_binding_character = binding_character
             namespace = namespace[:-1]
+
     if not string.startswith(namespace):
-        string = f"{namespace}{namespace_and_string_binding_character}{string}"
-    elif not already_added_ok:
+        return f"{namespace}{namespace_and_string_binding_character}{string}"
+
+    if not already_added_ok:
         raise NameSpaceError(
             f"The string {string} is already in " f"the namespace {namespace}"
         )
-    else:
-        pass
+
     return string
 
 
@@ -72,27 +75,27 @@ class VariableLine:
         self.variable_type = variable_type
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, new_name):
+    def name(self, new_name: str):
         self._name = new_name
 
     @property
-    def value(self):
+    def value(self) -> str:
         return self._value
 
     @value.setter
-    def value(self, new_value):
+    def value(self, new_value: str):
         self._value = new_value
 
     @property
-    def line(self):
+    def line(self) -> str:
         return f"{self.name}{self.NAME_AND_VALUE_SEPARATOR}{self.value}"
 
     @line.setter
-    def line(self, new_line):
+    def line(self, new_line: str):
         name, value = new_line.split(self.NAME_AND_VALUE_SEPARATOR)
         self.name = name
         self.value = value
@@ -110,7 +113,7 @@ class VariableLine:
         with open(file_path, "a") as file:
             file.write(f"{self.line}{os.linesep}")
 
-    def truncate_to_current_context(self, current_context: str):
+    def truncate_to_current_context(self, current_context: str) -> VariableLine:
         """
         Modifies the name and value parts so that they represent the current context,
         that is to say, we remove the coordinates which are used to
@@ -133,6 +136,7 @@ class VariableLine:
                 : -len(self.NAMESPACE_OF_NAME_WORDS_SEPARATOR)
             ]
         truncated_variable_line = VariableLine(line=self.line)
+
         for (
             variable_inside_value
         ) in truncated_variable_line.get_variables_inside_value():
@@ -162,6 +166,7 @@ class VariableLine:
             )
         else:
             truncated_variable_line.name = new_var_line_name
+
         return truncated_variable_line
 
     def replace_variable_inside_value(
@@ -169,7 +174,7 @@ class VariableLine:
         variable: str,
         other_variable: str,
         inplace: bool = False,
-    ) -> Union["VariableLine", None]:
+    ) -> Optional[VariableLine]:
         """
         Replaces a variable name that is in the value part with another variable name.
 
@@ -181,7 +186,8 @@ class VariableLine:
                 Defaults to False.
 
         Returns:
-            str: The modified variable line with the updated variable name in the value part.
+            str: The modified variable line with the updated variable name in the value
+            part.
 
         Example:
             >>> var_line = VariableLine(
@@ -223,7 +229,7 @@ class VariableLine:
         self,
         namespace: str,
         already_added_ok: bool = False,
-    ):
+    ) -> VariableLine:
         var_line = VariableLine(self.line)
 
         var_line.name = add_namespace_to_string(
@@ -238,7 +244,7 @@ class VariableLine:
         self,
         namespace: str,
         already_added_ok: bool = False,
-    ):
+    ) -> VariableLine:
         var_line = VariableLine(self.line)
 
         var_line.value = add_namespace_to_string(
@@ -254,7 +260,7 @@ class VariableLine:
         namespace: str,
         variable_inside_value_to_add_to: Optional[str] = None,
         already_added_ok: bool = False,
-    ):
+    ) -> VariableLine:
         var_line = VariableLine(self.line)
 
         if variable_inside_value_to_add_to is not None:
@@ -286,7 +292,7 @@ class VariableLine:
         variable_inside_value_to_add_to: Optional[str] = None,
         inplace: bool = False,
         already_added_ok: bool = False,
-    ):
+    ) -> Optional[VariableLine]:
         var_line = VariableLine(self.line)
         if add_to_name:
             var_line = var_line.add_namespace_to_name(
@@ -314,21 +320,21 @@ class VariableLine:
     def __str__(self):
         return self.line
 
-    def get_variables_inside_value(self):
-
+    def get_variables_inside_value(self) -> List[str]:
         if variables_inside_value := re.findall(
             self.REGEX_OF_VALUE_PART_VARIABLES, self.value
         ):
             return list(variables_inside_value)
+
         return []
 
-    def is_a_multi_instance_resource(self):
+    def is_a_multi_instance_resource(self) -> bool:
         return self.variable_type == VariableType.MULTI_INSTANCE_RESOURCE
 
-    def is_a_repository_variable(self):
+    def is_a_repository_variable(self) -> bool:
         return self.variable_type == VariableType.REPOSITORY
 
-    def is_a_repository_code(self):
+    def is_a_repository_code(self) -> bool:
         return self.name == self.REPOSITORY_CODE_VARIABLE_NAME
 
 
@@ -338,12 +344,13 @@ class YamlEnvFile(BaseModel):
     other_variables: List[str]
 
     @classmethod
-    def read_file(cls, file_path: str) -> "YamlEnvFile":
+    def read_file(cls, file_path: str) -> YamlEnvFile:
         with open(file_path, "r") as self_reader:
             yaml_data = yaml.safe_load(self_reader)
+
         return cls.parse_obj(yaml_data)
 
-    def to_variables_lines(self):
+    def to_variables_lines(self) -> List[VariableLine]:
         return (
             [
                 VariableLine(line=variable, variable_type=VariableType.REPOSITORY)
@@ -370,12 +377,11 @@ class EnvFile:
             raise ValueError(f"path should end with {self.EXTENSION} extension")
         self.path = path
 
-    def readlines(self):
+    def readlines(self) -> List[str]:
         with open(self.path, "r") as self_reader:
-            lines = self_reader.readlines()
-        return lines
+            return self_reader.readlines()
 
-    def read_variables_lines(self):
+    def read_variables_lines(self) -> List[VariableLine]:
         return [
             VariableLine(line=line.rstrip(os.linesep))
             for line in self.readlines()
@@ -385,22 +391,22 @@ class EnvFile:
 
 class Repository:
     VARIABLES_FILE_PATH = "iac/variables.yaml"
-    SUFFIX_OF_FUNCTIONAL_REPOSITORIES = SUFFIX_OF_FUNCTIONAL_REPOSITORIES
+    FUNCTIONAL_REPOSITORIES_PREFIX = FUNCTIONAL_REPOSITORIES_PREFIX
 
     def __init__(self, name: str):
         self.name = name
 
     @property
-    def yaml_env_file_path(self):
+    def yaml_env_file_path(self) -> str:
         return f"{self.name}/{self.VARIABLES_FILE_PATH}"
 
-    def has_yaml_env_file(self):
+    def has_yaml_env_file(self) -> bool:
         return os.path.isfile(self.yaml_env_file_path)
 
     def get_yaml_env_file(self) -> YamlEnvFile:
         return YamlEnvFile.read_file(self.yaml_env_file_path)
 
-    def get_dependency_repositories(self):
+    def get_dependency_repositories(self) -> List[Repository]:
         variable_name_value = {
             var_line.name: var_line.value
             for var_line in self.get_yaml_env_file().to_variables_lines()
@@ -417,21 +423,33 @@ class Repository:
                 Repository(name=dependency_repository)
                 for dependency_repository in dependency_repositories
             ]
+
         return []
 
-    def get_base_name_without_functional(self):
-        if self.name.endswith(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES):
-            return self.name[: -len(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES)]
+    def get_base_name_without_functional(self) -> str:
+        if self.name.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
+            return self.name[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
+
         return self.name
 
-    def get_base_code_without_functional(self):
+    def get_base_code_without_functional(self) -> str:
+        # The rule is one repo -> one code. We assume that the rule is respected and we
+        # do not ensure the management of errors caused by non-compliance with these
+        # rules, such as the absence of a code or the presence of several codes.
+        # If we did so, we would also have to consider and handle any other such
+        # scenarios that might arise e.g. code that does not have the prefix in a
+        # functional repo, code that does not follow naming conventions like size code,
+        # allowed characters, code without a prefix in a functional,
+        # with a bad prefix etc.
         code = [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
             if var_line.is_a_repository_code()
         ][0].value
-        if code.endswith(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES):
-            return code[: -len(self.SUFFIX_OF_FUNCTIONAL_REPOSITORIES)]
+
+        if code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
+            return code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
+
         return code
 
 
@@ -539,6 +557,9 @@ if __name__ == "__main__":
     shared_variables_lines = YamlEnvFile.read_file(
         file_path=".github/variables/variables.yaml"
     ).to_variables_lines()
+    shared_variables_lines_names = set(
+        shared_var_line.name for shared_var_line in shared_variables_lines
+    )
 
     main_repository = Repository(name=args.repository_name)
 
@@ -547,9 +568,7 @@ if __name__ == "__main__":
             repository=main_repository,
             add_namespace=False,
             add_namespace_to_name_of_multi_instance_resource=True,
-            variables_to_which_not_add_namespace=set(
-                shared_var_line.name for shared_var_line in shared_variables_lines
-            ),
+            variables_to_which_not_add_namespace=shared_variables_lines_names,
         )
     else:
         repository_variables_lines = []

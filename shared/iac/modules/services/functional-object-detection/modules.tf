@@ -1,4 +1,4 @@
-module "object_detection_functional" {
+module "functional_object_detection" {
   source     = "../../abstract/functional-online-prediction-model"
   project_id = var.project_id
   region     = var.region

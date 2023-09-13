@@ -61,7 +61,7 @@ jobs:
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-  object_detection_functional:
+  functional_object_detection:
     needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
     with:

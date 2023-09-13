@@ -1,9 +1,9 @@
 repository_variables:
   # general repository
   - REPOSITORY_NAME=functional-people-counting
-  - REPOSITORY_CODE=pc-functional
-  - MAIN_TERRAFORM_MODULE_NAME=people_counting_functional
-  - REPOSITORIES_DEPENDENCIES=people-counting,functional-object-detection
+  - REPOSITORY_CODE=functional-pc
+  - MAIN_TERRAFORM_MODULE_NAME=functional_people_counting
+  - REPOSITORIES_DEPENDENCIES=people-counting,object-detection,model-instantiator
 multi_instance_resource_names: []
 other_variables:
   # GCP project
