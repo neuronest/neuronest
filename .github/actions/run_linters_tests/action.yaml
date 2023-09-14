@@ -19,8 +19,9 @@ runs:
             --workdir $MONO_REPOSITORY_PATH \
             $CONTAINER_ID \
             /bin/bash -c "
+              [ ! -d ".git" ] && git init || echo ".git directory already exists. Skipping git init." \
               # to handle detected dubious ownership git issue
-              git config --global --add safe.directory $MONO_REPOSITORY_PATH \
+              && git config --global --add safe.directory $MONO_REPOSITORY_PATH \
               && source ./.github/functions/install_terraform.sh \
               && install_terraform \
               && cd $REPOSITORY_NAME \
