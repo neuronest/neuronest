@@ -580,18 +580,17 @@ if __name__ == "__main__":
     shared_variables_lines_names = set(
         shared_var_line.name for shared_var_line in shared_variables_lines
     )
+    repository_variables_prefix = VariableLine(
+        line="REPOSITORY_VARIABLES_PREFIX="
+        + VariableLine.build_namespace_of_name_from_string(
+            main_repository.get_base_name_without_functional(),
+        ),
+        variable_type=VariableType.REPOSITORY,
+    )
     all_variables_lines = (
         shared_variables_lines
         + repository_variables_lines
-        + [
-            VariableLine(
-                line="REPOSITORY_VARIABLES_PREFIX="
-                + VariableLine.build_namespace_of_name_from_string(
-                    main_repository.get_base_name_without_functional(),
-                ),
-                variable_type=VariableType.REPOSITORY,
-            )
-        ]
+        + [repository_variables_prefix]
     )
     if not args.keep_repository_variables:
         all_variables_lines = [
@@ -607,6 +606,12 @@ if __name__ == "__main__":
             if var_line.name not in shared_variables_lines_names
         ]
     if args.variable_prefix_to_filter_on:
+        variable_prefix = (
+            repository_variables_prefix.value
+            if args.variable_prefix_to_filter_on
+            == "current_repository_variables_prefix"
+            else args.variable_prefix_to_filter_on
+        )
         all_variables_lines = [
             var_line
             for var_line in all_variables_lines

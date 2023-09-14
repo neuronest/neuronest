@@ -35,7 +35,7 @@ jobs:
     steps:
       - id: set_up_non_functional_repository_name
         run: |
-          value=${REPOSITORY_NAME%-functional}
+          value=${REPOSITORY_NAME#functional-}
           echo value=$value >> $GITHUB_OUTPUT
         shell: bash
 
@@ -66,7 +66,7 @@ jobs:
         id: upload_online_prediction_model_variables
         uses: ./.github/actions/upload_variables
         with:
-          variable_prefix_to_filter_on: ${{ env.REPOSITORY_VARIABLES_PREFIX }}
+          variable_prefix_to_filter_on: current_repository_variables_prefix
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - name: upload_model_instantiator_variables
         id: upload_model_instantiator_variables
