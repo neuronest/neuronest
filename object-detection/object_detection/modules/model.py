@@ -31,13 +31,28 @@ class ObjectDetectionModel(OnlinePredictionModel):
         #     # self._model = self._load_hub_pretrained_model()
         #     self._model = self._retrieve_remote_model()
 
+    # @abstractmethod
+    # def __call__(self, *args, **kwargs) -> List[pd.DataFrame]:
+    #     raise NotImplementedError
+
+    # def _load_hub_pretrained_model(self):
+    #     return torch.hub.load(self.model_type, self.model_name, pretrained=True)
+
+    # @abstractmethod
+    # def _retrieve_remote_model(self):
+    #     raise NotImplementedError
+
+    # @abstractmethod
+    # def fit(self, *args, **kwargs):
+    #     raise NotImplementedError
+
     def __call__(self, *args, **kwargs) -> List[pd.DataFrame]:
         # noinspection PyCallingNonCallable
         predictions = self._model(*args, **kwargs)
 
         return list(predictions.pandas().xyxy)
 
-    def _load_hub_model(self, pretrained: bool = False):
+    def _retrieve_remote_model(self, pretrained: bool = False):
         return torch.hub.load(self.model_type, self.model_name, pretrained=pretrained)
 
     # def _load_hub_pretrained_model(self):
@@ -45,7 +60,7 @@ class ObjectDetectionModel(OnlinePredictionModel):
 
     def fit(self, *args, **kwargs):
         # pylint: disable=attribute-defined-outside-init
-        self._model = self._load_hub_model(pretrained=True)
+        self._model = self._retrieve_remote_model(pretrained=True)
 
     #
     # def eval(self):
@@ -79,6 +94,6 @@ class ObjectDetectionModel(OnlinePredictionModel):
     def load(self, path: str) -> ObjectDetectionModel:
         # loads in memory the project architecture of the model so that it is visible
         # to the interpreter when loading the MODEL.pt
-        self._load_hub_model(pretrained=False)
+        self._retrieve_remote_model(pretrained=False)
         self._model = torch.load(path)
         return self

@@ -13,19 +13,19 @@ on:
       - model-instantiator/**
       - video-comparator/**
       - object-detection/**
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - .github/workflows/video_comparator_dummy_project.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
-      - video-comparator/**
-      - object-detection/**
+#  pull_request:
+#    branches:
+#      - main
+#      - develop
+#    paths:
+#      - .github/workflows/video_comparator_dummy_project.yaml
+#      - .github/actions/**
+#      - .github/variables/**
+#      - .pre-commit-config.yaml
+#      - shared/**
+#      - model-instantiator/**
+#      - video-comparator/**
+#      - object-detection/**
   workflow_dispatch:
 
 env:
