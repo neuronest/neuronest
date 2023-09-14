@@ -60,9 +60,9 @@ class VariableType(str, Enum):
 
 class VariableLine:
     NAME_AND_VALUE_SEPARATOR = "="
-    NAMESPACE_OF_NAME_WORDS_SEPARATOR = "_"
-    NAMESPACE_OF_VALUE_WORDS_SEPARATOR = "-"
-    NAMESPACE_OF_VALUE_VARIABLES_WORDS_SEPARATOR = "_"
+    NAME_NAMESPACE_WORD_SEPARATOR = "_"
+    VALUE_NAMESPACE_WORD_SEPARATOR = "-"
+    VALUE_VARIABLES_NAMESPACE_WORD_SEPARATOR = "_"
     REGEX_OF_VALUE_PART_VARIABLES = r"\$\{([^\}]*)\}"
     REPOSITORY_CODE_VARIABLE_NAME = "REPOSITORY_CODE"
 
@@ -131,9 +131,9 @@ class VariableLine:
         ${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
         in "object_detection" context.
         """
-        if current_context.endswith(self.NAMESPACE_OF_NAME_WORDS_SEPARATOR):
+        if current_context.endswith(self.NAME_NAMESPACE_WORD_SEPARATOR):
             current_context = current_context[
-                : -len(self.NAMESPACE_OF_NAME_WORDS_SEPARATOR)
+                : -len(self.NAME_NAMESPACE_WORD_SEPARATOR)
             ]
         truncated_variable_line = VariableLine(line=self.line)
 
