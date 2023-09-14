@@ -99,16 +99,21 @@ jobs:
     # we use the !failure() condition
     # see: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
-    container: google/cloud-sdk
     outputs:
       dockerhub_training_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_training_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/set_variables_gcloud_auth
+      - uses: ./.github/actions/set_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
@@ -238,16 +243,21 @@ jobs:
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
-    container: google/cloud-sdk
     outputs:
       dockerhub_serving_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/set_variables_gcloud_auth
+      - uses: ./.github/actions/set_variables
         with:
-          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: set_additional_variables
         run: |
           echo "MODEL_PATH"="${{ env.REPOSITORY_NAME }}/model.pt" >> $GITHUB_ENV

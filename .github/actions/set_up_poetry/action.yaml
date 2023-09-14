@@ -1,10 +1,16 @@
 name: 'set_up_poetry'
 description: 'Install poetry'
 inputs:
+  python_environment_location:
+    description: 'Python environment location'
   version:
     description: 'The version of poetry to install'
     required: false
     default: '1.3.1'
+  as_root:
+    description: 'Whether to execute apt commands as root'
+    required: false
+    default: 'false'
 outputs:
   version:
     description: 'The version of poetry installed'
@@ -12,6 +18,10 @@ outputs:
 runs:
   using: "composite"
   steps:
+      - uses: ./.github/actions/set_up_python
+        with:
+          python_environment_location: ${{ inputs.python_environment_location }}
+          as_root: ${{ inputs.as_root }}
       - run: pip install poetry==${{ inputs.version }}
         shell: bash
       - id: set_poetry_version
