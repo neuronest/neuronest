@@ -59,7 +59,7 @@ class InputSchemaSample(BaseModel):
     def to_serialized_dict(self):
         return {
             key: array_to_string(value) if isinstance(value, np.ndarray) else value
-            for key, value in self.dict()
+            for key, value in self.dict().items()
         }
 
 
@@ -68,10 +68,13 @@ class InputSchema(online_prediction_model.InputSchema):
 
     def to_serialized_dict(self):
         return {
-            key: [sample.to_serialized_dict() for sample in value]
+            key: [
+                InputSchemaSample.parse_obj(sample).to_serialized_dict()
+                for sample in value
+            ]
             if key == "samples"
             else value
-            for key, value in self.dict()
+            for key, value in self.dict().items()
         }
 
 

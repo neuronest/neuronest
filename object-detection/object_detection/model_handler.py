@@ -36,7 +36,7 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         *args,
         inner_model_type: Optional[str] = None,
         inner_model_name: Optional[str] = None,
-        inner_model_tag: Optional[str] = None,
+        # inner_model_tag: Optional[str] = None,
         image_width: Optional[int] = None,
         **kwargs,
         # device: Device = Device.CUDA,
@@ -52,7 +52,7 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         # used with torchserve, torchserve has no way of knowing what values to pass
         # for these arguments, so it does not pass anything and in this case we source
         # ourselves explicitly in the config
-        self.inner_model_tag = inner_model_tag or cfg.model.inner_model_tag
+        # self.inner_model_tag = inner_model_tag or cfg.model.inner_model_tag
         self.inner_model_type = inner_model_type or cfg.model.inner_model_type
         self.inner_model_name = inner_model_name or cfg.model.inner_model_name
         self.image_width = image_width or cfg.model.image_width
@@ -189,7 +189,6 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         return ObjectDetectionModel(
             model_type=self.inner_model_type,
             model_name=self.inner_model_name,
-            model_tag=self.inner_model_tag,
         )
 
     # def initialize(self, context: Context):
