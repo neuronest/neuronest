@@ -180,7 +180,8 @@ jobs:
           name_of_model_name_variable=${{ env.REPOSITORY_VARIABLES_PREFIX }}MODEL_NAME
           echo value=$(eval echo "\$${name_of_model_name_variable}") >> $GITHUB_OUTPUT
         shell: bash
-      - uses: ./.github/actions/run_linters_tests
+      - id: test_integration
+        uses: ./.github/actions/run_linters_tests
         with:
           image_name: python:3.9.17-slim-buster
           run_integration_tests: true

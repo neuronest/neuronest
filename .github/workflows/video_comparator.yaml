@@ -1,4 +1,4 @@
-name: object_detection
+name: video_comparator
 
 on:
 #  push:
@@ -6,23 +6,23 @@ on:
 #      - main
 #      - develop
 #    paths:
-#      - .github/workflows/object_detection.yaml
+#      - .github/workflows/video_comparator.yaml
 #      - .github/actions/**
 #      - .github/variables/**
 #      - .pre-commit-config.yaml
 #      - shared/**
-#      - object-detection/**
+#      - video-comparator/**
 #  pull_request:
 #    branches:
 #      - main
 #      - develop
 #    paths:
-#      - .github/workflows/object_detection.yaml
+#      - .github/workflows/video_comparator.yaml
 #      - .github/actions/**
 #      - .github/variables/**
 #      - .pre-commit-config.yaml
 #      - shared/**
-#      - object-detection/**
+#      - video-comparator/**
 #  workflow_dispatch:
   workflow_call:
     inputs:
@@ -43,7 +43,7 @@ on:
         type: string
         default: ''
 env:
-  REPOSITORY_NAME: object-detection
+  REPOSITORY_NAME: video-comparator
 
 jobs:
   upload_variables_of_called_workflows:
@@ -59,20 +59,13 @@ jobs:
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-  object_detection:
+  video_comparator:
     needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: true
       deploy: true
       do_post_deployment: true
-      online_prediction_model_repository: object-detection
+      online_prediction_model_repository: video-comparator
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit
-# todo: basculer ces étapes sur functional-{...}. Sans doute divise la cli en deux
-#      - id: remove_last_model_version_if_deploy_has_failed
-#        if: ${{ failure() && steps.deploy.conclusion == 'failure' }}
-#        run: python -m object_detection.cli --actions remove_last_model_version
-#      - id: undeploy_and_remove_last_model_version_and_redeploy_if_test_integration_has_failed
-#        if: ${{ failure() && steps.test_integration.conclusion == 'failure' }}
-#        run: python -m object_detection.cli --actions undeploy remove_last_model_version deploy
