@@ -40,11 +40,7 @@ def test_endpoint_inference(
             source_blob_name=other_video_path.blob_name,
             destination_file_name=other_video_path,
         )
-    # raise ValueError(
-    #     "probleme storage devrait pas arriver parce que le role du cliernt est justement"
-    #     " de pousser d'abord les videos dans un bucket pour lequel le service a le droit"
-    #     " de dl des blobs"
-    # )
+
     video_comparator_best_to_worst_video_pairs = sorted(
         best_to_worst_matching_videos_pairs,
         key=lambda video_and_other_video_path: video_comparator_client.predict_batch(

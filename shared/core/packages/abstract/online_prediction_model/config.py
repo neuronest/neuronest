@@ -81,18 +81,3 @@ class Config(BaseModel):
         return cls.parse_obj(
             OmegaConf.to_container(cfg=OmegaConf.load(file_path), resolve=True)
         )
-
-
-# for forbidden_character, replacement_character in zip(
-#     cfg.bigquery.dataset.forbidden_characters,
-#     cfg.bigquery.dataset.replacement_characters_of_forbidden_characters,
-# ):
-#     if forbidden_character not in cfg.bigquery.dataset.name:
-#         continue
-#     cfg.bigquery.dataset.name = cfg.bigquery.dataset.name.replace(
-#         forbidden_character, replacement_character
-#     )
-#     logger.warning(
-#         f"We replace the forbidden character '{forbidden_character}' "
-#         f"with '{replacement_character}' for the element bigquery.dataset.name"
-#     )

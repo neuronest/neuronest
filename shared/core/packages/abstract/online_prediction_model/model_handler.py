@@ -12,21 +12,6 @@ from core.packages.abstract.online_prediction_model.modules.model import (
 )
 from core.schemas.abstract.online_prediction_model import Device, OutputSchemaSample
 
-# from core.schemas.object_detection import (
-#     Device,
-#     InputSampleSchema,
-#     InputSchema,
-#     OutputSchema,
-# )
-
-# a relative import should be done here as this module is intended to be used with
-# torchserve
-# pylint: disable=import-error
-# from config import cfg  # isort:skip
-# from object_detection.model import ObjectDetectionModel  # isort:skip
-
-# pylint: enable=import-error
-
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 

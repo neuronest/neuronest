@@ -35,12 +35,10 @@ class APIClient(BaseClient, abc.ABC):
         project_id: Optional[str] = None,
     ):
         super().__init__(key_path=key_path, project_id=project_id)
-        # self.key_path = key_path
         self.host = host
         self.root = root
         self.protocol_with_host = self._build_host_with_protocol(host=host, ssl=ssl)
         self.endpoint = f"{self.protocol_with_host}{root}"
-        # self.credentials = get_credentials(key_path=self.key_path)
 
     @staticmethod
     def _build_host_with_protocol(host: str, ssl: bool) -> str:

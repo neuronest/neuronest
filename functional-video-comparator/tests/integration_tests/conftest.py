@@ -12,15 +12,6 @@ from tests.environment_variables import (
     REGION,
 )
 
-# @pytest.fixture
-# def people_counting_url():
-#     return os.environ["PEOPLE_COUNTING_URL"]
-#
-#
-# @pytest.fixture
-# def project_id():
-#     return os.environ["PROJECT_ID"]
-
 
 class FakeModelInstantiatorClient(ModelInstantiatorClient):
     def instantiate(self, model_name: str) -> Optional[requests.Response]:

@@ -57,14 +57,6 @@ class VertexAIManager:
 
         return f"{model_name}_endpoint"
 
-    @staticmethod
-    def endpoint_is_deployed(endpoint: aiplatform.Endpoint) -> bool:
-        try:
-            endpoint_gca_resource: proto.Message = endpoint.gca_resource
-        except RuntimeError:
-            return False
-        return len(list(endpoint_gca_resource.deployed_models)) >= 1
-
     def _get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
         return aiplatform.models.Model.list(
             location=self.location,

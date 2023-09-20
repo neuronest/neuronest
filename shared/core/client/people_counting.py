@@ -31,20 +31,6 @@ class PeopleCountingClient(APIClient):
             key_path=key_path, project_id=self.project_id
         )
 
-    # # fixme: this is a duplicate code from  # pylint: disable=W0511
-    # #  core/google/vertex_ai_manager.py  # pylint: disable=W0511
-    # #  find a way to mutualize  # pylint: disable=W0511
-    # @property
-    # def project_id(self) -> str:
-    #     # we give priority on the project_id which was passed explicitly to the
-    #     # instantiation rather than to the project id to which the service account
-    #     # of the credentials is attached
-    #     return (
-    #         self._project_id
-    #         if self._project_id is not None
-    #         else self.credentials.project_id
-    #     )
-
     @property
     def videos_to_count_bucket(self) -> str:
         return f"{self.VIDEOS_TO_COUNT_BASE_BUCKET_NAME}-{self.project_id}"

@@ -61,9 +61,6 @@ def count_people_and_make_video(
     video_to_count_local_path = os.path.basename(
         input_of_people_counter.data.storage_path
     )
-    # bucket_of_videos_to_count.blob(
-    #     input_of_people_counter.data.storage_path
-    # ).download_to_filename(video_to_count_local_path)
     storage_client.download_blob_to_file(
         bucket_name=input_of_people_counter.data.storage_path.bucket,
         source_blob_name=input_of_people_counter.data.storage_path.blob_name,

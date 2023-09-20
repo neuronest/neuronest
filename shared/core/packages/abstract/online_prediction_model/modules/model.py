@@ -16,32 +16,18 @@ from core.path import GSPath
 class OnlinePredictionModel(ABC):
     def __init__(
         self,
-        # model_type: str,
-        # model_name: str,
         model_extension: str = ".pt",
         retrieve_remote_model: bool = False,
     ):
-        # self.model_type = model_type
-        # self.model_name = model_name
         self.model_extension = model_extension
 
         self._model: Optional[nn.Module] = None
         if retrieve_remote_model:
-            # self._model = self._load_hub_pretrained_model()
             self._model = self._retrieve_remote_model()
-
-    # def __call__(self, *args, **kwargs) -> List[pd.DataFrame]:
-    #     # noinspection PyCallingNonCallable
-    #     predictions = self._model(*args, **kwargs)
-    #
-    #     return list(predictions.pandas().xyxy)
 
     @abstractmethod
     def __call__(self, *args, **kwargs) -> List[pd.DataFrame]:
         raise NotImplementedError
-
-    # def _load_hub_pretrained_model(self):
-    #     return torch.hub.load(self.model_type, self.model_name, pretrained=True)
 
     @abstractmethod
     def _retrieve_remote_model(self):

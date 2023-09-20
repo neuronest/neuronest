@@ -20,12 +20,8 @@ from core.utils import timeit
 def train_model(
     online_prediction_model: OnlinePredictionModel, *args, **kwargs
 ) -> OnlinePredictionModel:
-    # def train_model(model_type: str, model_name: str) -> ObjectDetectionModel:
     online_prediction_model.fit(*args, **kwargs)
     return online_prediction_model
-    # return ObjectDetectionModel(
-    #     model_type=model_type, model_name=model_name, retrieve_remote_model=True
-    # )
 
 
 def write_metrics(
@@ -45,7 +41,7 @@ def write_metrics(
 
 
 def main(
-    online_prediction_model,
+    online_prediction_model: OnlinePredictionModel,
     config: DictConfig,
     *online_prediction_model_training_args,
     **online_prediction_model_training_kwargs,
@@ -61,10 +57,6 @@ def main(
 
     # pylint: disable=unpacking-non-sequence
     # noinspection PyArgumentList
-    # training_duration, model = train_model(
-    #     model_type=config.model.inner_model_type,
-    #     model_name=config.model.inner_model_name,
-    # )
     training_duration, online_prediction_model = train_model(
         online_prediction_model=online_prediction_model,
         *online_prediction_model_training_args,
@@ -96,6 +88,8 @@ def main(
 
 
 if __name__ == "__main__":
+    # dummy paragraph that shows how training should be triggered in
+    # specialized online prediction models packages
     cfg = None  # pylint: disable=invalid-name
     model = None  # pylint: disable=invalid-name
     training_args = ()  # pylint: disable=invalid-name
