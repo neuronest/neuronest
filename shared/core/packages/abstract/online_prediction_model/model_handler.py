@@ -21,9 +21,6 @@ logger = logging.getLogger(__name__)
 class OnlinePredictionModelHandler(BaseHandler, ABC):
     def __init__(
         self,
-        # inner_model_type: str,
-        # inner_model_name: str,
-        # image_width: int,
         device: Device = Device.CUDA,
     ):
         super().__init__()
@@ -33,24 +30,8 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
             self.device = Device.CPU.value
         else:
             self.device = device.value
-        # self.inner_model_type = inner_model_type
-        # self.inner_model_name = inner_model_name
-        # self.image_width = image_width
         self._context = None
-        # self.initialized = False
         self.model: Optional[OnlinePredictionModel] = None
-        # self.labels_to_predict: Optional[List[str]] = None
-        # self.confidence_threshold: Optional[float] = None
-
-    # def _fill_labels_to_predict(self, labels_to_predict: Optional[List[str]]):
-    #     self.labels_to_predict = labels_to_predict
-
-    # def _fill_confidence_threshold(self, confidence_threshold: Optional[float]):
-    #     self.confidence_threshold = confidence_threshold
-
-    # def _fill_image_width(self, overridden_image_width: Optional[int]):
-    #     if overridden_image_width is not None:
-    #         self.image_width = overridden_image_width
 
     @staticmethod
     def get_input_schema_sample_class() -> Type:
@@ -72,14 +53,6 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         InputSchemaSample = self.get_input_schema_sample_class()
         input_schema_samples = [InputSchemaSample.parse_obj(sample) for sample in data]
 
-        # validated_data = InputSchema(
-        #     samples=[InputSampleSchema.parse_obj(sample) for sample in data]
-        # )
-
-        # if len(validated_data.samples) == 0:
-        #     return []
-
-        # return validated_data.samples
         return self.get_inference_data_and_other_args_kwargs_from_input_schema_samples(
             input_schema_samples
         )
@@ -93,45 +66,11 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
 
         return os.path.join(model_dir, serialized_file)
 
-        # first_sample = validated_data.samples[0]
-
-        # self._fill_labels_to_predict(first_sample.labels_to_predict)
-        # self._fill_confidence_threshold(first_sample.confidence_threshold)
-        # self._fill_image_width(first_sample.overridden_image_width)
-        #
-        # return [
-        #     resize(image_from_string(sample.data), width=self.image_width)
-        #     for sample in validated_data.samples
-        # ]
-
     def inference(self, *args, **kwargs) -> List[Any]:
         with torch.no_grad():
             self.model.eval()
             results = self.model(*args, **kwargs)
         return results
-
-    # def _filter_predictions(
-    #     self, raw_predictions: List[pd.DataFrame]
-    # ) -> List[pd.DataFrame]:
-    #     filtered_predictions = raw_predictions
-    #
-    #     if self.labels_to_predict is not None:
-    #         filtered_predictions = [
-    #             filtered_prediction[
-    #                 filtered_prediction.name.isin(self.labels_to_predict)
-    #             ]
-    #             for filtered_prediction in filtered_predictions
-    #         ]
-    #
-    #     if self.confidence_threshold is not None:
-    #         filtered_predictions = [
-    #             filtered_prediction[
-    #                 filtered_prediction.confidence >= self.confidence_threshold
-    #             ]
-    #             for filtered_prediction in filtered_predictions
-    #         ]
-    #
-    #     return filtered_predictions
 
     # the data argument of the BaseHandler.postprocess function has been renamed
     # predictions for more clarity on the fact that the function necessarily takes
@@ -141,12 +80,6 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         self, predictions: List[Any]
     ) -> List[OutputSchemaSample]:  # -> List[Dict[str, str]]:
         raise NotImplementedError
-        # filtered_predictions = self._filter_predictions(data)
-        #
-        # return [
-        #     OutputSchema(results=array_to_string(prediction.values)).dict()
-        #     for prediction in filtered_predictions
-        # ]
 
     def initialize_model_pt(self, context: Context):
         self._context = context
@@ -156,49 +89,12 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         if not os.path.isfile(model_pt_path):
             raise RuntimeError("The model.pt file is missing")
 
-        # if self.device == Device.CUDA and not torch.cuda.is_available():
-        #     logger.warning(f"GPU not detected while the device is {self.device}")
-        #     self.device = Device.CPU.value
-
-        # self.model = ObjectDetectionModel(
-        #     model_type=self.inner_model_type, model_name=self.inner_model_name
-        # ).load(model_pt_path)
         model_pt = OnlinePredictionModel.get_model_pt_from_path(
             model_pt_path=model_pt_path
         )
-        # self.model = OnlinePredictionModel.
-        # self.model.to(self.device)
         model_pt.to(self.device)
+
         return model_pt
-
-        # self.initialized = True
-
-    # @abstractmethod
-    # def initialize(self, context: Context):
-    #     """
-    #     Initialize model. This will be called during model loading time
-    #     :param context: Initial context contains model server system properties.
-    #     :return:
-    #     """
-    #     raise NotImplementedError
-    # self._context = context
-    #
-    # model_pt_path = self._retrieve_model_path()
-    #
-    # if not os.path.isfile(model_pt_path):
-    #     raise RuntimeError("The model.pt file is missing")
-    #
-    # # if self.device == Device.CUDA and not torch.cuda.is_available():
-    # #     logger.warning(f"GPU not detected while the device is {self.device}")
-    # #     self.device = Device.CPU.value
-    #
-    # self.model = ObjectDetectionModel(
-    #     model_type=self.inner_model_type, model_name=self.inner_model_name
-    # ).load(model_pt_path)
-    # # self.model = OnlinePredictionModel.
-    # self.model.to(self.device)
-    #
-    # # self.initialized = True
 
     @abstractmethod
     def initialize_new_model(self):
@@ -212,7 +108,6 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         """
         self._context = context
         self.model = self.initialize_new_model()
-        # self.model.set_model(model=self.initialize_model_pt(context=context))
         self.model.load(path=self._retrieve_model_path())
         self.model.to(self.device)
 

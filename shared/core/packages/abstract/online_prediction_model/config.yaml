@@ -31,5 +31,4 @@ serving_deployment:
 bigquery:
   dataset:
     name: '${model.name}_training'
-#    forbidden_characters: ['-']
-#    replacement_characters_of_forbidden_characters: ['_']
+
