@@ -93,7 +93,7 @@ class LaunchTrainingJobAction(RunnableAction):
             )
 
         models_bucket_name, _ = model_gspath.to_bucket_and_blob_names()
-        StorageClient().create_bucket(
+        StorageClient(project_id=vertex_ai_manager.project_id).create_bucket(
             bucket_name=models_bucket_name,
             location=vertex_ai_manager.location,
             exist_ok=True,
