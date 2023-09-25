@@ -5,4 +5,4 @@ repository_variables:
 multi_instance_resource_names: []
 other_variables:
   # GCP project
-  - PROJECT_ID=video-comparator-add-service
+  - PROJECT_ID=customer-project-32

@@ -1,8 +1,7 @@
+from enum import Enum
 from typing import Dict, List, Optional, Union
 
-from pydantic import validator
-
-from core.schemas.abstract import online_prediction_model
+from pydantic import BaseModel, validator
 
 PREDICTION_COLUMNS = [
     "x_min",
@@ -15,8 +14,13 @@ PREDICTION_COLUMNS = [
 ]
 
 
-class InputSchemaSample(online_prediction_model.InputSchemaSample):
-    # data: str
+class Device(str, Enum):
+    CPU = "cpu"
+    CUDA = "cuda"
+
+
+class InputSampleSchema(BaseModel):
+    data: str
     labels_to_predict: Optional[List[str]] = None
     confidence_threshold: Optional[float] = None
     overridden_image_width: Optional[int] = None
@@ -40,18 +44,14 @@ class InputSchemaSample(online_prediction_model.InputSchemaSample):
         }
 
 
-class InputSchema(online_prediction_model.InputSchema):
-    samples: List[InputSchemaSample]
+class InputSchema(BaseModel):
+    samples: List[InputSampleSchema]
 
-    # fixme: the InputSchemaSample structures are parsed and  # pylint: disable=W0511
-    #  validated one by one, but the InputSchema structure  # pylint: disable=W0511
-    #  which wraps them is never validated anywhere it seems to  # pylint: disable=W0511
-    #  me and therefore the sample validator is never executed  # pylint: disable=W0511
     @validator("samples")
     # pylint: disable=no-self-argument
     def validate_metadata_batch_unicity(
-        cls, samples: List[InputSchemaSample]
-    ) -> List[InputSchemaSample]:
+        cls, samples: List[InputSampleSchema]
+    ) -> List[InputSampleSchema]:
         if len(samples) == 0:
             return []
 
@@ -78,5 +78,5 @@ class InputSchema(online_prediction_model.InputSchema):
         return samples
 
 
-class OutputSchemaSample(online_prediction_model.OutputSchemaSample):
-    pass
+class OutputSchema(BaseModel):
+    results: str

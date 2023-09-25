@@ -34,12 +34,11 @@ class ServingDeploymentConfig(BaseModel):
     max_replica_count: int = 1
     accelerator_type: Optional[str] = None
     accelerator_count: int = 0
-    service_account_name: Optional[str] = None
 
     @classmethod
     def from_labels(cls, config_as_labels: Dict[str, str]) -> ServingDeploymentConfig:
         config_as_labels = {
-            hyphen_to_underscore(key): value if value != "none" else None
+            hyphen_to_underscore(key): value if value != "None" else None
             for key, value in config_as_labels.items()
         }
 

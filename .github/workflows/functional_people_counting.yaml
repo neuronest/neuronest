@@ -52,7 +52,7 @@ env:
 jobs:
   run_base_terraform:
     runs-on: ubuntu-latest
-    # If the workflow isn't called, inputs are blank and job should run
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
     outputs:
@@ -96,8 +96,6 @@ jobs:
 
   build_test_push_people_counting:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
     uses: ./.github/workflows/people_counting.yaml
     with:
       build: true
@@ -108,8 +106,6 @@ jobs:
 
   build_test_push_object_detection:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
     uses: ./.github/workflows/object_detection.yaml
     with:
       build: true
@@ -120,8 +116,6 @@ jobs:
 
   build_test_push_model_instantiator:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
     uses: ./.github/workflows/model_instantiator.yaml
     with:
       build: true
@@ -136,8 +130,6 @@ jobs:
      - build_test_push_object_detection
      - build_test_push_model_instantiator
      - run_base_terraform
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
       people_counting_url: ${{ steps.get_people_counting_url.outputs.value }}
@@ -192,8 +184,6 @@ jobs:
       - deploy_functional_people_counting
       - build_test_push_object_detection
       - upload_variables_of_called_workflows
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     uses: ./.github/workflows/object_detection.yaml
     with:
       build: false
@@ -208,8 +198,6 @@ jobs:
 
   post_deploy_model_instantiator:
     needs: [deploy_functional_people_counting, upload_variables_of_called_workflows]
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     uses: ./.github/workflows/model_instantiator.yaml
     with:
       build: false

@@ -48,26 +48,119 @@ env:
   REPOSITORY_NAME: functional-object-detection
 
 jobs:
+  run_base_terraform:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
+    container: google/cloud-sdk
+    outputs:
+      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - id: run_base_terraform
+        uses: ./.github/actions/run_base_terraform
+
   upload_variables_of_called_workflows:
     runs-on: ubuntu-latest
     container: google/cloud-sdk
     outputs:
-      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
+      object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
+      model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
-      - name: upload_variables
-        id: upload_variables
+      - name: upload_object_detection_variables
+        id: upload_object_detection_variables
         uses: ./.github/actions/upload_variables
         with:
+          variable_prefix_to_filter_on: OBJECT_DETECTION
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - name: upload_model_instantiator_variables
+        id: upload_model_instantiator_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: MODEL_INSTANTIATOR
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-  functional_object_detection:
-    needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
+
+  build_test_push_object_detection:
+    needs: [run_base_terraform, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/object_detection.yaml
     with:
       build: true
-      deploy: true
+      deploy: false
+      do_post_deployment: false
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
+    secrets: inherit
+
+  build_test_push_model_instantiator:
+    needs: [run_base_terraform, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/model_instantiator.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
+    secrets: inherit
+
+  deploy_functional_object_detection:
+    needs:
+     - build_test_push_object_detection
+     - build_test_push_model_instantiator
+     - run_base_terraform
+    outputs:
+      model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
+    runs-on: ubuntu-latest
+    container:
+      image: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - id: run_functional_object_detection_terraform
+        uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+          workspace: ${{ env.REPOSITORY_NAME }}
+        # favor environment variables that show up clearly in github logs over
+        # var-like arguments to make it easier to reproduce errors locally
+        env:
+          TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
+      - id: get_model_instantiator_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: model_instantiator_url
+
+  post_deploy_object_detection:
+    # the job in the needs section is necessary to recover its output
+    needs:
+      - run_base_terraform
+      - deploy_functional_object_detection
+      - build_test_push_object_detection
+      - upload_variables_of_called_workflows
+    uses: ./.github/workflows/object_detection.yaml
+    with:
+      build: false
+      deploy: false
       do_post_deployment: true
-      online_prediction_model_repository: functional-object-detection
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
+      dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
+      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+      model_instantiator_url: ${{ needs.deploy_functional_object_detection.outputs.model_instantiator_url }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
+    secrets: inherit
+
+  post_deploy_model_instantiator:
+    needs: [deploy_functional_object_detection, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/model_instantiator.yaml
+    with:
+      build: false
+      deploy: false
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit

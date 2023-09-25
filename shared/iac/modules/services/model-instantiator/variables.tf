@@ -34,6 +34,3 @@ variable "cloud_uninstantiate_route" {
 variable "cloud_scheduler_model_name" {
   type = string
 }
-variable "online_prediction_model_sa_name" {
-  type = string
-}

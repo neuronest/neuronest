@@ -53,7 +53,7 @@ env:
 jobs:
   run_base_terraform:
     runs-on: ubuntu-latest
-    # If the workflow isn't called, inputs are blank and job should run
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
     outputs:

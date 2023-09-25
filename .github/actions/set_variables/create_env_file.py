@@ -60,9 +60,6 @@ class VariableType(str, Enum):
 
 class VariableLine:
     NAME_AND_VALUE_SEPARATOR = "="
-    NAME_NAMESPACE_WORD_SEPARATOR = "_"
-    VALUE_NAMESPACE_WORD_SEPARATOR = "-"
-    VALUE_VARIABLES_NAMESPACE_WORD_SEPARATOR = "_"
     REGEX_OF_VALUE_PART_VARIABLES = r"\$\{([^\}]*)\}"
     REPOSITORY_CODE_VARIABLE_NAME = "REPOSITORY_CODE"
 
@@ -131,10 +128,6 @@ class VariableLine:
         ${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
         in "object_detection" context.
         """
-        if current_context.endswith(self.NAME_NAMESPACE_WORD_SEPARATOR):
-            current_context = current_context[
-                : -len(self.NAME_NAMESPACE_WORD_SEPARATOR)
-            ]
         truncated_variable_line = VariableLine(line=self.line)
 
         for (
@@ -213,28 +206,17 @@ class VariableLine:
 
         return None
 
-    @staticmethod
-    def build_namespace_of_name_from_string(string: str) -> str:
-        return f"{string.replace('-', '_').upper()}{'_'}"
-
-    @staticmethod
-    def build_namespace_of_value_from_string(string: str) -> str:
-        return f"{string.replace('_', '-').lower()}{'-'}"
-
-    @staticmethod
-    def build_namespace_of_value_variables_from_string(string: str) -> str:
-        return f"{string.replace('-', '_').upper()}{'_'}"
-
     def add_namespace_to_name(
         self,
         namespace: str,
         already_added_ok: bool = False,
     ) -> VariableLine:
         var_line = VariableLine(self.line)
+        namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
         var_line.name = add_namespace_to_string(
             string=var_line.name,
-            namespace=self.build_namespace_of_name_from_string(namespace),
+            namespace=namespace,
             already_added_ok=already_added_ok,
         )
 
@@ -246,10 +228,11 @@ class VariableLine:
         already_added_ok: bool = False,
     ) -> VariableLine:
         var_line = VariableLine(self.line)
+        namespace = f"{namespace.replace('_', '-').lower()}{'-'}"
 
         var_line.value = add_namespace_to_string(
             string=var_line.value,
-            namespace=self.build_namespace_of_value_from_string(namespace),
+            namespace=namespace,
             already_added_ok=already_added_ok,
         )
 
@@ -262,6 +245,7 @@ class VariableLine:
         already_added_ok: bool = False,
     ) -> VariableLine:
         var_line = VariableLine(self.line)
+        namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
         if variable_inside_value_to_add_to is not None:
             # only add the namespace to this variable only within the value part
@@ -274,9 +258,7 @@ class VariableLine:
                 variable=variable,
                 other_variable=add_namespace_to_string(
                     string=variable,
-                    namespace=self.build_namespace_of_value_variables_from_string(
-                        namespace
-                    ),
+                    namespace=namespace,
                     already_added_ok=already_added_ok,
                 ),
             )
@@ -577,21 +559,7 @@ if __name__ == "__main__":
             f"needed to load variables"
         )
 
-    shared_variables_lines_names = set(
-        shared_var_line.name for shared_var_line in shared_variables_lines
-    )
-    repository_variables_prefix = VariableLine(
-        line="REPOSITORY_VARIABLES_PREFIX="
-        + VariableLine.build_namespace_of_name_from_string(
-            main_repository.get_base_name_without_functional(),
-        ),
-        variable_type=VariableType.REPOSITORY,
-    )
-    all_variables_lines = (
-        shared_variables_lines
-        + repository_variables_lines
-        + [repository_variables_prefix]
-    )
+    all_variables_lines = shared_variables_lines + repository_variables_lines
     if not args.keep_repository_variables:
         all_variables_lines = [
             var_line
@@ -606,12 +574,6 @@ if __name__ == "__main__":
             if var_line.name not in shared_variables_lines_names
         ]
     if args.variable_prefix_to_filter_on:
-        variable_prefix = (
-            repository_variables_prefix.value
-            if args.variable_prefix_to_filter_on
-            == "current_repository_variables_prefix"
-            else args.variable_prefix_to_filter_on
-        )
         all_variables_lines = [
             var_line
             for var_line in all_variables_lines
