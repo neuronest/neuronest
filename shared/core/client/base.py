@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from core.auth import generate_identity_token
+from core.auth import generate_identity_token, get_credentials
 
 
 class Protocol(str, Enum):
@@ -24,12 +24,32 @@ class Protocol(str, Enum):
 
 
 class APIClient(abc.ABC):
-    def __init__(self, key_path: str, host: str, root: str, ssl: bool = True):
+    def __init__(
+        self,
+        key_path: str,
+        host: str,
+        root: str,
+        ssl: bool = True,
+        project_id: Optional[str] = None,
+    ):
         self.key_path = key_path
         self.host = host
         self.root = root
         self.protocol_with_host = self._build_host_with_protocol(host=host, ssl=ssl)
         self.endpoint = f"{self.protocol_with_host}{root}"
+        self.credentials = get_credentials(key_path=self.key_path)
+        self._project_id = project_id
+
+    @property
+    def project_id(self) -> str:
+        # we give priority on the project_id which was passed explicitly to the
+        # instantiation rather than to the project id to which the service account
+        # of the credentials is attached
+        return (
+            self._project_id
+            if self._project_id is not None
+            else self.credentials.project_id
+        )
 
     @staticmethod
     def _build_host_with_protocol(host: str, ssl: bool) -> str:

@@ -3,7 +3,7 @@ import json
 import uuid
 from typing import Optional
 
-from core.client.api_client import APIClient
+from core.client.base import APIClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.routes.people_counting import routes
@@ -22,11 +22,9 @@ class PeopleCountingClient(APIClient):
     def __init__(
         self,
         host: str,
-        project_id: Optional[str] = None,
         key_path: Optional[str] = None,
     ):
         super().__init__(host=host, key_path=key_path, root=routes.root)
-        # self._project_id = project_id
         self.storage_client = StorageClient(
             key_path=key_path, project_id=self.project_id
         )
