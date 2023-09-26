@@ -228,4 +228,3 @@ jobs:
           run_integration_tests: true
           run_unit_tests: false
           environment_variables: -e PEOPLE_COUNTING_URL=${{ needs.deploy_functional_people_counting.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }}
-
