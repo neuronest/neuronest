@@ -156,7 +156,7 @@ jobs:
         uses: ./.github/actions/get_terraform_output
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
-          terraform_output_name: people_counting_url
+          terraform_output_name: model_instantiator_url
       - id: get_people_counting_url
         uses: ./.github/actions/get_terraform_output
         with:
