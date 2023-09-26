@@ -23,8 +23,11 @@ class PeopleCountingClient(APIClient):
         self,
         host: str,
         key_path: Optional[str] = None,
+        project_id: Optional[str] = None,
     ):
-        super().__init__(host=host, key_path=key_path, root=routes.root)
+        super().__init__(
+            host=host, key_path=key_path, root=routes.root, project_id=project_id
+        )
         self.storage_client = StorageClient(
             key_path=key_path, project_id=self.project_id
         )
