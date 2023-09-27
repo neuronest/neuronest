@@ -164,3 +164,26 @@ jobs:
       do_post_deployment: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
+
+  run_integration_tests:
+    runs-on: ubuntu-latest
+    needs:
+      - post_deploy_object_detection
+      - post_deploy_model_instantiator
+      - deploy_functional_object_detection
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
+    container: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - id: test_integration
+        uses: ./.github/actions/run_linters_tests
+        with:
+          image_name: python:3.9.17-slim-buster
+          run_integration_tests: true
+          run_unit_tests: false
+          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}
