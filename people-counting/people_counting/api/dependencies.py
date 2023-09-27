@@ -1,5 +1,6 @@
+from core.google.storage_client import StorageClient
 from fastapi import Depends
-from google.cloud import firestore, storage
+from google.cloud import firestore
 
 from people_counting.dependencies import get_people_counter_with_package_config
 from people_counting.environment_variables import (
@@ -11,19 +12,19 @@ from people_counting.environment_variables import (
 
 
 def get_storage_client():
-    return storage.Client(project=PROJECT_ID)
+    return StorageClient(project_id=PROJECT_ID)
 
 
 def get_bucket_of_videos_to_count(
-    storage_client: storage.Client = Depends(get_storage_client),
+    storage_client: StorageClient = Depends(get_storage_client),
 ):
-    return storage_client.bucket(VIDEOS_TO_COUNT_BUCKET)
+    return storage_client.client.bucket(VIDEOS_TO_COUNT_BUCKET)
 
 
 def get_bucket_of_counted_videos(
-    storage_client: storage.Client = Depends(get_storage_client),
+    storage_client: StorageClient = Depends(get_storage_client),
 ):
-    return storage_client.bucket(COUNTED_VIDEOS_BUCKET)
+    return storage_client.client.bucket(COUNTED_VIDEOS_BUCKET)
 
 
 def get_people_counter():

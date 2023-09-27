@@ -12,7 +12,7 @@ from core.schemas.people_counting import (
     PeopleCounterInputData,
     PeopleCounterOutput,
 )
-from core.tools import get_file_id_from_path
+from core.tools import generate_file_id
 
 
 class PeopleCountingClient(APIClient):
@@ -26,7 +26,10 @@ class PeopleCountingClient(APIClient):
         project_id: Optional[str] = None,
     ):
         super().__init__(
-            host=host, key_path=key_path, root=routes.root, project_id=project_id
+            host=host,
+            key_path=key_path,
+            root=routes.root,
+            project_id=project_id,
         )
         self.storage_client = StorageClient(
             key_path=key_path, project_id=self.project_id
@@ -42,7 +45,7 @@ class PeopleCountingClient(APIClient):
         if not bucket.exists():
             bucket.create()
 
-        video_blob_name = get_file_id_from_path(file_path=video_path)
+        video_blob_name = generate_file_id(file_path=video_path)
 
         self.storage_client.upload_blob(
             source_file_name=video_path,
@@ -58,9 +61,7 @@ class PeopleCountingClient(APIClient):
         now = datetime.datetime.now().strftime(
             self.PREDICTION_INSTANCE_ID_DATETIME_FORMAT
         )
-        return (
-            f"{now}_{get_file_id_from_path(file_path=video_path)}_{str(uuid.uuid4())}"
-        )
+        return f"{now}_{generate_file_id(file_path=video_path)}_{str(uuid.uuid4())}"
 
     def predict(
         self, video_path: str, save_counted_video_in_storage: bool = False

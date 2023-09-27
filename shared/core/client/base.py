@@ -59,6 +59,12 @@ class APIClient(abc.ABC):
         if parsed_host.scheme == "":
             return f"{constructed_protocol}://{host}"
 
+        # Le paramètre ssl devrait être optionnel et servir au cas où le
+        # protocol n'est pas contenu dans le host.
+        # Si le host contient http:// ou https:// l'expected protocol est de fait connu.
+        # Il n'y a pas de raison de passer par exemple http://localhost:8080 et
+        # qu'une erreur soit raised parce qu'une seconde variable ssl qui exprime la
+        # même information que le prefix du host est True par défaut
         if parsed_host.scheme != constructed_protocol:
             raise ValueError(
                 f"Expected protocol to be '{constructed_protocol}' from ssl={ssl}, "

@@ -70,21 +70,32 @@ def maybe_async(convert_to_async: bool) -> Callable:
     return decorator
 
 
-def get_file_id_from_path(
+def generate_file_id(
     file_path: str,
-    add_filename: bool = True,
-    add_extension: bool = True,
-):
-    file_path_without_extension, extension = os.path.splitext(file_path)
-    with open(file_path, "rb") as file_reader:
-        file_hash_hexdigest = hashlib.sha256(file_reader.read()).hexdigest()
+    include_name: bool = True,
+    include_extension: bool = True,
+) -> str:
+    """
+    Generate a unique ID based on the sha256 hash of the file content.
+    Optionally include the original filename and extension.
 
-    if add_filename:
-        file_id = (
-            f"{os.path.basename(file_path_without_extension)}_{file_hash_hexdigest}"
-        )
-    else:
-        file_id = file_hash_hexdigest
-    if add_extension and extension:
+    :param file_path: str, path to the file
+    :param include_name: bool, flag to include original filename in the ID
+    :param include_extension: bool, flag to include file extension in the ID
+    :return: str, generated file ID
+    """
+    # Check if file exists
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"The file at path {file_path} does not exist.")
+
+    file_path_without_extension, extension = os.path.splitext(file_path)
+
+    with open(file_path, "rb") as file_reader:
+        file_id = hashlib.sha256(file_reader.read()).hexdigest()
+
+    if include_name:
+        file_id = f"{os.path.basename(file_path_without_extension)}_{file_id}"
+    if include_extension and extension:
         file_id += extension
+
     return file_id
