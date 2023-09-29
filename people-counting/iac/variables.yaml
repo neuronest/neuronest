@@ -13,8 +13,8 @@ multi_instance_resource_names:
   # cloud run
   - CLOUD_RUN_NAME=webapp
   # storage
-  - VIDEOS_TO_COUNT_BUCKET=videos-to-count-${PROJECT_ID}
-  - COUNTED_VIDEOS_BUCKET=counted-videos-${PROJECT_ID}
+  - VIDEOS_TO_COUNT_BUCKET=videos-to-count-${PROJECT_CODE}
+  - COUNTED_VIDEOS_BUCKET=counted-videos-${PROJECT_CODE}
 other_variables:
   # cloud run
   - CLOUD_RUN_MEMORY=4Gi
@@ -26,3 +26,4 @@ other_variables:
   - OBJECT_DETECTION_MODEL_NAME=dummy_object_detection_model_name
   # GCP project
   - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
+  - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}

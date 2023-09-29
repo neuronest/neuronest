@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import abc
 import json
+from abc import ABC
 from enum import Enum
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
@@ -23,11 +23,13 @@ class Protocol(str, Enum):
         return cls.HTTP
 
 
-class APIClient(abc.ABC):
-    def __init__(self, key_path: str, host: str, root: str, ssl: bool = True):
-        self.key_path = key_path
+class APIClient(ABC):
+    def __init__(
+        self, host: str, root: str, key_path: Optional[str] = None, ssl: bool = True
+    ):
         self.host = host
         self.root = root
+        self.key_path = key_path
         self.protocol_with_host = self._build_host_with_protocol(host=host, ssl=ssl)
         self.endpoint = f"{self.protocol_with_host}{root}"
 
@@ -49,7 +51,7 @@ class APIClient(abc.ABC):
 
     def auth_headers(self) -> Dict[str, str]:
         identity_token = generate_identity_token(
-            key_path=self.key_path, target_audience=self.protocol_with_host
+            target_audience=self.protocol_with_host, key_path=self.key_path
         )
 
         return {"Authorization": f"Bearer {identity_token}"}

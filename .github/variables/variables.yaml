@@ -15,8 +15,11 @@ other_variables:
   - DEFAULT_PROJECTS_OWNERS=come.arvis@neuronest.net,guillaume.ligner@neuronest.net
   # GCP projects
   - PROJECT_ID=dummy-project-id
+  - PROJECT_CODE=dpi
   - FUNCTIONAL_SERVICES_PROJECT_ID=functional-services
   - NON_FUNCTIONAL_SERVICES_PROJECT_ID=non-functional-services
+  - FUNCTIONAL_SERVICES_PROJECT_CODE=fs
+  - NON_FUNCTIONAL_SERVICES_PROJECT_CODE=nfs
   - REGION=europe-west1
   - ZONE=europe-west1-b
   - TIMEZONE=Europe/Paris
@@ -31,6 +34,6 @@ other_variables:
   - DOCKER_REPOSITORY_NAME=neuronest
   # terraform
   - BASE_TERRAFORM_RESOURCES=module.base
-  - STATE_BUCKET=${PROJECT_ID}-tfstate
+  - STATE_BUCKET=${PROJECT_CODE}-tfstate
   # artifact registry
   - GCP_REGISTRY_NAME=${REGION}-docker.pkg.dev/${PROJECT_ID}

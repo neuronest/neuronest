@@ -26,6 +26,10 @@ resource "google_cloud_run_service" "people_counting_api" {
           value = var.region
         }
         env {
+          name  = "IMAGE_NAME"
+          value = var.image_name
+        }
+        env {
           name  = "COUNTED_VIDEOS_BUCKET"
           value = var.counted_videos_bucket
         }
