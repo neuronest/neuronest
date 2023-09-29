@@ -24,6 +24,7 @@ from object_detection.config import cfg
 from object_detection.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
+    PROJECT_ID,
     TRAINING_IMAGE_NAME,
 )
 
@@ -93,7 +94,7 @@ class LaunchTrainingJobAction(RunnableAction):
             )
 
         models_bucket_name, _ = model_gspath.to_bucket_and_blob_names()
-        StorageClient(project_id=vertex_ai_manager.project_id).create_bucket(
+        StorageClient(project_id=PROJECT_ID).create_bucket(
             bucket_name=models_bucket_name,
             location=vertex_ai_manager.location,
             exist_ok=True,

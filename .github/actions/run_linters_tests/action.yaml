@@ -40,7 +40,7 @@ runs:
             --global \
             --add safe.directory ${{ steps.set_container_mono_repository_path.outputs.value }} \
           && cd $REPOSITORY_NAME \
-          && pip install poetry && poetry export \
+          && pip install poetry==$POETRY_VERSION && poetry export \
             --without-hashes \
             --with dev -f requirements.txt \
             --output requirements.txt \

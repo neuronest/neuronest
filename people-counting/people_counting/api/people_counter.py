@@ -1,8 +1,6 @@
 import os
 from typing import Tuple
 
-from core.google.storage_client import StorageClient
-from core.path import GSPath
 from core.routes.people_counting import routes
 from core.schemas import people_counting as schemas
 from core.tools import maybe_async
@@ -50,21 +48,21 @@ def count_people_and_make_video(
     collection_of_people_counter_output: firestore.CollectionReference = Depends(
         dependencies.get_firestore_results_collection
     ),
+    bucket_of_videos_to_count: storage.Bucket = Depends(
+        dependencies.get_bucket_of_videos_to_count
+    ),
     bucket_of_counted_videos: storage.Bucket = Depends(
         dependencies.get_bucket_of_counted_videos
     ),
-    storage_client: StorageClient = Depends(dependencies.get_storage_client),
 ) -> schemas.PeopleCounterOutput:
-    input_of_people_counter.data.storage_path = GSPath(
-        input_of_people_counter.data.storage_path
-    )
     video_to_count_local_path = os.path.basename(
         input_of_people_counter.data.storage_path
     )
-    storage_client.download_blob_to_file(
-        bucket_name=input_of_people_counter.data.storage_path.bucket,
-        source_blob_name=input_of_people_counter.data.storage_path.blob_name,
-        destination_file_name=video_to_count_local_path,
+    blob_name = "/".join(
+        input_of_people_counter.data.storage_path.lstrip("gs://").split("/")[1:]
+    )
+    bucket_of_videos_to_count.blob(blob_name).download_to_filename(
+        video_to_count_local_path
     )
     (
         counting_statistics,

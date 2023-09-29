@@ -6,7 +6,6 @@ import tempfile
 import time
 from typing import Dict, List, Optional, Tuple, Union
 
-import cv2 as cv
 import numpy as np
 import pandas as pd
 from google.api_core.exceptions import Conflict, NotFound
@@ -17,6 +16,7 @@ from tqdm import tqdm
 from core.exceptions import DependencyError
 from core.path import GSPath
 from core.serialization.encoding import NumpyEncoder
+from core.serialization.image import image_from_binary
 
 logger = logging.getLogger(__name__)
 
@@ -257,9 +257,7 @@ class StorageClient:
         :return: The blob found content as NumPy array image.
         """
         raw_image = self.download_blob(bucket_name, blob_name)
-        # fixme: replace with from # pylint: disable=W0511
-        #  core.serialization.image import image_from_binary  # pylint: disable=W0511
-        image = cv.imdecode(np.frombuffer(raw_image, np.uint8), cv.IMREAD_UNCHANGED)
+        image = image_from_binary(binary_image=raw_image)
 
         if image is None:
             message = (

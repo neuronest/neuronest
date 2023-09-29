@@ -440,7 +440,6 @@ def get_all_repository_var_lines(
     variables_to_which_not_add_namespace: Optional[Set[str]] = None,
     add_namespace_to_name_of_multi_instance_resource: bool = True,
 ) -> List[VariableLine]:
-
     if variables_to_which_not_add_namespace is None:
         variables_to_which_not_add_namespace = {}
 

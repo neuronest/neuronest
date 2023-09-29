@@ -7,7 +7,7 @@ profile = "black"
 
 [tool.poetry]
 authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
-description = "People counting functional project"
+description = "Functional object detection project"
 name = "object-detection-functional"
 version = "0.1.0"
 
