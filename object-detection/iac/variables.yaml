@@ -8,11 +8,12 @@ multi_instance_resource_names:
   # docker image
   - BASE_IMAGE_NAME=object-detection
   # service account names
-  - SERVICE_ACCOUNT_NAME=online-prediction-model
+  - SERVICE_ACCOUNT_NAME=prediction-model
   # vertex
   - MODEL_NAME=model
   # storage
-  - MODELS_BUCKET=models-${PROJECT_ID}
+  - MODELS_BUCKET=models-${PROJECT_CODE}
 other_variables:
   # GCP project
   - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
+  - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}

@@ -6,3 +6,4 @@ multi_instance_resource_names: []
 other_variables:
   # GCP project
   - PROJECT_ID=pc-add-integration-tests
+  - PROJECT_CODE=tests

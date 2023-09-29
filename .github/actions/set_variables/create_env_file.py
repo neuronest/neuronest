@@ -17,7 +17,7 @@ from pydantic import BaseModel
 sys.path.append("shared")
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
-FUNCTIONAL_REPOSITORIES_PREFIX = "functional-"
+FUNCTIONAL_REPOSITORIES_PREFIX = "func-"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
@@ -228,7 +228,8 @@ class VariableLine:
         already_added_ok: bool = False,
     ) -> VariableLine:
         var_line = VariableLine(self.line)
-        namespace = f"{namespace.replace('_', '-').lower()}{'-'}"
+        namespace = namespace.replace("_", "-").lower()
+        namespace = f"{namespace}" if namespace.endswith("-") else f"{namespace}-"
 
         var_line.value = add_namespace_to_string(
             string=var_line.value,
@@ -373,7 +374,6 @@ class EnvFile:
 
 class Repository:
     VARIABLES_FILE_PATH = "iac/variables.yaml"
-    FUNCTIONAL_REPOSITORIES_PREFIX = FUNCTIONAL_REPOSITORIES_PREFIX
 
     def __init__(self, name: str):
         self.name = name
@@ -408,30 +408,17 @@ class Repository:
 
         return []
 
-    def get_base_name_without_functional(self) -> str:
-        if self.name.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
-            return self.name[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
-
-        return self.name
-
-    def get_base_code_without_functional(self) -> str:
-        # The rule is one repo -> one code. We assume that the rule is respected and we
-        # do not ensure the management of errors caused by non-compliance with these
-        # rules, such as the absence of a code or the presence of several codes.
-        # If we did so, we would also have to consider and handle any other such
-        # scenarios that might arise e.g. code that does not have the prefix in a
-        # functional repo code , code that does not follow naming conventions like
-        # code length, allowed characters, wrong prefix etc.
-        code = [
+    def get_base_code(self, prefix_to_remove: Optional[str] = None) -> str:
+        base_code = [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
             if var_line.is_a_repository_code()
         ][0].value
 
-        if code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
-            return code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
+        if prefix_to_remove is None or not base_code.startswith(prefix_to_remove):
+            return base_code
 
-        return code
+        return base_code[len(prefix_to_remove) :]
 
 
 def get_all_repository_var_lines(
@@ -444,9 +431,6 @@ def get_all_repository_var_lines(
         variables_to_which_not_add_namespace = {}
 
     all_repository_var_lines = []
-
-    repository_code_without_functional = repository.get_base_code_without_functional()
-    repository_name_without_functional = repository.get_base_name_without_functional()
 
     for dependency_repository in repository.get_dependency_repositories():
         dependency_repository_var_lines = get_all_repository_var_lines(
@@ -464,7 +448,7 @@ def get_all_repository_var_lines(
             for variable_inside_value in variables_inside_value:
                 if variable_inside_value not in variables_to_which_not_add_namespace:
                     var_line.add_namespace(
-                        repository_name_without_functional,
+                        repository.name,
                         add_to_value_variables=True,
                         add_to_name=False,
                         variable_inside_value_to_add_to=variable_inside_value,
@@ -472,7 +456,7 @@ def get_all_repository_var_lines(
                         already_added_ok=True,
                     )
             var_line.add_namespace(
-                repository_name_without_functional,
+                repository.name,
                 add_to_name=True,
                 add_to_value_variables=False,
                 inplace=True,
@@ -481,10 +465,18 @@ def get_all_repository_var_lines(
         if (
             add_namespace_to_name_of_multi_instance_resource
             and var_line.is_a_multi_instance_resource()
-            and not var_line.value.startswith(repository_name_without_functional)
         ):
+            if var_line.value.startswith(
+                repository.get_base_code(
+                    prefix_to_remove=FUNCTIONAL_REPOSITORIES_PREFIX
+                )
+            ):
+                namespace = FUNCTIONAL_REPOSITORIES_PREFIX
+            else:
+                namespace = repository.get_base_code()
+
             var_line.add_namespace(
-                repository_code_without_functional,
+                namespace,
                 add_to_value=True,
                 add_to_name=False,
                 add_to_value_variables=False,

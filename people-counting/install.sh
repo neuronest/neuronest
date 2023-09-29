@@ -9,7 +9,7 @@ RED='\033[0;31m'
 
 MIN_REQUIRED_PYTHON_VERSION=3.8.0
 MAX_EXCLUDED_REQUIRED_PYTHON_VERSION=3.9.0
-PATH_TO_PYTHON=$(which python3)
+PATH_TO_PYTHON=$(which python3.8)
 
 function green {
   printf "${GREEN}$@${NC}\n"
@@ -82,7 +82,7 @@ delete_poetry_env
 poetry env use $PATH_TO_PYTHON
 poetry run pip install --upgrade pip
 poetry run pip install dlib==19.24.0
-poetry install
+poetry install --with dev
 
 ENV=$(poetry env info -p)
 ENV_BIN=$ENV/bin

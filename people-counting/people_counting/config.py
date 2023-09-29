@@ -1,3 +1,3 @@
 from omegaconf import OmegaConf
 
-config = OmegaConf.load("config/config.yaml")
+config = OmegaConf.load("conf/config.yaml")

@@ -52,7 +52,9 @@ class GSPath(Path):
     PREFIX = "gs://"
 
     @classmethod
-    def from_bucket_and_blob_names(cls, bucket_name: str, blob_name: str = "") -> Path:
+    def from_bucket_and_blob_names(
+        cls, bucket_name: str, blob_name: str = ""
+    ) -> GSPath:
         return cls(os.path.join(cls.PREFIX, bucket_name, blob_name))
 
     def to_bucket_and_blob_names(self) -> Tuple[str, str]:

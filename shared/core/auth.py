@@ -14,6 +14,7 @@ def _get_id_token_credentials(
         return IDTokenCredentials.from_service_account_file(
             key_path, target_audience=target_audience
         )
+
     # create IDTokenCredentials from current environment
     return id_token.fetch_id_token_credentials(audience=target_audience)
 
@@ -35,7 +36,9 @@ def get_credentials(
 ) -> Credentials:
     if key_path is not None:
         return Credentials.from_service_account_file(key_path, scopes=[auth_scope])
+
     credentials, _ = default(scopes=[auth_scope])
+
     return credentials
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import abc
 import json
+from abc import ABC
 from enum import Enum
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
@@ -23,18 +23,18 @@ class Protocol(str, Enum):
         return cls.HTTP
 
 
-class APIClient(abc.ABC):
+class APIClient(ABC):
     def __init__(
         self,
-        key_path: str,
         host: str,
         root: str,
-        ssl: bool = True,
+        key_path: Optional[str] = None,
+        ssl: Optional[bool] = None,
         project_id: Optional[str] = None,
     ):
-        self.key_path = key_path
         self.host = host
         self.root = root
+        self.key_path = key_path
         self.protocol_with_host = self._build_host_with_protocol(host=host, ssl=ssl)
         self.endpoint = f"{self.protocol_with_host}{root}"
         self.credentials = get_credentials(key_path=self.key_path)
@@ -52,30 +52,25 @@ class APIClient(abc.ABC):
         )
 
     @staticmethod
-    def _build_host_with_protocol(host: str, ssl: bool) -> str:
+    def _build_host_with_protocol(host: str, ssl: Optional[bool]) -> str:
         parsed_host = urlparse(host)
-        constructed_protocol = Protocol.from_ssl(ssl=ssl)
 
         if parsed_host.scheme == "":
-            return f"{constructed_protocol}://{host}"
+            if ssl is None:
+                raise ValueError(
+                    "The parameter 'ssl' should be specified in the case where the "
+                    "protocol is not contained in the host"
+                )
 
-        # Le paramètre ssl devrait être optionnel et servir au cas où le
-        # protocol n'est pas contenu dans le host.
-        # Si le host contient http:// ou https:// l'expected protocol est de fait connu.
-        # Il n'y a pas de raison de passer par exemple http://localhost:8080 et
-        # qu'une erreur soit raised parce qu'une seconde variable ssl qui exprime la
-        # même information que le prefix du host est True par défaut
-        if parsed_host.scheme != constructed_protocol:
-            raise ValueError(
-                f"Expected protocol to be '{constructed_protocol}' from ssl={ssl}, "
-                f"could not deduce it from host: {host}"
-            )
+            constructed_protocol = Protocol.from_ssl(ssl=ssl)
+
+            return f"{constructed_protocol}://{host}"
 
         return host
 
     def auth_headers(self) -> Dict[str, str]:
         identity_token = generate_identity_token(
-            key_path=self.key_path, target_audience=self.protocol_with_host
+            target_audience=self.protocol_with_host, key_path=self.key_path
         )
 
         return {"Authorization": f"Bearer {identity_token}"}

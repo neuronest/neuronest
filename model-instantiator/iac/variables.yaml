@@ -11,7 +11,7 @@ multi_instance_resource_names:
   - WEBAPP_SERVICE_ACCOUNT_NAME=webapp
   - CLOUD_SCHEDULER_SERVICE_ACCOUNT_NAME=cloud-scheduler
   # cloud scheduler
-  - CLOUD_SCHEDULER_JOB_NAME=uninstantiate-model-schedule-temp
+  - CLOUD_SCHEDULER_JOB_NAME=uninstantiate-model-schedule
   # cloud run
   - CLOUD_RUN_NAME=webapp
 other_variables:
@@ -25,3 +25,4 @@ other_variables:
   - CLOUD_UNINSTANTIATE_ROUTE=/model_instantiator/api/v1/uninstantiate_logs_conditioned
   # GCP project
   - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
+  - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}

@@ -6,7 +6,8 @@ class _PeopleCountingRoutes(_BaseRoutes):
 
     class PeopleCounter:
         prefix = "people_counter"
-        count_people_and_make_video: str = "/count_people_and_make_video"
+        count_people: str = "/count_people"
+        count_people_real_time_showing: str = "/count_people_real_time_showing"
 
 
 routes: _PeopleCountingRoutes = _PeopleCountingRoutes()
