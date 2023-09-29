@@ -13,8 +13,9 @@ from people_counting.common import Statistics
 from people_counting.config import config
 from people_counting.people_counter import PeopleCounter
 
-resource_name = os.path.splitext(os.path.basename(__file__))[0]
-router = APIRouter(prefix=f"/{routes.PeopleCounter.prefix}", tags=[resource_name])
+router = APIRouter(
+    prefix=f"/{routes.PeopleCounter.prefix}", tags=[routes.PeopleCounter.prefix]
+)
 
 
 def count_people_and_make_video_from_local_path(
