@@ -51,7 +51,7 @@ env:
 
 jobs:
   run_base_terraform:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
@@ -67,7 +67,7 @@ jobs:
         uses: ./.github/actions/run_base_terraform
 
   upload_variables_of_called_workflows:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     container: google/cloud-sdk
     outputs:
       people_counting_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
@@ -132,7 +132,7 @@ jobs:
      - run_base_terraform
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     container:
       image: google/cloud-sdk
     steps:

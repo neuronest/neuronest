@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dind-deployment
+  namespace: arc-systems
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dind
+  template:
+    metadata:
+      labels:
+        app: dind
+    spec:
+      containers:
+      - name: dind
+        image: docker:dind
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+        ports:
+          - containerPort: 2375
+        volumeMounts:
+          - name: docker-storage
+            mountPath: /var/lib/docker
+      volumes:
+        - name: docker-storage
+          persistentVolumeClaim:
+            claimName: docker-storage-openebs-hostpath-pvc
