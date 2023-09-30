@@ -172,7 +172,7 @@ def count_people(
     routes.PeopleCounter.count_people_real_time_showing,
     status_code=status.HTTP_200_OK,
 )
-def count_people_real_time_showing(
+def count_people_real_time(
     people_counter_input: PeopleCounterInput,
     response: Response,
     people_counter: PeopleCounter = Depends(use_people_counter),
@@ -190,6 +190,9 @@ def count_people_real_time_showing(
         storage_client=storage_client,
     )
 
-    statistics = people_counter.run(video_asset=video_asset, enable_video_showing=True)
+    statistics = people_counter.run(
+        video_asset=video_asset,
+        enable_video_showing=people_counter_input.enable_video_showing,
+    )
 
     return _real_time_response(response=response, statistics=statistics)

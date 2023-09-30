@@ -7,7 +7,7 @@ from core.client.base import APIClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.routes.people_counting import routes
-from core.schemas.people_counting import PeopleCounterInput, PeopleCounterOutput
+from core.schemas.people_counting import PeopleCounterInput, PeopleCounterRealTimeOutput
 from core.tools import generate_file_id
 
 
@@ -61,19 +61,19 @@ class PeopleCountingClient(APIClient):
 
     def predict(
         self, video_path: str, save_counted_video_in_storage: bool = False
-    ) -> PeopleCounterOutput:
+    ) -> PeopleCounterRealTimeOutput:
         uploaded_video_storage_path = self._upload_video_to_storage(
             video_path=video_path
         )
 
-        return PeopleCounterOutput(
+        return PeopleCounterRealTimeOutput(
             **json.loads(
                 self.call(
                     resource=f"/{routes.PeopleCounter.prefix}"
-                    f"{routes.PeopleCounter.count_people}",
+                    f"{routes.PeopleCounter.count_people_real_time_showing}",
                     verb="post",
                     payload=PeopleCounterInput(
-                        storage_path=uploaded_video_storage_path,
+                        video_storage_path=uploaded_video_storage_path,
                         save_counted_video_in_storage=save_counted_video_in_storage,
                     ).dict(),
                 ).text

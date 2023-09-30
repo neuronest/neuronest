@@ -24,6 +24,7 @@ class Detection(BaseModel):
 class PeopleCounterInput(BaseModel):
     video_storage_path: GSPath
     save_counted_video: bool = False
+    enable_video_showing: bool = False
 
 
 class PeopleCounterOutput(BaseModel):
