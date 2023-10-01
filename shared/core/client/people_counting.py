@@ -34,7 +34,9 @@ class PeopleCountingClient(APIClient):
         self.storage_client = StorageClient(
             key_path=key_path, project_id=self.project_id
         )
-        self.firestore_client = FirestoreClient(key_path=key_path)
+        self.firestore_client = FirestoreClient(
+            key_path=key_path, project_id=self.project_id
+        )
 
     def _upload_video_to_storage(
         self, video_path: LocalPath, destination_bucket: str

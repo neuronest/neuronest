@@ -10,12 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 class FirestoreClient:
-    def __init__(self, key_path: Optional[str] = None):
+    def __init__(
+        self, key_path: Optional[str] = None, project_id: Optional[str] = None
+    ):
+        # noinspection PyTypeChecker
         self.client = (
-            firestore.Client()
+            firestore.Client(project=project_id)
             if key_path is None
-            else firestore.Client.from_service_account_json(key_path)
+            else firestore.Client.from_service_account_json(
+                json_credentials_path=key_path, project=project_id
+            )
         )
+        self.project_id = project_id
 
     def upload_document(self, collection_name: str, document_id: str, content: dict):
         doc_ref = self.client.collection(collection_name).document(document_id)
