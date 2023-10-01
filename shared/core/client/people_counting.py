@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Optional
 
 from core.client.base import APIClient
@@ -72,11 +73,39 @@ class PeopleCountingClient(APIClient):
             )
         ).bucket
 
-    def retrieve_counted_people_document(self, job_id: str) -> PeopleCounterDocument:
+    def retrieve_counted_people_document(
+        self,
+        job_id: str,
+        wait_if_not_existing: bool = False,
+        total_waited_time: int = 0,
+        timeout: int = 2700,
+        retry_wait_time: int = 60,
+    ) -> PeopleCounterDocument:
         raw_document = self.firestore_client.get_document(
             collection_name=self.get_firestore_results_collection(),
             document_id=job_id,
         )
+
+        if raw_document is None and wait_if_not_existing is False:
+            raise RuntimeError(f"Document not found for job_id={job_id}")
+
+        if raw_document is None:
+            time.sleep(retry_wait_time)
+            total_waited_time += retry_wait_time
+
+            if total_waited_time > timeout:
+                raise TimeoutError(
+                    f"Failed to retrieve document having job_id={job_id}, "
+                    f"giving up after {timeout // 60} minutes of trying"
+                )
+
+            return self.retrieve_counted_people_document(
+                job_id=job_id,
+                wait_if_not_existing=wait_if_not_existing,
+                total_waited_time=total_waited_time,
+                timeout=timeout,
+                retry_wait_time=retry_wait_time,
+            )
 
         return PeopleCounterDocument.parse_obj(raw_document)
 

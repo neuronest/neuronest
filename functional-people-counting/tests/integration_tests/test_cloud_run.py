@@ -9,7 +9,7 @@ from core.path import GSPath
 from core.schemas.people_counting import Detection, Direction
 
 
-def test_correct_detections(
+def are_detections_correct(
     detections: List[Detection], up_amount: int, down_amount: int
 ) -> bool:
     return up_amount == sum(
@@ -59,12 +59,12 @@ def test_cloud_run_inference(
         )
         people_counter_document = (
             people_counting_client.retrieve_counted_people_document(
-                job_id=people_counter_output.job_id
+                job_id=people_counter_output.job_id, wait_if_not_existing=True
             )
         )
 
         assert people_counter_document.job_id == people_counter_output.job_id
-        assert test_correct_detections(
+        assert are_detections_correct(
             detections=people_counter_document.detections,
             up_amount=up_amount,
             down_amount=down_amount,
@@ -73,7 +73,7 @@ def test_cloud_run_inference(
         real_time_predictions = people_counting_client.count_people_real_time(
             video_path=named_temporary_file.name
         )
-        assert test_correct_detections(
+        assert are_detections_correct(
             detections=real_time_predictions.detections,
             up_amount=up_amount,
             down_amount=down_amount,
