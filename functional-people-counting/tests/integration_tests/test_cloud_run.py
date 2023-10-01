@@ -1,5 +1,6 @@
 import os
 import tempfile
+from typing import Optional
 
 import pytest
 from core.client.people_counting import PeopleCountingClient
