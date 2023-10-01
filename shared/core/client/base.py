@@ -94,7 +94,7 @@ class APIClient(ABC):
             url=f"{self.endpoint}{resource}",
             headers={**content_type, **self.auth_headers()},
             params={**self.auth_params(), **(params or {})},
-            data=json.dumps(payload or {}),
+            data=json.dumps(payload or {}) if payload else None,
         )
 
     def call(
