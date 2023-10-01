@@ -2,11 +2,15 @@ import json
 from typing import Optional
 
 from core.client.base import APIClient
+from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath, LocalPath
 from core.routes.people_counting import routes
 from core.schemas.people_counting import (
+    FirestoreResultsCollectionOutput,
+    PeopleCounterDocument,
     PeopleCounterInput,
+    PeopleCounterOutput,
     PeopleCounterRealTimeOutput,
     VideosToCountBucketOutput,
 )
@@ -29,6 +33,7 @@ class PeopleCountingClient(APIClient):
         self.storage_client = StorageClient(
             key_path=key_path, project_id=self.project_id
         )
+        self.firestore_client = FirestoreClient(key_path=key_path)
 
     def _upload_video_to_storage(
         self, video_path: LocalPath, destination_bucket: str
@@ -45,16 +50,59 @@ class PeopleCountingClient(APIClient):
             bucket_name=destination_bucket, blob_name=video_blob_name
         )
 
+    def get_firestore_results_collection(self) -> str:
+        return FirestoreResultsCollectionOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.Resources.prefix}"
+                    f"{routes.Resources.firestore_results_collection}",
+                    verb="get",
+                ).text
+            )
+        ).collection
+
     def get_videos_to_count_bucket(self) -> str:
         return VideosToCountBucketOutput(
             **json.loads(
                 self.call(
-                    resource=f"/{routes.PeopleCounter.prefix}"
-                    f"{routes.PeopleCounter.videos_to_count_bucket}",
+                    resource=f"/{routes.Resources.prefix}"
+                    f"{routes.Resources.videos_to_count_bucket}",
                     verb="get",
                 ).text
             )
         ).bucket
+
+    def retrieve_counted_people_document(self, job_id: str) -> PeopleCounterDocument:
+        raw_document = self.firestore_client.get_document(
+            collection_name=self.get_firestore_results_collection(),
+            document_id=job_id,
+        )
+
+        return PeopleCounterDocument.parse_obj(raw_document)
+
+    def count_people(
+        self,
+        video_path: str,
+        save_counted_video_in_storage: bool = False,
+    ) -> PeopleCounterOutput:
+        uploaded_video_storage_path = self._upload_video_to_storage(
+            video_path=LocalPath(video_path),
+            destination_bucket=self.get_videos_to_count_bucket(),
+        )
+
+        return PeopleCounterOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.PeopleCounter.prefix}"
+                    f"{routes.PeopleCounter.count_people}",
+                    verb="post",
+                    payload=PeopleCounterInput(
+                        video_storage_path=uploaded_video_storage_path,
+                        save_counted_video_in_storage=save_counted_video_in_storage,
+                    ).dict(),
+                ).text
+            )
+        )
 
     def count_people_real_time(
         self,

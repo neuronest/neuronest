@@ -4,9 +4,13 @@ from core.routes.base import _BaseRoutes
 class _PeopleCountingRoutes(_BaseRoutes):
     service_name: str = "people_counting"
 
+    class Resources:
+        prefix = "resources"
+        videos_to_count_bucket: str = "/videos_to_count_bucket"
+        firestore_results_collection: str = "/firestore_results_collection"
+
     class PeopleCounter:
         prefix = "people_counter"
-        videos_to_count_bucket: str = "/videos_to_count_bucket"
         count_people: str = "/count_people"
         count_people_real_time: str = "/count_people_real_time"
 

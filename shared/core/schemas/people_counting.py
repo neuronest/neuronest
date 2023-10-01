@@ -38,6 +38,10 @@ class VideosToCountBucketOutput(BaseModel):
     bucket: str
 
 
+class FirestoreResultsCollectionOutput(BaseModel):
+    collection: str
+
+
 class PeopleCounterDocument(PeopleCounterOutput):
     detections: List[Detection]
 
