@@ -49,7 +49,7 @@ env:
 
 jobs:
   run_base_terraform:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
     outputs:
@@ -64,7 +64,7 @@ jobs:
         uses: ./.github/actions/run_base_terraform
 
   upload_variables_of_called_workflows:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     container: google/cloud-sdk
     outputs:
       object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
@@ -112,7 +112,7 @@ jobs:
      - run_base_terraform
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     container:
       image: google/cloud-sdk
     steps:

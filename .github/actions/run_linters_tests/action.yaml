@@ -36,7 +36,11 @@ runs:
         shell: bash
       - run: |
           # handle detected dubious ownership git issue
-          run_linters_tests_cmd="apt update && apt install -y git && git config \
+          run_linters_tests_cmd="
+            apt update \
+            && apt install -y git \
+            && ([ ! -d ".git" ] && git init || echo ".git directory already exists. Skipping git init.") \
+            && git config \
             --global \
             --add safe.directory ${{ steps.set_container_mono_repository_path.outputs.value }} \
           && cd $REPOSITORY_NAME \

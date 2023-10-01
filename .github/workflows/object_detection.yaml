@@ -74,7 +74,7 @@ env:
 
 jobs:
   run_base_terraform:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') }}
     container: google/cloud-sdk
@@ -91,7 +91,7 @@ jobs:
 
   build_test_push_training_image:
     name: build_test_push_training_image
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     needs: run_base_terraform
     # the documentation specifies that if only one job is skipped
     # in a series of jobs dependencies defined by the "needs: ", all subsequent jobs are
@@ -104,17 +104,16 @@ jobs:
       gcp_training_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/make_space_for_docker
       - uses: ./.github/actions/set_variables
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
       - uses: google-github-actions/setup-gcloud@v0.2.0
         with:
           project_id: ${{ env.PROJECT_ID }}
-      - uses: ./.github/actions/set_variables_gcloud_auth
+      - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
@@ -128,7 +127,7 @@ jobs:
           build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }}
 
   get_training_images:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     needs: build_test_push_training_image
     if: ${{ !failure() }}
     outputs:
@@ -149,7 +148,7 @@ jobs:
 
   deploy_with_training_image:
     name: deploy_with_training_image
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     needs: get_training_images
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
@@ -171,7 +170,7 @@ jobs:
           image_name: ${{ needs.get_training_images.outputs.dockerhub_image }}
 
   get_base_project_builder_sa_key:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     needs: deploy_with_training_image
     if: ${{ !failure() }}
     outputs:
@@ -190,7 +189,7 @@ jobs:
     needs:
       - get_training_images
       - get_base_project_builder_sa_key
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     defaults:
@@ -241,7 +240,7 @@ jobs:
     needs:
       - get_base_project_builder_sa_key
       - train
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     outputs:
@@ -249,17 +248,16 @@ jobs:
       gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/make_space_for_docker
       - uses: ./.github/actions/set_variables
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
       - uses: google-github-actions/setup-gcloud@v0.2.0
         with:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: set_additional_variables
         run: |
           echo "MODEL_PATH"="${{ env.REPOSITORY_NAME }}/model.pt" >> $GITHUB_ENV
@@ -279,7 +277,7 @@ jobs:
       - get_training_images
       - get_base_project_builder_sa_key
       - build_test_push_serving_image
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
     defaults:
