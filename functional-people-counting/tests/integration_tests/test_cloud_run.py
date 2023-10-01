@@ -1,12 +1,22 @@
 import os
 import tempfile
-from typing import Optional
+from typing import List, Optional
 
 import pytest
 from core.client.people_counting import PeopleCountingClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
-from core.schemas.people_counting import Direction
+from core.schemas.people_counting import Detection, Direction
+
+
+def test_correct_detections(
+    detections: List[Detection], up_amount: int, down_amount: int
+) -> bool:
+    return up_amount == sum(
+        detection.direction == Direction.UP for detection in detections
+    ) and down_amount == sum(
+        detection.direction == Direction.DOWN for detection in detections
+    )
 
 
 @pytest.mark.parametrize(
@@ -44,13 +54,27 @@ def test_cloud_run_inference(
             destination_file_name=named_temporary_file.name,
         )
 
-        prediction = people_counting_client.count_people_real_time(
+        people_counter_output = people_counting_client.count_people(
             video_path=named_temporary_file.name
         )
-
-        assert up_amount == sum(
-            detection.direction == Direction.UP for detection in prediction.detections
+        people_counter_document = (
+            people_counting_client.retrieve_counted_people_document(
+                job_id=people_counter_output.job_id
+            )
         )
-        assert down_amount == sum(
-            detection.direction == Direction.DOWN for detection in prediction.detections
+
+        assert people_counter_document.job_id == people_counter_output.job_id
+        assert test_correct_detections(
+            detections=people_counter_document.detections,
+            up_amount=up_amount,
+            down_amount=down_amount,
+        )
+
+        real_time_predictions = people_counting_client.count_people_real_time(
+            video_path=named_temporary_file.name
+        )
+        assert test_correct_detections(
+            detections=real_time_predictions.detections,
+            up_amount=up_amount,
+            down_amount=down_amount,
         )
