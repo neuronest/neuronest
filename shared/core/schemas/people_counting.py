@@ -34,6 +34,10 @@ class PeopleCounterOutput(BaseModel):
     counted_video_storage_path: Optional[GSPath] = None
 
 
+class VideosToCountBucketOutput(BaseModel):
+    bucket: str
+
+
 class PeopleCounterDocument(PeopleCounterOutput):
     detections: List[Detection]
 

@@ -72,7 +72,7 @@ def maybe_async(convert_to_async: bool) -> Callable:
 
 def generate_file_id(
     file_path: str,
-    include_name: bool = True,
+    include_name: bool = False,
     include_extension: bool = True,
 ) -> str:
     """

@@ -36,7 +36,6 @@ def fixture_vertex_ai_manager() -> VertexAIManager:
 
 
 def test_endpoint_inference(vertex_ai_manager: VertexAIManager, image: np.ndarray):
-
     fake_model_instantiator_client = FakeModelInstantiatorClient(
         key_path=GOOGLE_APPLICATION_CREDENTIALS,
         host="https://fake_model_instantiator_host",

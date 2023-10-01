@@ -96,7 +96,7 @@ class HTTPPath(Path):
 
 
 class LocalPath(Path):
-    REGEX = r"^(/[^/ ]*)+/?$"
+    REGEX = r"^(?:/?[^/ ]+)+/?$"
 
 
 def build_path(path: str) -> Path:

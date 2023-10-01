@@ -11,6 +11,7 @@ from core.schemas.people_counting import (
     PeopleCounterInput,
     PeopleCounterOutput,
     PeopleCounterRealTimeOutput,
+    VideosToCountBucketOutput,
 )
 from core.services.asset_reader import make_asset
 from core.tools import extract_file_extension
@@ -96,6 +97,14 @@ def _maybe_create_counted_video_storage_path(
     )
 
 
+@router.get(
+    routes.PeopleCounter.videos_to_count_bucket,
+    status_code=status.HTTP_200_OK,
+)
+def get_videos_to_count_bucket() -> VideosToCountBucketOutput:
+    return VideosToCountBucketOutput(bucket=VIDEOS_TO_COUNT_BUCKET)
+
+
 @router.post(
     routes.PeopleCounter.count_people,
     status_code=status.HTTP_201_CREATED,
@@ -169,7 +178,7 @@ def count_people(
 
 # used for debugging purposes only
 @router.post(
-    routes.PeopleCounter.count_people_real_time_showing,
+    routes.PeopleCounter.count_people_real_time,
     status_code=status.HTTP_200_OK,
 )
 def count_people_real_time(
