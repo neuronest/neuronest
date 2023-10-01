@@ -214,13 +214,18 @@ jobs:
       - deploy_functional_people_counting
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
-    container: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/set_variables_gcloud_auth
+      - uses: ./.github/actions/set_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - uses: ./.github/actions/run_linters_tests
         with:
           image_name: python:3.9.17-slim-buster
