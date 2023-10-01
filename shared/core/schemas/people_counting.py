@@ -44,3 +44,4 @@ class PeopleCounterDocument(PeopleCounterOutput):
 
 class PeopleCounterRealTimeOutput(BaseModel):
     detections: List[Detection]
+    counted_video_storage_path: Optional[GSPath] = None

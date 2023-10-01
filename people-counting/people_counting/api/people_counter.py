@@ -35,7 +35,7 @@ from people_counting.environment_variables import (
     REGION,
     VIDEOS_TO_COUNT_BUCKET,
 )
-from people_counting.people_counter import PeopleCounter
+from people_counting.people_counter import PeopleCounter, count_people_with_upload
 
 router = APIRouter(
     prefix=f"/{routes.PeopleCounter.prefix}", tags=[routes.PeopleCounter.prefix]
@@ -60,12 +60,15 @@ def _launched_job_response(
 
 
 def _real_time_response(
-    response: Response, statistics: Statistics
+    response: Response,
+    statistics: Statistics,
+    counted_video_storage_path: Optional[GSPath],
 ) -> PeopleCounterRealTimeOutput:
     response.status_code = status.HTTP_200_OK
 
     return PeopleCounterRealTimeOutput(
         detections=statistics.to_detections(),
+        counted_video_storage_path=counted_video_storage_path,
     )
 
 
@@ -80,17 +83,21 @@ def _validate_video_storage_path(video_storage_path: GSPath, expected_bucket_nam
 
 
 def _maybe_create_counted_video_storage_path(
-    job_id: str,
     asset_id: str,
     save_counted_video: bool,
     asset_path: str,
     counted_videos_bucket: str,
+    job_id: Optional[str] = None,
 ) -> Optional[GSPath]:
     if save_counted_video is False:
         return None
 
     extension = extract_file_extension(asset_path)
-    counted_videos_blob_name = os.path.join(asset_id, job_id) + extension
+
+    if job_id is None:
+        counted_videos_blob_name = asset_id + extension
+    else:
+        counted_videos_blob_name = os.path.join(asset_id, job_id) + extension
 
     return GSPath.from_bucket_and_blob_names(
         bucket_name=counted_videos_bucket, blob_name=counted_videos_blob_name
@@ -132,11 +139,11 @@ def count_people(
     asset_id = video_asset.get_hash()
 
     counted_video_storage_path = _maybe_create_counted_video_storage_path(
-        job_id=job_id,
         asset_id=asset_id,
         save_counted_video=people_counter_input.save_counted_video,
         asset_path=video_asset.asset_path,
         counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
+        job_id=job_id,
     )
 
     job_name = f"count-people-{asset_id}"
@@ -199,9 +206,22 @@ def count_people_real_time(
         storage_client=storage_client,
     )
 
-    statistics = people_counter.run(
-        video_asset=video_asset,
-        enable_video_showing=people_counter_input.enable_video_showing,
+    counted_video_storage_path = _maybe_create_counted_video_storage_path(
+        asset_id=video_asset.get_hash(),
+        save_counted_video=people_counter_input.save_counted_video,
+        asset_path=video_asset.asset_path,
+        counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
     )
 
-    return _real_time_response(response=response, statistics=statistics)
+    statistics = count_people_with_upload(
+        people_counter=people_counter,
+        storage_client=storage_client,
+        video_asset=video_asset,
+        counted_video_storage_path=counted_video_storage_path,
+    )
+
+    return _real_time_response(
+        response=response,
+        statistics=statistics,
+        counted_video_storage_path=counted_video_storage_path,
+    )
