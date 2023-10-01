@@ -103,10 +103,11 @@ class APIClient(ABC):
         verb: str,
         payload: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
     ) -> requests.Response:
         request = self._request(resource, verb, payload, params).prepare()
         session = requests.Session()
-        response = session.send(request)
+        response = session.send(request, timeout=timeout)
         response.raise_for_status()
 
         return response

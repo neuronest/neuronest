@@ -57,7 +57,10 @@ class PeopleCountingClient(APIClient):
         ).bucket
 
     def count_people_real_time(
-        self, video_path: str, save_counted_video_in_storage: bool = False
+        self,
+        video_path: str,
+        save_counted_video_in_storage: bool = False,
+        timeout: int = 2700,
     ) -> PeopleCounterRealTimeOutput:
         uploaded_video_storage_path = self._upload_video_to_storage(
             video_path=LocalPath(video_path),
@@ -74,6 +77,7 @@ class PeopleCountingClient(APIClient):
                         video_storage_path=uploaded_video_storage_path,
                         save_counted_video_in_storage=save_counted_video_in_storage,
                     ).dict(),
+                    timeout=timeout,
                 ).text
             )
         )
