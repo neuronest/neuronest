@@ -8,11 +8,9 @@ from core.path import GSPath
 from core.routes.people_counting import routes
 from core.schemas.google.cloud_run import JobConfig
 from core.schemas.people_counting import (
-    FirestoreResultsCollectionOutput,
     PeopleCounterInput,
     PeopleCounterOutput,
     PeopleCounterRealTimeOutput,
-    VideosToCountBucketOutput,
 )
 from core.services.asset_reader import make_asset
 from core.tools import extract_file_extension
@@ -103,22 +101,6 @@ def _maybe_create_counted_video_storage_path(
     return GSPath.from_bucket_and_blob_names(
         bucket_name=counted_videos_bucket, blob_name=counted_videos_blob_name
     )
-
-
-@router.get(
-    routes.Resources.videos_to_count_bucket,
-    status_code=status.HTTP_200_OK,
-)
-def get_videos_to_count_bucket() -> VideosToCountBucketOutput:
-    return VideosToCountBucketOutput(bucket=VIDEOS_TO_COUNT_BUCKET)
-
-
-@router.get(
-    routes.Resources.firestore_results_collection,
-    status_code=status.HTTP_200_OK,
-)
-def get_firestore_results_collection() -> FirestoreResultsCollectionOutput:
-    return FirestoreResultsCollectionOutput(collection=FIRESTORE_RESULTS_COLLECTION)
 
 
 @router.post(
