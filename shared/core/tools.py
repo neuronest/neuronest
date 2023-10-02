@@ -84,7 +84,6 @@ def generate_file_id(
     :param include_extension: bool, flag to include file extension in the ID
     :return: str, generated file ID
     """
-    # Check if file exists
     if not os.path.isfile(file_path):
         raise FileNotFoundError(f"The file at path {file_path} does not exist.")
 
@@ -93,9 +92,9 @@ def generate_file_id(
     with open(file_path, "rb") as file_reader:
         file_id = hashlib.sha256(file_reader.read()).hexdigest()
 
-    if include_name:
+    if include_name is True:
         file_id = f"{os.path.basename(file_path_without_extension)}_{file_id}"
-    if include_extension and extension:
+    if include_extension is True and extension != "":
         file_id += extension
 
     return file_id

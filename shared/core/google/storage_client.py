@@ -199,6 +199,7 @@ class StorageClient:
         # level. dir variable is then an empty string, and os.makedirs(dir) fails
         if path_dirname_destination_file_name := os.path.dirname(destination_file_name):
             os.makedirs(path_dirname_destination_file_name, exist_ok=True)
+
         bucket: Bucket = self.client.bucket(bucket_name)
         blob = bucket.blob(source_blob_name)
         try:

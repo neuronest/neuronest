@@ -48,6 +48,7 @@ on:
         default: ''
 env:
   REPOSITORY_NAME: functional-people-counting
+  TESTING_BASE_IMAGE: python:3.9.17-slim-buster
 
 jobs:
   run_base_terraform:
@@ -229,7 +230,7 @@ jobs:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       - uses: ./.github/actions/run_linters_tests
         with:
-          image_name: python:3.9.17-slim-buster
+          image_name: ${{ env.TESTING_BASE_IMAGE }}
           run_integration_tests: true
           run_unit_tests: false
           environment_variables: -e PEOPLE_COUNTING_URL=${{ needs.deploy_functional_people_counting.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }}

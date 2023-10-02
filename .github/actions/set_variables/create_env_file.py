@@ -409,6 +409,8 @@ class Repository:
         return []
 
     def get_base_code(self, prefix_to_remove: Optional[str] = None) -> str:
+        # there is one and only one repository code by repo
+        # since it is configuration, we don't test it explicitly
         base_code = [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
