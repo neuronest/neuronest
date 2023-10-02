@@ -126,10 +126,10 @@ jobs:
 
   deploy_functional_people_counting:
     needs:
+     - run_base_terraform
      - build_test_push_people_counting
      - build_test_push_object_detection
      - build_test_push_model_instantiator
-     - run_base_terraform
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
       people_counting_url: ${{ steps.get_people_counting_url.outputs.value }}
@@ -140,7 +140,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: run_functional_people_counting_terraform
         uses: ./.github/actions/run_terraform
@@ -208,6 +208,7 @@ jobs:
   run_integration_tests:
     runs-on: neuronest-runner-set
     needs:
+      - run_base_terraform
       - post_deploy_people_counting
       - post_deploy_object_detection
       - post_deploy_model_instantiator
@@ -225,7 +226,7 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       - uses: ./.github/actions/run_linters_tests
         with:
           image_name: python:3.9.17-slim-buster

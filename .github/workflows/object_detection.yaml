@@ -89,10 +89,25 @@ jobs:
       - id: run_base_terraform
         uses: ./.github/actions/run_base_terraform
 
+  get_base_project_builder_sa_key:
+    runs-on: neuronest-runner-set
+    needs: run_base_terraform
+    if: ${{ !failure() }}
+    outputs:
+      value: ${{ steps.get_base_project_builder_sa_key.outputs.base_project_builder_sa_key }}
+    steps:
+      - id: get_base_project_builder_sa_key
+        run: |
+          job_base_project_builder_sa_key=${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+          input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
+          # take the one that is not empty
+          base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
+          echo "base_project_builder_sa_key=$base_project_builder_sa_key" | tee -a $GITHUB_OUTPUT
+
   build_test_push_training_image:
     name: build_test_push_training_image
     runs-on: neuronest-runner-set
-    needs: run_base_terraform
+    needs: get_base_project_builder_sa_key
     # the documentation specifies that if only one job is skipped
     # in a series of jobs dependencies defined by the "needs: ", all subsequent jobs are
     # skipped. To allow jobs to run despite a skip in the series,
@@ -113,7 +128,7 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
@@ -149,46 +164,29 @@ jobs:
   deploy_with_training_image:
     name: deploy_with_training_image
     runs-on: neuronest-runner-set
-    needs: get_training_images
+    needs:
+      - get_base_project_builder_sa_key
+      - get_training_images
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
     container: google/cloud-sdk
-    outputs:
-      base_project_builder_sa_key: ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - id: base_run_terraform
-        uses: ./.github/actions/run_base_terraform
       - uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
           workspace: ${{ env.REPOSITORY_NAME }}
           image_name: ${{ needs.get_training_images.outputs.dockerhub_image }}
 
-  get_base_project_builder_sa_key:
-    runs-on: neuronest-runner-set
-    needs: deploy_with_training_image
-    if: ${{ !failure() }}
-    outputs:
-      value: ${{ steps.get_base_project_builder_sa_key.outputs.base_project_builder_sa_key }}
-    steps:
-      - id: get_base_project_builder_sa_key
-        run: |
-          job_base_project_builder_sa_key=${{ needs.deploy_with_training_image.outputs.base_project_builder_sa_key }}
-          input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
-          # take the one that is not empty
-          base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
-          echo "base_project_builder_sa_key=$base_project_builder_sa_key" | tee -a $GITHUB_OUTPUT
-
   train:
     name: train
     needs:
-      - get_training_images
       - get_base_project_builder_sa_key
+      - get_training_images
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
@@ -257,7 +255,7 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
       - id: set_additional_variables
         run: |
           echo "MODEL_PATH"="${{ env.REPOSITORY_NAME }}/model.pt" >> $GITHUB_ENV
@@ -274,8 +272,8 @@ jobs:
   model_upload:
     name: model_upload
     needs:
-      - get_training_images
       - get_base_project_builder_sa_key
+      - get_training_images
       - build_test_push_serving_image
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
