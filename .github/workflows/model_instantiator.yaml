@@ -87,7 +87,7 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:

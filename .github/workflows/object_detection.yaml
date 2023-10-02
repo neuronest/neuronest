@@ -89,25 +89,10 @@ jobs:
       - id: run_base_terraform
         uses: ./.github/actions/run_base_terraform
 
-  get_base_project_builder_sa_key:
-    runs-on: neuronest-runner-set
-    needs: run_base_terraform
-    if: ${{ !failure() }}
-    outputs:
-      value: ${{ steps.get_base_project_builder_sa_key.outputs.base_project_builder_sa_key }}
-    steps:
-      - id: get_base_project_builder_sa_key
-        run: |
-          job_base_project_builder_sa_key=${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
-          input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
-          # take the one that is not empty
-          base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
-          echo "base_project_builder_sa_key=$base_project_builder_sa_key" | tee -a $GITHUB_OUTPUT
-
   build_test_push_training_image:
     name: build_test_push_training_image
     runs-on: neuronest-runner-set
-    needs: get_base_project_builder_sa_key
+    needs: run_base_terraform
     # the documentation specifies that if only one job is skipped
     # in a series of jobs dependencies defined by the "needs: ", all subsequent jobs are
     # skipped. To allow jobs to run despite a skip in the series,
@@ -128,7 +113,7 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
       - id: build_test_push
         uses: ./.github/actions/build_test_push
         with:
@@ -160,6 +145,21 @@ jobs:
           input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
           gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
           echo "gcp_image=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
+
+  get_base_project_builder_sa_key:
+    runs-on: neuronest-runner-set
+    needs: run_base_terraform
+    if: ${{ !failure() }}
+    outputs:
+      value: ${{ steps.get_base_project_builder_sa_key.outputs.base_project_builder_sa_key }}
+    steps:
+      - id: get_base_project_builder_sa_key
+        run: |
+          job_base_project_builder_sa_key=${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+          input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
+          # take the one that is not empty
+          base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
+          echo "base_project_builder_sa_key=$base_project_builder_sa_key" | tee -a $GITHUB_OUTPUT
 
   deploy_with_training_image:
     name: deploy_with_training_image
