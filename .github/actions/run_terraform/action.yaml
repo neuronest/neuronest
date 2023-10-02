@@ -27,7 +27,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-
     - run: echo "TF_VAR_image_name"="${{ inputs.image_name }}" >> $GITHUB_ENV
       shell: bash
 
@@ -39,52 +38,6 @@ runs:
           exit 1
         fi
       shell: bash
-
-    - id: link_project_to_organization
-      uses: nick-fields/retry@v2.8.2
-      with:
-        timeout_seconds: 60
-        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
-        max_attempts: 3
-        command: |
-          if ! gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
-              # Project does not exist, create it
-              gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID
-          fi
-
-    - id: link_billing_account_to_project
-      uses: nick-fields/retry@v2.8.2
-      with:
-        timeout_seconds: 60
-        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
-        max_attempts: 3
-        command: |
-          # the command may fail if the project is not actually created yet
-          gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
-
-    - id: create_state_bucket
-      uses: nick-fields/retry@v2.8.2
-      with:
-        timeout_seconds: 60
-        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
-        max_attempts: 3
-        command: |
-          # the command may fail if the project is not actually created yet
-          if ! echo "$(gsutil ls -p $PROJECT_ID)" | grep -q "gs://$STATE_BUCKET/"; then
-            # Bucket does not exist, create it
-            gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
-          fi
-
-    - id: add_iam_with_retry
-      uses: nick-fields/retry@v2.8.2
-      with:
-        timeout_seconds: 60
-        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
-        max_attempts: 3
-        command: |
-          for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
-            gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
-          done
 
     - id: set_terraform_retry_wait_seconds
       # we wait a random number of seconds before retrying to prevent jobs targeting

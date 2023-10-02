@@ -4,36 +4,73 @@ inputs:
   image_name:
     description: 'Image name'
     required: true
+  run_unit_tests:
+    description: 'run unit_tests'
+    required: false
+    default: 'true'
+  run_integration_tests:
+    description: 'run integration_tests'
+    required: false
+    default: 'true'
+  environment_variables:
+    description: 'environment variables'
+    required: false
+    default: ''
 runs:
   using: "composite"
   steps:
-      - run: |
-          CONTAINER_ID=$(docker run -dit --entrypoint /bin/bash ${{ inputs.image_name }})
-          echo "CONTAINER_ID"="$CONTAINER_ID" >> $GITHUB_ENV
-          echo "MONO_REPOSITORY_PATH"="/mono_repository" >> $GITHUB_ENV
+      - id: set_container_mono_repository_path
+        run: echo "value=/mono_repository" >> $GITHUB_OUTPUT
         shell: bash
-      - run: docker cp ./. $CONTAINER_ID:$MONO_REPOSITORY_PATH
+      - id: set_container_google_application_credentials
+        run: echo "value=/tmp/credentials.json" >> $GITHUB_OUTPUT
+        shell: bash
+      - id: run_background_container
+        run: |
+          container_id=$(docker run -dit ${{ inputs.environment_variables }} -e GOOGLE_APPLICATION_CREDENTIALS=${{ steps.set_container_google_application_credentials.outputs.value }} --entrypoint /bin/bash ${{ inputs.image_name }})
+          echo "container_id"="$container_id" >> $GITHUB_OUTPUT
+        shell: bash
+      - run: docker cp $GOOGLE_APPLICATION_CREDENTIALS ${{ steps.run_background_container.outputs.container_id }}:${{ steps.set_container_google_application_credentials.outputs.value }}
+        shell: bash
+      - run: docker cp ./. ${{ steps.run_background_container.outputs.container_id }}:${{ steps.set_container_mono_repository_path.outputs.value }}
         shell: bash
       - run: |
-          docker exec \
-            --workdir $MONO_REPOSITORY_PATH \
-            $CONTAINER_ID \
-            /bin/bash -c "
-              [ ! -d ".git" ] && git init || echo ".git directory already exists. Skipping git init." \
-              # to handle detected dubious ownership git issue
-              && git config --global --add safe.directory $MONO_REPOSITORY_PATH \
-              && source ./.github/functions/install_terraform.sh \
-              && install_terraform \
-              && cd $REPOSITORY_NAME \
-              && poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
-              && pip install -r requirements.txt \
-              && cd $MONO_REPOSITORY_PATH \
-              && pre-commit install \
-              && pre-commit run \
-                --show-diff-on-failure \
-                --files $REPOSITORY_NAME/**/* \
-              && pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv
+          # handle detected dubious ownership git issue
+          run_linters_tests_cmd="
+            apt update \
+            && apt install -y git \
+            && ([ ! -d \".git\" ] && git init || echo \".git directory already exists. Skipping git init.\") \
+            && git config \
+            --global \
+            --add safe.directory ${{ steps.set_container_mono_repository_path.outputs.value }} \
+          && cd $REPOSITORY_NAME \
+          && pip install poetry==$POETRY_VERSION && poetry export \
+            --without-hashes \
+            --with dev -f requirements.txt \
+            --output requirements.txt \
+          && pip install -r requirements.txt \
+          && cd ${{ steps.set_container_mono_repository_path.outputs.value }} \
+          && source ./.github/functions/install_terraform.sh && install_terraform \
+          && pre-commit install \
+          && pre-commit run \
+            --show-diff-on-failure \
+            --files $REPOSITORY_NAME/**/* \
           "
+          
+          # run unit tests
+          if [[ "${{ inputs.run_unit_tests }}" == "true" ]]; then
+            run_linters_tests_cmd+="&& pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv"
+          fi
+          
+          # run integration tests
+          if [[ "${{ inputs.run_integration_tests }}" == "true" ]]; then
+            run_linters_tests_cmd+="&& pytest -x -n auto $REPOSITORY_NAME/tests/integration_tests -vv"
+          fi
+          
+          docker exec \
+            --workdir ${{ steps.set_container_mono_repository_path.outputs.value }} \
+            ${{ steps.run_background_container.outputs.container_id }} \
+            /bin/bash -c "$run_linters_tests_cmd"
         shell: bash
-      - run: docker rm -f $CONTAINER_ID
+      - run: docker rm -f ${{ steps.run_background_container.outputs.container_id }}
         shell: bash

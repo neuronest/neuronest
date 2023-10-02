@@ -14,7 +14,6 @@ import numpy as np
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from pydantic import BaseModel, root_validator, validator
 
-from core.fixed_parameters import TIME_STEP
 from core.path import LocalPath
 from core.tools import extract_file_extension, get_chunks_from_iterable
 
@@ -252,16 +251,8 @@ class VideoAsset(VisualAsset):
 
     @root_validator(pre=True)
     # pylint: disable=no-self-argument
-    def fill_time_step(cls, values: dict) -> dict:
-        if values.get("time_step") is None:
-            values["time_step"] = TIME_STEP
-
-        return values
-
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
     def fill_metadata(cls, values: dict) -> dict:
-        asset_path, targeted_time_step = values["asset_path"], values["time_step"]
+        asset_path = values["asset_path"]
 
         with cls._capture_video(asset_path) as video_capture:
             initial_fps = int(video_capture.get(cv.CAP_PROP_FPS))
@@ -274,10 +265,13 @@ class VideoAsset(VisualAsset):
             # read subsequently
             frames_number = sum(1 for _ in cls._read(asset_path))
 
+        if values["time_step"] is None:
+            values["time_step"] = 1 / initial_fps
+
         sampled_frames_number = cls.estimate_sampled_frames_number(
             frames_number=frames_number,
             initial_fps=initial_fps,
-            targeted_time_step=targeted_time_step,
+            targeted_time_step=values["time_step"],
         )
 
         values["asset_meta"] = VideoAssetMeta(
@@ -287,7 +281,7 @@ class VideoAsset(VisualAsset):
             frames_number=frames_number,
             initial_fps=initial_fps,
             sampled_frames_number=sampled_frames_number,
-            time_step=targeted_time_step,
+            time_step=values["time_step"],
         )
 
         return values

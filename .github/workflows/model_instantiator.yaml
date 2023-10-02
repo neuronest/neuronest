@@ -75,6 +75,7 @@ jobs:
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
     outputs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
+      dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
@@ -96,7 +97,9 @@ jobs:
   deploy:
     name: deploy
     runs-on: neuronest-runner-set
-    needs: build_test_push
+    needs:
+      - run_base_terraform
+      - build_test_push
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
     container:
@@ -105,7 +108,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - uses: ./.github/actions/run_terraform
         with:

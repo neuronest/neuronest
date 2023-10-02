@@ -46,6 +46,7 @@ on:
         default: ''
 env:
   REPOSITORY_NAME: functional-object-detection
+  TESTING_BASE_IMAGE: python:3.9.17-slim-buster
 
 jobs:
   run_base_terraform:
@@ -107,9 +108,9 @@ jobs:
 
   deploy_functional_object_detection:
     needs:
+     - run_base_terraform
      - build_test_push_object_detection
      - build_test_push_model_instantiator
-     - run_base_terraform
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
     runs-on: neuronest-runner-set
@@ -119,7 +120,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: run_functional_object_detection_terraform
         uses: ./.github/actions/run_terraform
@@ -164,3 +165,32 @@ jobs:
       do_post_deployment: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
+
+  run_integration_tests:
+    runs-on: neuronest-runner-set
+    needs:
+      - run_base_terraform
+      - post_deploy_object_detection
+      - post_deploy_model_instantiator
+      - deploy_functional_object_detection
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+      - id: test_integration
+        uses: ./.github/actions/run_linters_tests
+        with:
+          image_name: ${{ env.TESTING_BASE_IMAGE }}
+          run_integration_tests: true
+          run_unit_tests: false
+          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_object_detection.outputs.model_instantiator_url }}

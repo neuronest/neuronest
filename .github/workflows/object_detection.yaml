@@ -146,49 +146,47 @@ jobs:
           gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
           echo "gcp_image=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
 
-  deploy_with_training_image:
-    name: deploy_with_training_image
-    runs-on: neuronest-runner-set
-    needs: get_training_images
-    # If the workflow isn't called, inputs are blank and all jobs should run
-    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
-    container: google/cloud-sdk
-    outputs:
-      base_project_builder_sa_key: ${{ steps.base_run_terraform.outputs.base_project_builder_sa_key }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/set_variables_gcloud_auth
-        with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - id: base_run_terraform
-        uses: ./.github/actions/run_base_terraform
-      - uses: ./.github/actions/run_terraform
-        with:
-          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
-          workspace: ${{ env.REPOSITORY_NAME }}
-          image_name: ${{ needs.get_training_images.outputs.dockerhub_image }}
-
   get_base_project_builder_sa_key:
     runs-on: neuronest-runner-set
-    needs: deploy_with_training_image
+    needs: run_base_terraform
     if: ${{ !failure() }}
     outputs:
       value: ${{ steps.get_base_project_builder_sa_key.outputs.base_project_builder_sa_key }}
     steps:
       - id: get_base_project_builder_sa_key
         run: |
-          job_base_project_builder_sa_key=${{ needs.deploy_with_training_image.outputs.base_project_builder_sa_key }}
+          job_base_project_builder_sa_key=${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
           input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
           # take the one that is not empty
           base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
           echo "base_project_builder_sa_key=$base_project_builder_sa_key" | tee -a $GITHUB_OUTPUT
 
+  deploy_with_training_image:
+    name: deploy_with_training_image
+    runs-on: neuronest-runner-set
+    needs:
+      - get_base_project_builder_sa_key
+      - get_training_images
+    # If the workflow isn't called, inputs are blank and all jobs should run
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
+    container: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+          workspace: ${{ env.REPOSITORY_NAME }}
+          image_name: ${{ needs.get_training_images.outputs.dockerhub_image }}
+
   train:
     name: train
     needs:
-      - get_training_images
       - get_base_project_builder_sa_key
+      - get_training_images
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
@@ -257,7 +255,7 @@ jobs:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
       - id: set_additional_variables
         run: |
           echo "MODEL_PATH"="${{ env.REPOSITORY_NAME }}/model.pt" >> $GITHUB_ENV
@@ -274,8 +272,8 @@ jobs:
   model_upload:
     name: model_upload
     needs:
-      - get_training_images
       - get_base_project_builder_sa_key
+      - get_training_images
       - build_test_push_serving_image
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and all jobs should run
@@ -298,43 +296,3 @@ jobs:
         run: python -m object_detection.cli --actions model_upload
         env:
           SERVING_IMAGE_NAME: ${{ needs.build_test_push_serving_image.outputs.gcp_serving_image_name }}
-
-  deploy_test_serving:
-    name: deploy_test_serving
-    needs:
-      - model_upload
-      - get_training_images
-      - get_base_project_builder_sa_key
-    runs-on: neuronest-runner-set
-    # If the workflow isn't called, inputs are blank and all jobs should run
-    if: ${{ inputs.model_instantiator_url != '' && (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
-    defaults:
-      run:
-        working-directory: ${{ env.REPOSITORY_NAME }}
-    container:
-      image: ${{needs.get_training_images.outputs.dockerhub_image}}
-      credentials:
-        username: ${{ vars.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/set_variables_gcloud_auth
-        with:
-          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - id: deploy
-        run: python -m object_detection.cli --actions deploy
-        env:
-          MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_url }}
-      - id: remove_last_model_version_if_deploy_has_failed
-        if: ${{ failure() && steps.deploy.conclusion == 'failure' }}
-        run: python -m object_detection.cli --actions remove_last_model_version
-      - id: test_integration
-        run: |
-          poetry check && poetry install --with dev
-          poetry run pytest -x tests/integration_tests -vv
-        env:
-          MODEL_INSTANTIATOR_HOST: ${{ inputs.model_instantiator_url }}
-      - id: undeploy_and_remove_last_model_version_and_redeploy_if_test_integration_has_failed
-        if: ${{ failure() && steps.test_integration.conclusion == 'failure' }}
-        run: python -m object_detection.cli --actions undeploy remove_last_model_version deploy

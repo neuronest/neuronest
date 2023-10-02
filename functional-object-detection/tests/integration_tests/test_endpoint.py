@@ -3,21 +3,16 @@ import os
 import cv2 as cv
 import numpy as np
 import pytest
+from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.object_detection import ObjectDetectionClient
 from core.google.vertex_ai_manager import VertexAIManager
-from omegaconf import DictConfig
-
-from object_detection.config import cfg
-from object_detection.environment_variables import (
+from tests.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
+    MODEL_INSTANTIATOR_HOST,
+    MODEL_NAME,
     PROJECT_ID,
+    REGION,
 )
-from tests.injection.fake_model_instantiator_client import FakeModelInstantiatorClient
-
-
-@pytest.fixture(name="config")
-def fixture_config() -> DictConfig:
-    return cfg
 
 
 @pytest.fixture(name="image_directory")
@@ -33,29 +28,34 @@ def fixture_sample(image_directory: str) -> np.ndarray:
 
 
 @pytest.fixture(name="vertex_ai_manager")
-def fixture_vertex_ai_manager(config: DictConfig) -> VertexAIManager:
+def fixture_vertex_ai_manager() -> VertexAIManager:
     return VertexAIManager(
-        location=config.region,
+        location=REGION,
         key_path=GOOGLE_APPLICATION_CREDENTIALS,
         project_id=PROJECT_ID,
     )
 
 
-def test_endpoint_inference(
-    config: DictConfig, vertex_ai_manager: VertexAIManager, image: np.ndarray
-):
-    model_name = config.model.name
-
-    fake_model_instantiator_client = FakeModelInstantiatorClient(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, host="fake_model_instantiator_host"
+@pytest.fixture(name="model_instantiator_client")
+def fixture_model_instantiator_client() -> ModelInstantiatorClient:
+    return ModelInstantiatorClient(
+        host=MODEL_INSTANTIATOR_HOST,
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
     )
+
+
+def test_endpoint_inference(
+    vertex_ai_manager: VertexAIManager,
+    model_instantiator_client: ModelInstantiatorClient,
+    image: np.ndarray,
+):
     vertex_ai_manager = VertexAIManager(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, location=cfg.region
+        key_path=GOOGLE_APPLICATION_CREDENTIALS, location=REGION, project_id=PROJECT_ID
     )
     object_detection_client = ObjectDetectionClient(
         vertex_ai_manager=vertex_ai_manager,
-        model_instantiator_client=fake_model_instantiator_client,
-        model_name=model_name,
+        model_instantiator_client=model_instantiator_client,
+        model_name=MODEL_NAME,
     )
 
     single_prediction_df = object_detection_client.predict_single(image)

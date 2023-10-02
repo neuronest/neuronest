@@ -409,19 +409,13 @@ class Repository:
         return []
 
     def get_base_code(self, prefix_to_remove: Optional[str] = None) -> str:
-        codes = [
+        # there is one and only one repository code by repo
+        # since it is configuration, we don't test it explicitly
+        base_code = [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
             if var_line.is_a_repository_code()
-        ]
-
-        if len(codes) == 0:
-            raise ValueError("No repository code variable found")
-
-        if len(codes) > 1:
-            raise ValueError("Multiple repository code variables found")
-
-        base_code = codes[0].value
+        ][0].value
 
         if prefix_to_remove is None or not base_code.startswith(prefix_to_remove):
             return base_code

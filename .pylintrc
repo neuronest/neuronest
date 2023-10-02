@@ -207,7 +207,6 @@ spelling-store-unknown-words=no
 # List of note tags to take in consideration, separated by a comma.
 notes=FIXME,
       XXX,
-      TODO
 
 # Regular expression of note tags to take in consideration.
 notes-rgx=
@@ -223,7 +222,9 @@ contextmanager-decorators=contextlib.contextmanager
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E1101 when accessed. Python regular
 # expressions are accepted.
-generated-members=
+# pylint does not pick up members of some packages, see the solution proposed
+# and retained here: https://github.com/pytorch/pytorch/issues/701
+generated-members=numpy.*,torch.*
 
 # Tells whether to warn about missing members when the owner of the attribute
 # is inferred to be None.

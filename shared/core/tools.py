@@ -1,5 +1,7 @@
+import hashlib
 import os
-from typing import Any, Iterable, Iterator, List, Optional
+from functools import wraps
+from typing import Any, Callable, Iterable, Iterator, List, Optional
 
 
 def get_chunks_from_iterable(
@@ -45,3 +47,54 @@ def extract_file_extension(path: str) -> str:
         raise ValueError(f"Unable to get the file extension from '{path}'")
 
     return extension
+
+
+def maybe_async(convert_to_async: bool) -> Callable:
+    """
+    Make a sync or async function dynamically.
+    Useful in some cases for debug where the
+    function must then be def or async def for example
+    """
+
+    def decorator(func):
+        if convert_to_async is True:
+
+            @wraps(func)
+            async def async_func(*args, **kwargs):
+                return await func(*args, **kwargs)
+
+            return async_func
+
+        return func
+
+    return decorator
+
+
+def generate_file_id(
+    file_path: str,
+    include_name: bool = False,
+    include_extension: bool = True,
+) -> str:
+    """
+    Generate a unique ID based on the sha256 hash of the file content.
+    Optionally include the original filename and extension.
+
+    :param file_path: str, path to the file
+    :param include_name: bool, flag to include original filename in the ID
+    :param include_extension: bool, flag to include file extension in the ID
+    :return: str, generated file ID
+    """
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"The file at path {file_path} does not exist.")
+
+    file_path_without_extension, extension = os.path.splitext(file_path)
+
+    with open(file_path, "rb") as file_reader:
+        file_id = hashlib.sha256(file_reader.read()).hexdigest()
+
+    if include_name is True:
+        file_id = f"{os.path.basename(file_path_without_extension)}_{file_id}"
+    if include_extension is True and extension != "":
+        file_id += extension
+
+    return file_id

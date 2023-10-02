@@ -21,7 +21,7 @@ paths:
 
 algorithm:
   line_placement_ratio: 0.5
-  inference_periodicity: 3
+  inference_periodicity: 15
   centroid_tracker:
     max_disappeared: 5
     max_distance_height_ratio: 0.2
