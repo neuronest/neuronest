@@ -5,5 +5,5 @@ repository_variables:
 multi_instance_resource_names: []
 other_variables:
   # GCP project
-  - PROJECT_ID=custom-dummy-10
-  - PROJECT_CODE=cp-10
+  - PROJECT_ID=customer-dummy-project-main
+  - PROJECT_CODE=cdp-main
