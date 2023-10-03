@@ -1,8 +1,9 @@
 import os
 import tempfile
-from typing import List, Optional
+from typing import List
 
 import pytest
+from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.people_counting import PeopleCountingClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
@@ -33,22 +34,19 @@ def are_detections_correct(
     ],
 )
 def test_cloud_run_inference(
-    people_counting_url: str,
-    project_id: str,
+    model_instantiator_client: ModelInstantiatorClient,
+    people_counting_client: PeopleCountingClient,
+    storage_client: StorageClient,
+    model_name: str,
     video_storage_path: GSPath,
     up_amount: int,
     down_amount: int,
-    google_application_credentials: Optional[str],
 ):
-    people_counting_client = PeopleCountingClient(
-        host=people_counting_url, project_id=project_id
-    )
-
     video_bucket, video_blob_name = video_storage_path.to_bucket_and_blob_names()
     _, extension = os.path.splitext(video_blob_name)
 
     with tempfile.NamedTemporaryFile(suffix=extension) as named_temporary_file:
-        StorageClient(key_path=google_application_credentials).download_blob_to_file(
+        storage_client.download_blob_to_file(
             bucket_name=video_bucket,
             source_blob_name=video_blob_name,
             destination_file_name=named_temporary_file.name,
@@ -78,3 +76,5 @@ def test_cloud_run_inference(
             up_amount=up_amount,
             down_amount=down_amount,
         )
+
+    model_instantiator_client.uninstantiate(model_name=model_name)
