@@ -1,10 +1,6 @@
 name: 'set_variables'
 description: 'Configure environment variables for a workflow'
 inputs:
-  branch_name:
-    description: 'GitHub current branch name'
-    required: false
-    default: ''
   set_up_terraform_variables:
     description: 'Whether to also create corresponding terraform variables'
     required: false
@@ -72,8 +68,8 @@ runs:
     - run: |
         python3 .github/actions/set_variables/create_env_file.py \
           --repository_name ${{ env.REPOSITORY_NAME }} \
+          --branch_name ${{ env.GITHUB_BRANCH }} \
           --environment_variables_file_path ${{ steps.set_created_env_file_path.outputs.value }} \
-          --branch_name "${{ inputs.branch_name }}" \
           --add_terraform_variables ${{ inputs.set_up_terraform_variables }} \
           --variable_prefix_to_filter_on "${{ inputs.variable_prefix_to_filter_on }}" \
           --discard_shared_variables ${{ inputs.discard_shared_variables }} \

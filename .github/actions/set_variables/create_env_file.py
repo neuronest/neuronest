@@ -516,12 +516,12 @@ if __name__ == "__main__":
         type=str,
         required=True,
     )
+    parser.add_argument("--branch_name", type=str, required=False, default=None)
     parser.add_argument(
         "--environment_variables_file_path",
         type=str,
         required=True,
     )
-    parser.add_argument("--branch_name", type=str, required=False, default=None)
     parser.add_argument(
         "--add_terraform_variables",
         type=string_to_boolean,
