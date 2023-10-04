@@ -1,5 +1,10 @@
 name: 'run_base_terraform'
 description: 'Deploy the terraform part of the shared repository, common to all IACs of all repositories'
+inputs:
+  min_terraform_retry_wait_seconds:
+    description: 'Terraform maximum wait time for retry after failure'
+    required: false
+    default: "60"
 outputs:
   base_project_builder_sa_key:
     description: 'The base64 encoded key of the IAC service account of the shared repository'
@@ -7,6 +12,52 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - id: link_project_to_organization
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
+        max_attempts: 3
+        command: |
+          if ! gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
+              # Project does not exist, create it
+              gcloud projects create $PROJECT_ID --set-as-default --organization $ORGANIZATION_ID
+          fi
+
+    - id: link_billing_account_to_project
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
+        max_attempts: 3
+        command: |
+          # the command may fail if the project is not actually created yet
+          gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
+
+    - id: create_state_bucket
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
+        max_attempts: 3
+        command: |
+          # the command may fail if the project is not actually created yet
+          if ! echo "$(gsutil ls -p $PROJECT_ID)" | grep -q "gs://$STATE_BUCKET/"; then
+            # Bucket does not exist, create it
+            gsutil mb -p $PROJECT_ID -c STANDARD -l $REGION -b on gs://$STATE_BUCKET
+          fi
+
+    - id: add_iam_with_retry
+      uses: nick-fields/retry@v2.8.2
+      with:
+        timeout_seconds: 60
+        retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
+        max_attempts: 3
+        command: |
+          for default_projects_owner in ${DEFAULT_PROJECTS_OWNERS//,/ }; do
+            gcloud projects add-iam-policy-binding $PROJECT_ID --member=user:$default_projects_owner --role=roles/owner
+          done
+
     - id: run_base_terraform
       uses: ./.github/actions/run_terraform
       with:

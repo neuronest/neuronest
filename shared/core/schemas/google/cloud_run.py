@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -19,7 +19,7 @@ class JobConfig(BaseModel):
     parallelism: int = 1
     command: List[str] = Field(default_factory=list)
     command_args: List[str] = Field(default_factory=list)
-    environment_variables: Dict[str, str] = Field(default_factory=dict)
+    environment_variables: Dict[str, Optional[str]] = Field(default_factory=dict)
     # custom fields
     formatted_environment_variables: List[EnvironmentVariable] = Field(
         default_factory=list
@@ -28,7 +28,7 @@ class JobConfig(BaseModel):
     @validator("formatted_environment_variables", always=True)
     # pylint: disable=no-self-argument,unused-argument
     def format_environment_variables(
-        cls, formatted_environment_variables: List[Dict[str, str]], values: dict
+        cls, formatted_environment_variables: List[EnvironmentVariable], values: dict
     ) -> List[EnvironmentVariable]:
         environment_variables = values["environment_variables"]
 
@@ -39,6 +39,7 @@ class JobConfig(BaseModel):
             for environment_variable_name, environment_variable_value in (
                 environment_variables.items()
             )
+            if environment_variable_value is not None
         ]
 
 

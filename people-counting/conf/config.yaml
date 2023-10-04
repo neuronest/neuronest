@@ -1,23 +1,14 @@
-project_id: '${oc.env:PROJECT_ID,null}'
-region: '${oc.env:REGION,null}'
-name: '${oc.env:REPOSITORY_NAME,null}'
-
-general:
-  verbosity: True
-  enable_video_writing: False
-  enable_video_showing: False
-
-dataset:
-  google_drive_url: "https://drive.google.com/uc?id=18W81EE8LtNlzXG2xrgl0Fh102vyouD47"
+job:
+  container_uri: '${oc.env:IMAGE_NAME}'
+  cpu: '1.0'
+  memory: '1Gi'
 
 preprocessing:
   image_width: 400
 
-
 postprocessing:
   class_name: "person"
   confidence_threshold: 0.15
-
 
 paths:
   videos_directory: "data"
@@ -30,7 +21,7 @@ paths:
 
 algorithm:
   line_placement_ratio: 0.5
-  inference_periodicity: 3
+  inference_periodicity: 15
   centroid_tracker:
     max_disappeared: 5
     max_distance_height_ratio: 0.2

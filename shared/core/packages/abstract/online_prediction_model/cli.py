@@ -17,6 +17,7 @@ from core.packages.abstract.online_prediction_model.config import Config
 from core.packages.abstract.online_prediction_model.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
+    PROJECT_ID,
     TRAINING_IMAGE_NAME,
 )
 from core.path import GSPath
@@ -92,7 +93,7 @@ class LaunchTrainingJobAction(RunnableAction):
             )
 
         models_bucket_name, _ = model_gspath.to_bucket_and_blob_names()
-        StorageClient(project_id=vertex_ai_manager.project_id).create_bucket(
+        StorageClient(project_id=PROJECT_ID).create_bucket(
             bucket_name=models_bucket_name,
             location=vertex_ai_manager.location,
             exist_ok=True,
@@ -257,6 +258,9 @@ def main(config: Config):
         nargs="+",
     )
     parsed_args = parser.parse_args()
+
+    if len(parsed_args.actions) == 0:
+        raise ValueError("No action received")
 
     model_gspath = (
         None if parsed_args.model_gspath is None else GSPath(parsed_args.model_gspath)

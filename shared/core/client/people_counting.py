@@ -1,89 +1,162 @@
-import datetime
 import json
-import uuid
+import time
 from typing import Optional
 
 from core.client.api_client import APIClient
+from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
-from core.path import GSPath
+from core.path import GSPath, LocalPath
 from core.routes.people_counting import routes
 from core.schemas.people_counting import (
+    FirestoreResultsCollectionOutput,
+    PeopleCounterDocument,
     PeopleCounterInput,
-    PeopleCounterInputData,
     PeopleCounterOutput,
+    PeopleCounterRealTimeOutput,
+    VideosToCountBucketOutput,
 )
-from core.tools import get_file_id_from_path
+from core.tools import generate_file_id
 
 
 class PeopleCountingClient(APIClient):
-    VIDEOS_TO_COUNT_BASE_BUCKET_NAME = "pc-videos-to-count"
-    PREDICTION_INSTANCE_ID_DATETIME_FORMAT = "%Y_%m_%d_%H:%M:%S"
-
     def __init__(
         self,
         host: str,
-        project_id: Optional[str] = None,
         key_path: Optional[str] = None,
+        project_id: Optional[str] = None,
     ):
-        super().__init__(host=host, key_path=key_path, root=routes.root)
-        # self._project_id = project_id
+        super().__init__(
+            host=host,
+            key_path=key_path,
+            root=routes.root,
+            project_id=project_id,
+        )
         self.storage_client = StorageClient(
             key_path=key_path, project_id=self.project_id
         )
+        self.firestore_client = FirestoreClient(
+            key_path=key_path, project_id=self.project_id
+        )
 
-    @property
-    def videos_to_count_bucket(self) -> str:
-        return f"{self.VIDEOS_TO_COUNT_BASE_BUCKET_NAME}-{self.project_id}"
-
-    def _upload_video_to_storage(self, video_path: str) -> GSPath:
-        bucket = self.storage_client.client.bucket(self.videos_to_count_bucket)
-
-        if not bucket.exists():
-            bucket.create()
-
-        video_blob_name = get_file_id_from_path(file_path=video_path)
+    def _upload_video_to_storage(
+        self, video_path: LocalPath, destination_bucket: str
+    ) -> GSPath:
+        video_blob_name = generate_file_id(file_path=video_path)
 
         self.storage_client.upload_blob(
             source_file_name=video_path,
-            bucket_name=bucket.name,
+            bucket_name=destination_bucket,
             blob_name=video_blob_name,
         )
 
         return GSPath.from_bucket_and_blob_names(
-            bucket_name=bucket.name, blob_name=video_blob_name
+            bucket_name=destination_bucket, blob_name=video_blob_name
         )
 
-    def get_prediction_instance_id(self, video_path: str):
-        now = datetime.datetime.now().strftime(
-            self.PREDICTION_INSTANCE_ID_DATETIME_FORMAT
-        )
-        return (
-            f"{now}_{get_file_id_from_path(file_path=video_path)}_{str(uuid.uuid4())}"
+    def get_firestore_results_collection(self) -> str:
+        return FirestoreResultsCollectionOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.Resources.prefix}"
+                    f"{routes.Resources.firestore_results_collection}",
+                    verb="get",
+                ).text
+            )
+        ).collection
+
+    def get_videos_to_count_bucket(self) -> str:
+        return VideosToCountBucketOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.Resources.prefix}"
+                    f"{routes.Resources.videos_to_count_bucket}",
+                    verb="get",
+                ).text
+            )
+        ).bucket
+
+    def retrieve_counted_people_document(
+        self,
+        job_id: str,
+        wait_if_not_existing: bool = False,
+        total_waited_time: int = 0,
+        timeout: int = 2700,
+        retry_wait_time: int = 60,
+    ) -> PeopleCounterDocument:
+        raw_document = self.firestore_client.get_document(
+            collection_name=self.get_firestore_results_collection(),
+            document_id=job_id,
         )
 
-    def predict(
-        self, video_path: str, save_counted_video_in_storage: bool = False
+        if raw_document is None and wait_if_not_existing is False:
+            raise RuntimeError(f"Document not found for job_id={job_id}")
+
+        if raw_document is None:
+            time.sleep(retry_wait_time)
+            total_waited_time += retry_wait_time
+
+            if total_waited_time > timeout:
+                raise TimeoutError(
+                    f"Failed to retrieve document having job_id={job_id}, "
+                    f"giving up after {timeout // 60} minutes of trying"
+                )
+
+            return self.retrieve_counted_people_document(
+                job_id=job_id,
+                wait_if_not_existing=wait_if_not_existing,
+                total_waited_time=total_waited_time,
+                timeout=timeout,
+                retry_wait_time=retry_wait_time,
+            )
+
+        return PeopleCounterDocument.parse_obj(raw_document)
+
+    def count_people(
+        self,
+        video_path: str,
+        save_counted_video_in_storage: bool = False,
     ) -> PeopleCounterOutput:
         uploaded_video_storage_path = self._upload_video_to_storage(
-            video_path=video_path
+            video_path=LocalPath(video_path),
+            destination_bucket=self.get_videos_to_count_bucket(),
         )
 
         return PeopleCounterOutput(
             **json.loads(
                 self.call(
                     resource=f"/{routes.PeopleCounter.prefix}"
-                    f"{routes.PeopleCounter.count_people_and_make_video}",
+                    f"{routes.PeopleCounter.count_people}",
                     verb="post",
                     payload=PeopleCounterInput(
-                        data=PeopleCounterInputData(
-                            job_id=self.get_prediction_instance_id(
-                                video_path=video_path
-                            ),
-                            storage_path=uploaded_video_storage_path,
-                            save_counted_video_in_storage=save_counted_video_in_storage,
-                            enable_video_showing=False,
-                        )
+                        video_storage_path=uploaded_video_storage_path,
+                        save_counted_video_in_storage=save_counted_video_in_storage,
                     ).dict(),
+                ).text
+            )
+        )
+
+    def count_people_real_time(
+        self,
+        video_path: str,
+        save_counted_video_in_storage: bool = False,
+        timeout: int = 2700,
+    ) -> PeopleCounterRealTimeOutput:
+        uploaded_video_storage_path = self._upload_video_to_storage(
+            video_path=LocalPath(video_path),
+            destination_bucket=self.get_videos_to_count_bucket(),
+        )
+
+        return PeopleCounterRealTimeOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.PeopleCounter.prefix}"
+                    f"{routes.PeopleCounter.count_people_real_time}",
+                    verb="post",
+                    payload=PeopleCounterInput(
+                        video_storage_path=uploaded_video_storage_path,
+                        save_counted_video_in_storage=save_counted_video_in_storage,
+                    ).dict(),
+                    timeout=timeout,
                 ).text
             )
         )

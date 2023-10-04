@@ -3,15 +3,16 @@ import os
 import cv2 as cv
 import numpy as np
 import pytest
+from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.object_detection import ObjectDetectionClient
 from core.google.vertex_ai_manager import VertexAIManager
 from tests.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
+    MODEL_INSTANTIATOR_HOST,
     MODEL_NAME,
     PROJECT_ID,
     REGION,
 )
-from tests.injection.fake_model_instantiator_client import FakeModelInstantiatorClient
 
 
 @pytest.fixture(name="image_directory")
@@ -35,17 +36,25 @@ def fixture_vertex_ai_manager() -> VertexAIManager:
     )
 
 
-def test_endpoint_inference(vertex_ai_manager: VertexAIManager, image: np.ndarray):
-
-    fake_model_instantiator_client = FakeModelInstantiatorClient(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, host="fake_model_instantiator_host"
+@pytest.fixture(name="model_instantiator_client")
+def fixture_model_instantiator_client() -> ModelInstantiatorClient:
+    return ModelInstantiatorClient(
+        host=MODEL_INSTANTIATOR_HOST,
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
     )
+
+
+def test_endpoint_inference(
+    vertex_ai_manager: VertexAIManager,
+    model_instantiator_client: ModelInstantiatorClient,
+    image: np.ndarray,
+):
     vertex_ai_manager = VertexAIManager(
         key_path=GOOGLE_APPLICATION_CREDENTIALS, location=REGION, project_id=PROJECT_ID
     )
     object_detection_client = ObjectDetectionClient(
         vertex_ai_manager=vertex_ai_manager,
-        model_instantiator_client=fake_model_instantiator_client,
+        model_instantiator_client=model_instantiator_client,
         model_name=MODEL_NAME,
     )
 

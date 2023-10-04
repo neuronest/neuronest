@@ -17,7 +17,7 @@ from pydantic import BaseModel
 sys.path.append("shared")
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
-FUNCTIONAL_REPOSITORIES_PREFIX = "functional-"
+FUNCTIONAL_REPOSITORIES_PREFIX = "func-"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
@@ -426,30 +426,25 @@ class Repository:
 
         return []
 
-    def get_base_name_without_functional(self) -> str:
-        if self.name.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
-            return self.name[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
-
-        return self.name
-
-    def get_base_code_without_functional(self) -> str:
-        # The rule is one repo -> one code. We assume that the rule is respected and we
-        # do not ensure the management of errors caused by non-compliance with these
-        # rules, such as the absence of a code or the presence of several codes.
-        # If we did so, we would also have to consider and handle any other such
-        # scenarios that might arise e.g. code that does not have the prefix in a
-        # functional repo code , code that does not follow naming conventions like
-        # code length, allowed characters, wrong prefix etc.
-        code = [
+    def get_base_code(self) -> str:
+        # there is one and only one repository code by repo
+        # since it is configuration, we don't test it explicitly
+        base_code = [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
             if var_line.is_a_repository_code()
         ][0].value
 
-        if code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
-            return code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
+        # By development convention within the repo the code is always made up of the
+        # base code prefixed or not with "func-" contained in
+        # the variable FUNCTIONAL_REPOSITORIES_PREFIX.
+        # There is therefore no reason to parameterize the function
+        # with an argument which would allow passing something other than this variable,
+        # we use it directly
+        if not base_code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
+            return base_code
 
-        return code
+        return base_code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
 
 
 def get_all_repository_var_lines(
@@ -458,14 +453,10 @@ def get_all_repository_var_lines(
     variables_to_which_not_add_namespace: Optional[Set[str]] = None,
     add_namespace_to_name_of_multi_instance_resource: bool = True,
 ) -> List[VariableLine]:
-
     if variables_to_which_not_add_namespace is None:
         variables_to_which_not_add_namespace = {}
 
     all_repository_var_lines = []
-
-    repository_code_without_functional = repository.get_base_code_without_functional()
-    repository_name_without_functional = repository.get_base_name_without_functional()
 
     for dependency_repository in repository.get_dependency_repositories():
         dependency_repository_var_lines = get_all_repository_var_lines(
@@ -483,7 +474,7 @@ def get_all_repository_var_lines(
             for variable_inside_value in variables_inside_value:
                 if variable_inside_value not in variables_to_which_not_add_namespace:
                     var_line.add_namespace(
-                        repository_name_without_functional,
+                        repository.name,
                         add_to_value_variables=True,
                         add_to_name=False,
                         variable_inside_value_to_add_to=variable_inside_value,
@@ -491,7 +482,7 @@ def get_all_repository_var_lines(
                         already_added_ok=True,
                     )
             var_line.add_namespace(
-                repository_name_without_functional,
+                repository.name,
                 add_to_name=True,
                 add_to_value_variables=False,
                 inplace=True,
@@ -500,10 +491,14 @@ def get_all_repository_var_lines(
         if (
             add_namespace_to_name_of_multi_instance_resource
             and var_line.is_a_multi_instance_resource()
-            and not var_line.value.startswith(repository_name_without_functional)
         ):
+            if var_line.value.startswith(repository.get_base_code()):
+                namespace = FUNCTIONAL_REPOSITORIES_PREFIX
+            else:
+                namespace = repository.get_base_code()
+
             var_line.add_namespace(
-                repository_code_without_functional,
+                namespace,
                 add_to_value=True,
                 add_to_name=False,
                 add_to_value_variables=False,
@@ -583,7 +578,7 @@ if __name__ == "__main__":
     repository_variables_prefix = VariableLine(
         line="REPOSITORY_VARIABLES_PREFIX="
         + VariableLine.build_namespace_of_name_from_string(
-            main_repository.get_base_name_without_functional(),
+            main_repository.name,
         ),
         variable_type=VariableType.REPOSITORY,
     )

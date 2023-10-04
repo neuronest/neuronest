@@ -34,7 +34,7 @@ env:
 
 jobs:
   upload_variables_of_called_workflows:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     container: google/cloud-sdk
     outputs:
       env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}

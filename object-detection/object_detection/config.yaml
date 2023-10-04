@@ -34,3 +34,4 @@ serving_deployment:
 bigquery:
   dataset:
     name: '${model.name}_training'
+

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import abc
 import json
-import logging
+from abc import ABC
 from enum import Enum
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 import requests
 
-from core.auth import generate_identity_token
+from core.auth import generate_identity_token, get_credentials
 from core.client.base_client import BaseClient
 
 
@@ -25,54 +24,55 @@ class Protocol(str, Enum):
         return cls.HTTP
 
 
-class APIClient(BaseClient, abc.ABC):
+class APIClient(BaseClient, ABC):
     def __init__(
         self,
         host: str,
         root: str,
         key_path: Optional[str],
-        ssl: bool = True,
+        ssl: Optional[bool] = None,
         project_id: Optional[str] = None,
     ):
         super().__init__(key_path=key_path, project_id=project_id)
         self.host = host
         self.root = root
+        self.key_path = key_path
         self.protocol_with_host = self._build_host_with_protocol(host=host, ssl=ssl)
         self.endpoint = f"{self.protocol_with_host}{root}"
+        self.credentials = get_credentials(key_path=self.key_path)
+        self._project_id = project_id
+
+    @property
+    def project_id(self) -> str:
+        # we give priority on the project_id which was passed explicitly to the
+        # instantiation rather than to the project id to which the service account
+        # of the credentials is attached
+        return (
+            self._project_id
+            if self._project_id is not None
+            else self.credentials.project_id
+        )
 
     @staticmethod
-    def _build_host_with_protocol(host: str, ssl: bool) -> str:
-        constructed_protocol = Protocol.from_ssl(ssl=ssl)
-        # Check if the host already contains a protocol
-        # If it does, we detect it and avoid rebuilding it
-        # This is important to prevent conflicts with the ssl flag (True or False)
-        if any(
-            host.startswith(f"{protocol}://")
-            for protocol in [Protocol.HTTP, Protocol.HTTPS]
-        ):
-            if not host.startswith(constructed_protocol):
-                logging.warning(
-                    f"A host with protocol {constructed_protocol} was requested, "
-                    f"but the host {host} has a conflicting protocol already present"
-                )
-            return host
-
+    def _build_host_with_protocol(host: str, ssl: Optional[bool]) -> str:
         parsed_host = urlparse(host)
 
         if parsed_host.scheme == "":
-            return f"{constructed_protocol}://{host}"
+            if ssl is None:
+                raise ValueError(
+                    "The parameter 'ssl' should be specified in the case where the "
+                    "protocol is not contained in the host"
+                )
 
-        if parsed_host.scheme != constructed_protocol:
-            raise ValueError(
-                f"Expected protocol to be '{constructed_protocol}' from ssl={ssl}, "
-                f"could not deduce it from host: {host}"
-            )
+            constructed_protocol = Protocol.from_ssl(ssl=ssl)
+
+            return f"{constructed_protocol}://{host}"
 
         return host
 
     def auth_headers(self) -> Dict[str, str]:
         identity_token = generate_identity_token(
-            key_path=self.key_path, target_audience=self.protocol_with_host
+            target_audience=self.protocol_with_host, key_path=self.key_path
         )
         return {"Authorization": f"Bearer {identity_token}"}
 
@@ -95,7 +95,7 @@ class APIClient(BaseClient, abc.ABC):
             url=f"{self.endpoint}{resource}",
             headers={**content_type, **self.auth_headers()},
             params={**self.auth_params(), **(params or {})},
-            data=json.dumps(payload or {}),
+            data=json.dumps(payload or {}) if payload else None,
         )
 
     def call(
@@ -104,10 +104,11 @@ class APIClient(BaseClient, abc.ABC):
         verb: str,
         payload: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
     ) -> requests.Response:
         request = self._request(resource, verb, payload, params).prepare()
         session = requests.Session()
-        response = session.send(request)
+        response = session.send(request, timeout=timeout)
         response.raise_for_status()
 
         return response

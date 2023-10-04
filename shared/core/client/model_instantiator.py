@@ -1,3 +1,5 @@
+from typing import Optional
+
 import requests
 
 from core.client.api_client import APIClient
@@ -9,8 +11,8 @@ from core.schemas.model_instantiator import (
 
 
 class ModelInstantiatorClient(APIClient):
-    def __init__(self, key_path: str, host: str):
-        super().__init__(key_path=key_path, host=host, root=route.root)
+    def __init__(self, host: str, key_path: Optional[str] = None):
+        super().__init__(host=host, key_path=key_path, root=route.root)
 
     def instantiate(self, model_name: str) -> requests.Response:
         instantiate_call_parameters = {

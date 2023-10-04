@@ -1,6 +1,7 @@
 from __future__ import annotations as type_annotations
 
 import contextlib
+import hashlib
 import os
 import tempfile
 from abc import ABC
@@ -13,7 +14,6 @@ import numpy as np
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 from pydantic import BaseModel, root_validator, validator
 
-from core.fixed_parameters import TIME_STEP
 from core.path import LocalPath
 from core.tools import extract_file_extension, get_chunks_from_iterable
 
@@ -45,6 +45,14 @@ AUDIO_CODEC_TO_CONTAINER = {
 }
 
 
+def rgb_to_bgr(frame: np.ndarray) -> np.ndarray:
+    return cv.cvtColor(frame, cv.COLOR_RGB2BGR)
+
+
+def bgr_to_rgb(frame: np.ndarray) -> np.ndarray:
+    return cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+
+
 class AssetMeta(ABC, BaseModel):
     asset_type: AssetType
     width: int
@@ -71,15 +79,24 @@ class VideoAssetMeta(AssetMeta):
     asset_type: AssetType = AssetType.VIDEO
     frames_number: int
     sampled_frames_number: int
-    fps: float
+    initial_fps: float
     time_step: float
     # do not specify the duration, because it can be deduced from the other fields
     duration: float
+    # custom fields
+    sampled_fps: float
 
     @root_validator(pre=True)
     # pylint: disable=no-self-argument
     def populate_duration(cls, values: dict) -> dict:
-        values["duration"] = values["frames_number"] / values["fps"]
+        values["duration"] = values["frames_number"] / values["initial_fps"]
+
+        return values
+
+    @root_validator(pre=True)
+    # pylint: disable=no-self-argument
+    def populate_sampled_fps(cls, values: dict) -> dict:
+        values["sampled_fps"] = 1 / values["time_step"]
 
         return values
 
@@ -101,7 +118,7 @@ def build_asset_meta(
     raise ValueError(f"Unknown asset type: {asset_type}")
 
 
-class AssetContent(BaseModel, ABC):
+class Asset(BaseModel, ABC):
     asset_path: LocalPath
     delete: bool = False
 
@@ -128,12 +145,21 @@ class AssetContent(BaseModel, ABC):
     def as_array_content(self) -> np.ndarray:
         raise NotImplementedError
 
+    def get_hash(self, buffer_size: int = 2**24) -> str:
+        hash_md5 = hashlib.md5()
+
+        with open(self.asset_path, "rb") as fp:
+            for chunk in iter(lambda: fp.read(buffer_size), b""):
+                hash_md5.update(chunk)
+
+        return hash_md5.hexdigest()
+
     def __del__(self):
         if self.delete and os.path.exists(self.asset_path):
             os.unlink(self.asset_path)
 
 
-class VisualAssetContent(AssetContent, ABC):
+class VisualAsset(Asset, ABC):
     asset_meta: AssetMeta
 
     @staticmethod
@@ -142,7 +168,7 @@ class VisualAssetContent(AssetContent, ABC):
         return cv.imencode(extension, frame)[1].tobytes()
 
 
-class ImageAssetContent(VisualAssetContent):
+class ImageAsset(VisualAsset):
     asset_meta: ImageAssetMeta
     # fields filled with validators
     image: np.ndarray
@@ -161,7 +187,7 @@ class ImageAssetContent(VisualAssetContent):
     @root_validator(pre=True)
     # pylint: disable=no-self-argument
     def fill_metadata(cls, values: dict) -> dict:
-        values["extension"] = os.path.splitext(values["asset_path"])[-1]
+        values["extension"] = extract_file_extension(values["asset_path"])
 
         values["asset_meta"] = ImageAssetMeta(
             width=values["image"].shape[1],
@@ -183,9 +209,10 @@ class ImageAssetContent(VisualAssetContent):
         return self.content
 
 
-class VideoAssetContent(VisualAssetContent):
+class VideoAsset(VisualAsset):
     asset_meta: VideoAssetMeta
     time_step: float
+    to_rgb: bool = True
 
     @staticmethod
     def estimate_sampled_frames_number(
@@ -208,28 +235,24 @@ class VideoAssetContent(VisualAssetContent):
             video_capture.release()
 
     @classmethod
-    def _read(cls, asset_path: str) -> Iterator[np.ndarray]:
+    def _read(cls, asset_path: str, to_rgb: bool = False) -> Iterator[np.ndarray]:
         with cls._capture_video(asset_path) as video_capture:
             while video_capture.isOpened():
                 is_read, frame = video_capture.read()
                 if not is_read:
                     break
+
+                if to_rgb is True:
+                    frame = bgr_to_rgb(frame)
+
                 yield frame
             else:
                 raise ValueError(f"Could not open the following asset: {asset_path}")
 
     @root_validator(pre=True)
     # pylint: disable=no-self-argument
-    def fill_time_step(cls, values: dict) -> dict:
-        if values.get("time_step") is None:
-            values["time_step"] = TIME_STEP
-
-        return values
-
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
     def fill_metadata(cls, values: dict) -> dict:
-        asset_path, targeted_time_step = values["asset_path"], values["time_step"]
+        asset_path = values["asset_path"]
 
         with cls._capture_video(asset_path) as video_capture:
             initial_fps = int(video_capture.get(cv.CAP_PROP_FPS))
@@ -242,10 +265,13 @@ class VideoAssetContent(VisualAssetContent):
             # read subsequently
             frames_number = sum(1 for _ in cls._read(asset_path))
 
+        if values["time_step"] is None:
+            values["time_step"] = 1 / initial_fps
+
         sampled_frames_number = cls.estimate_sampled_frames_number(
             frames_number=frames_number,
             initial_fps=initial_fps,
-            targeted_time_step=targeted_time_step,
+            targeted_time_step=values["time_step"],
         )
 
         values["asset_meta"] = VideoAssetMeta(
@@ -253,23 +279,23 @@ class VideoAssetContent(VisualAssetContent):
             width=width,
             height=height,
             frames_number=frames_number,
-            fps=initial_fps,
+            initial_fps=initial_fps,
             sampled_frames_number=sampled_frames_number,
-            time_step=targeted_time_step,
+            time_step=values["time_step"],
         )
 
         return values
 
     def _get_frames(self) -> Iterator[np.ndarray]:
-        duration = self.asset_meta.frames_number / self.asset_meta.fps
+        duration = self.asset_meta.frames_number / self.asset_meta.initial_fps
 
         sampled_frames_offsets = tuple(
-            int(time_offset * self.asset_meta.fps)
+            int(time_offset * self.asset_meta.initial_fps)
             for time_offset in np.arange(0, duration, self.time_step)
         )
 
         sampled_frames_index = 0
-        for frame_number, frame in enumerate(self._read(self.asset_path)):
+        for frame_number, frame in enumerate(self._read(self.asset_path, self.to_rgb)):
             while (
                 sampled_frames_index < len(sampled_frames_offsets)
                 and frame_number == sampled_frames_offsets[sampled_frames_index]
@@ -339,7 +365,7 @@ class VideoAssetContent(VisualAssetContent):
                     yield frame
 
 
-class AudioContent(AssetContent):
+class AudioContent(Asset):
     asset_path: LocalPath
     delete: bool = False
     # fields filled with validators

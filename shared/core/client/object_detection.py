@@ -1,11 +1,15 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 from imutils import resize
 
 from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
-from core.schemas.object_detection import PREDICTION_COLUMNS, OutputSchemaSample
+from core.schemas.object_detection import (
+    PREDICTION_COLUMNS,
+    InputSchemaSample,
+    OutputSchemaSample,
+)
 from core.serialization.array import array_from_string
 from core.serialization.image import image_to_string
 
@@ -88,7 +92,12 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
         return chunks
 
     # pylint: disable=arguments-renamed
-    def predict_batch(self, images: List[np.ndarray]) -> List[pd.DataFrame]:
+    def predict_batch(
+        self,
+        images: List[np.ndarray],
+        labels: Optional[List[str]] = None,
+        confidence_threshold: Optional[float] = None,
+    ) -> List[pd.DataFrame]:
         """
         images: List of RGB images as NumPy arrays
         """
@@ -96,12 +105,14 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
             raise ValueError("Incorrect received shapes")
 
         preprocessed_images = [
-            {
-                "data": image_to_string(
+            InputSchemaSample(
+                data=image_to_string(
                     frame=image,
                     extension=self.PREPROCESSING_IMAGE_TYPE,
-                )
-            }
+                ),
+                labels_to_predict=labels,
+                confidence_threshold=confidence_threshold,
+            ).dict(exclude_none=True)
             for image in self._resize_images(images=images)
         ]
         chunks_preprocessed_images = self._split_into_chunks(preprocessed_images)
@@ -121,3 +132,17 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
             pd.DataFrame(prediction, columns=PREDICTION_COLUMNS)
             for prediction in predictions
         ]
+
+    # pylint: disable=arguments-renamed
+    def predict_single(
+        self,
+        image: np.ndarray,
+        labels: Optional[List[str]] = None,
+        confidence_threshold: Optional[float] = None,
+    ) -> pd.DataFrame:
+        """
+        images: A RGB image as NumPy array
+        """
+        return self.predict_batch(
+            images=[image], labels=labels, confidence_threshold=confidence_threshold
+        )[0]

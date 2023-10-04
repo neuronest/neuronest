@@ -126,13 +126,13 @@ runs:
       shell: bash
 
     - name: Clean old docker images
-      uses: docker://europe-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli
-      with:
-        args: >-
-          -token=${{ env.ACCESS_TOKEN }}
-          -repo=${{ env.GCP_IMAGE_NAME }}
-          -tag-filter-all="\d+"
+      run: |
+        docker run europe-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli \
+          -token ${{ env.ACCESS_TOKEN }} \
+          -repo=${{ env.GCP_IMAGE_NAME }} \
+          -tag-filter-all="\d+" \
           -keep=${{ inputs.maximum_number_images_to_keep }}
+      shell: bash
 
     - id: dockerhub_output_step
       # we prefer the sha256 to identify the image. The workflow id as identifier is

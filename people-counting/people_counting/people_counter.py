@@ -1,24 +1,29 @@
 import logging
 import os
+import tempfile
 from typing import Dict, List, Optional
 
-import cv2 as cv
 import dlib
-import pandas as pd
 from core.client.object_detection import ObjectDetectionClient
+from core.google.storage_client import StorageClient
+from core.path import GSPath
+from core.schemas.asset import VideoAsset
+from core.timing import TimingMeta
+from core.tools import extract_file_extension
+from imutils import resize
 from omegaconf import DictConfig
 
 from people_counting.centroid_tracker import CentroidTracker
-from people_counting.common import BoundingBox, Statistics, Status, timed
+from people_counting.common import BoundingBox, Statistics, Status
 from people_counting.config import config
 from people_counting.model import Model
 from people_counting.trackable_object import TrackableObject
-from people_counting.video_handler import VideoRenderer, read_video_as_frames
+from people_counting.video_renderer import VideoRenderer
 
 logger = logging.getLogger(__name__)
 
 
-class PeopleCounter:
+class PeopleCounter(metaclass=TimingMeta):
     def __init__(
         self,
         object_detection_client: ObjectDetectionClient,
@@ -27,56 +32,53 @@ class PeopleCounter:
         confidence_threshold: float,
         video_outputs_directory: Optional[str] = None,
     ):
-        self.image_width = image_width
-        self.video_outputs_directory = video_outputs_directory
-        self.algorithm_config = algorithm_config
         self.model = Model(
             object_detection_client=object_detection_client,
             confidence_threshold=confidence_threshold,
         )
+        self.algorithm_config = algorithm_config
+        self.image_width = image_width
+        self.video_outputs_directory = video_outputs_directory
 
         if self.video_outputs_directory is not None:
             os.makedirs(video_outputs_directory, exist_ok=True)
 
-        self.run_duration: Dict[str, float] = {}
-
-    def get_video_output_path(self, video_input_path: str) -> str:
-        return os.path.join(
-            self.video_outputs_directory, os.path.basename(video_input_path)
-        )
-
-    # pylint: disable=too-many-branches,too-many-locals
-    @timed
+    # pylint: disable=too-many-branches,too-many-locals,too-many-statements
     def run(
         self,
-        video_input_path: str,
-        enable_video_writing: bool = False,
+        video_asset: VideoAsset,
+        video_output_path: Optional[str] = None,
         enable_video_showing: bool = False,
         video_is_rgb_color: bool = True,
-    ) -> pd.DataFrame:
-        video_output_path = self.get_video_output_path(video_input_path)
-        vcap = cv.VideoCapture(video_input_path)
-        video_renderer = VideoRenderer(
-            line_placement_ratio=self.algorithm_config.line_placement_ratio,
-            output_path=video_output_path,
-            enable_video_writing=enable_video_writing,
-            enable_video_showing=enable_video_showing,
-            fps=vcap.get(cv.CAP_PROP_FPS),
-        )
+    ) -> Statistics:
+        enable_video_writing = video_output_path is not None
+        video_rendering_enabled = enable_video_writing or enable_video_showing
+
+        video_renderer = None
+        if video_rendering_enabled is True:
+            video_renderer = VideoRenderer(
+                line_placement_ratio=self.algorithm_config.line_placement_ratio,
+                fps=video_asset.asset_meta.sampled_fps,
+                output_path=video_output_path,
+                enable_video_writing=enable_video_writing,
+                enable_video_showing=enable_video_showing,
+            )
+
         centroid_tracker = CentroidTracker(
             max_disappeared=self.algorithm_config.centroid_tracker.max_disappeared,
-            max_distance=vcap.get(cv.CAP_PROP_FRAME_HEIGHT)
-            / vcap.get(cv.CAP_PROP_FRAME_WIDTH)
+            max_distance=video_asset.asset_meta.height
+            / video_asset.asset_meta.width
             * self.image_width
             * self.algorithm_config.centroid_tracker.max_distance_height_ratio,
         )
+
         statistics = Statistics()
         trackable_objects: Dict[int, TrackableObject] = {}
         trackers: List[dlib.correlation_tracker] = []
-        video_rendering_enabled = enable_video_writing or enable_video_showing
-        for frame_number, (time_offset, frame) in enumerate(
-            read_video_as_frames(video_input_path, resized_width=self.image_width)
-        ):
+
+        for frame_number, frame in enumerate(video_asset.content):
+            time_offset = frame_number * video_asset.time_step
+            frame = resize(frame, width=self.image_width)
             drawn_frame = frame.copy()
 
             if frame_number % self.algorithm_config.inference_periodicity == 0:
@@ -142,7 +144,6 @@ class PeopleCounter:
                             < line_vertical_position
                             <= tracked_object.centroids[0][1]
                         ):
-                            # statistics.add_went_down(time_offset)
                             statistics.add_went_up(time_offset)
                             tracked_object.counted = True
 
@@ -151,24 +152,21 @@ class PeopleCounter:
                             <= line_vertical_position
                             < centroid[1]
                         ):
-                            # statistics.add_went_up(time_offset)
                             statistics.add_went_down(time_offset)
                             tracked_object.counted = True
 
                 trackable_objects[object_id] = tracked_object
 
-                if video_rendering_enabled:
-                    drawn_frame = video_renderer.draw_text(
+                if video_rendering_enabled is True:
+                    drawn_frame = video_renderer.draw_object_id(
                         frame=drawn_frame,
-                        text=f"ID {object_id}",
-                        bottom_left_position=(centroid[0] - 10, centroid[1] - 10),
-                    )
-                    drawn_frame = video_renderer.draw_circle(
-                        frame=drawn_frame, center=(centroid[0], centroid[1])
+                        object_id=object_id,
+                        centroid_x=centroid[0],
+                        centroid_y=centroid[1],
                     )
 
-            if video_rendering_enabled:
-                drawn_frame = video_renderer.draw_statistics(
+            if video_rendering_enabled is True:
+                drawn_frame = video_renderer.draw_statistics_on_frame(
                     frame=drawn_frame,
                     statistics=statistics,
                     status=status,
@@ -176,4 +174,41 @@ class PeopleCounter:
                 )
                 video_renderer.render(drawn_frame, to_bgr=video_is_rgb_color)
 
-        return statistics, video_renderer
+        return statistics
+
+
+# todo: this method should maybe placed elsewhere as it uses gcloud notions that are
+#  beyond the scope of this module
+def count_people_with_upload(
+    people_counter: PeopleCounter,
+    storage_client: StorageClient,
+    video_asset: VideoAsset,
+    counted_video_storage_path: Optional[GSPath],
+) -> Statistics:
+    if counted_video_storage_path is not None:
+        extension = extract_file_extension(video_asset.asset_path)
+
+        (
+            counted_videos_bucket,
+            counted_videos_blob_name,
+        ) = GSPath(counted_video_storage_path).to_bucket_and_blob_names()
+
+        with tempfile.NamedTemporaryFile(suffix=extension) as named_temporary_file:
+            statistics = people_counter.run(
+                video_asset=video_asset,
+                video_output_path=named_temporary_file.name,
+            )
+
+            storage_client.upload_blob(
+                source_file_name=named_temporary_file.name,
+                bucket_name=counted_videos_bucket,
+                blob_name=counted_videos_blob_name,
+            )
+
+            return statistics
+
+    statistics = people_counter.run(
+        video_asset=video_asset,
+    )
+
+    return statistics

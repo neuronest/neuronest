@@ -48,11 +48,12 @@ on:
         default: ''
 env:
   REPOSITORY_NAME: functional-people-counting
+  TESTING_BASE_IMAGE: python:3.9.17-slim-buster
 
 jobs:
   run_base_terraform:
-    runs-on: ubuntu-latest
-    # If the workflow isn't called, inputs are blank and job should run
+    runs-on: neuronest-runner-set
+    # If the workflow isn't called, inputs are blank and all jobs should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
     outputs:
@@ -67,7 +68,7 @@ jobs:
         uses: ./.github/actions/run_base_terraform
 
   upload_variables_of_called_workflows:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     container: google/cloud-sdk
     outputs:
       people_counting_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
@@ -132,6 +133,7 @@ jobs:
 
   deploy_functional_people_counting:
     needs:
+     - run_base_terraform
      - build_test_push_people_counting
      - build_test_push_object_detection
      - build_test_push_model_instantiator
@@ -141,14 +143,14 @@ jobs:
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
       people_counting_url: ${{ steps.get_people_counting_url.outputs.value }}
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     container:
       image: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - id: run_functional_people_counting_terraform
         uses: ./.github/actions/run_terraform
@@ -164,13 +166,12 @@ jobs:
         uses: ./.github/actions/get_terraform_output
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
-          terraform_output_name: people_counting_url
+          terraform_output_name: model_instantiator_url
       - id: get_people_counting_url
         uses: ./.github/actions/get_terraform_output
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: people_counting_url
-      - run: echo "people_counting_url=${{ steps.get_people_counting_url.outputs.value }}"
 
 
   post_deploy_people_counting:
@@ -219,24 +220,30 @@ jobs:
     secrets: inherit
 
   run_integration_tests:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     needs:
+      - run_base_terraform
       - post_deploy_people_counting
       - post_deploy_object_detection
       - post_deploy_model_instantiator
       - deploy_functional_people_counting
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
-    container: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/set_variables_gcloud_auth
+      - uses: ./.github/actions/set_variables
         with:
-          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       - uses: ./.github/actions/run_linters_tests
         with:
-          image_name: python:3.9.17-slim-buster
+          image_name: ${{ env.TESTING_BASE_IMAGE }}
           run_integration_tests: true
           run_unit_tests: false
           environment_variables: -e PEOPLE_COUNTING_URL=${{ needs.deploy_functional_people_counting.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }}

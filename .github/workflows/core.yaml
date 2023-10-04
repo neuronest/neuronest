@@ -28,7 +28,7 @@ env:
 jobs:
   tests:
     name: tests
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     container: python:3.8-buster
     steps:
       - uses: actions/checkout@v3

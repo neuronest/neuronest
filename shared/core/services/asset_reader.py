@@ -7,23 +7,18 @@ import numpy as np
 
 from core.google.storage_client import StorageClient
 from core.path import build_path
-from core.schemas.asset import (
-    AssetType,
-    ImageAssetContent,
-    VideoAssetContent,
-    VisualAssetContent,
-)
+from core.schemas.asset import AssetType, ImageAsset, VideoAsset, VisualAsset
 from core.services.reader_common import infer_asset_type, retrieve_asset_locally
 
 logger = logging.getLogger(__name__)
 
 
-def make_asset_content(
+def make_asset(
     asset_path: str,
     asset_type: Optional[AssetType] = None,
     storage_client: Optional[StorageClient] = None,
     time_step: Optional[float] = None,
-) -> Union[ImageAssetContent, VideoAssetContent]:
+) -> Union[ImageAsset, VideoAsset]:
     """
     Read an image or a video, encode each frame as binary if specified.
 
@@ -36,7 +31,7 @@ def make_asset_content(
     equal to the inverse of the sampled frame rate. Used in the case of video assets
     only.
 
-    :return: An AssetContent object, containing the frame(s) of the asset along with
+    :return: An Asset object, containing the frame(s) of the asset along with
     the metadata.
     """
     asset_path = build_path(asset_path)
@@ -47,13 +42,13 @@ def make_asset_content(
         with retrieve_asset_locally(
             asset_path=asset_path, storage_client=storage_client
         ) as (delete, local_asset_path):
-            return ImageAssetContent(asset_path=local_asset_path, delete=delete)
+            return ImageAsset(asset_path=local_asset_path, delete=delete)
 
     if asset_type == AssetType.VIDEO:
         with retrieve_asset_locally(
             asset_path=asset_path, storage_client=storage_client
         ) as (delete, local_asset_path):
-            return VideoAssetContent(
+            return VideoAsset(
                 asset_path=local_asset_path, time_step=time_step, delete=delete
             )
 
@@ -61,7 +56,7 @@ def make_asset_content(
 
 
 def must_be_resized(image: np.ndarray, max_allowed_size: int) -> bool:
-    buf = VisualAssetContent.to_binary(image)
+    buf = VisualAsset.to_binary(image)
     return len(buf) > max_allowed_size
 
 
@@ -78,9 +73,9 @@ def compute_image_buffer_size(
     image: np.ndarray, targeted_dim: Optional[Tuple[int, int]] = None
 ) -> int:
     if targeted_dim is None:
-        return len(VisualAssetContent.to_binary(image))
+        return len(VisualAsset.to_binary(image))
 
-    return len(VisualAssetContent.to_binary(resize_image(image, targeted_dim)))
+    return len(VisualAsset.to_binary(resize_image(image, targeted_dim)))
 
 
 def get_middle_point(

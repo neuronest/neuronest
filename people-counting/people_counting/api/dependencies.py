@@ -1,28 +1,76 @@
+from functools import lru_cache
+
+from core.client.model_instantiator import ModelInstantiatorClient
+from core.client.object_detection import ObjectDetectionClient
+from core.google.cloud_run_job_manager import CloudRunJobManager
+from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
+from core.google.vertex_ai_manager import VertexAIManager
 from fastapi import Depends
-from google.cloud import firestore
+from omegaconf import DictConfig
 
-from people_counting.dependencies import get_people_counter_with_package_config
+from people_counting.config import config as cfg
 from people_counting.environment_variables import (
-    COUNTED_VIDEOS_BUCKET,
-    FIRESTORE_RESULTS_COLLECTION,
+    GOOGLE_APPLICATION_CREDENTIALS,
+    MODEL_INSTANTIATOR_HOST,
+    OBJECT_DETECTION_MODEL_NAME,
     PROJECT_ID,
+    REGION,
 )
+from people_counting.people_counter import PeopleCounter
 
 
-def get_storage_client():
-    return StorageClient(project_id=PROJECT_ID)
+@lru_cache
+def use_config() -> DictConfig:
+    return cfg
 
 
-def get_bucket_of_counted_videos(
-    storage_client: StorageClient = Depends(get_storage_client),
-):
-    return storage_client.client.bucket(COUNTED_VIDEOS_BUCKET)
+@lru_cache
+def use_storage_client() -> StorageClient:
+    return StorageClient(key_path=GOOGLE_APPLICATION_CREDENTIALS)
 
 
-def get_people_counter():
-    return get_people_counter_with_package_config()
+@lru_cache
+def use_firestore_client() -> FirestoreClient:
+    return FirestoreClient(key_path=GOOGLE_APPLICATION_CREDENTIALS)
 
 
-def get_firestore_results_collection():
-    return firestore.Client(project=PROJECT_ID).collection(FIRESTORE_RESULTS_COLLECTION)
+@lru_cache
+def use_cloud_run_job_manager() -> CloudRunJobManager:
+    return CloudRunJobManager(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
+        project_id=PROJECT_ID,
+        location=REGION,
+    )
+
+
+@lru_cache
+def use_object_detection_client() -> ObjectDetectionClient:
+    return ObjectDetectionClient(
+        vertex_ai_manager=VertexAIManager(
+            key_path=GOOGLE_APPLICATION_CREDENTIALS,
+            location=REGION,
+            project_id=PROJECT_ID,
+        ),
+        model_instantiator_client=ModelInstantiatorClient(
+            key_path=GOOGLE_APPLICATION_CREDENTIALS,
+            host=MODEL_INSTANTIATOR_HOST,
+        ),
+        model_name=OBJECT_DETECTION_MODEL_NAME,
+    )
+
+
+@lru_cache
+def use_people_counter(
+    config: DictConfig = Depends(use_config),
+    object_detection_client: ObjectDetectionClient = Depends(
+        use_object_detection_client
+    ),
+) -> PeopleCounter:
+    return PeopleCounter(
+        object_detection_client=object_detection_client,
+        confidence_threshold=config.postprocessing.confidence_threshold,
+        algorithm_config=config.algorithm,
+        image_width=config.preprocessing.image_width,
+        video_outputs_directory=config.paths.outputs_directory,
+    )

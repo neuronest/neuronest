@@ -1,0 +1,51 @@
+name: 'set_up_python'
+inputs:
+  python_environment_location:
+    description: 'Python environment location'
+  already_exists_do_the_set_up:
+    description: 'Whether to force python installation even if already here'
+    required: false
+    default: 'false'
+  as_root:
+    description: 'Whether to execute apt commands as root'
+    required: false
+    default: 'false'
+description: 'Install latest python'
+runs:
+  using: "composite"
+  steps:
+      - name: Install the latest version of python
+        run: |
+          set_up_python() {
+            apt update && apt install -y python3 python3-pip python3-venv
+          }
+          set_up_python_as_root() {
+            sudo apt update && sudo apt install -y python3 python3-pip python3-venv
+          }
+          set_up_venv_and_path() {
+            # default pip packages location
+            python3 -m venv ${{ inputs.python_environment_location }}
+            echo "PATH"="${{ inputs.python_environment_location }}/bin:$PATH" >> $GITHUB_ENV
+            alias python=python3
+            alias pip=pip3
+          }
+          if ! type python &>/dev/null; then
+              echo "Python is not installed, setting up Python"
+              if ${{ inputs.as_root }}; then
+                set_up_python_as_root
+              else
+                set_up_python
+              fi
+              set_up_venv_and_path
+          elif ${{ inputs.already_exists_do_the_set_up }}; then
+              echo "Python is already installed, setting up Python anyway"
+              if ${{ inputs.as_root }}; then
+                set_up_python_as_root
+              else
+                set_up_python
+              fi
+              set_up_venv_and_path
+          else
+              echo "Python is already installed, skipping setting up Python"
+          fi
+        shell: bash

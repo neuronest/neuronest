@@ -7,8 +7,8 @@ profile = "black"
 
 [tool.poetry]
 authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
-description = "People counting functional project"
-name = "people-counting-functional"
+description = "Functional people counting project"
+name = "functional-people-counting"
 version = "0.1.0"
 
 [tool.poetry.dependencies]

@@ -33,7 +33,7 @@ env:
 
 jobs:
   upload_variables_of_called_workflows:
-    runs-on: ubuntu-latest
+    runs-on: neuronest-runner-set
     container: google/cloud-sdk
     outputs:
       functional_object_detection_env_file_artifact_name: ${{ steps.upload_functional_object_detection_variables.outputs.env_file_artifact_name }}

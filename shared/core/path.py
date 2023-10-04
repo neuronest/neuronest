@@ -51,10 +51,13 @@ class Path(str, ABC):
 
     @classmethod
     def validate(cls, value: Any):
-        if not cls.is_valid(value):
-            raise ValueError(f"Path {value} is invalid")
+        if not isinstance(value, str):
+            raise ValueError(
+                f"Only the string type is accepted for pydantic validation of a "
+                f"Path object, got {type(value)}"
+            )
 
-        return cls(value)
+        return cls(path=value)
 
     @classmethod
     def __get_validators__(cls):
@@ -66,16 +69,24 @@ class Path(str, ABC):
             return file_extension.lower()
         return None
 
-    # fixme: LocalPath class should override self.PREFIX  # pylint: disable=W0511
-    #  to avoid method crashing.  # pylint: disable=W0511
-    #  Besides, does a from_bucket_and_blob_names  # pylint: disable=W0511
-    #  method make sense in LocalPath?  # pylint: disable=W0511
+
+class GSPath(Path):
+    PREFIX = "gs://"
+
     @classmethod
-    def from_bucket_and_blob_names(cls, bucket_name: str, blob_name: str = "") -> Path:
+    def from_bucket_and_blob_names(
+        cls, bucket_name: str, blob_name: str = ""
+    ) -> GSPath:
         return cls(os.path.join(cls.PREFIX, bucket_name, blob_name))
 
     def to_bucket_and_blob_names(self) -> Tuple[str, str]:
-        raise NotImplementedError
+        parsed_url = parse.urlparse(self)
+        blob = parsed_url.path
+
+        if blob.startswith("/"):
+            blob = blob[1:]
+
+        return parsed_url.netloc, blob
 
     @property
     def bucket(self) -> str:
@@ -88,19 +99,6 @@ class Path(str, ABC):
         return blob_name
 
 
-class GSPath(Path):
-    PREFIX = "gs://"
-
-    def to_bucket_and_blob_names(self) -> Tuple[str, str]:
-        parsed_url = parse.urlparse(self)
-        blob = parsed_url.path
-
-        if blob.startswith("/"):
-            blob = blob[1:]
-
-        return parsed_url.netloc, blob
-
-
 class HTTPPath(Path):
     PREFIX = "https://storage.googleapis.com/"
 
@@ -110,11 +108,17 @@ class HTTPPath(Path):
     def to_bucket_and_blob_names(self) -> Tuple[str, str]:
         return self.to_gs_path().to_bucket_and_blob_names()
 
+    @property
+    def bucket(self) -> str:
+        return self.to_gs_path().bucket
 
-# fixme: class LocalPath inherits from_bucket_and_blob_names method,  # pylint: disable=W0511
-#  is that appropriate?  # pylint: disable=W0511
+    @property
+    def blob_name(self) -> str:
+        return self.to_gs_path().blob_name
+
+
 class LocalPath(Path):
-    REGEX = r"^(/[^/ ]*)+/?$"
+    REGEX = r"^(?:/?[^/ ]+)+/?$"
 
 
 def build_path(path: str) -> Path:
