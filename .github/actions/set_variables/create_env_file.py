@@ -344,7 +344,7 @@ class YamlEnvFile(BaseModel):
     ) -> List[VariableLine]:
         other_variables_section = self.other_variables.branch.get(
             branch_name or other_variables_default_section,
-            other_variables_default_section,
+            self.other_variables.branch[other_variables_default_section],
         )
 
         return (
