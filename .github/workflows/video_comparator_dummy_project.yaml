@@ -1,6 +1,7 @@
 name: video_comparator_dummy_project
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - .github/workflows/video_comparator_dummy_project.yaml
@@ -26,7 +27,6 @@ on:
 #      - model-instantiator/**
 #      - video-comparator/**
 #      - object-detection/**
-  workflow_dispatch:
 
 env:
   REPOSITORY_NAME: customer-dummy-project
