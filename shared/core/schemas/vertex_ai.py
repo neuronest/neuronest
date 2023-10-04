@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Union
 
 from omegaconf import ListConfig
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, root_validator, validator
 
 from core.utils import hyphen_to_underscore, underscore_to_hyphen
 
@@ -34,6 +34,30 @@ class ServingDeploymentConfig(BaseModel):
     max_replica_count: int = 1
     accelerator_type: Optional[str] = None
     accelerator_count: int = 0
+
+    @root_validator
+    # pylint: disable=no-self-argument
+    def validate_accelerator_fields(cls, values: dict) -> dict:
+        """
+        To disable GPUs during serving, the proper configuration is and only is:
+            accelerator_type=None
+            accelerator_count=0
+
+        In the case where accelerator_type=ACCELERATOR_TYPE_UNSPECIFIED, we set it to
+        None, and set accelerator_count to 0.
+        Similarly, if accelerator_count=0, we set accelerator_type to None.
+        """
+        if (
+            values["accelerator_type"] is None
+            or values["accelerator_type"].lower() == "accelerator_type_unspecified"
+        ):
+            values["accelerator_count"] = 0
+            values["accelerator_type"] = None
+
+        if values["accelerator_count"] == 0:
+            values["accelerator_type"] = None
+
+        return values
 
     @classmethod
     def from_labels(cls, config_as_labels: Dict[str, str]) -> ServingDeploymentConfig:
