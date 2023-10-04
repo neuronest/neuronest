@@ -4,6 +4,8 @@ repository_variables:
   - REPOSITORY_CODE=cdp
 multi_instance_resource_names: []
 other_variables:
-  # GCP project
-  - PROJECT_ID=customer-dummy-project-main
-  - PROJECT_CODE=cdp-main
+  branch:
+    default:
+    # GCP project
+    - PROJECT_ID=customer-dummy-project-main
+    - PROJECT_CODE=cdp-main

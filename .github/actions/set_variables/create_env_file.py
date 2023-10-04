@@ -6,7 +6,7 @@ import os
 import re
 import sys
 from enum import Enum
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 import yaml
 from pydantic import BaseModel
@@ -321,10 +321,14 @@ class VariableLine:
         return self.name == self.REPOSITORY_CODE_VARIABLE_NAME
 
 
+class BranchConditionedSection(BaseModel):
+    branch: Dict[str, List[str]]
+
+
 class YamlEnvFile(BaseModel):
     repository_variables: List[str]
     multi_instance_resource_names: List[str]
-    other_variables: List[str]
+    other_variables: BranchConditionedSection
 
     @classmethod
     def read_file(cls, file_path: str) -> YamlEnvFile:
@@ -333,7 +337,16 @@ class YamlEnvFile(BaseModel):
 
         return cls.parse_obj(yaml_data)
 
-    def to_variables_lines(self) -> List[VariableLine]:
+    def to_variables_lines(
+        self,
+        branch_name: Optional[str] = None,
+        other_variables_default_section: str = "default",
+    ) -> List[VariableLine]:
+        other_variables_section = self.other_variables.branch.get(
+            branch_name or other_variables_default_section,
+            other_variables_default_section,
+        )
+
         return (
             [
                 VariableLine(line=variable, variable_type=VariableType.REPOSITORY)
@@ -347,7 +360,7 @@ class YamlEnvFile(BaseModel):
             ]
             + [
                 VariableLine(line=variable, variable_type=VariableType.OTHER)
-                for variable in self.other_variables
+                for variable in other_variables_section
             ]
         )
 
@@ -375,8 +388,9 @@ class EnvFile:
 class Repository:
     VARIABLES_FILE_PATH = "iac/variables.yaml"
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, branch_name: Optional[str] = None):
         self.name = name
+        self.branch_name = branch_name
 
     @property
     def yaml_env_file_path(self) -> str:
@@ -391,7 +405,9 @@ class Repository:
     def get_dependency_repositories(self) -> List[Repository]:
         variable_name_value = {
             var_line.name: var_line.value
-            for var_line in self.get_yaml_env_file().to_variables_lines()
+            for var_line in self.get_yaml_env_file().to_variables_lines(
+                branch_name=self.branch_name
+            )
         }
         if (
             dependency_repositories := variable_name_value.get(
@@ -402,7 +418,7 @@ class Repository:
                 ARRAY_SEPARATOR
             )
             return [
-                Repository(name=dependency_repository)
+                Repository(name=dependency_repository, branch_name=self.branch_name)
                 for dependency_repository in dependency_repositories
             ]
 
@@ -413,7 +429,9 @@ class Repository:
         # since it is configuration, we don't test it explicitly
         base_code = [
             var_line
-            for var_line in self.get_yaml_env_file().to_variables_lines()
+            for var_line in self.get_yaml_env_file().to_variables_lines(
+                branch_name=self.branch_name
+            )
             if var_line.is_a_repository_code()
         ][0].value
 
@@ -442,7 +460,9 @@ def get_all_repository_var_lines(
         )
         all_repository_var_lines += dependency_repository_var_lines
 
-    all_repository_var_lines += repository.get_yaml_env_file().to_variables_lines()
+    all_repository_var_lines += repository.get_yaml_env_file().to_variables_lines(
+        branch_name=repository.branch_name
+    )
 
     for var_line in all_repository_var_lines:
         if add_namespace:
@@ -501,6 +521,7 @@ if __name__ == "__main__":
         type=str,
         required=True,
     )
+    parser.add_argument("--branch_name", type=str, required=False, default=None)
     parser.add_argument(
         "--add_terraform_variables",
         type=string_to_boolean,
@@ -530,12 +551,14 @@ if __name__ == "__main__":
 
     shared_variables_lines = YamlEnvFile.read_file(
         file_path=".github/variables/variables.yaml"
-    ).to_variables_lines()
+    ).to_variables_lines(branch_name=args.branch_name)
     shared_variables_lines_names = set(
         shared_var_line.name for shared_var_line in shared_variables_lines
     )
 
-    main_repository = Repository(name=args.repository_name)
+    main_repository = Repository(
+        name=args.repository_name, branch_name=args.branch_name
+    )
 
     if main_repository.has_yaml_env_file():
         repository_variables_lines = get_all_repository_var_lines(
