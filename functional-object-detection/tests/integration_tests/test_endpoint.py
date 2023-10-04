@@ -67,3 +67,5 @@ def test_endpoint_inference(
         for batch_prediction_df in batch_predictions_df
         for class_name in batch_prediction_df.class_name
     ) == {"dog", "bicycle", "truck"}
+
+    model_instantiator_client.uninstantiate(model_name=MODEL_NAME)
