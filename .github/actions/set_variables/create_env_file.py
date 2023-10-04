@@ -21,6 +21,7 @@ FUNCTIONAL_REPOSITORIES_PREFIX = "func-"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
+OTHER_VARIABLES_DEFAULT_SECTION = "default"
 
 # create logger
 logger = logging.getLogger(__name__)
@@ -340,11 +341,10 @@ class YamlEnvFile(BaseModel):
     def to_variables_lines(
         self,
         branch_name: Optional[str] = None,
-        other_variables_default_section: str = "default",
     ) -> List[VariableLine]:
         other_variables_section = self.other_variables.branch.get(
-            branch_name or other_variables_default_section,
-            self.other_variables.branch[other_variables_default_section],
+            branch_name or OTHER_VARIABLES_DEFAULT_SECTION,
+            self.other_variables.branch[OTHER_VARIABLES_DEFAULT_SECTION],
         )
 
         return (
