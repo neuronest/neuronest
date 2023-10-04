@@ -130,7 +130,7 @@ jobs:
 
   get_base_project_builder_sa_key:
     runs-on: neuronest-runner-set
-    needs: deploy_with_training_image
+    needs: run_base_terraform
     if: ${{ !failure() }}
     outputs:
       value: ${{ steps.get_base_project_builder_sa_key.outputs.base_project_builder_sa_key }}
