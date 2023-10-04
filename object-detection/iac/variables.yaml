@@ -22,6 +22,6 @@ other_variables:
     # vertex
     - SERVING_ACCELERATOR_TYPE=ACCELERATOR_TYPE_UNSPECIFIED
     - SERVING_ACCELERATOR_COUNT=0
-    main:
+    feat/use-branch-based-behaviour:
       - SERVING_ACCELERATOR_TYPE=NVIDIA_TESLA_T4
       - SERVING_ACCELERATOR_COUNT=1
