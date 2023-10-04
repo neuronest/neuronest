@@ -31,7 +31,7 @@ on:
 
 env:
   REPOSITORY_NAME: customer-dummy-project
-  GITHUB_BRANCH: ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   test:
