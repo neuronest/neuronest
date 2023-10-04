@@ -62,7 +62,7 @@ class ServingDeploymentConfig(BaseModel):
     @classmethod
     def from_labels(cls, config_as_labels: Dict[str, str]) -> ServingDeploymentConfig:
         config_as_labels = {
-            hyphen_to_underscore(key): value if value != "None" else None
+            hyphen_to_underscore(key): value if value.lower() != "none" else None
             for key, value in config_as_labels.items()
         }
 
