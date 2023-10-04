@@ -31,8 +31,15 @@ on:
 
 env:
   REPOSITORY_NAME: customer-dummy-project
+  GITHUB_BRANCH: ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
 
 jobs:
+  test:
+    runs-on: neuronest-runner-set
+    steps:
+      - uses: actions/checkout@v3
+      - run: echo ${{ env.GITHUB_BRANCH }}
+
   upload_variables_of_called_workflows:
     runs-on: neuronest-runner-set
     container: google/cloud-sdk
