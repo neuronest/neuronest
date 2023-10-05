@@ -71,6 +71,7 @@ on:
 
 env:
   REPOSITORY_NAME: object-detection
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   run_base_terraform:
