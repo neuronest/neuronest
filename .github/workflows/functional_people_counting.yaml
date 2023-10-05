@@ -169,7 +169,7 @@ jobs:
   post_deploy_people_counting:
     needs: [deploy_functional_people_counting, upload_variables_of_called_workflows]
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/people_counting.yaml
     with:
       build: false
@@ -216,7 +216,7 @@ jobs:
       - post_deploy_model_instantiator
       - deploy_functional_people_counting
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
