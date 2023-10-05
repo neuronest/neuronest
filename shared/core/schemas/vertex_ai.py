@@ -66,9 +66,10 @@ class ServingDeploymentConfig(BaseModel):
             for key, value in config_as_labels.items()
         }
 
-        config_as_labels["accelerator_type"] = hyphen_to_underscore(
-            config_as_labels["accelerator_type"]
-        ).upper()
+        if config_as_labels["accelerator_type"] is not None:
+            config_as_labels["accelerator_type"] = hyphen_to_underscore(
+                config_as_labels["accelerator_type"]
+            ).upper()
 
         return cls(**config_as_labels)
 
