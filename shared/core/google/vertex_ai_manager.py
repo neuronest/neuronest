@@ -170,7 +170,7 @@ class VertexAIManager:
     ) -> aiplatform.Model:
         if add_random_suffix is True:
             random_uuid = str(uuid.uuid4())
-            name += random_uuid[: min(suffix_length, len(random_uuid))]
+            name += "-" + random_uuid[: min(suffix_length, len(random_uuid))]
         else:
             if self.get_last_model_by_name(name=name) is not None:
                 raise AlreadyExistingError(
