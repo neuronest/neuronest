@@ -47,7 +47,7 @@ class ObjectDetectionClient:
         total_waited_time = 0
 
         while total_waited_time < self.endpoint_retry_timeout:
-            model = self.vertex_ai_manager.get_model_by_name(self.model_name)
+            model = self.vertex_ai_manager.get_last_model_by_name(self.model_name)
             endpoint = self.vertex_ai_manager.get_endpoint_by_name(self.model_name)
 
             if endpoint is not None and self.vertex_ai_manager.is_model_deployed(

@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import List, Optional, Tuple
+import uuid
+from typing import List, Optional
 
 import proto
 from google.cloud import aiplatform, aiplatform_v1
@@ -57,13 +58,14 @@ class VertexAIManager:
         return f"{model_name}_endpoint"
 
     def _get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
-        return aiplatform.models.Model.list(
+        models = aiplatform.models.Model.list(
             location=self.location,
             credentials=self.credentials,
             project=self.project_id,
-            filter=f"display_name={name}",
             order_by="create_time desc",
         )
+
+        return [model for model in models if model.display_name.startswith(name)]
 
     def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
@@ -99,22 +101,14 @@ class VertexAIManager:
             location=self.location, credentials=self.credentials, model_name=model_id
         )
 
-    def get_model_by_name(
-        self, name: str, version_aliases: Tuple[str, ...] = ("default",)
-    ) -> Optional[aiplatform.Model]:
-        models = [
-            model
-            for model in self._get_all_models_by_name(name)
-            if tuple(model.version_aliases) == version_aliases
-        ]
+    def get_last_model_by_name(self, name: str) -> Optional[aiplatform.Model]:
+        # models are ordered by create_time desc
+        models = self._get_all_models_by_name(name)
 
         if len(models) == 0:
             return None
 
-        if len(models) == 1:
-            return models[0]
-
-        raise ValueError(f"Multiple models found with the same name: {name}")
+        return models[0]
 
     def get_endpoint_by_name(
         self,
@@ -150,8 +144,8 @@ class VertexAIManager:
         if endpoint is not None:
             endpoint.undeploy_all()
 
-    def delete_model_by_name(self, name: str):
-        model = self.get_model_by_name(name)
+    def delete_last_model_by_name(self, name: str):
+        model = self.get_last_model_by_name(name)
 
         if model is None:
             logger.warning(f"No model named '{name}' has been found")
@@ -171,17 +165,20 @@ class VertexAIManager:
         name: str,
         serving_model_upload_config: ServingModelUploadConfig,
         serving_deployment_config: ServingDeploymentConfig,
+        add_random_suffix: bool = True,
+        suffix_length: int = 8,
     ) -> aiplatform.Model:
-        existing_model = self.get_model_by_name(name=name)
-
-        if existing_model is None:
-            parent_model = None
+        if add_random_suffix is True:
+            random_uuid = str(uuid.uuid4())
+            name += random_uuid[: min(suffix_length, len(random_uuid))]
         else:
-            parent_model = existing_model.resource_name
+            if self.get_last_model_by_name(name=name) is not None:
+                raise AlreadyExistingError(
+                    f"A model with name={name} is already existing"
+                )
 
         return aiplatform.Model.upload(
             project=self.project_id,
-            parent_model=parent_model,
             display_name=name,
             location=self.location,
             serving_container_image_uri=serving_model_upload_config.container_uri,
