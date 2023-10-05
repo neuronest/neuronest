@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import HTTPException
+from fastapi.exceptions import HTTPException
 
 
 def abort(code: int, detail: Optional[str] = "Whoops! Something went wrong"):

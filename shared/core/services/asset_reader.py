@@ -1,14 +1,18 @@
 import logging
 from functools import partial
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import cv2 as cv
 import numpy as np
 
 from core.google.storage_client import StorageClient
-from core.path import build_path
+from core.path import build_path, build_paths
 from core.schemas.asset import AssetType, ImageAsset, VideoAsset, VisualAsset
-from core.services.reader_common import infer_asset_type, retrieve_asset_locally
+from core.services.reader_common import (
+    infer_asset_type,
+    is_path_asset_type_coherent,
+    retrieve_asset_locally,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,23 +40,40 @@ def make_asset(
     """
     asset_path = build_path(asset_path)
 
-    asset_type = asset_type or infer_asset_type(asset_path)
-
-    if asset_type == AssetType.IMAGE:
-        with retrieve_asset_locally(
-            asset_path=asset_path, storage_client=storage_client
-        ) as (delete, local_asset_path):
-            return ImageAsset(asset_path=local_asset_path, delete=delete)
-
-    if asset_type == AssetType.VIDEO:
-        with retrieve_asset_locally(
-            asset_path=asset_path, storage_client=storage_client
-        ) as (delete, local_asset_path):
-            return VideoAsset(
-                asset_path=local_asset_path, time_step=time_step, delete=delete
+    if asset_type is None:
+        asset_type = infer_asset_type(asset_path)
+    else:
+        if (
+            is_path_asset_type_coherent(asset_path=asset_path, asset_type=asset_type)
+            is False
+        ):
+            raise ValueError(
+                f"asset_path not coherent with received asset_type: {asset_type}"
             )
 
-    raise ValueError(f"Unknown asset_type: {asset_type}")
+    with retrieve_asset_locally(
+        asset_path=asset_path, storage_client=storage_client
+    ) as (delete, local_asset_path):
+        return asset_type.asset_builder(
+            asset_path=local_asset_path, time_step=time_step, delete=delete
+        )
+
+
+def make_assets(
+    assets_paths: List[str],
+    asset_type: Optional[AssetType] = None,
+    storage_client: Optional[StorageClient] = None,
+    time_step: Optional[float] = None,
+) -> Union[List[ImageAsset], List[VideoAsset]]:
+    return [
+        make_asset(
+            asset_path=asset_path,
+            asset_type=asset_type or infer_asset_type(asset_path),
+            storage_client=storage_client,
+            time_step=time_step,
+        )
+        for asset_path in build_paths(assets_paths)
+    ]
 
 
 def must_be_resized(image: np.ndarray, max_allowed_size: int) -> bool:

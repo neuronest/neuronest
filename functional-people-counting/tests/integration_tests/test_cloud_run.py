@@ -21,60 +21,97 @@ def are_detections_correct(
 
 
 @pytest.mark.parametrize(
-    "video_storage_path, up_amount, down_amount",
+    "videos_storage_paths, up_amounts, down_amounts",
     [
         (
-            GSPath(
-                "gs://datasets-neuronest/on_off_bus_videos"
-                "/301_20150512_front_normal_uncrowd_2015_05_12_11_09_40FrontColor.avi"
-            ),
-            0,
-            4,
+            [
+                GSPath("gs://datasets-neuronest/on_off_bus_videos/example_up.mp4"),
+                GSPath("gs://datasets-neuronest/on_off_bus_videos/example_down.avi"),
+            ],
+            [4, 0],
+            [0, 4],
         )
     ],
 )
+# pylint: disable=too-many-locals
 def test_cloud_run_inference(
     model_instantiator_client: ModelInstantiatorClient,
     people_counting_client: PeopleCountingClient,
     storage_client: StorageClient,
     model_name: str,
-    video_storage_path: GSPath,
-    up_amount: int,
-    down_amount: int,
+    videos_storage_paths: List[GSPath],
+    up_amounts: List[int],
+    down_amounts: List[int],
 ):
-    video_bucket, video_blob_name = video_storage_path.to_bucket_and_blob_names()
-    _, extension = os.path.splitext(video_blob_name)
-
-    with tempfile.NamedTemporaryFile(suffix=extension) as named_temporary_file:
-        storage_client.download_blob_to_file(
-            bucket_name=video_bucket,
-            source_blob_name=video_blob_name,
-            destination_file_name=named_temporary_file.name,
+    videos_buckets, videos_blob_names = list(
+        zip(
+            *[
+                video_storage_path.to_bucket_and_blob_names()
+                for video_storage_path in videos_storage_paths
+            ]
         )
+    )
+    extensions = [
+        os.path.splitext(video_blob_name)[1] for video_blob_name in videos_blob_names
+    ]
+
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        temporary_videos_paths = []
+        for index, (video_bucket, video_blob_name, extension) in enumerate(
+            zip(videos_buckets, videos_blob_names, extensions)
+        ):
+            temporary_video_path = os.path.join(
+                temporary_directory, str(index) + extension
+            )
+            storage_client.download_blob_to_file(
+                bucket_name=video_bucket,
+                source_blob_name=video_blob_name,
+                destination_file_name=temporary_video_path,
+            )
+            temporary_videos_paths.append(temporary_video_path)
 
         people_counter_output = people_counting_client.count_people(
-            video_path=named_temporary_file.name
+            videos_paths=temporary_videos_paths,
         )
-        people_counter_document = (
+        people_counter_documents = [
             people_counting_client.retrieve_counted_people_document(
-                job_id=people_counter_output.job_id, wait_if_not_existing=True
+                job_id=people_counter_output.job_id,
+                asset_id=asset_id,
+                wait_if_not_existing=True,
+            )
+            for asset_id in people_counter_output.assets_ids
+        ]
+
+        assert all(
+            people_counter_document.job_id == people_counter_output.job_id
+            for people_counter_document in people_counter_documents
+        )
+        assert all(
+            are_detections_correct(
+                detections=people_counter_document.detections,
+                up_amount=up_amount,
+                down_amount=down_amount,
+            )
+            for people_counter_document, up_amount, down_amount in zip(
+                people_counter_documents, up_amounts, down_amounts
             )
         )
 
-        assert people_counter_document.job_id == people_counter_output.job_id
-        assert are_detections_correct(
-            detections=people_counter_document.detections,
-            up_amount=up_amount,
-            down_amount=down_amount,
-        )
-
-        real_time_predictions = people_counting_client.count_people_real_time(
-            video_path=named_temporary_file.name
-        )
-        assert are_detections_correct(
-            detections=real_time_predictions.detections,
-            up_amount=up_amount,
-            down_amount=down_amount,
+        multiple_real_time_predictions = [
+            people_counting_client.count_people_real_time(
+                video_path=temporary_video_path
+            )
+            for temporary_video_path in temporary_videos_paths
+        ]
+        assert all(
+            are_detections_correct(
+                detections=real_time_predictions.detections,
+                up_amount=up_amount,
+                down_amount=down_amount,
+            )
+            for real_time_predictions, up_amount, down_amount in zip(
+                multiple_real_time_predictions, up_amounts, down_amounts
+            )
         )
 
     model_instantiator_client.uninstantiate(model_name=model_name)

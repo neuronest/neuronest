@@ -6,9 +6,13 @@ from enum import Enum
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
+import backoff
 import requests
+from requests import HTTPError
 
 from core.auth import generate_identity_token, get_credentials
+
+HTTP_CALL_MAX_RETRY_ATTEMPT = 3
 
 
 class Protocol(str, Enum):
@@ -97,6 +101,9 @@ class APIClient(ABC):
             data=json.dumps(payload or {}) if payload else None,
         )
 
+    @backoff.on_exception(
+        backoff.expo, HTTPError, max_tries=HTTP_CALL_MAX_RETRY_ATTEMPT
+    )
     def call(
         self,
         resource: str,

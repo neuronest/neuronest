@@ -6,7 +6,7 @@ import os
 import tempfile
 from abc import ABC
 from enum import Enum
-from typing import Any, Iterator, List, Optional, Union
+from typing import Any, Iterator, List, Optional, Type, Union
 
 import cv2 as cv
 import librosa
@@ -24,6 +24,16 @@ VIDEO_EXTENSIONS = {".mp4", ".mov", ".mpg", ".mpeg", ".m4v", ".webm", ".avi"}
 class AssetType(str, Enum):
     VIDEO = "video"
     IMAGE = "image"
+
+    @property
+    def asset_builder(self) -> Union[Type[VideoAsset], Type[ImageAsset]]:
+        if self == self.VIDEO:
+            return VideoAsset
+
+        if self == self.IMAGE:
+            return ImageAsset
+
+        raise NotImplementedError(f"Unsupported asset_type: {self}")
 
 
 class AudioCodec(str, Enum):

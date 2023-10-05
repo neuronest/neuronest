@@ -1,3 +1,6 @@
+api:
+  maximum_videos_number: 10
+
 job:
   container_uri: '${oc.env:IMAGE_NAME}'
   cpu: '1.0'

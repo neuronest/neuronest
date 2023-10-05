@@ -1,18 +1,22 @@
 import os
 import uuid
-from typing import Optional
+from typing import List, Optional
 
+from core.api_exceptions import abort
 from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.storage_client import StorageClient
+from core.hashing import combine_hashes
 from core.path import GSPath
 from core.routes.people_counting import routes
+from core.schemas.asset import AssetType
 from core.schemas.google.cloud_run import JobConfig
 from core.schemas.people_counting import (
     PeopleCounterInput,
     PeopleCounterOutput,
+    PeopleCounterRealTimeInput,
     PeopleCounterRealTimeOutput,
 )
-from core.services.asset_reader import make_asset
+from core.services.asset_reader import make_asset, make_assets
 from core.tools import extract_file_extension
 from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
@@ -44,17 +48,15 @@ router = APIRouter(
 def _launched_job_response(
     response: Response,
     job_id: str,
-    asset_id: str,
-    storage_path: GSPath,
-    counted_video_storage_path: GSPath,
+    assets_ids: List[str],
+    counted_videos_storage_paths: List[GSPath],
 ) -> PeopleCounterOutput:
     response.status_code = status.HTTP_201_CREATED
 
     return PeopleCounterOutput(
         job_id=job_id,
-        asset_id=asset_id,
-        storage_path=storage_path,
-        counted_video_storage_path=counted_video_storage_path,
+        assets_ids=assets_ids,
+        counted_videos_storage_paths=counted_videos_storage_paths,
     )
 
 
@@ -81,16 +83,22 @@ def _validate_video_storage_path(video_storage_path: GSPath, expected_bucket_nam
         )
 
 
-def _maybe_create_counted_video_storage_path(
+def _validate_video_storage_paths(
+    videos_storage_paths: List[GSPath], expected_bucket_name: str
+):
+    for video_storage_path in videos_storage_paths:
+        _validate_video_storage_path(
+            video_storage_path=video_storage_path,
+            expected_bucket_name=expected_bucket_name,
+        )
+
+
+def _create_counted_video_storage_path(
     asset_id: str,
-    save_counted_video: bool,
     asset_path: str,
     counted_videos_bucket: str,
     job_id: Optional[str] = None,
 ) -> Optional[GSPath]:
-    if save_counted_video is False:
-        return None
-
     extension = extract_file_extension(asset_path)
 
     if job_id is None:
@@ -116,28 +124,54 @@ def count_people(
 ) -> PeopleCounterOutput:
     job_id = uuid.uuid4().hex
 
-    video_storage_path = people_counter_input.video_storage_path
+    if (
+        len(people_counter_input.videos_storage_paths)
+        > config.api.maximum_videos_number
+    ):
+        abort(
+            code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The number of videos exceeds the maximum currently allowed "
+            f"({len(people_counter_input.videos_storage_paths)} > "
+            f"{config.api.maximum_videos_number})",
+        )
 
-    _validate_video_storage_path(
-        video_storage_path=video_storage_path,
+    _validate_video_storage_paths(
+        videos_storage_paths=people_counter_input.videos_storage_paths,
         expected_bucket_name=VIDEOS_TO_COUNT_BUCKET,
     )
 
-    video_asset = make_asset(
-        asset_path=people_counter_input.video_storage_path,
+    video_assets = make_assets(
+        assets_paths=people_counter_input.videos_storage_paths,
         storage_client=storage_client,
+        asset_type=AssetType.VIDEO,
     )
-    asset_id = video_asset.get_hash()
+    assets_ids = [video_asset.get_hash() for video_asset in video_assets]
+    assets_batch_id = combine_hashes(assets_ids)
 
-    counted_video_storage_path = _maybe_create_counted_video_storage_path(
-        asset_id=asset_id,
-        save_counted_video=people_counter_input.save_counted_video,
-        asset_path=video_asset.asset_path,
-        counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
-        job_id=job_id,
-    )
+    counted_videos_storage_paths = None
+    if people_counter_input.save_counted_videos is True:
+        counted_videos_storage_paths = [
+            _create_counted_video_storage_path(
+                asset_id=asset_id,
+                asset_path=video_asset.asset_path,
+                counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
+                job_id=job_id,
+            )
+            for asset_id, video_asset in zip(assets_ids, video_assets)
+        ]
 
-    job_name = f"count-people-{asset_id}"
+    job_name = f"count-people-{assets_batch_id}"
+    command_args = [
+        "-m",
+        "people_counting.jobs.count_people",
+        f"--job-id {job_id}",
+        f"--videos-storage-paths {' '.join(people_counter_input.videos_storage_paths)}",
+    ]
+    if counted_videos_storage_paths is not None:
+        command_args += (
+            f"--counted-videos-storage-paths {' '.join(counted_videos_storage_paths)}"
+        )
+
     cloud_run_job_manager.create_job(
         job_name=job_name,
         job_config=JobConfig(
@@ -145,20 +179,13 @@ def count_people(
             cpu=config.job.cpu,
             memory=config.job.memory,
             command=["python"],
-            command_args=[
-                "-m",
-                "people_counting.jobs.count_people",
-            ],
+            command_args=command_args,
             environment_variables={
                 "PROJECT_ID": PROJECT_ID,
                 "REGION": REGION,
                 "OBJECT_DETECTION_MODEL_NAME": OBJECT_DETECTION_MODEL_NAME,
                 "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
                 "FIRESTORE_RESULTS_COLLECTION": FIRESTORE_RESULTS_COLLECTION,
-                "JOB_ID": job_id,
-                "ASSET_ID": asset_id,
-                "VIDEO_STORAGE_PATH": people_counter_input.video_storage_path,
-                "COUNTED_VIDEO_STORAGE_PATH": counted_video_storage_path,
             },
         ),
         override_if_existing=True,
@@ -168,9 +195,8 @@ def count_people(
     return _launched_job_response(
         response=response,
         job_id=job_id,
-        asset_id=asset_id,
-        storage_path=people_counter_input.video_storage_path,
-        counted_video_storage_path=counted_video_storage_path,
+        assets_ids=assets_ids,
+        counted_videos_storage_paths=counted_videos_storage_paths,
     )
 
 
@@ -180,7 +206,7 @@ def count_people(
     status_code=status.HTTP_200_OK,
 )
 def count_people_real_time(
-    people_counter_input: PeopleCounterInput,
+    people_counter_input: PeopleCounterRealTimeInput,
     response: Response,
     people_counter: PeopleCounter = Depends(use_people_counter),
     storage_client: StorageClient = Depends(use_storage_client),
@@ -197,12 +223,13 @@ def count_people_real_time(
         storage_client=storage_client,
     )
 
-    counted_video_storage_path = _maybe_create_counted_video_storage_path(
-        asset_id=video_asset.get_hash(),
-        save_counted_video=people_counter_input.save_counted_video,
-        asset_path=video_asset.asset_path,
-        counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
-    )
+    counted_video_storage_path = None
+    if people_counter_input.save_counted_video is not None:
+        counted_video_storage_path = _create_counted_video_storage_path(
+            asset_id=video_asset.get_hash(),
+            asset_path=video_asset.asset_path,
+            counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
+        )
 
     statistics = count_people_with_upload(
         people_counter=people_counter,

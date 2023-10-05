@@ -22,6 +22,11 @@ class Detection(BaseModel):
 
 
 class PeopleCounterInput(BaseModel):
+    videos_storage_paths: List[GSPath]
+    save_counted_videos: bool = False
+
+
+class PeopleCounterRealTimeInput(BaseModel):
     video_storage_path: GSPath
     save_counted_video: bool = False
     enable_video_showing: bool = False
@@ -29,8 +34,12 @@ class PeopleCounterInput(BaseModel):
 
 class PeopleCounterOutput(BaseModel):
     job_id: str
-    asset_id: str
-    storage_path: GSPath
+    assets_ids: List[str]
+    counted_videos_storage_paths: List[GSPath]
+
+
+class PeopleCounterRealTimeOutput(BaseModel):
+    detections: List[Detection]
     counted_video_storage_path: Optional[GSPath] = None
 
 
@@ -42,10 +51,8 @@ class FirestoreResultsCollectionOutput(BaseModel):
     collection: str
 
 
-class PeopleCounterDocument(PeopleCounterOutput):
+class PeopleCounterDocument(BaseModel):
+    asset_id: str
+    job_id: str
     detections: List[Detection]
-
-
-class PeopleCounterRealTimeOutput(BaseModel):
-    detections: List[Detection]
-    counted_video_storage_path: Optional[GSPath] = None
+    counted_video_storage_path: GSPath

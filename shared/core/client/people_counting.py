@@ -1,10 +1,11 @@
 import json
 import time
-from typing import Optional
+from typing import List, Optional
 
 from core.client.base import APIClient
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
+from core.hashing import combine_hashes
 from core.path import GSPath, LocalPath
 from core.routes.people_counting import routes
 from core.schemas.people_counting import (
@@ -12,6 +13,7 @@ from core.schemas.people_counting import (
     PeopleCounterDocument,
     PeopleCounterInput,
     PeopleCounterOutput,
+    PeopleCounterRealTimeInput,
     PeopleCounterRealTimeOutput,
     VideosToCountBucketOutput,
 )
@@ -78,6 +80,7 @@ class PeopleCountingClient(APIClient):
     def retrieve_counted_people_document(
         self,
         job_id: str,
+        asset_id: str,
         wait_if_not_existing: bool = False,
         total_waited_time: int = 0,
         timeout: int = 2700,
@@ -85,11 +88,13 @@ class PeopleCountingClient(APIClient):
     ) -> PeopleCounterDocument:
         raw_document = self.firestore_client.get_document(
             collection_name=self.get_firestore_results_collection(),
-            document_id=job_id,
+            document_id=combine_hashes([job_id, asset_id]),
         )
 
         if raw_document is None and wait_if_not_existing is False:
-            raise RuntimeError(f"Document not found for job_id={job_id}")
+            raise RuntimeError(
+                f"Document not found for job_id={job_id} and asset_id={asset_id}"
+            )
 
         if raw_document is None:
             time.sleep(retry_wait_time)
@@ -103,6 +108,7 @@ class PeopleCountingClient(APIClient):
 
             return self.retrieve_counted_people_document(
                 job_id=job_id,
+                asset_id=asset_id,
                 wait_if_not_existing=wait_if_not_existing,
                 total_waited_time=total_waited_time,
                 timeout=timeout,
@@ -113,13 +119,16 @@ class PeopleCountingClient(APIClient):
 
     def count_people(
         self,
-        video_path: str,
-        save_counted_video_in_storage: bool = False,
+        videos_paths: List[str],
+        save_counted_videos_in_storage: bool = False,
     ) -> PeopleCounterOutput:
-        uploaded_video_storage_path = self._upload_video_to_storage(
-            video_path=LocalPath(video_path),
-            destination_bucket=self.get_videos_to_count_bucket(),
-        )
+        uploaded_videos_storage_paths = [
+            self._upload_video_to_storage(
+                video_path=LocalPath(video_path),
+                destination_bucket=self.get_videos_to_count_bucket(),
+            )
+            for video_path in videos_paths
+        ]
 
         return PeopleCounterOutput(
             **json.loads(
@@ -128,8 +137,8 @@ class PeopleCountingClient(APIClient):
                     f"{routes.PeopleCounter.count_people}",
                     verb="post",
                     payload=PeopleCounterInput(
-                        video_storage_path=uploaded_video_storage_path,
-                        save_counted_video_in_storage=save_counted_video_in_storage,
+                        videos_storage_paths=uploaded_videos_storage_paths,
+                        save_counted_videos=save_counted_videos_in_storage,
                     ).dict(),
                 ).text
             )
@@ -139,6 +148,7 @@ class PeopleCountingClient(APIClient):
         self,
         video_path: str,
         save_counted_video_in_storage: bool = False,
+        enable_video_showing: bool = False,
         timeout: int = 2700,
     ) -> PeopleCounterRealTimeOutput:
         uploaded_video_storage_path = self._upload_video_to_storage(
@@ -152,9 +162,10 @@ class PeopleCountingClient(APIClient):
                     resource=f"/{routes.PeopleCounter.prefix}"
                     f"{routes.PeopleCounter.count_people_real_time}",
                     verb="post",
-                    payload=PeopleCounterInput(
+                    payload=PeopleCounterRealTimeInput(
                         video_storage_path=uploaded_video_storage_path,
-                        save_counted_video_in_storage=save_counted_video_in_storage,
+                        save_counted_video=save_counted_video_in_storage,
+                        enable_video_showing=enable_video_showing,
                     ).dict(),
                     timeout=timeout,
                 ).text
