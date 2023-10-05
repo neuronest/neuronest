@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import proto
 from google.cloud import aiplatform, aiplatform_v1
+from google.cloud.aiplatform import Endpoint
 from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
 
@@ -253,6 +254,14 @@ class VertexAIManager:
         timeout: float = 3600,
     ) -> aiplatform.Endpoint:
         endpoint = self.get_endpoint_by_name(name)
+
+        if endpoint is None:
+            endpoint = Endpoint.create(
+                display_name=name,
+                project=self.project_id,
+                location=self.location,
+                credentials=self.credentials,
+            )
 
         if self.is_model_deployed(name=name, model=model):
             if is_last_model_already_deployed_ok:
