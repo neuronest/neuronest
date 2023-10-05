@@ -215,15 +215,15 @@ class VariableLine:
 
     @staticmethod
     def build_namespace_of_name_from_string(string: str) -> str:
-        return f"{string.replace('-', '_').upper()}{'_'}"
+        return f"{string.replace('-', '_').upper().rstrip('_')}{'_'}"
 
     @staticmethod
     def build_namespace_of_value_from_string(string: str) -> str:
-        return f"{string.replace('_', '-').lower()}{'-'}"
+        return f"{string.replace('_', '-').lower().rstrip('-')}{'-'}"
 
     @staticmethod
     def build_namespace_of_value_variables_from_string(string: str) -> str:
-        return f"{string.replace('-', '_').upper()}{'_'}"
+        return f"{string.replace('-', '_').upper().rstrip('_')}{'_'}"
 
     def add_namespace_to_name(
         self,
@@ -426,14 +426,17 @@ class Repository:
 
         return []
 
-    def get_base_code(self) -> str:
+    def get_code(self) -> str:
         # there is one and only one repository code by repo
         # since it is configuration, we don't test it explicitly
-        base_code = [
+        return [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines()
             if var_line.is_a_repository_code()
         ][0].value
+
+    def get_base_code(self) -> str:
+        code = self.get_code()
 
         # By development convention within the repo the code is always made up of the
         # base code prefixed or not with "func-" contained in
@@ -441,10 +444,10 @@ class Repository:
         # There is therefore no reason to parameterize the function
         # with an argument which would allow passing something other than this variable,
         # we use it directly
-        if not base_code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
-            return base_code
+        if not code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
+            return code
 
-        return base_code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
+        return code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
 
 
 def get_all_repository_var_lines(
@@ -495,7 +498,7 @@ def get_all_repository_var_lines(
             if var_line.value.startswith(repository.get_base_code()):
                 namespace = FUNCTIONAL_REPOSITORIES_PREFIX
             else:
-                namespace = repository.get_base_code()
+                namespace = repository.get_code()
 
             var_line.add_namespace(
                 namespace,
