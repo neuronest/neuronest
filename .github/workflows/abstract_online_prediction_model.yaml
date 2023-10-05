@@ -228,7 +228,6 @@ jobs:
       gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/make_space_for_docker
       - uses: ./.github/actions/set_variables
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
