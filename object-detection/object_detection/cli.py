@@ -182,39 +182,7 @@ class RemoveLastModelVersionAction(RunnableAction):
     @classmethod
     # pylint: disable=arguments-differ
     def run(cls, vertex_ai_manager: VertexAIManager, model_name: str, **kwargs):
-        model = vertex_ai_manager.get_model_by_name(name=model_name)
-
-        if model is None:
-            return
-
-        model_registry = model.versioning_registry
-
-        all_model_versions = model_registry.list_versions()
-
-        if len(all_model_versions) == 0:
-            return
-
-        if len(all_model_versions) == 1:
-            vertex_ai_manager.delete_model_by_name(name=model_name)
-
-        sorted_model_versions = sorted(
-            all_model_versions,
-            key=lambda version: version.version_create_time,
-            reverse=True,
-        )
-        last_model_version, before_last_model_version = sorted_model_versions[:2]
-
-        if model.version_id != last_model_version.version_id:
-            raise ValueError(
-                f"Recovered default model and last model don't have the same version "
-                f"({model.version_id} != {last_model_version})"
-            )
-
-        version_aliases = list(model.version_aliases)
-        model_registry.add_version_aliases(
-            version=before_last_model_version.version_id, new_aliases=version_aliases
-        )
-        model_registry.delete_version(last_model_version.version_id)
+        vertex_ai_manager.delete_last_model_by_name(name=model_name)
 
 
 class UndeployAction(RunnableAction):
