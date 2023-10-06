@@ -23,7 +23,8 @@ module "model_instantiator" {
   cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
   cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
 
-  cloud_scheduler_model_name = module.object_detection.model_name
+  cloud_scheduler_model_name      = module.object_detection.model_name
+  online_prediction_model_sa_name = module.object_detection.service_account_name
 }
 module "people_counting" {
   source                       = "../people-counting"
