@@ -9,3 +9,7 @@ other_variables:
     # GCP project
     - PROJECT_ID=customer-dummy-project-come
     - PROJECT_CODE=cdp-come
+    main:
+    # GCP project
+    - PROJECT_ID=customer-dummy-project-main
+    - PROJECT_CODE=cdp-main
