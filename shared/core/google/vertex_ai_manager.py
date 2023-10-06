@@ -73,7 +73,7 @@ class VertexAIManager:
             location=self.location,
             credentials=self.credentials,
             project=self.project_id,
-            filter=f"display_name={self._model_to_endpoint_name(name)}",
+            filter=f"display_name={name}",
             order_by="create_time desc",
         )
 
