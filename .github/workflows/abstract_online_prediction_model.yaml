@@ -279,4 +279,3 @@ jobs:
         run: python -m ${PACKAGE_NAME}.cli --actions model_upload
         env:
           SERVING_IMAGE_NAME: ${{ needs.build_test_push_serving_image.outputs.gcp_serving_image_name }}
-
