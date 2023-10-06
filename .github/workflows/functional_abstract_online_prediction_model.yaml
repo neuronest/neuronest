@@ -169,7 +169,6 @@ jobs:
       - deploy_functional_online_prediction_model
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
-    container: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
