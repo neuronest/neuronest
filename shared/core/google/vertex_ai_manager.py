@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 import uuid
 from typing import List, Optional
@@ -16,6 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class VertexAIManager:
+    SUFFIX_LENGTH = 8
+    MODEL_DISPLAY_NAME_REGEX = rf"^(.*?)-[0-9a-z]{SUFFIX_LENGTH}$"
+
     def __init__(
         self,
         location: str,
@@ -66,7 +70,12 @@ class VertexAIManager:
             order_by="create_time desc",
         )
 
-        return [model for model in models if model.display_name.startswith(name)]
+        return [
+            model
+            for model in models
+            if re.match(self.MODEL_DISPLAY_NAME_REGEX, model.display_name).group(1)
+            == name
+        ]
 
     def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
@@ -166,17 +175,9 @@ class VertexAIManager:
         name: str,
         serving_model_upload_config: ServingModelUploadConfig,
         serving_deployment_config: ServingDeploymentConfig,
-        add_random_suffix: bool = True,
-        suffix_length: int = 8,
     ) -> aiplatform.Model:
-        if add_random_suffix is True:
-            random_uuid = str(uuid.uuid4())
-            name += "-" + random_uuid[: min(suffix_length, len(random_uuid))]
-        else:
-            if self.get_last_model_by_name(name=name) is not None:
-                raise AlreadyExistingError(
-                    f"A model with name={name} is already existing"
-                )
+        random_uuid = str(uuid.uuid4())
+        name += "-" + random_uuid[: min(self.SUFFIX_LENGTH, len(random_uuid))]
 
         return aiplatform.Model.upload(
             project=self.project_id,
