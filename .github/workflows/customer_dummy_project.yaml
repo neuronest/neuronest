@@ -1,33 +1,40 @@
 name: customer_dummy_project
 
 on:
-#  push:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/functional_people_counting.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - people-counting/**
-#      - object-detection/**
-#      - model-instantiator/**
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/customer_dummy_project.yaml
+      - .github/workflows/functional_abstract_online_prediction_model.yaml
+      - .github/workflows/abstract_online_prediction_model.yaml
+      - .github/workflows/functional_people_counting.yaml
+      - .github/workflows/functional_video_comparator.yaml
+      - .github/workflows/functional_object_detection.yaml
+      - .pre-commit-config.yaml
+      - shared/**
+      - people-counting/**
+      - object-detection/**
+      - model-instantiator/**
+      - .github/actions/**
+      - .github/variables/**
+      - .pre-commit-config.yaml
+      - shared/**
+      - model-instantiator/**
+      - video-comparator/**
+      - object-detection/**
 #  pull_request:
 #    branches:
 #      - main
 #      - develop
 #    paths:
-#      - .github/workflows/functional_people_counting.yaml
+#      - .github/workflows/video_comparator_dummy_project.yaml
 #      - .github/actions/**
 #      - .github/variables/**
 #      - .pre-commit-config.yaml
 #      - shared/**
-#      - people-counting/**
-#      - object-detection/**
 #      - model-instantiator/**
-  workflow_dispatch:
+#      - video-comparator/**
+#      - object-detection/**
 
 env:
   REPOSITORY_NAME: customer-dummy-project
@@ -37,22 +44,30 @@ jobs:
     runs-on: neuronest-runner-set
     container: google/cloud-sdk
     outputs:
-      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
+      functional_object_detection_env_file_artifact_name: ${{ steps.upload_functional_object_detection_variables.outputs.env_file_artifact_name }}
+      functional_video_comparator_env_file_artifact_name: ${{ steps.upload_functional_video_comparator_variables.outputs.env_file_artifact_name }}
+      functional_people_counting_env_file_artifact_name: ${{ steps.upload_functional_people_counting_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
-      - name: upload_variables
-        id: upload_variables
+      - name: upload_functional_object_detection_variables
+        id: upload_functional_object_detection_variables
         uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: OBJECT_DETECTION
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - name: upload_functional_video_comparator_variables
+        id: upload_functional_video_comparator_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: VIDEO_COMPARATOR
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - name: upload_functional_video_comparator_variables
+        id: upload_functional_people_counting_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: PEOPLE_COUNTING
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-  functional_people_counting:
-    needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/functional_people_counting.yaml
-    with:
-      build: true
-      deploy: true
-      do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
-    secrets: inherit
 
   functional_object_detection:
     needs: upload_variables_of_called_workflows
@@ -61,5 +76,25 @@ jobs:
       build: true
       deploy: true
       do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
+    secrets: inherit
+
+  functional_video_comparator:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/functional_video_comparator.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_video_comparator_env_file_artifact_name }}
+    secrets: inherit
+
+  functional_people_counting:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/functional_people_counting.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_people_counting_env_file_artifact_name }}
     secrets: inherit
