@@ -105,7 +105,7 @@ def uninstantiate_model(
     if endpoint is None:
         return _no_endpoint_response(response=response, model_name=model_name)
 
-    model = vertex_ai_manager.get_model_by_name(model_name)
+    model = vertex_ai_manager.get_last_model_by_name(model_name)
     if not vertex_ai_manager.is_model_deployed(endpoint=endpoint, model=model):
         return _no_traffic_response(response=response, model_name=model_name)
 

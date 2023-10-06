@@ -59,3 +59,8 @@ class ExecutionSchema(BaseModel):
     retried_count: int
     running_count: int
     succeeded_count: int
+    cancelled_count: int
+
+    @property
+    def terminated_count(self) -> int:
+        return self.succeeded_count + self.failed_count + self.cancelled_count

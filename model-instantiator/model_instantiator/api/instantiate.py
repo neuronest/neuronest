@@ -72,7 +72,7 @@ def instantiate_model(
 ):
     model_name = instantiate_model_input.model_name
 
-    model = vertex_ai_manager.get_model_by_name(name=model_name)
+    model = vertex_ai_manager.get_last_model_by_name(name=model_name)
 
     if model is None:
         return _no_model_response(response=response, model_name=model_name)

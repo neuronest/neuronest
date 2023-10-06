@@ -28,7 +28,7 @@ def deploy_model(
     undeploy_previous_model: bool,
     is_last_model_already_deployed_ok: bool,
 ) -> Optional[aiplatform.Endpoint]:
-    model = vertex_ai_manager.get_model_by_name(name=model_name)
+    model = vertex_ai_manager.get_last_model_by_name(name=model_name)
     serving_deployment_config = ServingDeploymentConfig.from_labels(model.labels)
 
     deployment_status_document = deployment_status_manager.maybe_set_status(

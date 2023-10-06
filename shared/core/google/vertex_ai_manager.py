@@ -1,9 +1,12 @@
 import logging
+import re
 import time
-from typing import List, Optional, Tuple
+import uuid
+from typing import List, Optional
 
 import proto
 from google.cloud import aiplatform, aiplatform_v1
+from google.cloud.aiplatform import Endpoint
 from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
 
@@ -14,6 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 class VertexAIManager:
+    MODEL_DISPLAY_SUFFIX_LENGTH = 8
+    MODEL_DISPLAY_NAME_REGEX = re.compile(
+        r"^([0-9a-z-]*?)-[0-9a-z]{" + str(MODEL_DISPLAY_SUFFIX_LENGTH) + "}$"
+    )
+
     def __init__(
         self,
         location: str,
@@ -57,20 +65,29 @@ class VertexAIManager:
         return f"{model_name}_endpoint"
 
     def _get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
-        return aiplatform.models.Model.list(
+        models = aiplatform.models.Model.list(
             location=self.location,
             credentials=self.credentials,
             project=self.project_id,
-            filter=f"display_name={name}",
             order_by="create_time desc",
         )
+
+        matching_models = []
+        for model in models:
+            match = self.MODEL_DISPLAY_NAME_REGEX.match(model.display_name)
+
+            if match is not None:
+                if match.group(1) == name:
+                    matching_models.append(model)
+
+        return matching_models
 
     def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
             location=self.location,
             credentials=self.credentials,
             project=self.project_id,
-            filter=f"display_name={self._model_to_endpoint_name(name)}",
+            filter=f"display_name={name}",
             order_by="create_time desc",
         )
 
@@ -99,22 +116,14 @@ class VertexAIManager:
             location=self.location, credentials=self.credentials, model_name=model_id
         )
 
-    def get_model_by_name(
-        self, name: str, version_aliases: Tuple[str, ...] = ("default",)
-    ) -> Optional[aiplatform.Model]:
-        models = [
-            model
-            for model in self._get_all_models_by_name(name)
-            if tuple(model.version_aliases) == version_aliases
-        ]
+    def get_last_model_by_name(self, name: str) -> Optional[aiplatform.Model]:
+        # models are ordered by create_time desc
+        models = self._get_all_models_by_name(name)
 
         if len(models) == 0:
             return None
 
-        if len(models) == 1:
-            return models[0]
-
-        raise ValueError(f"Multiple models found with the same name: {name}")
+        return models[0]
 
     def get_endpoint_by_name(
         self,
@@ -150,8 +159,8 @@ class VertexAIManager:
         if endpoint is not None:
             endpoint.undeploy_all()
 
-    def delete_model_by_name(self, name: str):
-        model = self.get_model_by_name(name)
+    def delete_last_model_by_name(self, name: str):
+        model = self.get_last_model_by_name(name)
 
         if model is None:
             logger.warning(f"No model named '{name}' has been found")
@@ -172,16 +181,13 @@ class VertexAIManager:
         serving_model_upload_config: ServingModelUploadConfig,
         serving_deployment_config: ServingDeploymentConfig,
     ) -> aiplatform.Model:
-        existing_model = self.get_model_by_name(name=name)
-
-        if existing_model is None:
-            parent_model = None
-        else:
-            parent_model = existing_model.resource_name
+        random_uuid = str(uuid.uuid4())
+        name += (
+            "-" + random_uuid[: min(self.MODEL_DISPLAY_SUFFIX_LENGTH, len(random_uuid))]
+        )
 
         return aiplatform.Model.upload(
             project=self.project_id,
-            parent_model=parent_model,
             display_name=name,
             location=self.location,
             serving_container_image_uri=serving_model_upload_config.container_uri,
@@ -256,6 +262,14 @@ class VertexAIManager:
         timeout: float = 3600,
     ) -> aiplatform.Endpoint:
         endpoint = self.get_endpoint_by_name(name)
+
+        if endpoint is None:
+            endpoint = Endpoint.create(
+                display_name=name,
+                project=self.project_id,
+                location=self.location,
+                credentials=self.credentials,
+            )
 
         if self.is_model_deployed(name=name, model=model):
             if is_last_model_already_deployed_ok:
