@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class VertexAIManager:
-    SUFFIX_LENGTH = 8
-    MODEL_DISPLAY_NAME_REGEX = rf"^(.*?)-[0-9a-z]{SUFFIX_LENGTH}$"
+    MODEL_DISPLAY_SUFFIX_LENGTH = 8
+    MODEL_DISPLAY_NAME_REGEX = re.compile(
+        r"^([0-9a-z-]*?)-[0-9a-z]{" + str(MODEL_DISPLAY_SUFFIX_LENGTH) + "}$"
+    )
 
     def __init__(
         self,
@@ -70,12 +72,15 @@ class VertexAIManager:
             order_by="create_time desc",
         )
 
-        return [
-            model
-            for model in models
-            if re.match(self.MODEL_DISPLAY_NAME_REGEX, model.display_name).group(1)
-            == name
-        ]
+        matching_models = []
+        for model in models:
+            match = self.MODEL_DISPLAY_NAME_REGEX.match(model.display_name)
+
+            if match is not None:
+                if match.group(1) == name:
+                    matching_models.append(model)
+
+        return matching_models
 
     def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
@@ -177,7 +182,9 @@ class VertexAIManager:
         serving_deployment_config: ServingDeploymentConfig,
     ) -> aiplatform.Model:
         random_uuid = str(uuid.uuid4())
-        name += "-" + random_uuid[: min(self.SUFFIX_LENGTH, len(random_uuid))]
+        name += (
+            "-" + random_uuid[: min(self.MODEL_DISPLAY_SUFFIX_LENGTH, len(random_uuid))]
+        )
 
         return aiplatform.Model.upload(
             project=self.project_id,
