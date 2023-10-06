@@ -54,9 +54,6 @@ on:
         required: false
         type: string
         default: ""
-      online_prediction_model_repository:
-        required: true
-        type: string
     outputs:
       gcp_training_image_name:
         description: "The gcp training image name"
