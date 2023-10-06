@@ -173,7 +173,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
         with:
-          project_id: ${{ env.PROJECT_ID }}
+          as_root: true
       - uses: google-github-actions/setup-gcloud@v0.2.0
         with:
           project_id: ${{ env.PROJECT_ID }}
