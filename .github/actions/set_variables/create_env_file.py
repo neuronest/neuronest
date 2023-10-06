@@ -400,6 +400,10 @@ class Repository:
     def yaml_env_file_path(self) -> str:
         return f"{self.name}/{self.VARIABLES_FILE_PATH}"
 
+    @property
+    def variables_prefix(self) -> str:
+        return VariableLine.build_namespace_of_name_from_string(self.name)
+
     def has_yaml_env_file(self) -> bool:
         return os.path.isfile(self.yaml_env_file_path)
 
@@ -578,18 +582,7 @@ if __name__ == "__main__":
     shared_variables_lines_names = set(
         shared_var_line.name for shared_var_line in shared_variables_lines
     )
-    repository_variables_prefix = VariableLine(
-        line="REPOSITORY_VARIABLES_PREFIX="
-        + VariableLine.build_namespace_of_name_from_string(
-            main_repository.name,
-        ),
-        variable_type=VariableType.REPOSITORY,
-    )
-    all_variables_lines = (
-        shared_variables_lines
-        + repository_variables_lines
-        + [repository_variables_prefix]
-    )
+    all_variables_lines = shared_variables_lines + repository_variables_lines
     if not args.keep_repository_variables:
         all_variables_lines = [
             var_line
@@ -605,7 +598,7 @@ if __name__ == "__main__":
         ]
     if args.variable_prefix_to_filter_on:
         variable_prefix = (
-            repository_variables_prefix.value
+            main_repository.variables_prefix
             if args.variable_prefix_to_filter_on
             == "current_repository_variables_prefix"
             else args.variable_prefix_to_filter_on

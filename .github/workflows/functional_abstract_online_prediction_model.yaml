@@ -182,9 +182,7 @@ jobs:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       - id: get_model_name
         run: |
-          # name_of_model_name_variable equals "OBJECT_DETECTION_MODEL_NAME" for example
-          name_of_model_name_variable=${{ env.REPOSITORY_VARIABLES_PREFIX }}MODEL_NAME
-          echo value=$(eval echo "\$${name_of_model_name_variable}") >> $GITHUB_OUTPUT
+          echo value=$(env | grep -E '*MODEL_NAME=' | cut -d '=' -f2-) >> $GITHUB_OUTPUT
         shell: bash
       - id: test_integration
         uses: ./.github/actions/run_linters_tests

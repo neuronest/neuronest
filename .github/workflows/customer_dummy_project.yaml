@@ -68,7 +68,6 @@ jobs:
           variable_prefix_to_filter_on: PEOPLE_COUNTING
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-
   functional_object_detection:
     needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/functional_object_detection.yaml
