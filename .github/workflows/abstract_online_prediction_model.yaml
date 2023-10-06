@@ -31,10 +31,6 @@ on:
         required: false
         type: string
         default: ""
-      model_instantiator_url:
-        required: false
-        type: string
-        default: ""
       online_prediction_model_repository:
         required: true
         type: string

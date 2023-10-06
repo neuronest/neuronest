@@ -42,6 +42,31 @@ on:
         required: false
         type: string
         default: ''
+      base_project_builder_sa_key:
+        required: false
+        type: string
+        default: ""
+      dockerhub_training_image_name:
+        required: false
+        type: string
+        default: ""
+      gcp_training_image_name:
+        required: false
+        type: string
+        default: ""
+      online_prediction_model_repository:
+        required: true
+        type: string
+    outputs:
+      gcp_training_image_name:
+        description: "The gcp training image name"
+        value: ${{ jobs.object_detection.outputs.gcp_training_image_name }}
+      dockerhub_training_image_name:
+        description: "The dockerhub training image name"
+        value: ${{ jobs.object_detection.outputs.dockerhub_training_image_name }}
+      base_project_builder_sa_key:
+        description: 'The base64 encoded key of the IAC service account of the shared repository'
+        value: ${{ jobs.object_detection.outputs.base_project_builder_sa_key }}
 env:
   REPOSITORY_NAME: object-detection
 
@@ -63,16 +88,12 @@ jobs:
     needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
-      build: true
-      deploy: true
-      do_post_deployment: true
+      build: ${{ inputs.build }}
+      deploy: ${{ inputs.deploy }}
+      do_post_deployment: ${{ inputs.do_post_deployment }}
+      base_project_builder_sa_key: ${{ inputs.base_project_builder_sa_key }}
+      dockerhub_training_image_name: ${{ inputs.dockerhub_training_image_name }}
+      gcp_training_image_name: ${{ inputs.gcp_training_image_name }}
       online_prediction_model_repository: object-detection
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit
-# todo: basculer ces étapes sur functional-{...}. Sans doute divise la cli en deux
-#      - id: remove_last_model_version_if_deploy_has_failed
-#        if: ${{ failure() && steps.deploy.conclusion == 'failure' }}
-#        run: python -m object_detection.cli --actions remove_last_model_version
-#      - id: undeploy_and_remove_last_model_version_and_redeploy_if_test_integration_has_failed
-#        if: ${{ failure() && steps.test_integration.conclusion == 'failure' }}
-#        run: python -m object_detection.cli --actions undeploy remove_last_model_version deploy
