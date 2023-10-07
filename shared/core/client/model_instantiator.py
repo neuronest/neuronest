@@ -15,17 +15,17 @@ class ModelInstantiatorClient(APIClient):
         super().__init__(host=host, key_path=key_path, root=routes.root)
 
     def instantiate(self, model_name: str) -> requests.Response:
-        instantiate_call_parameters = {
-            "resource": routes.Instantiator.instantiate,
-            "verb": "post",
-            "payload": InstantiateModelInput(model_name=model_name).dict(),
-        }
-
-        return self.call(**instantiate_call_parameters)
+        return self.call(
+            resource=f"/{routes.Instantiator.prefix}"
+            f"{routes.Instantiator.instantiate}",
+            verb="post",
+            payload=InstantiateModelInput(model_name=model_name).dict(),
+        )
 
     def uninstantiate(self, model_name: str) -> requests.Response:
         return self.call(
-            resource=routes.Uninstantiator.uninstantiate,
+            resource=f"/{routes.Uninstantiator.prefix}"
+            f"{routes.Uninstantiator.uninstantiate}",
             verb="post",
             payload=UninstantiateModelInput(model_name=model_name).dict(),
         )
