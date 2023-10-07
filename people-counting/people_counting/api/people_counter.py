@@ -135,10 +135,13 @@ def count_people(
             f"{config.api.maximum_videos_number})",
         )
 
-    _validate_video_storage_paths(
-        videos_storage_paths=people_counter_input.videos_storage_paths,
-        expected_bucket_name=VIDEOS_TO_COUNT_BUCKET,
-    )
+    try:
+        _validate_video_storage_paths(
+            videos_storage_paths=people_counter_input.videos_storage_paths,
+            expected_bucket_name=VIDEOS_TO_COUNT_BUCKET,
+        )
+    except ValueError as value_error:
+        abort(code=status.HTTP_400_BAD_REQUEST, detail=str(value_error))
 
     video_assets = make_assets(
         assets_paths=people_counter_input.videos_storage_paths,
@@ -161,15 +164,22 @@ def count_people(
         ]
 
     job_name = f"count-people-{assets_batch_id}"
-    command_args = [
+    job_command_args = [
         "-m",
         "people_counting.jobs.count_people",
-        f"--job-id {job_id}",
-        f"--videos-storage-paths {' '.join(people_counter_input.videos_storage_paths)}",
     ]
+    job_environment_variables = {
+        "PROJECT_ID": PROJECT_ID,
+        "REGION": REGION,
+        "OBJECT_DETECTION_MODEL_NAME": OBJECT_DETECTION_MODEL_NAME,
+        "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
+        "FIRESTORE_RESULTS_COLLECTION": FIRESTORE_RESULTS_COLLECTION,
+        "JOB_ID": job_id,
+        "VIDEOS_STORAGE_PATHS": " ".join(people_counter_input.videos_storage_paths),
+    }
     if counted_videos_storage_paths is not None:
-        command_args += (
-            f"--counted-videos-storage-paths {' '.join(counted_videos_storage_paths)}"
+        job_environment_variables["COUNTED_VIDEOS_STORAGE_PATHS"] = " ".join(
+            counted_videos_storage_paths
         )
 
     cloud_run_job_manager.create_job(
@@ -179,14 +189,8 @@ def count_people(
             cpu=config.job.cpu,
             memory=config.job.memory,
             command=["python"],
-            command_args=command_args,
-            environment_variables={
-                "PROJECT_ID": PROJECT_ID,
-                "REGION": REGION,
-                "OBJECT_DETECTION_MODEL_NAME": OBJECT_DETECTION_MODEL_NAME,
-                "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
-                "FIRESTORE_RESULTS_COLLECTION": FIRESTORE_RESULTS_COLLECTION,
-            },
+            command_args=job_command_args,
+            environment_variables=job_environment_variables,
         ),
         override_if_existing=True,
     )

@@ -35,7 +35,7 @@ class PeopleCounterRealTimeInput(BaseModel):
 class PeopleCounterOutput(BaseModel):
     job_id: str
     assets_ids: List[str]
-    counted_videos_storage_paths: List[GSPath]
+    counted_videos_storage_paths: Optional[List[GSPath]] = None
 
 
 class PeopleCounterRealTimeOutput(BaseModel):
