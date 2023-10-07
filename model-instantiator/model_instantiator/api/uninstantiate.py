@@ -1,10 +1,9 @@
 import datetime
 import logging
-import os
 
 from core.google.logging_client import LoggerName, LoggingClient
 from core.google.vertex_ai_manager import VertexAIManager
-from core.routes.model_instantiator import route
+from core.routes.model_instantiator import routes
 from core.schemas.model_instantiator import (
     UninstantiateModelInput,
     UninstantiateModelLogsConditionedInput,
@@ -28,7 +27,9 @@ from model_instantiator.api.dependencies import (
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=[os.path.splitext(os.path.basename(__file__))[0]])
+router = APIRouter(
+    prefix=f"/{routes.Uninstantiator.prefix}", tags=[routes.Uninstantiator.prefix]
+)
 
 
 def _correctly_undeployed_endpoint_response(
@@ -87,7 +88,7 @@ def _too_recently_used_endpoint_response(
 
 
 @router.post(
-    route.uninstantiate,
+    routes.Uninstantiator.uninstantiate,
     response_model=UninstantiateModelOutput,
     status_code=status.HTTP_202_ACCEPTED,
 )
@@ -120,7 +121,7 @@ def uninstantiate_model(
 
 
 @router.post(
-    route.uninstantiate_logs_conditioned,
+    routes.Uninstantiator.uninstantiate_logs_conditioned,
     response_model=UninstantiateModelOutput,
     status_code=status.HTTP_202_ACCEPTED,
 )

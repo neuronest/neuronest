@@ -3,7 +3,7 @@ from typing import Optional
 import requests
 
 from core.client.base import APIClient
-from core.routes.model_instantiator import route
+from core.routes.model_instantiator import routes
 from core.schemas.model_instantiator import (
     InstantiateModelInput,
     UninstantiateModelInput,
@@ -12,11 +12,11 @@ from core.schemas.model_instantiator import (
 
 class ModelInstantiatorClient(APIClient):
     def __init__(self, host: str, key_path: Optional[str] = None):
-        super().__init__(host=host, key_path=key_path, root=route.root)
+        super().__init__(host=host, key_path=key_path, root=routes.root)
 
     def instantiate(self, model_name: str) -> requests.Response:
         instantiate_call_parameters = {
-            "resource": route.instantiate,
+            "resource": routes.Instantiator.instantiate,
             "verb": "post",
             "payload": InstantiateModelInput(model_name=model_name).dict(),
         }
@@ -25,7 +25,7 @@ class ModelInstantiatorClient(APIClient):
 
     def uninstantiate(self, model_name: str) -> requests.Response:
         return self.call(
-            resource=route.uninstantiate,
+            resource=routes.Uninstantiator.uninstantiate,
             verb="post",
             payload=UninstantiateModelInput(model_name=model_name).dict(),
         )
