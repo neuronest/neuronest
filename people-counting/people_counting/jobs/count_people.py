@@ -1,4 +1,3 @@
-import argparse
 import os
 from typing import List, Optional
 
@@ -9,11 +8,14 @@ from joblib import Parallel, delayed
 
 from people_counting.config import config as cfg
 from people_counting.jobs.environment_variables import (
+    COUNTED_VIDEOS_STORAGE_PATHS,
     FIRESTORE_RESULTS_COLLECTION,
+    JOB_ID,
     MODEL_INSTANTIATOR_HOST,
     OBJECT_DETECTION_MODEL_NAME,
     PROJECT_ID,
     REGION,
+    VIDEOS_STORAGE_PATHS,
 )
 from people_counting.jobs.services import (
     create_firestore_client,
@@ -106,32 +108,13 @@ def main(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--job-id",
-        dest="job_id",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "--videos-storage-paths",
-        dest="videos_storage_paths",
-        nargs="+",
-    )
-    parser.add_argument(
-        "--counted-videos-storage-paths",
-        dest="counted_videos_storage_paths",
-        nargs="+",
-    )
-    args = parser.parse_args()
-
     main(
         project_id=PROJECT_ID,
         region=REGION,
         object_detection_model_name=OBJECT_DETECTION_MODEL_NAME,
         model_instantiator_host=MODEL_INSTANTIATOR_HOST,
         firestore_results_collection=FIRESTORE_RESULTS_COLLECTION,
-        job_id=args.job_id,
-        videos_storage_paths=args.videos_storage_paths,
-        counted_videos_storage_paths=args.counted_videos_storage_paths,
+        job_id=JOB_ID,
+        videos_storage_paths=VIDEOS_STORAGE_PATHS,
+        counted_videos_storage_paths=COUNTED_VIDEOS_STORAGE_PATHS,
     )
