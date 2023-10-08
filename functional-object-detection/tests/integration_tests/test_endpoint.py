@@ -44,6 +44,14 @@ def fixture_model_instantiator_client() -> ModelInstantiatorClient:
     )
 
 
+@pytest.fixture(name="uninstantiate_teardown", autouse=True)
+def fixture_uninstantiate_teardown(model_instantiator_client: ModelInstantiatorClient):
+    try:
+        yield
+    finally:
+        model_instantiator_client.uninstantiate(model_name=MODEL_NAME)
+
+
 def test_endpoint_inference(
     vertex_ai_manager: VertexAIManager,
     model_instantiator_client: ModelInstantiatorClient,
@@ -67,5 +75,3 @@ def test_endpoint_inference(
         for batch_prediction_df in batch_predictions_df
         for class_name in batch_prediction_df.class_name
     ) == {"dog", "bicycle", "truck"}
-
-    model_instantiator_client.uninstantiate(model_name=MODEL_NAME)

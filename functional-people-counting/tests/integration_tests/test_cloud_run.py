@@ -20,6 +20,17 @@ def are_detections_correct(
     )
 
 
+@pytest.fixture(name="uninstantiate_teardown", autouse=True)
+def fixture_uninstantiate_teardown(
+    model_instantiator_client: ModelInstantiatorClient,
+    model_name: str,
+):
+    try:
+        yield
+    finally:
+        model_instantiator_client.uninstantiate(model_name=model_name)
+
+
 @pytest.mark.parametrize(
     "videos_storage_paths, up_amounts, down_amounts",
     [
@@ -35,10 +46,8 @@ def are_detections_correct(
 )
 # pylint: disable=too-many-locals
 def test_cloud_run_inference(
-    model_instantiator_client: ModelInstantiatorClient,
     people_counting_client: PeopleCountingClient,
     storage_client: StorageClient,
-    model_name: str,
     videos_storage_paths: List[GSPath],
     up_amounts: List[int],
     down_amounts: List[int],
@@ -112,5 +121,3 @@ def test_cloud_run_inference(
                 multiple_real_time_predictions, up_amounts, down_amounts
             )
         )
-
-    model_instantiator_client.uninstantiate(model_name=model_name)
