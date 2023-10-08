@@ -44,6 +44,7 @@ on:
         default: ''
 env:
   REPOSITORY_NAME: video-comparator
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   upload_variables_of_called_workflows:

@@ -26,6 +26,7 @@ on:
 env:
   REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
   TESTING_BASE_IMAGE: python:3.9.17-slim-buster
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   set_up_non_functional_repository_name:

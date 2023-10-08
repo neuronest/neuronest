@@ -66,6 +66,7 @@ on:
         value: ${{ jobs.object_detection.outputs.base_project_builder_sa_key }}
 env:
   REPOSITORY_NAME: object-detection
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   upload_variables_of_called_workflows:
