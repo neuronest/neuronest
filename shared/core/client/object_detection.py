@@ -141,6 +141,9 @@ class ObjectDetectionClient:
         max_tries: int = 5,
         current_try: int = 0,
     ) -> List[Any]:
+        if len(chunk_preprocessed_images) == 0:
+            return []
+
         endpoint = self._try_get_endpoint()
 
         try:
