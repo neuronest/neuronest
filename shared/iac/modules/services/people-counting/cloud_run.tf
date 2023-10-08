@@ -38,6 +38,10 @@ resource "google_cloud_run_service" "people_counting_api" {
           value = var.firestore_results_collection
         }
         env {
+          name  = "FIRESTORE_JOBS_COLLECTION"
+          value = var.firestore_jobs_collection
+        }
+        env {
           name  = "OBJECT_DETECTION_MODEL_NAME"
           value = var.object_detection_model_name
         }

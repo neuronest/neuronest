@@ -12,6 +12,7 @@ from requests import HTTPError
 
 from core.auth import generate_identity_token, get_credentials
 
+# todo: make it configurable from inherited classes
 HTTP_CALL_MAX_RETRY_ATTEMPT = 3
 
 

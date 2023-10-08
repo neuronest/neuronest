@@ -73,27 +73,26 @@ def test_cloud_run_inference(
         people_counter_output = people_counting_client.count_people(
             videos_paths=temporary_videos_paths,
         )
-        people_counter_documents = [
-            people_counting_client.retrieve_counted_people_document(
-                job_id=people_counter_output.job_id,
-                asset_id=asset_id,
-                wait_if_not_existing=True,
+        people_counter_job_results_document = (
+            people_counting_client.get_predictions_from_job_id(
+                job_id=people_counter_output.job_id, wait_if_not_existing=True
             )
-            for asset_id in people_counter_output.assets_ids
-        ]
+        )
 
         assert all(
-            people_counter_document.job_id == people_counter_output.job_id
-            for people_counter_document in people_counter_documents
+            people_counter_asset_results_document.job_id == people_counter_output.job_id
+            for people_counter_asset_results_document in (
+                people_counter_job_results_document.results
+            )
         )
         assert all(
             are_detections_correct(
-                detections=people_counter_document.detections,
+                detections=people_counter_asset_results_document.detections,
                 up_amount=up_amount,
                 down_amount=down_amount,
             )
-            for people_counter_document, up_amount, down_amount in zip(
-                people_counter_documents, up_amounts, down_amounts
+            for people_counter_asset_results_document, up_amount, down_amount in zip(
+                people_counter_job_results_document.results, up_amounts, down_amounts
             )
         )
 

@@ -4,14 +4,15 @@ from typing import List, Optional
 
 from core.api_exceptions import abort
 from core.google.cloud_run_job_manager import CloudRunJobManager
+from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
-from core.hashing import combine_hashes
 from core.path import GSPath
 from core.routes.people_counting import routes
 from core.schemas.asset import AssetType
 from core.schemas.google.cloud_run import JobConfig
 from core.schemas.people_counting import (
     PeopleCounterInput,
+    PeopleCounterJobDocument,
     PeopleCounterOutput,
     PeopleCounterRealTimeInput,
     PeopleCounterRealTimeOutput,
@@ -25,6 +26,8 @@ from starlette import status
 from people_counting.api.dependencies import (
     use_cloud_run_job_manager,
     use_config,
+    use_firestore_client,
+    use_firestore_jobs_collection,
     use_people_counter,
     use_storage_client,
 )
@@ -48,15 +51,11 @@ router = APIRouter(
 def _launched_job_response(
     response: Response,
     job_id: str,
-    assets_ids: List[str],
-    counted_videos_storage_paths: List[GSPath],
 ) -> PeopleCounterOutput:
     response.status_code = status.HTTP_201_CREATED
 
     return PeopleCounterOutput(
         job_id=job_id,
-        assets_ids=assets_ids,
-        counted_videos_storage_paths=counted_videos_storage_paths,
     )
 
 
@@ -111,6 +110,20 @@ def _create_counted_video_storage_path(
     )
 
 
+def _upload_people_job_document(
+    firestore_client: FirestoreClient,
+    firestore_jobs_collection: str,
+    job_id: str,
+    assets_ids: List[str],
+):
+    people_job_document = PeopleCounterJobDocument(job_id=job_id, assets_ids=assets_ids)
+    firestore_client.upload_document(
+        collection_name=firestore_jobs_collection,
+        document_id=job_id,
+        content=people_job_document.dict(),
+    )
+
+
 @router.post(
     routes.PeopleCounter.count_people,
     status_code=status.HTTP_201_CREATED,
@@ -121,6 +134,8 @@ def count_people(
     config: DictConfig = Depends(use_config),
     cloud_run_job_manager: CloudRunJobManager = Depends(use_cloud_run_job_manager),
     storage_client: StorageClient = Depends(use_storage_client),
+    firestore_client: FirestoreClient = Depends(use_firestore_client),
+    firestore_jobs_collection: str = Depends(use_firestore_jobs_collection),
 ) -> PeopleCounterOutput:
     job_id = uuid.uuid4().hex
 
@@ -149,7 +164,13 @@ def count_people(
         asset_type=AssetType.VIDEO,
     )
     assets_ids = [video_asset.get_hash() for video_asset in video_assets]
-    assets_batch_id = combine_hashes(assets_ids)
+
+    _upload_people_job_document(
+        firestore_client=firestore_client,
+        firestore_jobs_collection=firestore_jobs_collection,
+        job_id=job_id,
+        assets_ids=assets_ids,
+    )
 
     counted_videos_storage_paths = None
     if people_counter_input.save_counted_videos is True:
@@ -163,7 +184,7 @@ def count_people(
             for asset_id, video_asset in zip(assets_ids, video_assets)
         ]
 
-    job_name = f"count-people-{assets_batch_id}"
+    job_name = f"count-people-{job_id}"
     job_command_args = [
         "-m",
         "people_counting.jobs.count_people",
@@ -199,8 +220,6 @@ def count_people(
     return _launched_job_response(
         response=response,
         job_id=job_id,
-        assets_ids=assets_ids,
-        counted_videos_storage_paths=counted_videos_storage_paths,
     )
 
 

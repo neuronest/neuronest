@@ -68,7 +68,7 @@ def make_assets(
     return [
         make_asset(
             asset_path=asset_path,
-            asset_type=asset_type or infer_asset_type(asset_path),
+            asset_type=asset_type,
             storage_client=storage_client,
             time_step=time_step,
         )

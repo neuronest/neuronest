@@ -34,8 +34,6 @@ class PeopleCounterRealTimeInput(BaseModel):
 
 class PeopleCounterOutput(BaseModel):
     job_id: str
-    assets_ids: List[str]
-    counted_videos_storage_paths: Optional[List[GSPath]] = None
 
 
 class PeopleCounterRealTimeOutput(BaseModel):
@@ -43,16 +41,22 @@ class PeopleCounterRealTimeOutput(BaseModel):
     counted_video_storage_path: Optional[GSPath] = None
 
 
-class VideosToCountBucketOutput(BaseModel):
-    bucket: str
+class ResourcesOutput(BaseModel):
+    resource: str
 
 
-class FirestoreResultsCollectionOutput(BaseModel):
-    collection: str
+class PeopleCounterJobDocument(BaseModel):
+    job_id: str
+    assets_ids: List[str]
 
 
-class PeopleCounterDocument(BaseModel):
+class PeopleCounterAssetResultsDocument(BaseModel):
     asset_id: str
     job_id: str
     detections: List[Detection]
-    counted_video_storage_path: GSPath
+    video_storage_path: GSPath
+    counted_video_storage_path: Optional[GSPath] = None
+
+
+class PeopleCounterJobResultsDocument(BaseModel):
+    results: List[PeopleCounterAssetResultsDocument]

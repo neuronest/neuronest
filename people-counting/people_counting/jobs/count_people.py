@@ -1,8 +1,8 @@
 import os
 from typing import List, Optional
 
-from core.hashing import combine_hashes
-from core.schemas.people_counting import PeopleCounterDocument
+from core.client.people_counting import make_results_document_id
+from core.schemas.people_counting import PeopleCounterAssetResultsDocument
 from core.services.asset_reader import make_asset
 from joblib import Parallel, delayed
 
@@ -57,16 +57,17 @@ def run_asset_counting(
         counted_video_storage_path=counted_video_storage_path,
     )
 
-    people_counter_document = PeopleCounterDocument(
+    people_counter_document = PeopleCounterAssetResultsDocument(
         asset_id=asset_id,
         job_id=job_id,
         detections=statistics.to_detections(),
-        counted_video_storage_path=video_storage_path,
+        video_storage_path=video_storage_path,
+        counted_video_storage_path=counted_video_storage_path,
     )
 
     firestore_client.upload_document(
         collection_name=firestore_results_collection,
-        document_id=combine_hashes([asset_id, job_id]),
+        document_id=make_results_document_id(asset_id=asset_id, job_id=job_id),
         content=people_counter_document.dict(),
     )
 
