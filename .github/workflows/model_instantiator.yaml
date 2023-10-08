@@ -49,6 +49,7 @@ on:
 
 env:
   REPOSITORY_NAME: model-instantiator
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   run_base_terraform:
@@ -72,7 +73,7 @@ jobs:
     runs-on: neuronest-runner-set
     needs: run_base_terraform
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
+    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     outputs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
       dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
@@ -100,8 +101,8 @@ jobs:
     needs:
       - run_base_terraform
       - build_test_push
-    # If the workflow isn't called, inputs are blank and all jobs should run
-    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
     container:
       image: google/cloud-sdk
     steps:

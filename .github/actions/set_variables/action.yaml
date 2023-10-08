@@ -68,6 +68,7 @@ runs:
     - run: |
         python3 .github/actions/set_variables/create_env_file.py \
           --repository_name ${{ env.REPOSITORY_NAME }} \
+          --branch_name ${{ env.GITHUB_BRANCH }} \
           --environment_variables_file_path ${{ steps.set_created_env_file_path.outputs.value }} \
           --add_terraform_variables ${{ inputs.set_up_terraform_variables }} \
           --variable_prefix_to_filter_on "${{ inputs.variable_prefix_to_filter_on }}" \

@@ -48,6 +48,7 @@ on:
 env:
   REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
   DOCKERFILE_PATH: shared/core/dockerfiles/abstract/online_prediction_model.Dockerfile
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   run_base_terraform:
@@ -75,7 +76,7 @@ jobs:
     # skipped. To allow jobs to run despite a skip in the series,
     # we use the !failure() condition
     # see: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds
-    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() }}
+    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     outputs:
       dockerhub_training_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_training_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
@@ -107,7 +108,7 @@ jobs:
   get_training_images:
     runs-on: neuronest-runner-set
     needs: build_test_push_training_image
-    if: ${{ !failure() }}
+    if: ${{ !failure() && !cancelled() }}
     outputs:
       dockerhub_image: ${{ steps.get_dockerhub_and_gcp_training_images.outputs.dockerhub_image }}
       gcp_image: ${{ steps.get_dockerhub_and_gcp_training_images.outputs.gcp_image }}
@@ -127,7 +128,7 @@ jobs:
   get_base_project_builder_sa_key:
     runs-on: neuronest-runner-set
     needs: run_base_terraform
-    if: ${{ !failure() }}
+    if: ${{ !failure() && !cancelled() }}
     outputs:
       value: ${{ steps.get_base_project_builder_sa_key.outputs.base_project_builder_sa_key }}
     steps:
@@ -146,7 +147,7 @@ jobs:
       - get_base_project_builder_sa_key
       - get_training_images
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() }}
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
     container: google/cloud-sdk
     steps:
       - uses: actions/checkout@v3
@@ -167,7 +168,7 @@ jobs:
       - get_training_images
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
@@ -218,7 +219,7 @@ jobs:
       - train
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     outputs:
       dockerhub_serving_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
@@ -256,7 +257,7 @@ jobs:
       - build_test_push_serving_image
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() }}
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}

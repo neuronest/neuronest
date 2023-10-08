@@ -15,14 +15,16 @@ multi_instance_resource_names:
   # cloud run
   - CLOUD_RUN_NAME=webapp
 other_variables:
-  # cloud run
-  - CLOUD_RUN_MEMORY=1Gi
-  - CLOUD_RUN_CPU=1000m
-  - CLOUD_RUN_MIN_SCALE=0
-  - CLOUD_RUN_MAX_SCALE=1
-  # cloud scheduler
-  - CLOUD_SCHEDULER_SCHEDULE='*/30 * * * *'
-  - CLOUD_UNINSTANTIATE_ROUTE=/model_instantiator/api/v1/uninstantiate_logs_conditioned
-  # GCP project
-  - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
-  - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}
+  branch:
+    default:
+    # cloud run
+    - CLOUD_RUN_MEMORY=1Gi
+    - CLOUD_RUN_CPU=1000m
+    - CLOUD_RUN_MIN_SCALE=0
+    - CLOUD_RUN_MAX_SCALE=1
+    # cloud scheduler
+    - CLOUD_SCHEDULER_SCHEDULE='*/30 * * * *'
+    - CLOUD_UNINSTANTIATE_ROUTE=/model_instantiator/api/v1/uninstantiate_logs_conditioned
+    # GCP project
+    - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
+    - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}

@@ -46,6 +46,8 @@ on:
         default: ''
 env:
   REPOSITORY_NAME: functional-object-detection
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+  TESTING_BASE_IMAGE: python:3.9.17-slim-buster
 
 jobs:
   upload_variables_of_called_workflows:
