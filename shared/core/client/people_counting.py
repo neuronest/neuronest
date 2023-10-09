@@ -19,7 +19,7 @@ from core.schemas.people_counting import (
     PeopleCounterRealTimeOutput,
     ResourcesOutput,
 )
-from core.tools import generate_file_id
+from core.tools import generate_file_id, get_chunks_from_iterable
 
 
 def make_results_document_id(
@@ -97,6 +97,19 @@ class PeopleCountingClient(APIClient):
             )
         ).resource
 
+    def _get_maximum_videos_number(self) -> int:
+        return int(
+            ResourcesOutput(
+                **json.loads(
+                    self.call(
+                        resource=f"/{routes.Resources.prefix}"
+                        f"{routes.Resources.maximum_videos_number}",
+                        verb="get",
+                    ).text
+                )
+            ).resource
+        )
+
     def _get_predictions(
         self,
         job_id: str,
@@ -138,6 +151,33 @@ class PeopleCountingClient(APIClient):
             retry_wait_time=retry_wait_time,
         )
 
+    def _chunk_count_people(
+        self,
+        videos_paths: List[str],
+        save_counted_videos_in_storage: bool,
+    ) -> PeopleCounterOutput:
+        uploaded_videos_storage_paths = [
+            self._upload_video_to_storage(
+                video_path=LocalPath(video_path),
+                destination_bucket=self._get_videos_to_count_bucket(),
+            )
+            for video_path in videos_paths
+        ]
+
+        return PeopleCounterOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.PeopleCounter.prefix}"
+                    f"{routes.PeopleCounter.count_people}",
+                    verb="post",
+                    payload=PeopleCounterInput(
+                        videos_storage_paths=uploaded_videos_storage_paths,
+                        save_counted_videos=save_counted_videos_in_storage,
+                    ).dict(),
+                ).text
+            )
+        )
+
     def get_predictions_from_job_id(
         self,
         job_id: str,
@@ -172,28 +212,16 @@ class PeopleCountingClient(APIClient):
         self,
         videos_paths: List[str],
         save_counted_videos_in_storage: bool = False,
-    ) -> PeopleCounterOutput:
-        uploaded_videos_storage_paths = [
-            self._upload_video_to_storage(
-                video_path=LocalPath(video_path),
-                destination_bucket=self._get_videos_to_count_bucket(),
+    ) -> List[PeopleCounterOutput]:
+        return [
+            self._chunk_count_people(
+                videos_paths=chunk_videos_paths,
+                save_counted_videos_in_storage=save_counted_videos_in_storage,
             )
-            for video_path in videos_paths
+            for chunk_videos_paths in get_chunks_from_iterable(
+                iterable=videos_paths, chunk_size=self._get_maximum_videos_number()
+            )
         ]
-
-        return PeopleCounterOutput(
-            **json.loads(
-                self.call(
-                    resource=f"/{routes.PeopleCounter.prefix}"
-                    f"{routes.PeopleCounter.count_people}",
-                    verb="post",
-                    payload=PeopleCounterInput(
-                        videos_storage_paths=uploaded_videos_storage_paths,
-                        save_counted_videos=save_counted_videos_in_storage,
-                    ).dict(),
-                ).text
-            )
-        )
 
     def count_people_real_time(
         self,

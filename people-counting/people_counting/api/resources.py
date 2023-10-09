@@ -45,4 +45,4 @@ def get_firestore_jobs_collection() -> ResourcesOutput:
 def get_maximum_videos_number(
     config: DictConfig = Depends(use_config),
 ) -> ResourcesOutput:
-    return ResourcesOutput(resource=config.api.maximum_videos_number)
+    return ResourcesOutput(resource=str(config.api.maximum_videos_number))
