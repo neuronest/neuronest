@@ -29,8 +29,8 @@ class ServingModelUpload(BaseModel):
 
 class ServingDeployment(BaseModel):
     machine_type: str
-    accelerator_type: str
-    accelerator_count: int
+    accelerator_type: Optional[str]
+    accelerator_count: Optional[int]
     min_replica_count: int
     max_replica_count: int
     service_account_name: Optional[str]

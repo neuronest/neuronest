@@ -23,8 +23,8 @@ serving_model_upload:
 
 serving_deployment:
   machine_type: "n1-standard-2"
-  accelerator_type: "NVIDIA_TESLA_T4"
-  accelerator_count: 1
+  accelerator_type: "${oc.env:SERVING_ACCELERATOR_TYPE,null}"
+  accelerator_count: "${oc.env:SERVING_ACCELERATOR_COUNT,null}"
   min_replica_count: 1
   max_replica_count: 1
   service_account_name: "${oc.env:SERVICE_ACCOUNT_NAME,null}"

@@ -14,5 +14,10 @@ multi_instance_resource_names:
   # storage
   - MODELS_BUCKET=models-${PROJECT_ID}
 other_variables:
-  # GCP project
-  - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
+  branch:
+    default:
+      # GCP project
+      - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
+      # vertex
+      - SERVING_ACCELERATOR_TYPE=NVIDIA_TESLA_T4
+      - SERVING_ACCELERATOR_COUNT=1
