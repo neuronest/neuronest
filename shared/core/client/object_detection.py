@@ -1,3 +1,4 @@
+import random
 import time
 from typing import Any, Dict, List, Optional
 
@@ -139,6 +140,8 @@ class ObjectDetectionClient:
         self,
         chunk_preprocessed_images: List[Dict[str, str]],
         max_tries: int = 5,
+        base_retry_delay: float = 1.0,
+        max_retry_delay: float = 32.0,
         current_try: int = 0,
     ) -> List[Any]:
         if len(chunk_preprocessed_images) == 0:
@@ -153,7 +156,11 @@ class ObjectDetectionClient:
             if current_try > max_tries:
                 raise service_unavailable
 
-            time.sleep(2**current_try)  # exponential backoff
+            # exponential backoff with random
+            delay = min(base_retry_delay * (2**current_try), max_retry_delay)
+            delay_with_random = random.uniform(base_retry_delay, delay)
+
+            time.sleep(delay_with_random)
 
             # we divide the initial list into smaller chunks in case the size of the
             # initial list was an issue to be handled properly by the endpoint
