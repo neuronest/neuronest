@@ -6,6 +6,7 @@ import pytest
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.object_detection import ObjectDetectionClient
 from core.google.vertex_ai_manager import VertexAIManager
+
 from tests.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
