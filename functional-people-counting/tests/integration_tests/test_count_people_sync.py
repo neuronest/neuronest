@@ -23,8 +23,7 @@ from tests.integration_tests.common import are_detections_correct
         )
     ],
 )
-@pytest.mark.order(2)
-def test_count_people_cloud_run(
+def test_count_people_sync(
     people_counting_client: PeopleCountingClient,
     storage_client: StorageClient,
     videos_storage_paths: List[GSPath],
@@ -37,10 +36,9 @@ def test_count_people_cloud_run(
         storage_client=storage_client,
     )
 
-    multiple_real_time_predictions = [
-        people_counting_client.count_people_real_time(video_path=asset.asset_path)
-        for asset in assets
-    ]
+    multiple_real_time_predictions = people_counting_client.count_people_sync(
+        videos_paths=[asset.asset_path for asset in assets]
+    )
     assert all(
         are_detections_correct(
             detections=real_time_predictions.detections,

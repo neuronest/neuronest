@@ -24,8 +24,7 @@ from tests.integration_tests.common import are_detections_correct
         )
     ],
 )
-@pytest.mark.order(1)
-def test_count_people_cloud_job(
+def test_count_people_async(
     people_counting_client: PeopleCountingClient,
     storage_client: StorageClient,
     videos_storage_paths: List[GSPath],
@@ -38,7 +37,7 @@ def test_count_people_cloud_job(
         storage_client=storage_client,
     )
 
-    people_counter_outputs = people_counting_client.count_people(
+    people_counter_outputs = people_counting_client.count_people_async(
         videos_paths=[asset.asset_path for asset in assets],
     )
     people_counter_job_results_documents = [
