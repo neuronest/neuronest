@@ -178,6 +178,21 @@ class PeopleCountingClient(APIClient):
             )
         )
 
+    def _count_people(
+        self,
+        videos_paths: List[str],
+        save_counted_videos_in_storage: bool = False,
+    ) -> List[PeopleCounterOutput]:
+        return [
+            self._chunk_count_people(
+                videos_paths=chunk_videos_paths,
+                save_counted_videos_in_storage=save_counted_videos_in_storage,
+            )
+            for chunk_videos_paths in get_chunks_from_iterable(
+                iterable=videos_paths, chunk_size=self._get_maximum_videos_number()
+            )
+        ]
+
     def get_predictions_from_job_id(
         self,
         job_id: str,
@@ -208,21 +223,40 @@ class PeopleCountingClient(APIClient):
             ]
         )
 
-    def count_people(
+    def count_people_async(
         self,
         videos_paths: List[str],
         save_counted_videos_in_storage: bool = False,
     ) -> List[PeopleCounterOutput]:
-        return [
-            self._chunk_count_people(
-                videos_paths=chunk_videos_paths,
-                save_counted_videos_in_storage=save_counted_videos_in_storage,
+        return self._count_people(
+            videos_paths=videos_paths,
+            save_counted_videos_in_storage=save_counted_videos_in_storage,
+        )
+
+    def count_people_sync(
+        self,
+        videos_paths: List[str],
+        save_counted_videos_in_storage: bool = False,
+    ) -> List[PeopleCounterAssetResultsDocument]:
+        people_counter_outputs = self._count_people(
+            videos_paths=videos_paths,
+            save_counted_videos_in_storage=save_counted_videos_in_storage,
+        )
+
+        people_counter_job_results_documents = [
+            self.get_predictions_from_job_id(
+                job_id=people_counter_output.job_id, wait_if_not_existing=True
             )
-            for chunk_videos_paths in get_chunks_from_iterable(
-                iterable=videos_paths, chunk_size=self._get_maximum_videos_number()
-            )
+            for people_counter_output in people_counter_outputs
         ]
 
+        return [
+            asset_results
+            for people_counter_job_results_document in people_counter_job_results_documents
+            for asset_results in people_counter_job_results_document.results
+        ]
+
+    # used for debugging purposes only
     def count_people_real_time(
         self,
         video_path: str,
