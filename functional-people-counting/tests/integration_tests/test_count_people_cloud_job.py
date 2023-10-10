@@ -24,6 +24,7 @@ from tests.integration_tests.common import are_detections_correct
         )
     ],
 )
+@pytest.mark.order(1)
 def test_count_people_cloud_job(
     people_counting_client: PeopleCountingClient,
     storage_client: StorageClient,
