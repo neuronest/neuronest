@@ -11,7 +11,7 @@ from core.schemas.video_comparator import (
     OutputSchemaSample,
     PredictionType,
 )
-from core.tools import get_chunks_from_iterable, get_file_id_from_path
+from core.tools import generate_file_id, get_chunks_from_iterable
 
 Video = Union[str, np.ndarray]
 Sample = Union[Video, Iterable[Video]]
@@ -37,7 +37,7 @@ class VideoComparatorClient(OnlinePredictionModelClient):
         if not bucket.exists():
             bucket.create()
 
-        video_blob_name = get_file_id_from_path(file_path=video_path)
+        video_blob_name = generate_file_id(file_path=video_path)
 
         self.storage_client.upload_blob(
             source_file_name=video_path,
