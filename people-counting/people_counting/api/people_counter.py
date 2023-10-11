@@ -118,7 +118,7 @@ def _upload_people_job_document(
     assets_ids: List[str],
 ):
     people_job_document = PeopleCounterJobDocument(
-        job_id=job_id, job_date=datetime.now(), assets_ids=assets_ids
+        job_id=job_id, job_date=datetime.utcnow(), assets_ids=assets_ids
     )
     firestore_client.upload_document(
         collection_name=firestore_jobs_collection,
