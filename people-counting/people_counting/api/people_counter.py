@@ -1,5 +1,6 @@
 import os
 import uuid
+from datetime import datetime
 from typing import List, Optional
 
 from core.api_exceptions import abort
@@ -116,7 +117,9 @@ def _upload_people_job_document(
     job_id: str,
     assets_ids: List[str],
 ):
-    people_job_document = PeopleCounterJobDocument(job_id=job_id, assets_ids=assets_ids)
+    people_job_document = PeopleCounterJobDocument(
+        job_id=job_id, job_date=datetime.now(), assets_ids=assets_ids
+    )
     firestore_client.upload_document(
         collection_name=firestore_jobs_collection,
         document_id=job_id,

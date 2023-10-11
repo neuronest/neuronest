@@ -1,3 +1,4 @@
+import datetime
 import json
 import time
 from typing import List, Optional
@@ -116,7 +117,7 @@ class PeopleCountingClient(APIClient):
         asset_id: str,
         wait_if_not_existing: bool,
         timeout: int,
-        retry_wait_time: int,
+        retry_wait_time: int = 60,
         total_waited_time: int = 0,
     ) -> PeopleCounterAssetResultsDocument:
         results_document = self.firestore_client.get_document(
@@ -197,8 +198,7 @@ class PeopleCountingClient(APIClient):
         self,
         job_id: str,
         wait_if_not_existing: bool = False,
-        timeout: int = 2700,
-        retry_wait_time: int = 60,
+        job_timeout: int = 2700,
     ) -> PeopleCounterJobResultsDocument:
         raw_job_document = self.firestore_client.get_document(
             collection_name=self._get_firestore_jobs_collection(),
@@ -209,6 +209,13 @@ class PeopleCountingClient(APIClient):
             raise PredictionsNotFoundError(f"No predictions found for job_id={job_id}")
 
         job_document = PeopleCounterJobDocument.parse_obj(raw_job_document)
+        job_time_delta = (
+            job_timeout
+            - (
+                datetime.datetime.now(job_document.job_date.tzinfo)
+                - job_document.job_date
+            ).seconds
+        )
 
         return PeopleCounterJobResultsDocument(
             results=[
@@ -216,8 +223,7 @@ class PeopleCountingClient(APIClient):
                     job_id=job_id,
                     asset_id=asset_id,
                     wait_if_not_existing=wait_if_not_existing,
-                    timeout=timeout,
-                    retry_wait_time=retry_wait_time,
+                    timeout=job_time_delta,
                 )
                 for asset_id in job_document.assets_ids
             ]

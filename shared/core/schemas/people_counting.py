@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
@@ -47,6 +48,7 @@ class ResourcesOutput(BaseModel):
 
 class PeopleCounterJobDocument(BaseModel):
     job_id: str
+    job_date: datetime
     assets_ids: List[str]
 
 
