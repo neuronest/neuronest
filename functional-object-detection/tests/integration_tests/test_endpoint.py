@@ -2,9 +2,11 @@ import numpy as np
 from core.client.object_detection import ObjectDetectionClient
 
 
+# pylint: disable=unused-argument
 def test_endpoint_inference(
     object_detection_client: ObjectDetectionClient,
     image: np.ndarray,
+    uninstantiate_teardown,
 ):
     single_prediction_df = object_detection_client.predict_single(image)
     assert set(single_prediction_df.class_name) == {"dog", "bicycle", "truck"}

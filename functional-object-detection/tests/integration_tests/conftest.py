@@ -42,19 +42,19 @@ def fixture_region() -> str:
     return REGION
 
 
-@pytest.fixture(name="image_directory")
+@pytest.fixture(name="image_directory", scope="session")
 def fixture_image_directory() -> str:
     return os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"
     )
 
 
-@pytest.fixture(name="image")
+@pytest.fixture(name="image", scope="session")
 def fixture_sample(image_directory: str) -> np.ndarray:
     return cv.imread(os.path.join(image_directory, "sample.png"))
 
 
-@pytest.fixture(name="vertex_ai_manager")
+@pytest.fixture(name="vertex_ai_manager", scope="session")
 def fixture_vertex_ai_manager(
     region: str, project_id: str, google_application_credentials: Optional[str]
 ) -> VertexAIManager:
@@ -65,7 +65,7 @@ def fixture_vertex_ai_manager(
     )
 
 
-@pytest.fixture(name="model_instantiator_client")
+@pytest.fixture(name="model_instantiator_client", scope="session")
 def fixture_model_instantiator_client(
     model_instantiator_host: str, google_application_credentials: Optional[str]
 ) -> ModelInstantiatorClient:
@@ -75,7 +75,7 @@ def fixture_model_instantiator_client(
     )
 
 
-@pytest.fixture(name="object_detection_client")
+@pytest.fixture(name="object_detection_client", scope="session")
 def fixture_object_detection_client(
     vertex_ai_manager: VertexAIManager,
     model_instantiator_client: ModelInstantiatorClient,
@@ -86,3 +86,15 @@ def fixture_object_detection_client(
         model_instantiator_client=model_instantiator_client,
         model_name=model_name,
     )
+
+
+@pytest.fixture(name="uninstantiate_teardown", scope="session")
+def fixture_uninstantiate_teardown(
+    model_instantiator_client: ModelInstantiatorClient,
+    model_name: str,
+):
+    try:
+        yield
+
+    finally:
+        model_instantiator_client.uninstantiate(model_name)

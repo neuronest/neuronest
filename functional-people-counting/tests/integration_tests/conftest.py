@@ -58,3 +58,15 @@ def fixture_people_counting_client(
 @pytest.fixture(name="storage_client", scope="session")
 def fixture_storage_client() -> StorageClient:
     return StorageClient()
+
+
+@pytest.fixture(name="uninstantiate_teardown", scope="session")
+def fixture_uninstantiate_teardown(
+    model_instantiator_client: ModelInstantiatorClient,
+    model_name: str,
+):
+    try:
+        yield
+
+    finally:
+        model_instantiator_client.uninstantiate(model_name)

@@ -252,7 +252,9 @@ class PeopleCountingClient(APIClient):
 
         return [
             asset_results
-            for people_counter_job_results_document in people_counter_job_results_documents
+            for people_counter_job_results_document in (
+                people_counter_job_results_documents
+            )
             for asset_results in people_counter_job_results_document.results
         ]
 

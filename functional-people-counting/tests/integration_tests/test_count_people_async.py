@@ -24,12 +24,14 @@ from tests.integration_tests.common import are_detections_correct
         )
     ],
 )
+# pylint: disable=unused-argument
 def test_count_people_async(
     people_counting_client: PeopleCountingClient,
     storage_client: StorageClient,
     videos_storage_paths: List[GSPath],
     up_amounts: List[int],
     down_amounts: List[int],
+    uninstantiate_teardown,
 ):
     assets = make_assets(
         assets_paths=videos_storage_paths,
