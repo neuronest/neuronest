@@ -22,7 +22,7 @@ inputs:
     default: shared
   maximum_number_images_to_keep:
     description: 'Maximum number of most recent docker images to keep in the registry'
-    default: 2
+    default: 1
 outputs:
   dockerhub_image_name:
     description: 'Built and pushed image name to DockerHub'

@@ -11,6 +11,7 @@ from omegaconf import DictConfig
 
 from people_counting.config import config as cfg
 from people_counting.environment_variables import (
+    FIRESTORE_JOBS_COLLECTION,
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
     OBJECT_DETECTION_MODEL_NAME,
@@ -33,6 +34,11 @@ def use_storage_client() -> StorageClient:
 @lru_cache
 def use_firestore_client() -> FirestoreClient:
     return FirestoreClient(key_path=GOOGLE_APPLICATION_CREDENTIALS)
+
+
+@lru_cache
+def use_firestore_jobs_collection() -> str:
+    return FIRESTORE_JOBS_COLLECTION
 
 
 @lru_cache

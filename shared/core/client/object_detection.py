@@ -1,10 +1,12 @@
+import random
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 import requests
 from cachetools.func import ttl_cache
+from google.api_core.exceptions import ServiceUnavailable
 from google.cloud import aiplatform
 from imutils import resize
 
@@ -18,6 +20,7 @@ from core.schemas.object_detection import (
 )
 from core.serialization.array import array_from_string
 from core.serialization.image import image_to_string
+from core.tools import split_list_into_two_parts
 
 
 class ObjectDetectionClient:
@@ -133,6 +136,49 @@ class ObjectDetectionClient:
 
         return chunks
 
+    def _predict_batch(
+        self,
+        chunk_preprocessed_images: List[Dict[str, str]],
+        max_tries: int = 5,
+        base_retry_delay: float = 1.0,
+        max_retry_delay: float = 32.0,
+        current_try: int = 0,
+    ) -> List[Any]:
+        if len(chunk_preprocessed_images) == 0:
+            return []
+
+        endpoint = self._try_get_endpoint()
+
+        try:
+            return endpoint.predict(chunk_preprocessed_images).predictions
+        except ServiceUnavailable as service_unavailable:
+            current_try += 1
+            if current_try > max_tries:
+                raise service_unavailable
+
+            # exponential backoff with random
+            delay = min(base_retry_delay * (2**current_try), max_retry_delay)
+            delay_with_random = random.uniform(base_retry_delay, delay)
+
+            time.sleep(delay_with_random)
+
+            # we divide the initial list into smaller chunks in case the size of the
+            # initial list was an issue to be handled properly by the endpoint
+            (
+                left_chunk_preprocessed_images,
+                right_chunk_preprocessed_images,
+            ) = split_list_into_two_parts(chunk_preprocessed_images)
+
+            return self._predict_batch(
+                chunk_preprocessed_images=left_chunk_preprocessed_images,
+                max_tries=max_tries,
+                current_try=current_try,
+            ) + self._predict_batch(
+                chunk_preprocessed_images=right_chunk_preprocessed_images,
+                max_tries=max_tries,
+                current_try=current_try,
+            )
+
     def predict_batch(
         self,
         images: List[np.ndarray],
@@ -158,9 +204,8 @@ class ObjectDetectionClient:
         ]
         chunks_preprocessed_images = self._split_into_chunks(preprocessed_images)
 
-        endpoint = self._try_get_endpoint()
         raw_chunked_predictions = [
-            endpoint.predict(chunk_preprocessed_images).predictions
+            self._predict_batch(chunk_preprocessed_images)
             for chunk_preprocessed_images in chunks_preprocessed_images
         ]
         predictions = [

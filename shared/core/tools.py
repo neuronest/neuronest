@@ -1,7 +1,6 @@
 import hashlib
 import os
-from functools import wraps
-from typing import Any, Callable, Iterable, Iterator, List, Optional
+from typing import Any, Iterable, Iterator, List, Optional, Tuple
 
 
 def get_chunks_from_iterable(
@@ -40,6 +39,15 @@ def get_chunks_from_iterable(
         yield chunk
 
 
+def split_list_into_two_parts(elements: List[Any]) -> Tuple[List[Any], List[Any]]:
+    if len(elements) <= 1:
+        return elements, []
+
+    middle_index = len(elements) // 2
+
+    return elements[:middle_index], elements[middle_index:]
+
+
 def extract_file_extension(path: str) -> str:
     extension = os.path.splitext(path)[-1]
 
@@ -47,27 +55,6 @@ def extract_file_extension(path: str) -> str:
         raise ValueError(f"Unable to get the file extension from '{path}'")
 
     return extension
-
-
-def maybe_async(convert_to_async: bool) -> Callable:
-    """
-    Make a sync or async function dynamically.
-    Useful in some cases for debug where the
-    function must then be def or async def for example
-    """
-
-    def decorator(func):
-        if convert_to_async is True:
-
-            @wraps(func)
-            async def async_func(*args, **kwargs):
-                return await func(*args, **kwargs)
-
-            return async_func
-
-        return func
-
-    return decorator
 
 
 def generate_file_id(

@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
@@ -22,6 +23,11 @@ class Detection(BaseModel):
 
 
 class PeopleCounterInput(BaseModel):
+    videos_storage_paths: List[GSPath]
+    save_counted_videos: bool = False
+
+
+class PeopleCounterRealTimeInput(BaseModel):
     video_storage_path: GSPath
     save_counted_video: bool = False
     enable_video_showing: bool = False
@@ -29,23 +35,30 @@ class PeopleCounterInput(BaseModel):
 
 class PeopleCounterOutput(BaseModel):
     job_id: str
-    asset_id: str
-    storage_path: GSPath
-    counted_video_storage_path: Optional[GSPath] = None
-
-
-class VideosToCountBucketOutput(BaseModel):
-    bucket: str
-
-
-class FirestoreResultsCollectionOutput(BaseModel):
-    collection: str
-
-
-class PeopleCounterDocument(PeopleCounterOutput):
-    detections: List[Detection]
 
 
 class PeopleCounterRealTimeOutput(BaseModel):
     detections: List[Detection]
     counted_video_storage_path: Optional[GSPath] = None
+
+
+class ResourcesOutput(BaseModel):
+    resource: str
+
+
+class PeopleCounterJobDocument(BaseModel):
+    job_id: str
+    job_date: datetime
+    assets_ids: List[str]
+
+
+class PeopleCounterAssetResultsDocument(BaseModel):
+    asset_id: str
+    job_id: str
+    detections: List[Detection]
+    video_storage_path: GSPath
+    counted_video_storage_path: Optional[GSPath] = None
+
+
+class PeopleCounterJobResultsDocument(BaseModel):
+    results: List[PeopleCounterAssetResultsDocument]

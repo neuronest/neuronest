@@ -8,6 +8,8 @@ class _PeopleCountingRoutes(_BaseRoutes):
         prefix = "resources"
         videos_to_count_bucket: str = "/videos_to_count_bucket"
         firestore_results_collection: str = "/firestore_results_collection"
+        firestore_jobs_collection: str = "/firestore_jobs_collection"
+        maximum_videos_number: str = "/maximum_videos_number"
 
     class PeopleCounter:
         prefix = "people_counter"
