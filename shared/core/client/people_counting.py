@@ -133,15 +133,15 @@ class PeopleCountingClient(APIClient):
                 f"No predictions found for job_id={job_id} and asset_id={asset_id}"
             )
 
-        time.sleep(retry_wait_time)
-        total_waited_time += retry_wait_time
-
-        if total_waited_time > timeout:
+        if total_waited_time + retry_wait_time > timeout:
             raise TimeoutError(
                 f"Failed to retrieve predictions for job_id={job_id} "
                 f"and asset_id={asset_id}, giving up after {timeout // 60} "
                 f"minutes of trying"
             )
+
+        time.sleep(retry_wait_time)
+        total_waited_time += retry_wait_time
 
         return self._get_predictions(
             job_id=job_id,
@@ -209,25 +209,31 @@ class PeopleCountingClient(APIClient):
             raise PredictionsNotFoundError(f"No predictions found for job_id={job_id}")
 
         job_document = PeopleCounterJobDocument.parse_obj(raw_job_document)
-        job_time_delta = (
-            job_timeout
-            - (
-                datetime.datetime.now(job_document.job_date.tzinfo)
-                - job_document.job_date
-            ).seconds
+        job_time_delta = max(
+            (
+                job_timeout
+                - (datetime.datetime.utcnow() - job_document.job_date).seconds
+            ),
+            0,
         )
 
-        return PeopleCounterJobResultsDocument(
-            results=[
-                self._get_predictions(
-                    job_id=job_id,
-                    asset_id=asset_id,
-                    wait_if_not_existing=wait_if_not_existing,
-                    timeout=job_time_delta,
-                )
-                for asset_id in job_document.assets_ids
-            ]
-        )
+        try:
+            return PeopleCounterJobResultsDocument(
+                results=[
+                    self._get_predictions(
+                        job_id=job_id,
+                        asset_id=asset_id,
+                        wait_if_not_existing=wait_if_not_existing,
+                        timeout=job_time_delta,
+                    )
+                    for asset_id in job_document.assets_ids
+                ]
+            )
+        except TimeoutError as timeout_error:
+            raise TimeoutError(
+                f"At least one asset results could not be retrieved in time "
+                f"(targeted job UTC date: {job_document.job_date})"
+            ) from timeout_error
 
     def count_people_async(
         self,
