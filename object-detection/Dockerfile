@@ -31,6 +31,8 @@ ARG MODEL_NAME
 ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
 ARG POETRY_VERSION="1.3.2"
+ARG BATCH_SIZE="32"
+ARG MAX_BATCH_DELAY="50"
 
 ENV PIP_ROOT_USER_ACTION=ignore
 ENV REPOSITORY_NAME=$REPOSITORY_NAME
@@ -39,6 +41,8 @@ ENV MODEL_NAME=$MODEL_NAME
 ENV ROOT_DIRECTORY=$ROOT_DIRECTORY
 ENV SHARED_REPOSITORY_NAME=$SHARED_REPOSITORY_NAME
 ENV POETRY_VERSION=$POETRY_VERSION
+ENV BATCH_SIZE=$BATCH_SIZE
+ENV MAX_BATCH_DELAY=$MAX_BATCH_DELAY
 
 ENV POETRY_HOME="/opt/poetry"
 ENV PATH="$POETRY_HOME/bin:$ROOT_DIRECTORY/$REPOSITORY_NAME/.venv/bin:$PATH"
@@ -92,6 +96,8 @@ WORKDIR $MODEL_PACKAGE_PATH
 RUN printf "\nservice_envelope=json" >> config.properties
 RUN printf "\ninference_address=http://0.0.0.0:7080" >> config.properties
 RUN printf "\nmanagement_address=http://0.0.0.0:7081" >> config.properties
+RUN printf '\nmodels={"func-od-model": {"1.0": {"batchSize": %s,"maxBatchDelay": %s}}}' "$BATCH_SIZE" "$MAX_BATCH_DELAY" >> config.properties
+
 
 # expose health and prediction listener ports from the image
 EXPOSE 7080

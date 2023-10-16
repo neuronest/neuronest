@@ -10,6 +10,9 @@ from core.google.storage_client import StorageClient
 from core.path import GSPath
 from torch import nn
 
+# pylint: disable=protected-access
+torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
+
 
 class ObjectDetectionModel:
     def __init__(
