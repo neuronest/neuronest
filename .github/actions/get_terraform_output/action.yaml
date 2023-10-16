@@ -21,19 +21,7 @@ runs:
       run: |
           source ./.github/functions/initialize_terraform.sh
           initialize_terraform ${{ env.REPOSITORY_NAME }} ${{ inputs.workspace }} $STATE_BUCKET
-          # install jq utility
-          apt install -y jq
-          if [ -z "$(terraform output -json | jq -r ".${{ inputs.terraform_output_name }} // empty")" ]; then
-              # the output is not in the state, the output becomes the empty string
-              terraform_output_value=""
-          else
-              # the output is in the state and we get its value
-              terraform_output_value=$(terraform output ${{ inputs.terraform_output_name }} | tr -d '"')
-          fi
-          echo "terraform_output_value=$terraform_output_value" >> $GITHUB_OUTPUT
+          echo "terraform_output_value=$(terraform output ${{ inputs.terraform_output_name }} | tr -d '"')" >> $GITHUB_OUTPUT
           echo "${{ inputs.terraform_output_name }}=$terraform_output_value"
       shell: bash
 
-    - id: echo_terraform_output
-      run: echo "${{ inputs.terraform_output_name }}=${{ steps.get_terraform_output.outputs.terraform_output_value }}"
-      shell: bash

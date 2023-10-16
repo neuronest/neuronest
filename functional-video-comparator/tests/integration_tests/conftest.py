@@ -26,8 +26,3 @@ def video_comparator_client():
         model_name=MODEL_NAME,
         project_id=PROJECT_ID,
     )
-
-
-@pytest.fixture
-def best_to_worst_matching_videos_pairs():
-    return [(), ()]
