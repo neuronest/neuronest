@@ -39,6 +39,7 @@ module "functional_people_counting" {
   people_counting_image_name                   = var.people_counting_image_name
   people_counting_service_account_name         = var.people_counting_service_account_name
   people_counting_firestore_results_collection = var.people_counting_firestore_results_collection
+  people_counting_firestore_jobs_collection    = var.people_counting_firestore_jobs_collection
   people_counting_videos_to_count_bucket       = var.people_counting_videos_to_count_bucket
   people_counting_counted_videos_bucket        = var.people_counting_counted_videos_bucket
   people_counting_model_instantiator_host      = var.people_counting_model_instantiator_host

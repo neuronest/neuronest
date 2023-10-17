@@ -33,6 +33,7 @@ module "people_counting" {
   image_name                   = var.people_counting_image_name
   service_account_name         = var.people_counting_service_account_name
   firestore_results_collection = var.people_counting_firestore_results_collection
+  firestore_jobs_collection    = var.people_counting_firestore_jobs_collection
   videos_to_count_bucket       = var.people_counting_videos_to_count_bucket
   counted_videos_bucket        = var.people_counting_counted_videos_bucket
   cloud_run_name               = var.people_counting_cloud_run_name

@@ -10,6 +10,9 @@ variable "webapp_service_account_name" {
 variable "firestore_results_collection" {
   type = string
 }
+variable "firestore_jobs_collection" {
+  type = string
+}
 variable "videos_to_count_bucket" {
   type = string
 }

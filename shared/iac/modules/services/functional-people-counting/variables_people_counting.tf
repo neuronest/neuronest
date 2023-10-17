@@ -7,6 +7,9 @@ variable "people_counting_service_account_name" {
 variable "people_counting_firestore_results_collection" {
   type = string
 }
+variable "people_counting_firestore_jobs_collection" {
+  type = string
+}
 variable "people_counting_videos_to_count_bucket" {
   type = string
 }

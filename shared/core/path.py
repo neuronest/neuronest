@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import re
 from abc import ABC
-from typing import Any, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from urllib import parse
 
 
@@ -127,3 +127,7 @@ def build_path(path: str) -> Path:
             return path_type(path)
 
     raise ValueError(f"Incorrect path: {path}")
+
+
+def build_paths(paths: List[str]) -> List[Path]:
+    return [build_path(path) for path in paths]

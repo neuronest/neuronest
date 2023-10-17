@@ -18,6 +18,10 @@ def infer_asset_type(asset_path: Path) -> AssetType:
     raise ValueError(f"Extension of asset path not supported: {asset_path}")
 
 
+def is_path_asset_type_coherent(asset_path: Path, asset_type: AssetType) -> bool:
+    return infer_asset_type(asset_path) == asset_type
+
+
 @contextlib.contextmanager
 def retrieve_asset_locally(
     asset_path: str, storage_client: Optional[StorageClient]

@@ -12,3 +12,7 @@ class AlreadyExistingError(BaseError):
 
 class AlreadyProcessingError(BaseError):
     pass
+
+
+class PredictionsNotFoundError(BaseError):
+    pass

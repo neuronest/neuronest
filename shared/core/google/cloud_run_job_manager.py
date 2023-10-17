@@ -59,8 +59,7 @@ class CloudRunJobManager:
         return [
             cloud_run_execution
             for cloud_run_execution in cloud_run_executions
-            if cloud_run_execution.succeeded_count == 0
-            and cloud_run_execution.failed_count == 0
+            if cloud_run_execution.terminated_count == 0
         ]
 
     def run_job(self, job_name: str, sync: bool = False):
