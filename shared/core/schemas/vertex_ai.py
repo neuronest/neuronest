@@ -34,6 +34,7 @@ class ServingDeploymentConfig(BaseModel):
     max_replica_count: int = 1
     accelerator_type: Optional[str] = None
     accelerator_count: int = 0
+    service_account_name: Optional[str] = None
 
     @root_validator
     # pylint: disable=no-self-argument

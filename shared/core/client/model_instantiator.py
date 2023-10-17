@@ -2,7 +2,7 @@ from typing import Optional
 
 import requests
 
-from core.client.base import APIClient
+from core.client.api_client import APIClient
 from core.routes.model_instantiator import routes
 from core.schemas.model_instantiator import (
     InstantiateModelInput,

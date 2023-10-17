@@ -1,0 +1,34 @@
+project_id: '${oc.env:PROJECT_ID,null}'
+region: '${oc.env:REGION,null}'
+service_account: '${oc.env:SERVICE_ACCOUNT_EMAIL,null}'
+name: 'object-detection'
+package_name: '${oc.env:PACKAGE_NAME,null}'
+
+model:
+  name: '${oc.env:MODEL_NAME,null}'
+
+training:
+  container_uri: "${oc.env:TRAINING_IMAGE_NAME,null}"
+  machine_type: "e2-standard-4"
+  accelerator_type: "ACCELERATOR_TYPE_UNSPECIFIED"
+  accelerator_count: 0
+  replica_count: 1
+
+serving_model_upload:
+  container_uri: "${oc.env:SERVING_IMAGE_NAME,null}"
+  predict_route: "/predictions/${model.name}"
+  health_route: "/ping"
+  ports: [7080]
+
+serving_deployment:
+  machine_type: "n1-standard-2"
+  accelerator_type: "NVIDIA_TESLA_T4"
+  accelerator_count: 1
+  min_replica_count: 1
+  max_replica_count: 1
+  service_account_name: "${oc.env:SERVICE_ACCOUNT_NAME,null}"
+
+bigquery:
+  dataset:
+    name: '${model.name}_training'
+

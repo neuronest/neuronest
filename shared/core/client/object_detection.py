@@ -10,37 +10,25 @@ from google.api_core.exceptions import ServiceUnavailable
 from google.cloud import aiplatform
 from imutils import resize
 
-from core.client.model_instantiator import ModelInstantiatorClient
+from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
 from core.exceptions import DependencyError
-from core.google.vertex_ai_manager import VertexAIManager
 from core.schemas.object_detection import (
     PREDICTION_COLUMNS,
-    InputSampleSchema,
-    OutputSchema,
+    InputSchemaSample,
+    OutputSchemaSample,
 )
 from core.serialization.array import array_from_string
 from core.serialization.image import image_to_string
 from core.tools import split_list_into_two_parts
 
 
-class ObjectDetectionClient:
+class ObjectDetectionClient(OnlinePredictionModelClient):
     PREPROCESSING_IMAGE_TYPE = ".jpg"
     MAX_SIZE = (640, 640)
     MAX_BYTES = 1.5e6
 
-    def __init__(
-        self,
-        vertex_ai_manager: VertexAIManager,
-        model_instantiator_client: ModelInstantiatorClient,
-        model_name: str,
-        endpoint_retry_wait_time: int = 30,
-        endpoint_retry_timeout: int = 2700,
-    ):
-        self.vertex_ai_manager = vertex_ai_manager
-        self.model_instantiator_client = model_instantiator_client
-        self.model_name = model_name
-        self.endpoint_retry_wait_time = endpoint_retry_wait_time
-        self.endpoint_retry_timeout = endpoint_retry_timeout
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _create_endpoint(self) -> Optional[requests.Response]:
         return self.model_instantiator_client.instantiate(self.model_name)
@@ -179,6 +167,7 @@ class ObjectDetectionClient:
                 current_try=current_try,
             )
 
+    # pylint: disable=arguments-renamed
     def predict_batch(
         self,
         images: List[np.ndarray],
@@ -192,7 +181,7 @@ class ObjectDetectionClient:
             raise ValueError("Incorrect received shapes")
 
         preprocessed_images = [
-            InputSampleSchema(
+            InputSchemaSample(
                 data=image_to_string(
                     frame=image,
                     extension=self.PREPROCESSING_IMAGE_TYPE,
@@ -209,7 +198,7 @@ class ObjectDetectionClient:
             for chunk_preprocessed_images in chunks_preprocessed_images
         ]
         predictions = [
-            array_from_string(OutputSchema.parse_obj(raw_prediction).results)
+            array_from_string(OutputSchemaSample.parse_obj(raw_prediction).results)
             for raw_predictions in raw_chunked_predictions
             for raw_prediction in raw_predictions
         ]
@@ -219,6 +208,7 @@ class ObjectDetectionClient:
             for prediction in predictions
         ]
 
+    # pylint: disable=arguments-renamed
     def predict_single(
         self,
         image: np.ndarray,

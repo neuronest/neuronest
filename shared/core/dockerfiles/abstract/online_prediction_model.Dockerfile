@@ -59,7 +59,7 @@ RUN poetry config virtualenvs.in-project true \
     && poetry check  \
     && poetry install
 
-COPY $REPOSITORY_NAME/config.yaml .
+# COPY $REPOSITORY_NAME/config.yaml .
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 
@@ -78,14 +78,7 @@ ENV MODEL_PACKAGE_NAME=$MODEL_PACKAGE_NAME
 ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
 RUN mkdir $MODEL_PACKAGE_NAME
-
-RUN cp -r \
-    $PACKAGE_NAME/model_handler.py  \
-    $PACKAGE_NAME/modules  \
-    $PACKAGE_NAME/config.py \
-    config.yaml \
-    $MODEL_PACKAGE_NAME
-
+RUN cp -r $PACKAGE_NAME $MODEL_PACKAGE_NAME
 WORKDIR $MODEL_PACKAGE_PATH
 
 # create torchserve configuration file
@@ -101,16 +94,20 @@ RUN mkdir -p $MODEL_STORE_NAME
 
 COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
+ENV TMP_PACKAGE_DIR=/tmp/$PACKAGE_NAME
+RUN mkdir $TMP_PACKAGE_DIR
+RUN cp -r $PACKAGE_NAME $TMP_PACKAGE_DIR
+
 # create model archive file packaging model artifacts and dependencies
 RUN torch-model-archiver -f \
   --model-name=$MODEL_NAME \
   --version=1.0 \
   --serialized-file=$LOCAL_MODEL_PATH \
-  --handler=model_handler.py \
-  --extra-files=modules,config.py,config.yaml \
+  --handler=$MODEL_PACKAGE_PATH/$PACKAGE_NAME/model_handler.py \
+  --extra-files=$TMP_PACKAGE_DIR \
   --export-path=$MODEL_STORE_NAME
 
-ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
+# ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
 
 # run Torchserve HTTP serve to respond to prediction requests
 ENTRYPOINT torchserve \

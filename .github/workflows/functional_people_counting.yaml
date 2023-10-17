@@ -98,6 +98,8 @@ jobs:
 
   build_test_push_people_counting:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/people_counting.yaml
     with:
       build: true
@@ -108,6 +110,8 @@ jobs:
 
   build_test_push_object_detection:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/object_detection.yaml
     with:
       build: true
@@ -118,6 +122,8 @@ jobs:
 
   build_test_push_model_instantiator:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/model_instantiator.yaml
     with:
       build: true
@@ -132,6 +138,9 @@ jobs:
      - build_test_push_people_counting
      - build_test_push_object_detection
      - build_test_push_model_instantiator
+     - run_base_terraform
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
       people_counting_url: ${{ steps.get_people_counting_url.outputs.value }}
@@ -185,6 +194,8 @@ jobs:
       - deploy_functional_people_counting
       - build_test_push_object_detection
       - upload_variables_of_called_workflows
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/object_detection.yaml
     with:
       build: false
@@ -193,12 +204,13 @@ jobs:
       gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
       dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
-      model_instantiator_url: ${{ needs.deploy_functional_people_counting.outputs.model_instantiator_url }}
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
     secrets: inherit
 
   post_deploy_model_instantiator:
     needs: [deploy_functional_people_counting, upload_variables_of_called_workflows]
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/model_instantiator.yaml
     with:
       build: false

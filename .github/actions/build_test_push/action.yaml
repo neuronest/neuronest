@@ -23,6 +23,9 @@ inputs:
   maximum_number_images_to_keep:
     description: 'Maximum number of most recent docker images to keep in the registry'
     default: 1
+  dockerfile_path:
+    description: 'Dockerfile path'
+    default: ''
 outputs:
   dockerhub_image_name:
     description: 'Built and pushed image name to DockerHub'
@@ -66,7 +69,21 @@ runs:
           echo "$to_include_line" >> $REPOSITORY_NAME/.dockerignore
         done
       shell: bash
-    - run: cp $REPOSITORY_NAME/Dockerfile $REPOSITORY_NAME/.dockerignore .
+    - id: set_dockerfile_path
+      run: |
+        # if dockerfile_path is not empty
+        if [ -n "${{ inputs.dockerfile_path }}" ]; then
+            # the dockerfile_path is the one specified in input
+            dockerfile_path=${{ inputs.dockerfile_path }}
+        else
+            # the dockerfile_path is the default one, at the root of the repository
+            dockerfile_path=$REPOSITORY_NAME/Dockerfile
+        fi
+        echo "value=$dockerfile_path" >> $GITHUB_OUTPUT
+      shell: bash
+    - run: |
+        cp ${{ steps.set_dockerfile_path.outputs.value }} ./Dockerfile
+        cp $REPOSITORY_NAME/.dockerignore .
       shell: bash
     - id: build_image
       run: |

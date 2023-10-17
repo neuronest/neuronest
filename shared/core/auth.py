@@ -48,7 +48,7 @@ def generate_identity_token(
 ) -> str:
     return _generate_token_from_credentials(
         credentials=_get_id_token_credentials(
-            target_audience=target_audience, key_path=key_path
+            key_path=key_path, target_audience=target_audience
         )
     )
 

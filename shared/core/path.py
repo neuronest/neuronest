@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import re
 from abc import ABC
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from urllib import parse
 
 
@@ -32,8 +32,10 @@ class Path(str, ABC):
         return False
 
     @classmethod
-    def is_valid(cls, path: str) -> bool:
-        return cls.has_valid_prefix(path) and cls.has_valid_regex(path)
+    def is_valid(cls, value: Any) -> bool:
+        if isinstance(value, str):
+            return cls.has_valid_prefix(value) and cls.has_valid_regex(value)
+        return False
 
     def __new__(cls, path, *args, **kwargs):
         if not cls.has_valid_prefix(path):
@@ -46,6 +48,26 @@ class Path(str, ABC):
             raise ValueError(f"Incorrect local path: {path}")
 
         return str.__new__(cls, path, *args, **kwargs)
+
+    @classmethod
+    def validate(cls, value: Any):
+        if not isinstance(value, str):
+            raise ValueError(
+                f"Only the string type is accepted for pydantic validation of a "
+                f"Path object, got {type(value)}"
+            )
+
+        return cls(path=value)
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    def get_file_extension(self):
+        _, file_extension = os.path.splitext(self)
+        if file_extension:
+            return file_extension.lower()
+        return None
 
 
 class GSPath(Path):

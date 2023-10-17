@@ -1,0 +1,12 @@
+repository_variables:
+  # general repository
+  - REPOSITORY_NAME=functional-video-comparator
+  - REPOSITORY_CODE=func-vc
+  - MAIN_TERRAFORM_MODULE_NAME=functional_video_comparator
+  - REPOSITORIES_DEPENDENCIES=video-comparator,model-instantiator
+multi_instance_resource_names: []
+other_variables:
+  branch:
+    default:
+      # GCP project
+      - PROJECT_ID=${FUNCTIONAL_SERVICES_PROJECT_ID}
