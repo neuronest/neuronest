@@ -268,7 +268,7 @@ jobs:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           target: serving
-          build_arguments: --build-arg MODEL_PATH=$MODEL_PATH --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }}
+          build_arguments: --build-arg BATCH_SIZE=$BATCH_SIZE --build-arg MAX_BATCH_DELAY=$MAX_BATCH_DELAY --build-arg MODEL_PATH=$MODEL_PATH --build-arg REPOSITORY_NAME=$REPOSITORY_NAME --build-arg PACKAGE_NAME=$PACKAGE_NAME --build-arg MODEL_NAME=$MODEL_NAME
 
   model_upload:
     name: model_upload
