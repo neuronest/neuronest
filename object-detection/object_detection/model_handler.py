@@ -6,7 +6,7 @@ from core.packages.abstract.online_prediction_model.model_handler import (
     OnlinePredictionModelHandler,
 )
 from core.schemas.object_detection import (
-    InputSchemaSample as ObjectDetectionInputSchemaSample,
+    InputSchemaSample as ObjectDetectionInputSampleSchema,
 )
 from core.schemas.object_detection import OutputSchemaSample
 from core.serialization.array import array_to_string
@@ -38,8 +38,8 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         self.confidence_threshold: Optional[float] = None
 
     @staticmethod
-    def get_input_schema_sample_class():
-        return ObjectDetectionInputSchemaSample
+    def get_input_sample_schema_class():
+        return ObjectDetectionInputSampleSchema
 
     def _fill_labels_to_predict(self, labels_to_predict: Optional[List[str]]):
         self.labels_to_predict = labels_to_predict
@@ -51,11 +51,11 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         if overridden_image_width is not None:
             self.image_width = overridden_image_width
 
-    def get_inference_data_and_other_args_kwargs_from_input_schema_samples(
-        self, input_schema_samples: List[ObjectDetectionInputSchemaSample]
+    def build_inference_args_kwargs_from_input_samples(
+        self, input_samples: List[ObjectDetectionInputSampleSchema]
     ) -> Tuple[Tuple, dict]:
 
-        first_sample = input_schema_samples[0]
+        first_sample = input_samples[0]
 
         self._fill_labels_to_predict(first_sample.labels_to_predict)
         self._fill_confidence_threshold(first_sample.confidence_threshold)
@@ -64,8 +64,8 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         return (
             (
                 [
-                    resize(image_from_string(sample.data), width=self.image_width)
-                    for sample in input_schema_samples
+                    resize(image_from_string(input_sample.data), width=self.image_width)
+                    for input_sample in input_samples
                 ],
             ),
             {},
@@ -102,7 +102,7 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
             for prediction in filtered_predictions
         ]
 
-    def initialize_new_model(self):
+    def create_new_model(self):
         return ObjectDetectionModel(
             model_type=self.inner_model_type,
             model_name=self.inner_model_name,

@@ -2,8 +2,6 @@ import logging
 
 from core.packages.abstract.online_prediction_model import config
 
-# from omegaconf import OmegaConf
-
 
 class Model(config.Model):
     inner_model_type: str

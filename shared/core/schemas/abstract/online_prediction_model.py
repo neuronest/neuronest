@@ -17,5 +17,5 @@ class InputSchema(BaseModel):
     samples: List[InputSchemaSample]
 
 
-class OutputSchemaSample(BaseModel):
+class OutputSampleSchema(BaseModel):
     results: str

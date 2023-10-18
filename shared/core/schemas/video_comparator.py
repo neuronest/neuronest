@@ -78,7 +78,7 @@ class InputSchema(online_prediction_model.InputSchema):
         }
 
 
-class OutputSchemaSample(online_prediction_model.OutputSchemaSample):
+class OutputSchemaSample(online_prediction_model.OutputSampleSchema):
     results: Union[float, str, np.ndarray]
 
     class Config:

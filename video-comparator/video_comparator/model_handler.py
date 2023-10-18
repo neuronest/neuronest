@@ -36,7 +36,7 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         self.storage_client = StorageClient()
 
     @staticmethod
-    def get_input_schema_sample_class():
+    def get_input_sample_schema_class():
         return VideoComparatorInputSchemaSample
 
     def _preprocess_video(self, video: Union[GSPath, np.ndarray]):
@@ -52,10 +52,10 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
             return video
         raise ValueError
 
-    def get_inference_data_and_other_args_kwargs_from_input_schema_samples(
-        self, input_schema_samples: List[VideoComparatorInputSchemaSample]
+    def build_inference_args_kwargs_from_input_samples(
+        self, input_samples: List[VideoComparatorInputSchemaSample]
     ) -> Tuple[Tuple, dict]:
-        sample = input_schema_samples[0]
+        sample = input_samples[0]
         return (
             (),
             {
@@ -96,7 +96,7 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
     ) -> VideoComparatorOutputSchemaSample:  # -> List[Dict[str, str]]:
         return VideoComparatorOutputSchemaSample(results=prediction)
 
-    def initialize_new_model(self):
+    def create_new_model(self):
         return VideoComparatorModel()
 
     def handle(self, data: List[Dict], context) -> List[Dict[str, str]]:

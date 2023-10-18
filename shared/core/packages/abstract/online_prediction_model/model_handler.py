@@ -10,7 +10,7 @@ from ts.torch_handler.base_handler import BaseHandler
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
-from core.schemas.abstract.online_prediction_model import Device, OutputSchemaSample
+from core.schemas.abstract.online_prediction_model import Device, OutputSampleSchema
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -34,13 +34,13 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         self.model: Optional[OnlinePredictionModel] = None
 
     @staticmethod
-    def get_input_schema_sample_class() -> Type:
+    def get_input_sample_schema_class() -> Type:
         raise NotImplementedError
 
     @abstractmethod
-    def get_inference_data_and_other_args_kwargs_from_input_schema_samples(
+    def build_inference_args_kwargs_from_input_samples(
         self,
-        input_schema_samples: List[Any],
+        input_samples: List[Any],
     ) -> Tuple[Tuple, dict]:
         """
         Returns the data in the format expected by the model to predict,
@@ -50,12 +50,10 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
 
     def preprocess(self, data: List) -> Tuple[Tuple, dict]:
         # pylint: disable=invalid-name
-        InputSchemaSample = self.get_input_schema_sample_class()
-        input_schema_samples = [InputSchemaSample.parse_obj(sample) for sample in data]
+        InputSampleSchema = self.get_input_sample_schema_class()
+        input_samples = [InputSampleSchema.parse_obj(sample) for sample in data]
 
-        return self.get_inference_data_and_other_args_kwargs_from_input_schema_samples(
-            input_schema_samples
-        )
+        return self.build_inference_args_kwargs_from_input_samples(input_samples)
 
     def _retrieve_model_path(self) -> str:
         properties = self._context.system_properties
@@ -64,13 +62,20 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         model_dir = properties.get("model_dir")
         serialized_file = manifest["model"]["serializedFile"]
 
-        return os.path.join(model_dir, serialized_file)
+        model_path = os.path.join(model_dir, serialized_file)
+
+        if not os.path.isfile(model_path):
+            raise RuntimeError(
+                f"The model.pt file is missing at location: {model_path}"
+            )
+
+        return model_path
 
     def inference(self, *args, **kwargs) -> List[Any]:
         with torch.no_grad():
             self.model.eval()
-            results = self.model(*args, **kwargs)
-        return results
+            model_inferences = self.model(*args, **kwargs)
+        return model_inferences
 
     # the data argument of the BaseHandler.postprocess function has been renamed
     # predictions for more clarity on the fact that the function necessarily takes
@@ -78,7 +83,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     @abstractmethod
     def postprocess(  # pylint: disable=arguments-renamed
         self, predictions: List[Any]
-    ) -> List[OutputSchemaSample]:  # -> List[Dict[str, str]]:
+    ) -> List[OutputSampleSchema]:
         raise NotImplementedError
 
     def initialize_model_pt(self, context: Context):
@@ -97,7 +102,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         return model_pt
 
     @abstractmethod
-    def initialize_new_model(self):
+    def create_new_model(self):
         raise NotImplementedError
 
     def initialize(self, context: Context):
@@ -107,7 +112,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         :return:
         """
         self._context = context
-        self.model = self.initialize_new_model()
+        self.model = self.create_new_model()
         self.model.load(path=self._retrieve_model_path())
         self.model.to(self.device)
 
@@ -124,9 +129,9 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         if len(data) == 0:
             return []
 
-        inference_data_and_other_args, inference_kwargs = self.preprocess(data=data)
-        predictions = self.inference(*inference_data_and_other_args, **inference_kwargs)
-        post_processed_predictions = self.postprocess(predictions)
-        if not isinstance(post_processed_predictions, list):
-            post_processed_predictions = [post_processed_predictions]
-        return [output.dict() for output in post_processed_predictions]
+        inference_args, inference_kwargs = self.preprocess(data=data)
+        model_inferences = self.inference(*inference_args, **inference_kwargs)
+        output_samples = self.postprocess(model_inferences)
+        if not isinstance(output_samples, list):
+            output_samples = [output_samples]
+        return [output_sample.dict() for output_sample in output_samples]

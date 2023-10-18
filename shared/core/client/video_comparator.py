@@ -90,13 +90,11 @@ class VideoComparatorClient(OnlinePredictionModelClient):
         input_schema = self.preprocess_batch(batch)
         endpoint = self._try_get_endpoint()
         endpoint_predictions = []
-        for input_schema_samples_chunk in get_chunks_from_iterable(
+        for input_samples_chunk in get_chunks_from_iterable(
             input_schema.samples, chunk_size=self.MAX_BATCH_SIZE
         ):
             endpoint_predictions += endpoint.predict(
-                InputSchema(samples=input_schema_samples_chunk).to_serialized_dict()[
-                    "samples"
-                ]
+                InputSchema(samples=input_samples_chunk).to_serialized_dict()["samples"]
             ).predictions
         return [
             OutputSchemaSample.parse_obj(endpoint_prediction).results

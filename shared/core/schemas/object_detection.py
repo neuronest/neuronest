@@ -78,5 +78,5 @@ class InputSchema(online_prediction_model.InputSchema):
         return samples
 
 
-class OutputSchemaSample(online_prediction_model.OutputSchemaSample):
+class OutputSchemaSample(online_prediction_model.OutputSampleSchema):
     pass
