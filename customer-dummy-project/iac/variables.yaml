@@ -8,7 +8,7 @@ other_variables:
     default:
     # GCP project
     - PROJECT_ID=video-comparator-service-0
-    - PROJECT_CODE=vc-service
+    - PROJECT_CODE=vc-service-0
     main:
     # GCP project
     - PROJECT_ID=customer-dummy-project-main
