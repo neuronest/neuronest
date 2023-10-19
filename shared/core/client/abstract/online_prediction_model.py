@@ -38,29 +38,17 @@ class OnlinePredictionModelClient(BaseClient, ABC):
         total_waited_time = 0
 
         while total_waited_time < self.endpoint_retry_timeout:
-            endpoint = self.vertex_ai_manager.get_endpoint_by_name(self.model_name)
-            # pylint: disable=fixme
-            # todo: think about this
-            # get_model_by_name returns the model with the largest id.
-            # If the endpoint is well deployed, but with a model that is not that of
-            # the largest version id, the current function does not return the endpoint,
-            # which is not logical in a function that just says it wants to return
-            # the deployed endpoint
-            # the logic could be replaced by this block, which returns the endpoint
-            # if it is deployed
-            # def endpoint_is_deployed(endpoint: aiplatform.Endpoint) -> bool:
-            #     try:
-            #         endpoint_gca_resource: proto.Message = endpoint.gca_resource
-            #     except RuntimeError:
-            #         return False
-            #     return len(list(endpoint_gca_resource.deployed_models)) >= 1
+            # todo: the function says that it returns the endpoint but only returns the
+            #  endpoint if it is the last model which is deployed at the endpoint. At a
+            #  minimum rename the function so that you don't have to know the
+            #  implementation to know what it does
+            #  e.g _try_get_latest_model_deployed_endpoint
 
-            model = self.vertex_ai_manager.get_model_by_name(
-                self.model_name, version_aliases=("default",)
-            )
+            last_model = self.vertex_ai_manager.get_last_model_by_name(self.model_name)
+            endpoint = self.vertex_ai_manager.get_endpoint_by_name(self.model_name)
 
             if endpoint is not None and self.vertex_ai_manager.is_model_deployed(
-                model=model, endpoint=endpoint
+                model=last_model, endpoint=endpoint
             ):
                 return endpoint
 
