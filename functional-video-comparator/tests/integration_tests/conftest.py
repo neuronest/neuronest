@@ -11,8 +11,16 @@ from tests.environment_variables import (
 )
 
 
-@pytest.fixture
-def video_comparator_client():
+@pytest.fixture(name="model_instantiator_client", scope="session")
+def fixture_model_instantiator_client() -> ModelInstantiatorClient:
+    return ModelInstantiatorClient(
+        host=MODEL_INSTANTIATOR_HOST,
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
+    )
+
+
+@pytest.fixture(name="video_comparator_client", scope="session")
+def fixture_video_comparator_client(model_instantiator_client: ModelInstantiatorClient):
 
     return VideoComparatorClient(
         vertex_ai_manager=VertexAIManager(
@@ -20,9 +28,24 @@ def video_comparator_client():
             location=REGION,
             project_id=PROJECT_ID,
         ),
-        model_instantiator_client=ModelInstantiatorClient(
-            key_path=GOOGLE_APPLICATION_CREDENTIALS, host=MODEL_INSTANTIATOR_HOST
-        ),
+        model_instantiator_client=model_instantiator_client,
         model_name=MODEL_NAME,
         project_id=PROJECT_ID,
     )
+
+
+@pytest.fixture(name="model_name", scope="session")
+def fixture_model_name() -> str:
+    return MODEL_NAME
+
+
+@pytest.fixture(name="uninstantiate_teardown", scope="session")
+def fixture_uninstantiate_teardown(
+    model_instantiator_client: ModelInstantiatorClient,
+    model_name: str,
+):
+    try:
+        yield
+
+    finally:
+        model_instantiator_client.uninstantiate(model_name)

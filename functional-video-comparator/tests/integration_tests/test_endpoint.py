@@ -7,6 +7,7 @@ from core.google.storage_client import StorageClient
 from core.path import GSPath
 
 
+# pylint: disable=unused-argument
 @pytest.mark.parametrize(
     "best_to_worst_matching_videos_pairs",
     [
@@ -25,6 +26,7 @@ from core.path import GSPath
 def test_endpoint_inference(
     video_comparator_client: VideoComparatorClient,
     best_to_worst_matching_videos_pairs: List[Tuple[str, str]],
+    uninstantiate_teardown,
 ):
     for video_path, other_video_path in best_to_worst_matching_videos_pairs:
         video_path = GSPath(video_path)
