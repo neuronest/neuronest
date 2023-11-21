@@ -52,6 +52,23 @@ class FirestoreClient:
 
         return document.to_dict()
 
+    def get_documents_based_on_condition(
+        self,
+        collection_name: str,
+        field_name: str,
+        field_value: Any,
+        desc_order_by_field: Optional[str] = None,
+    ) -> Optional[Union[dict, Any]]:
+        collection_reference = self.client.collection(collection_name)
+
+        query = collection_reference.where(field_name, "==", field_value)
+        if desc_order_by_field is not None:
+            query = query.order_by(
+                desc_order_by_field, direction=firestore.Query.DESCENDING
+            )
+
+        return list(query.stream())
+
     @staticmethod
     @firestore.transactional
     def _update_in_transaction(

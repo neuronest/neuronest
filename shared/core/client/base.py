@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
@@ -28,7 +28,14 @@ class Protocol(str, Enum):
         return cls.HTTP
 
 
-class APIClient(ABC):
+class ClientMixin(ABC):
+    @classmethod
+    @abstractmethod
+    def from_primitive_attributes(cls, **kwargs):
+        raise NotImplementedError
+
+
+class HTTPClient(ABC):
     def __init__(
         self,
         host: str,

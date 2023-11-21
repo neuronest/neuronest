@@ -3,6 +3,8 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
+from core.schemas.image_name import ImageName
+
 
 class EnvironmentVariable(BaseModel):
     name: str
@@ -64,3 +66,33 @@ class ExecutionSchema(BaseModel):
     @property
     def terminated_count(self) -> int:
         return self.succeeded_count + self.failed_count + self.cancelled_count
+
+
+class ContainerSchema(BaseModel):
+    image: ImageName
+    # other fields exist GCP side but are not recovered here
+
+
+class TemplateSchema(BaseModel):
+    containers: List[ContainerSchema]
+    # other fields exist GCP side but are not recovered here
+
+
+class ServiceSchema(BaseModel):
+    name: str
+    uid: str
+    create_time: datetime
+    update_time: datetime
+    template: TemplateSchema
+    # other fields exist GCP side but are not recovered here
+
+    @property
+    def image_name(self) -> ImageName:
+        containers = self.template.containers
+
+        if len(containers) != 1:
+            raise ValueError("Missing or multiple containers not supported")
+
+        container = containers[0]
+
+        return container.image

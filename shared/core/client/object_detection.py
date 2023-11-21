@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import random
 import time
 from typing import Any, Dict, List, Optional
@@ -10,6 +12,7 @@ from google.api_core.exceptions import ServiceUnavailable
 from google.cloud import aiplatform
 from imutils import resize
 
+from core.client.base import ClientMixin
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.exceptions import DependencyError
 from core.google.vertex_ai_manager import VertexAIManager
@@ -23,7 +26,7 @@ from core.serialization.image import image_to_string
 from core.tools import split_list_into_two_parts
 
 
-class ObjectDetectionClient:
+class ObjectDetectionClient(ClientMixin):
     PREPROCESSING_IMAGE_TYPE = ".jpg"
     MAX_SIZE = (640, 640)
     MAX_BYTES = 1.5e6
@@ -41,6 +44,48 @@ class ObjectDetectionClient:
         self.model_name = model_name
         self.endpoint_retry_wait_time = endpoint_retry_wait_time
         self.endpoint_retry_timeout = endpoint_retry_timeout
+
+    @classmethod
+    def from_primitive_attributes(cls, **kwargs) -> ObjectDetectionClient:
+        mandatory_fields = (
+            "location",
+            "key_path",
+            "project_id",
+            "model_instantiator_host",
+            "model_name",
+        )
+        optional_fields = ("endpoint_retry_wait_time", "endpoint_retry_timeout")
+
+        try:
+            (
+                location,
+                key_path,
+                project_id,
+                model_instantiator_host,
+                model_name,
+            ) = [kwargs[mandatory_field] for mandatory_field in mandatory_fields]
+        except KeyError as key_error:
+            raise ValueError(
+                f"At least one mandatory field is missing, expected fields: "
+                f"{mandatory_fields}"
+            ) from key_error
+
+        optional_values = {
+            optional_field: kwargs[optional_field]
+            for optional_field in optional_fields
+            if optional_field in kwargs
+        }
+
+        return cls(
+            vertex_ai_manager=VertexAIManager(
+                location=location, key_path=key_path, project_id=project_id
+            ),
+            model_instantiator_client=ModelInstantiatorClient(
+                host=model_instantiator_host, key_path=key_path
+            ),
+            model_name=model_name,
+            **optional_values,
+        )
 
     def _create_endpoint(self) -> Optional[requests.Response]:
         return self.model_instantiator_client.instantiate(self.model_name)

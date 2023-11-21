@@ -23,7 +23,7 @@ BIG_QUERY_TYPES_MAPPING = {
 class BigQueryModel(ABC, BaseModel):
     __tablename__ = ""
     __bigquery_tablename__ = ""
-    uuid: str = Field(default_factory=lambda: str(uuid4()))
+    id: str = Field(default_factory=lambda: str(uuid4()))
     created_date: datetime
     updated_date: datetime
 
