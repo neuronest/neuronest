@@ -34,7 +34,7 @@ bigquery:
   dataset:
     name: '${model.name}_training'
     forbidden_characters: ['-']
-    replacement_characters_of_forbidden_characters: ['_']
+    forbidden_characters_replacements: ['_']
 
 storage:
   models_bucket_name: '${name}-models'
