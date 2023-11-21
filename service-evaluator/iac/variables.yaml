@@ -1,0 +1,28 @@
+repository_variables:
+  # general repository
+  - REPOSITORY_NAME=evaluator
+  - REPOSITORY_CODE=ev
+  - PACKAGE_NAME=evaluator
+  - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
+multi_instance_resource_names:
+  # docker image
+  - BASE_IMAGE_NAME=evaluator
+  # service account names
+  - WEBAPP_SERVICE_ACCOUNT_NAME=webapp
+  # firestore
+  - FIRESTORE_JOBS_COLLECTION=jobs
+  # cloud run
+  - CLOUD_RUN_NAME=webapp
+  # vertex
+  - JOB_PREFIX_NAME=evaluate
+other_variables:
+  branch:
+    default:
+    # cloud run
+    - CLOUD_RUN_MEMORY=1Gi
+    - CLOUD_RUN_CPU=1000m
+    - CLOUD_RUN_MIN_SCALE=0
+    - CLOUD_RUN_MAX_SCALE=1
+    # GCP project
+    - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
+    - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}
