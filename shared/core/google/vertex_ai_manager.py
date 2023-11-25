@@ -4,7 +4,9 @@ import time
 import uuid
 from typing import List, Optional
 
+import backoff
 import proto
+from google.api_core.exceptions import ResourceExhausted
 from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform import Endpoint
 from google.cloud.aiplatform_v1 import PipelineState
@@ -15,6 +17,8 @@ from core.exceptions import AlreadyExistingError
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
+
+VERTEX_API_MAX_TIME_IN_SECONDS = 120
 
 
 class VertexAIManager:
@@ -65,6 +69,9 @@ class VertexAIManager:
 
         return f"{model_name}_endpoint"
 
+    @backoff.on_exception(
+        backoff.expo, ResourceExhausted, max_time=VERTEX_API_MAX_TIME_IN_SECONDS
+    )
     def _get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
         models = aiplatform.models.Model.list(
             location=self.location,
@@ -83,6 +90,9 @@ class VertexAIManager:
 
         return matching_models
 
+    @backoff.on_exception(
+        backoff.expo, ResourceExhausted, max_time=VERTEX_API_MAX_TIME_IN_SECONDS
+    )
     def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
             location=self.location,

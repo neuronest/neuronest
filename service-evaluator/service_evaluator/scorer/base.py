@@ -4,8 +4,6 @@ from typing import List, TypeVar
 import pandas as pd
 from pydantic import BaseModel
 
-from service_evaluator.dataset_manager import DatasetManager
-
 PredictionDocument = TypeVar("PredictionDocument", bound="BaseModel")
 
 
@@ -29,7 +27,7 @@ class ScorerMixin(ABC):
     @abstractmethod
     def run(
         self,
-        dataset_manager: DatasetManager,
-        predictions: List[PredictionDocument],
+        real_documents: List[ScorableDocument],
+        prediction_documents: List[ScorableDocument],
     ) -> List[float]:
         raise NotImplementedError

@@ -16,6 +16,7 @@ from core.client.base import ClientMixin
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.exceptions import DependencyError
 from core.google.vertex_ai_manager import VertexAIManager
+from core.schemas.image_name import ImageNameWithTag
 from core.schemas.object_detection import (
     PREDICTION_COLUMNS,
     InputSampleSchema,
@@ -223,6 +224,16 @@ class ObjectDetectionClient(ClientMixin):
                 max_tries=max_tries,
                 current_try=current_try,
             )
+
+    def get_underlying_serving_image(
+        self, project_id: str, location: str, key_path: Optional[str] = None
+    ) -> Optional[ImageNameWithTag]:
+        model = self.vertex_ai_manager.get_last_model_by_name(self.model_name)
+
+        if model is None:
+            return None
+
+        return ImageNameWithTag(model.container_spec.image_uri)
 
     def predict_batch(
         self,

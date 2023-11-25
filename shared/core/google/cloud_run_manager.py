@@ -5,6 +5,7 @@ from google.cloud.run_v2 import GetServiceRequest, ListServicesRequest, Services
 
 from core.auth import get_credentials
 from core.schemas.google.cloud_run import ServiceSchema
+from core.serialization.protobuf import protobuf_to_dict
 
 
 class CloudRunManager:
@@ -26,13 +27,13 @@ class CloudRunManager:
         except NotFound:
             return None
 
-        return ServiceSchema.parse_obj(response)
+        return ServiceSchema.parse_obj(protobuf_to_dict(response))
 
     def get_service_by_host_name(self, host_name: str) -> Optional[ServiceSchema]:
         services = self.list_services()
 
         matching_services = [
-            service for service in services if service.name in host_name
+            service for service in services if service.short_name in host_name
         ]
 
         if len(matching_services) == 0:
@@ -43,7 +44,7 @@ class CloudRunManager:
 
         matching_service = matching_services[0]
 
-        return self.get_service_by_name(service_name=matching_service.name)
+        return self.get_service_by_name(service_name=matching_service.short_name)
 
     def list_services(self) -> List[ServiceSchema]:
         # noinspection PyTypeChecker
@@ -51,4 +52,7 @@ class CloudRunManager:
 
         responses = self.services_client.list_services(request=request)
 
-        return [ServiceSchema.parse_obj(response) for response in responses]
+        return [
+            ServiceSchema.parse_obj(protobuf_to_dict(response))
+            for response in list(responses)
+        ]

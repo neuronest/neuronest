@@ -4,6 +4,7 @@ import importlib
 import inspect
 import os
 import pkgutil
+from abc import ABC
 from typing import Dict, TypeVar
 
 from core.client.base import ClientMixin
@@ -18,7 +19,7 @@ class ServiceClientFactory:
         module_name: cls
         for module_name, module in _modules.items()
         for _, cls in inspect.getmembers(module, inspect.isclass)
-        if ClientMixin in cls.__bases__
+        if ClientMixin in inspect.getmro(cls) and ABC not in cls.__bases__
     }
 
     @classmethod

@@ -5,7 +5,7 @@ import json
 import time
 from typing import Iterable, List, Optional
 
-from core.client.base import ClientMixin, HTTPClient
+from core.client.base import CloudRunBasedClient, HTTPClient
 from core.exceptions import PredictionsNotFoundError
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
@@ -32,7 +32,7 @@ def make_results_document_id(
     return combine_hashes([job_id, asset_id])
 
 
-class PeopleCountingClient(HTTPClient, ClientMixin):
+class PeopleCountingClient(HTTPClient, CloudRunBasedClient):
     def __init__(
         self,
         host: str,

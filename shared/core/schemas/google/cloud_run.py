@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
-from core.schemas.image_name import ImageName
+from core.schemas.image_name import ImageNameWithTag
 
 
 class EnvironmentVariable(BaseModel):
@@ -69,7 +69,7 @@ class ExecutionSchema(BaseModel):
 
 
 class ContainerSchema(BaseModel):
-    image: ImageName
+    image: ImageNameWithTag
     # other fields exist GCP side but are not recovered here
 
 
@@ -87,7 +87,7 @@ class ServiceSchema(BaseModel):
     # other fields exist GCP side but are not recovered here
 
     @property
-    def image_name(self) -> ImageName:
+    def image_name(self) -> ImageNameWithTag:
         containers = self.template.containers
 
         if len(containers) != 1:
@@ -96,3 +96,13 @@ class ServiceSchema(BaseModel):
         container = containers[0]
 
         return container.image
+
+    @property
+    def short_name(self) -> str:
+        """
+        self.name references full name resource,
+        e.g.: 'projects/customer-dummy-project-come/locations/europe-west1/
+               services/func-od-mi-webapp'
+        this property returns a shortened version: e.g.: 'func-od-mi-webapp'
+        """
+        return self.name.split("/")[-1]

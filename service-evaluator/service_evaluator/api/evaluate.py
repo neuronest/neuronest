@@ -10,6 +10,7 @@ from core.schemas.image_name import ImageName
 from core.schemas.service_evaluator import (
     EvaluatedServiceName,
     EvaluateJobDocument,
+    ServiceEvaluatorInput,
     ServiceEvaluatorOutput,
 )
 from core.utils import underscore_to_hyphen
@@ -25,6 +26,11 @@ from service_evaluator.api.dependencies import (
     use_service_image_name,
     use_service_name,
     use_vertex_ai_manager,
+)
+from service_evaluator.environment_variables import (
+    PROJECT_ID,
+    REGION,
+    SERIALIZED_SERVICE_CLIENT_PARAMETERS,
 )
 
 router = APIRouter(prefix=f"/{routes.Evaluator.prefix}", tags=[routes.Evaluator.prefix])
@@ -93,6 +99,7 @@ def _download_last_evaluate_job_document(
 
 @router.post(routes.Evaluator.evaluate, status_code=status.HTTP_201_CREATED)
 def evaluate(
+    service_evaluator_input: ServiceEvaluatorInput,
     response: Response,
     config: DictConfig = Depends(use_config),
     vertex_ai_manager: VertexAIManager = Depends(use_vertex_ai_manager),
@@ -147,7 +154,17 @@ def evaluate(
         service_account=config.service_account,
         machine_type=config.machine_type,
         sync=False,
-        environment_variables={},
+        environment_variables={
+            "REUSE_ALREADY_COMPUTED_RESULTS": (
+                service_evaluator_input.reuse_already_computed_results
+            ),
+            "PROJECT_ID": PROJECT_ID,
+            "REGION": REGION,
+            "SERIALIZED_SERVICE_CLIENT_PARAMETERS": (
+                SERIALIZED_SERVICE_CLIENT_PARAMETERS
+            ),
+            "SERVICE_NAME": service_name,
+        },
     )
 
     return _launched_job_response(

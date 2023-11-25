@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+from service_evaluator.scorer.metrics import MetricName
+
 from core.path import GSPath
 from core.schemas.bigquery.base import BigQueryModel
 from core.schemas.image_name import ImageNameWithTag
@@ -22,6 +24,8 @@ class TrainingMetrics(BigQueryModel):
 class ScoringJob(BigQueryModel):
     __bigquery_tablename__ = "scoring_job"
     service_name: str
+    service_image_name: ImageNameWithTag
+    metric_name: MetricName
     scoring_id: str
     dataset_id: str
 
@@ -40,3 +44,10 @@ class ScoringAsset(BigQueryModel):
     scoring_id: str
     path: str
     score: float
+
+
+class PredictionAsset(BigQueryModel):
+    __bigquery_tablename__ = "prediction_asset"
+    scoring_id: str
+    path: str
+    serialized_prediction: str

@@ -4,7 +4,7 @@ from typing import Optional
 
 import requests
 
-from core.client.base import ClientMixin, HTTPClient
+from core.client.base import CloudRunBasedClient, HTTPClient
 from core.routes.model_instantiator import routes
 from core.schemas.model_instantiator import (
     InstantiateModelInput,
@@ -12,7 +12,7 @@ from core.schemas.model_instantiator import (
 )
 
 
-class ModelInstantiatorClient(HTTPClient, ClientMixin):
+class ModelInstantiatorClient(HTTPClient, CloudRunBasedClient):
     def __init__(self, host: str, key_path: Optional[str] = None):
         super().__init__(host=host, key_path=key_path, root=routes.root)
 
