@@ -96,8 +96,8 @@ jobs:
         with:
           variable_prefix_to_filter_on: MODEL_INSTANTIATOR
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - name: upload_model_instantiator_variables
-        id: upload_model_instantiator_variables
+      - name: upload_service_evaluator_variables
+        id: upload_service_evaluator_variables
         uses: ./.github/actions/upload_variables
         with:
           variable_prefix_to_filter_on: SERVICE_EVALUATOR
