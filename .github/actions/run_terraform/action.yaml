@@ -51,7 +51,8 @@ runs:
     - id: terraform_with_retry
       uses: nick-fields/retry@v2.8.2
       with:
-        timeout_seconds: 1200
+        # timeout_seconds: 1200
+        timeout_seconds: 120
         max_attempts: 5
         retry_wait_seconds: ${{ steps.set_terraform_retry_wait_seconds.outputs.value }}
         command: |
