@@ -4,7 +4,7 @@ variable "people_counting_repository_name" {
 # default dummy value when running focusing on the base module
 variable "people_counting_image_name" {
   type    = string
-  default = "people_counting_image_name_dummy"
+  default = "people_counting_image_name_default"
 }
 variable "people_counting_service_account_name" {
   type = string

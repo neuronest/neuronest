@@ -1,15 +1,11 @@
-# default dummy values when running focusing on the base module
 variable "service_evaluator_image_name" {
-  type    = string
-  default = "service_evaluator_image_name_default"
+  type = string
 }
 variable "service_evaluator_serialized_service_client_parameters" {
-  type    = string
-  default = "service_evaluator_serialized_service_client_parameters_default"
+  type = string
 }
 variable "service_evaluator_service_name" {
-  type    = string
-  default = "service_evaluator_service_name_default"
+  type = string
 }
 variable "service_evaluator_webapp_service_account_name" {
   type = string

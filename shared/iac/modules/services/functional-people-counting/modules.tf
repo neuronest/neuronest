@@ -44,3 +44,20 @@ module "people_counting" {
   model_instantiator_host     = module.model_instantiator.url
   object_detection_model_name = module.object_detection.model_name
 }
+module "service_evaluator" {
+  source                      = "../service-evaluator"
+  project_id                  = var.project_id
+  region                      = var.region
+  image_name                  = var.service_evaluator_image_name
+  webapp_service_account_name = var.service_evaluator_webapp_service_account_name
+  firestore_jobs_collection   = var.service_evaluator_firestore_jobs_collection
+  job_prefix_name             = var.service_evaluator_job_prefix_name
+  cloud_run_name              = var.service_evaluator_cloud_run_name
+  cloud_run_memory            = var.service_evaluator_cloud_run_memory
+  cloud_run_cpu               = var.service_evaluator_cloud_run_cpu
+  cloud_run_min_scale         = var.service_evaluator_cloud_run_min_scale
+  cloud_run_max_scale         = var.service_evaluator_cloud_run_max_scale
+
+  serialized_service_client_parameters = "{\"host\": \"${module.people_counting.url}\"}"
+  service_name                         = "people_counting"
+}

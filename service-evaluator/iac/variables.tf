@@ -19,9 +19,6 @@ variable "service_image_name" {
 variable "service_name" {
   type = string
 }
-variable "service_url" {
-  type = string
-}
 variable "job_prefix_name" {
   type = string
 }

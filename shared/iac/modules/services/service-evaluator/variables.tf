@@ -1,22 +1,16 @@
 variable "image_name" {
   type = string
 }
-variable "webapp_service_account_name" {
-  type = string
-}
-variable "firestore_jobs_collection" {
-  type = string
-}
 variable "serialized_service_client_parameters" {
-  type = string
-}
-variable "service_image_name" {
   type = string
 }
 variable "service_name" {
   type = string
 }
-variable "service_url" {
+variable "webapp_service_account_name" {
+  type = string
+}
+variable "firestore_jobs_collection" {
   type = string
 }
 variable "job_prefix_name" {

@@ -1,12 +1,12 @@
 repository_variables:
   # general repository
-  - REPOSITORY_NAME=evaluator
-  - REPOSITORY_CODE=ev
-  - PACKAGE_NAME=evaluator
+  - REPOSITORY_NAME=service-evaluator
+  - REPOSITORY_CODE=se
+  - PACKAGE_NAME=service_evaluator
   - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
 multi_instance_resource_names:
   # docker image
-  - BASE_IMAGE_NAME=evaluator
+  - BASE_IMAGE_NAME=service-evaluator
   # service account names
   - WEBAPP_SERVICE_ACCOUNT_NAME=webapp
   # firestore

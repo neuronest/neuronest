@@ -15,7 +15,6 @@ resource "google_project_service" "cloud_run" {
 resource "time_sleep" "api_activation_waiting" {
   create_duration = "30s"
   depends_on = [
-    google_project_service.cloud_run,
-    google_project_service.cloud_scheduler
+    google_project_service.cloud_run
   ]
 }

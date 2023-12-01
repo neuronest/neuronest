@@ -18,8 +18,12 @@ resource "google_cloud_run_service" "evaluator_api" {
           }
         }
         env {
-          name  = "FIRESTORE_RESULTS_COLLECTION"
-          value = var.firestore_results_collection
+          name  = "FIRESTORE_JOBS_COLLECTION"
+          value = var.firestore_jobs_collection
+        }
+        env {
+          name  = "JOB_PREFIX_NAME"
+          value = var.job_prefix_name
         }
         env {
           name  = "PROJECT_ID"
@@ -34,20 +38,8 @@ resource "google_cloud_run_service" "evaluator_api" {
           value = var.serialized_service_client_parameters
         }
         env {
-          name  = "SERVICE_IMAGE_NAME"
-          value = var.service_image_name
-        }
-        env {
           name  = "SERVICE_NAME"
           value = var.service_name
-        }
-        env {
-          name  = "SERVICE_URL"
-          value = var.service_url
-        }
-        env {
-          name  = "JOB_PREFIX_NAME"
-          value = var.job_prefix_name
         }
       }
       service_account_name = google_service_account.evaluator_api_sa.email

@@ -67,11 +67,10 @@ module "functional_people_counting" {
   model_instantiator_cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
 
   service_evaluator_image_name                           = var.service_evaluator_image_name
+  service_evaluator_serialized_service_client_parameters = var.service_evaluator_serialized_service_client_parameters
+  service_evaluator_service_name                         = var.service_evaluator_service_name
   service_evaluator_webapp_service_account_name          = var.service_evaluator_webapp_service_account_name
   service_evaluator_firestore_jobs_collection            = var.service_evaluator_firestore_jobs_collection
-  service_evaluator_serialized_service_client_parameters = var.service_evaluator_serialized_service_client_parameters
-  service_evaluator_service_image_name                   = var.service_evaluator_service_image_name
-  service_evaluator_service_name                         = var.service_evaluator_service_name
   service_evaluator_job_prefix_name                      = var.service_evaluator_job_prefix_name
   service_evaluator_cloud_run_name                       = var.service_evaluator_cloud_run_name
   service_evaluator_cloud_run_memory                     = var.service_evaluator_cloud_run_memory
