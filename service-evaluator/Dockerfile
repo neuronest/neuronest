@@ -3,8 +3,8 @@ FROM python:3.8.14-buster
 RUN apt -qqy update && apt install -qqy cmake
 
 ARG ROOT_DIRECTORY="/app"
-ARG REPOSITORY_NAME="evaluator"
-ARG PACKAGE_NAME="evaluator"
+ARG REPOSITORY_NAME="service-evaluator"
+ARG PACKAGE_NAME="service_evaluator"
 ARG SHARED_REPOSITORY_NAME="shared"
 ARG PORT=80
 ARG WORKERS=4

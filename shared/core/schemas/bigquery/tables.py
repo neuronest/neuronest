@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from typing import Optional
 
-from service_evaluator.scorer.metrics import MetricName
-
 from core.path import GSPath
 from core.schemas.bigquery.base import BigQueryModel
 from core.schemas.image_name import ImageNameWithTag
+from core.schemas.service_evaluator import MetricName
 
 
 class TrainingMetrics(BigQueryModel):

@@ -1,13 +1,10 @@
-import json
 from functools import lru_cache
-from typing import Dict
 
 from core.google.cloud_run_job_manager import CloudRunJobManager
-from core.google.cloud_run_manager import CloudRunManager
 from core.google.firestore_client import FirestoreClient
 from core.google.vertex_ai_manager import VertexAIManager
-from core.schemas.image_name import ImageName
 from core.schemas.service_evaluator import EvaluatedServiceName
+from fastapi import Depends
 from omegaconf import DictConfig
 
 from service_evaluator.config import cfg
@@ -18,15 +15,28 @@ from service_evaluator.environment_variables import (
     PROJECT_ID,
     REGION,
     SERIALIZED_SERVICE_CLIENT_PARAMETERS,
-    SERVICE_IMAGE_NAME,
     SERVICE_NAME,
-    SERVICE_URL,
 )
 
 
 @lru_cache
 def use_config() -> DictConfig:
     return cfg
+
+
+@lru_cache
+def use_project_id() -> str:
+    return PROJECT_ID
+
+
+@lru_cache
+def use_region() -> str:
+    return REGION
+
+
+@lru_cache
+def use_google_application_credentials() -> str:
+    return GOOGLE_APPLICATION_CREDENTIALS
 
 
 @lru_cache
@@ -40,54 +50,45 @@ def use_service_name() -> EvaluatedServiceName:
 
 
 @lru_cache
-def use_service_url() -> str:
-    return SERVICE_URL
-
-
-@lru_cache
-def use_service_image_name() -> ImageName:
-    return SERVICE_IMAGE_NAME
-
-
-@lru_cache
 def use_job_prefix_name() -> str:
     return JOB_PREFIX_NAME
 
 
 @lru_cache
-def use_service_client_parameters() -> Dict[str, str]:
-    return json.loads(SERIALIZED_SERVICE_CLIENT_PARAMETERS)
+def use_serialized_service_client_parameters() -> str:
+    return SERIALIZED_SERVICE_CLIENT_PARAMETERS
 
 
 @lru_cache
-def use_firestore_client() -> FirestoreClient:
+def use_firestore_client(
+    google_application_credentials: str = Depends(use_google_application_credentials),
+) -> FirestoreClient:
     return FirestoreClient(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS,
+        key_path=google_application_credentials,
     )
 
 
 @lru_cache
-def use_cloud_run_manager() -> CloudRunManager:
-    return CloudRunManager(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS,
-        project_id=PROJECT_ID,
-        location=REGION,
-    )
-
-
-@lru_cache
-def use_cloud_run_job_manager() -> CloudRunJobManager:
+def use_cloud_run_job_manager(
+    google_application_credentials: str = Depends(use_google_application_credentials),
+    project_id: str = Depends(use_project_id),
+    region: str = Depends(use_region),
+) -> CloudRunJobManager:
     return CloudRunJobManager(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS,
-        project_id=PROJECT_ID,
-        location=REGION,
+        key_path=google_application_credentials,
+        project_id=project_id,
+        location=region,
     )
 
 
 @lru_cache
-def use_vertex_ai_manager() -> VertexAIManager:
+def use_vertex_ai_manager(
+    google_application_credentials: str = Depends(use_google_application_credentials),
+    project_id: str = Depends(use_project_id),
+    region: str = Depends(use_region),
+) -> VertexAIManager:
     return VertexAIManager(
-        location=REGION,
-        key_path=GOOGLE_APPLICATION_CREDENTIALS,
-        project_id=PROJECT_ID,
+        location=region,
+        key_path=google_application_credentials,
+        project_id=project_id,
     )

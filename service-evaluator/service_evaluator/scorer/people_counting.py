@@ -4,10 +4,13 @@ from typing import List, Type
 
 import pandas as pd
 from core.schemas.people_counting import Direction, PeopleCounterAssetResultsDocument
-from core.schemas.service_evaluator import EvaluatedServiceName
+from core.schemas.service_evaluator import (
+    AbsoluteErrorMetric,
+    EvaluatedServiceName,
+    Metric,
+)
 
 from service_evaluator.scorer.base import ScorableDocument, ScorerMixin
-from service_evaluator.scorer.metrics import AbsoluteErrorMetric, Metric
 
 
 class PeopleCountingScorableDocument(ScorableDocument):

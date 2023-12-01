@@ -2,6 +2,7 @@ import json
 from typing import Dict
 
 from core.google.firestore_client import FirestoreClient
+from core.schemas.image_name import ImageNameWithTag
 from core.schemas.service_evaluator import EvaluatedServiceName
 from core.services.bigquery_writer import BigQueryWriter
 from core.utils import string_to_boolean
@@ -15,6 +16,7 @@ from service_evaluator.jobs.environment_variables import (
     REGION,
     REUSE_ALREADY_COMPUTED_RESULTS,
     SERIALIZED_SERVICE_CLIENT_PARAMETERS,
+    SERVICE_IMAGE_NAME,
     SERVICE_NAME,
 )
 from service_evaluator.predictor.factory import ServicePredictorFactory
@@ -57,6 +59,7 @@ def make_bigquery_writer(
 # pylint: disable=too-many-locals
 def main(
     service_name: EvaluatedServiceName,
+    service_image_name: ImageNameWithTag,
     service_client_parameters: Dict[str, str],
     reuse_already_computed_results: bool,
     datasets_directory_name: str,
@@ -88,12 +91,6 @@ def main(
         dataset_filename=dataset_filename,
     )
     dataset_manager.pull_dataset()
-
-    service_image_name = service_predictor.client.get_underlying_serving_image(
-        project_id=PROJECT_ID,
-        location=REGION,
-        key_path=GOOGLE_APPLICATION_CREDENTIALS,
-    )
 
     already_computed_predictions = []
     if reuse_already_computed_results is True:
@@ -131,6 +128,7 @@ def main(
 if __name__ == "__main__":
     main(
         service_name=EvaluatedServiceName(SERVICE_NAME),
+        service_image_name=ImageNameWithTag(SERVICE_IMAGE_NAME),
         service_client_parameters=make_service_client_parameters(),
         reuse_already_computed_results=string_to_boolean(
             REUSE_ALREADY_COMPUTED_RESULTS

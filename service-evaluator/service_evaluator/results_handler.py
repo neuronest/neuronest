@@ -9,14 +9,13 @@ from core.schemas.bigquery.tables import (
     ScoringJob,
 )
 from core.schemas.image_name import ImageNameWithTag
-from core.schemas.service_evaluator import EvaluatedServiceName
+from core.schemas.service_evaluator import EvaluatedServiceName, MetricName
 from core.services.bigquery_writer import BigQueryWriter
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, bigquery_storage
 
 from service_evaluator.dataset_manager import DatasetManager
 from service_evaluator.scorer.base import ScorableDocument
-from service_evaluator.scorer.metrics import MetricName
 
 
 class ResultsHandler:
