@@ -36,7 +36,7 @@ def write_metrics(
         dataset_name=bigquery_dataset_name,
         big_query_client=bigquery_client,
         location=location,
-    ).submit(training_metrics)
+    ).submit([training_metrics])
 
 
 def main(
