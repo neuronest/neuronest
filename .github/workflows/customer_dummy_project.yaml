@@ -1,32 +1,32 @@
 name: customer_dummy_project
 
 on:
-#  push:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/functional_people_counting.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - people-counting/**
-#      - object-detection/**
-#      - model-instantiator/**
-#  pull_request:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/functional_people_counting.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - people-counting/**
-#      - object-detection/**
-#      - model-instantiator/**
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/functional_people_counting.yaml
+      - .github/actions/**
+      - .github/variables/**
+      - .pre-commit-config.yaml
+      - shared/**
+      - people-counting/**
+      - object-detection/**
+      - model-instantiator/**
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - .github/workflows/functional_people_counting.yaml
+      - .github/actions/**
+      - .github/variables/**
+      - .pre-commit-config.yaml
+      - shared/**
+      - people-counting/**
+      - object-detection/**
+      - model-instantiator/**
   workflow_dispatch:
 
 env:
@@ -55,12 +55,12 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit
 
-  functional_object_detection:
-    needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/functional_object_detection.yaml
-    with:
-      build: true
-      deploy: true
-      do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
-    secrets: inherit
+#  functional_object_detection:
+#    needs: upload_variables_of_called_workflows
+#    uses: ./.github/workflows/functional_object_detection.yaml
+#    with:
+#      build: true
+#      deploy: true
+#      do_post_deployment: true
+#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+#    secrets: inherit
