@@ -39,6 +39,12 @@ def get_chunks_from_iterable(
         yield chunk
 
 
+def merge_chunks_get_elements(chunks: Iterable[Iterable[Any]]) -> Any:
+    for chunk in chunks:
+        for element in chunk:
+            yield element
+
+
 def split_list_into_two_parts(elements: List[Any]) -> Tuple[List[Any], List[Any]]:
     if len(elements) <= 1:
         return elements, []

@@ -1,59 +1,21 @@
-import random
-import time
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
-import requests
-from cachetools.func import ttl_cache
-from google.api_core.exceptions import ServiceUnavailable
-from google.cloud import aiplatform
 from imutils import resize
 
 from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
-from core.exceptions import DependencyError
 from core.schemas.object_detection import (
-    PREDICTION_COLUMNS,
-    InputSchemaSample,
-    OutputSchemaSample,
+    InputSampleSchema as ObjectDetectionInputSampleSchema,
 )
-from core.serialization.array import array_from_string
-from core.serialization.image import image_to_string
-from core.tools import split_list_into_two_parts
 
 
 class ObjectDetectionClient(OnlinePredictionModelClient):
     PREPROCESSING_IMAGE_TYPE = ".jpg"
     MAX_SIZE = (640, 640)
-    MAX_BYTES = 1.5e6
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    def _create_endpoint(self) -> Optional[requests.Response]:
-        return self.model_instantiator_client.instantiate(self.model_name)
-
-    @ttl_cache(ttl=600)
-    def _try_get_endpoint(self) -> aiplatform.Endpoint:
-        total_waited_time = 0
-
-        while total_waited_time < self.endpoint_retry_timeout:
-            model = self.vertex_ai_manager.get_last_model_by_name(self.model_name)
-            endpoint = self.vertex_ai_manager.get_endpoint_by_name(self.model_name)
-
-            if endpoint is not None and self.vertex_ai_manager.is_model_deployed(
-                model=model, endpoint=endpoint
-            ):
-                return endpoint
-
-            self._create_endpoint()
-            time.sleep(self.endpoint_retry_wait_time)
-            total_waited_time += self.endpoint_retry_wait_time
-
-        raise DependencyError(
-            f"Failed to deploy an endpoint for model_name={self.model_name}, "
-            f"giving up after {self.endpoint_retry_timeout // 60} minutes of trying"
-        )
 
     @staticmethod
     def _are_shapes_correct(images: List[np.ndarray]) -> bool:
@@ -84,90 +46,28 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
             for image in images
         ]
 
-    def _split_into_chunks(
-        self, preprocessed_images: List[Dict[str, str]]
-    ) -> List[List[Dict[str, str]]]:
-        if len(preprocessed_images) == 0:
-            return []
+    # # pylint: disable=arguments-differ,arguments-renamed
+    # def _batch_sample_to_input_sample_schema(
+    #     self, image: np.ndarray
+    # ) -> ObjectDetectionInputSampleSchema:
+    #     return ObjectDetectionInputSampleSchema(image=image)
 
-        if len(preprocessed_images) == 1:
-            return [preprocessed_images]
-
-        if (
-            sum(
-                len(preprocessed_image["data"])
-                for preprocessed_image in preprocessed_images
-            )
-            <= self.MAX_BYTES
-        ):
-            return [preprocessed_images]
-
-        for index, preprocessed_image in enumerate(preprocessed_images):
-            if (image_bytes := len(preprocessed_image["data"])) > self.MAX_BYTES:
-                raise ValueError(
-                    f"Cannot proceed, image at index {index} is too large: "
-                    f"{image_bytes/1e6}MB"
-                )
-
-        chunks, bytes_current_chunk = [[preprocessed_images[0]]], len(
-            preprocessed_images[0]["data"]
-        )
-        for preprocessed_image in preprocessed_images[1:]:
-            bytes_current_image = len(preprocessed_image["data"])
-            if bytes_current_image + bytes_current_chunk <= self.MAX_BYTES:
-                chunks[-1].append(preprocessed_image)
-                bytes_current_chunk += bytes_current_image
-                continue
-
-            chunks.append([preprocessed_image])
-            bytes_current_chunk = bytes_current_image
-
-        return chunks
-
-    def _predict_batch(
+    # pylint: disable=arguments-differ,arguments-renamed
+    def _batch_sample_to_input_sample_schema(
         self,
-        chunk_preprocessed_images: List[Dict[str, str]],
-        max_tries: int = 5,
-        base_retry_delay: float = 1.0,
-        max_retry_delay: float = 32.0,
-        current_try: int = 0,
-    ) -> List[Any]:
-        if len(chunk_preprocessed_images) == 0:
-            return []
+        batch_sample_image: np.ndarray,
+        labels: Optional[List[str]] = None,
+        confidence_threshold: Optional[float] = None,
+    ) -> ObjectDetectionInputSampleSchema:
+        resized_batch_sample_image = self._resize_images([batch_sample_image])[0]
 
-        endpoint = self._try_get_endpoint()
+        return ObjectDetectionInputSampleSchema(
+            image=resized_batch_sample_image,
+            labels_to_predict=labels,
+            confidence_threshold=confidence_threshold,
+        )
 
-        try:
-            return endpoint.predict(chunk_preprocessed_images).predictions
-        except ServiceUnavailable as service_unavailable:
-            current_try += 1
-            if current_try > max_tries:
-                raise service_unavailable
-
-            # exponential backoff with random
-            delay = min(base_retry_delay * (2**current_try), max_retry_delay)
-            delay_with_random = random.uniform(base_retry_delay, delay)
-
-            time.sleep(delay_with_random)
-
-            # we divide the initial list into smaller chunks in case the size of the
-            # initial list was an issue to be handled properly by the endpoint
-            (
-                left_chunk_preprocessed_images,
-                right_chunk_preprocessed_images,
-            ) = split_list_into_two_parts(chunk_preprocessed_images)
-
-            return self._predict_batch(
-                chunk_preprocessed_images=left_chunk_preprocessed_images,
-                max_tries=max_tries,
-                current_try=current_try,
-            ) + self._predict_batch(
-                chunk_preprocessed_images=right_chunk_preprocessed_images,
-                max_tries=max_tries,
-                current_try=current_try,
-            )
-
-    # pylint: disable=arguments-renamed
+    # pylint: disable=arguments-differ,arguments-renamed
     def predict_batch(
         self,
         images: List[np.ndarray],
@@ -180,44 +80,12 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
         if not self._are_shapes_correct(images):
             raise ValueError("Incorrect received shapes")
 
-        preprocessed_images = [
-            InputSchemaSample(
-                data=image_to_string(
-                    frame=image,
-                    extension=self.PREPROCESSING_IMAGE_TYPE,
-                ),
-                labels_to_predict=labels,
-                confidence_threshold=confidence_threshold,
-            ).dict(exclude_none=True)
-            for image in self._resize_images(images=images)
-        ]
-        chunks_preprocessed_images = self._split_into_chunks(preprocessed_images)
-
-        raw_chunked_predictions = [
-            self._predict_batch(chunk_preprocessed_images)
-            for chunk_preprocessed_images in chunks_preprocessed_images
-        ]
-        predictions = [
-            array_from_string(OutputSchemaSample.parse_obj(raw_prediction).results)
-            for raw_predictions in raw_chunked_predictions
-            for raw_prediction in raw_predictions
-        ]
-
-        return [
-            pd.DataFrame(prediction, columns=PREDICTION_COLUMNS)
-            for prediction in predictions
-        ]
-
-    # pylint: disable=arguments-renamed
-    def predict_single(
-        self,
-        image: np.ndarray,
-        labels: Optional[List[str]] = None,
-        confidence_threshold: Optional[float] = None,
-    ) -> pd.DataFrame:
-        """
-        images: A RGB image as NumPy array
-        """
-        return self.predict_batch(
-            images=[image], labels=labels, confidence_threshold=confidence_threshold
-        )[0]
+        return super().predict_batch(
+            batch=images, labels=labels, confidence_threshold=confidence_threshold
+        )
+        # return [
+        #     pd.DataFrame(prediction, columns=PREDICTION_COLUMNS)
+        #     for prediction in super().predict_batch(
+        #         batch=images, labels=labels, confidence_threshold=confidence_threshold
+        #     )
+        # ]

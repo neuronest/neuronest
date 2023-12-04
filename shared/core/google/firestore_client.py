@@ -4,24 +4,25 @@ from typing import Any, List, Optional, Union
 from google.cloud import firestore
 from google.cloud.firestore_v1 import DocumentReference, Transaction
 
+from core.client.base_client import BaseClient
 from core.serialization.encoding import json_encodable_dict
 
 logger = logging.getLogger(__name__)
 
 
-class FirestoreClient:
+class FirestoreClient(BaseClient):
     def __init__(
         self, key_path: Optional[str] = None, project_id: Optional[str] = None
     ):
+        super().__init__(key_path=key_path, project_id=project_id)
         # noinspection PyTypeChecker
         self.client = (
-            firestore.Client(project=project_id)
+            firestore.Client(project=self.project_id)
             if key_path is None
             else firestore.Client.from_service_account_json(
-                json_credentials_path=key_path, project=project_id
+                json_credentials_path=key_path, project=self.project_id
             )
         )
-        self.project_id = project_id
 
     def upload_document(self, collection_name: str, document_id: str, content: dict):
         doc_ref = self.client.collection(collection_name).document(document_id)

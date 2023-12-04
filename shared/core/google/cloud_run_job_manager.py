@@ -15,21 +15,18 @@ from google.cloud.run_v2 import (
     types,
 )
 
-from core.auth import get_credentials
+from core.client.base_client import BaseClient
 from core.schemas.google.cloud_run import ExecutionSchema, JobConfig, JobSchema
 from core.serialization.protobuf import protobuf_to_dict
 from core.utils import hyphen_to_underscore
 
 
-class CloudRunJobManager:
+class CloudRunJobManager(BaseClient):
     def __init__(self, project_id: str, location: str, key_path: Optional[str] = None):
-        self._credentials = (
-            get_credentials(key_path=key_path) if key_path is not None else None
-        )
+        super().__init__(key_path=key_path, project_id=self.project_id)
         self._parent = f"projects/{project_id}/locations/{location}"
-        self.jobs_client = JobsClient(credentials=self._credentials)
-        self.executions_client = ExecutionsClient(credentials=self._credentials)
-        self.project_id = project_id
+        self.jobs_client = JobsClient(credentials=self.credentials)
+        self.executions_client = ExecutionsClient(credentials=self.credentials)
         self.location = location
 
     @staticmethod

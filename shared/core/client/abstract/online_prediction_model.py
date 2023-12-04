@@ -1,18 +1,27 @@
+import random
 import time
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import requests
 from cachetools.func import ttl_cache
+from google.api_core.exceptions import ServiceUnavailable
 from google.cloud import aiplatform
 
 from core.client.base_client import BaseClient
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.exceptions import DependencyError
 from core.google.vertex_ai_manager import VertexAIManager
+from core.schemas.abstract.online_prediction_model import (
+    InputSampleSchema,
+    OutputSampleSchema,
+)
+from core.tools import merge_chunks_get_elements, split_list_into_two_parts
 
 
 class OnlinePredictionModelClient(BaseClient, ABC):
+    MAX_BYTES = 1.5e6
+
     def __init__(
         self,
         vertex_ai_manager: VertexAIManager,
@@ -61,12 +70,179 @@ class OnlinePredictionModelClient(BaseClient, ABC):
             f"giving up after {self.endpoint_retry_timeout // 60} minutes of trying"
         )
 
+    def _calculate_endpoint_input_samples_schema_bytes(
+        self, input_samples_schema_chunk: List[InputSampleSchema]
+    ) -> int:
+        return self.vertex_ai_manager.calculate_prediction_payload_size(
+            instances=[
+                input_sample_schema.serialized_attributes_dict()
+                for input_sample_schema in input_samples_schema_chunk
+            ]
+        )
+
+    def _split_into_chunks(
+        self, input_samples_schema: List[InputSampleSchema]
+    ) -> List[List[InputSampleSchema]]:
+        if len(input_samples_schema) == 0:
+            return []
+
+        if len(input_samples_schema) == 1:
+            return [input_samples_schema]
+
+        if (
+            self._calculate_endpoint_input_samples_schema_bytes(
+                input_samples_schema_chunk=input_samples_schema
+            )
+            <= self.MAX_BYTES
+        ):
+            # a list of lists must be returned
+            return [input_samples_schema]
+
+        for index, input_sample_schema in enumerate(input_samples_schema):
+            if (
+                input_sample_schema_size_in_bytes := (
+                    self._calculate_endpoint_input_samples_schema_bytes(
+                        input_samples_schema_chunk=[input_sample_schema]
+                    )
+                )
+            ) > self.MAX_BYTES:
+                raise ValueError(
+                    f"Cannot proceed input_sample_schema "
+                    f"at index {index} is too large: "
+                    f"{input_sample_schema_size_in_bytes / 1e6}MB"
+                )
+
+        input_samples_schema_chunks, current_input_samples_schema_chunk_bytes = [
+            [input_samples_schema[0]]
+        ], self._calculate_endpoint_input_samples_schema_bytes(
+            input_samples_schema_chunk=[input_samples_schema[0]]
+        )
+
+        for input_sample_schema in input_samples_schema[1:]:
+            current_input_sample_schema_bytes = (
+                self._calculate_endpoint_input_samples_schema_bytes(
+                    input_samples_schema_chunk=[input_sample_schema]
+                )
+            )
+            if (
+                current_input_sample_schema_bytes
+                + current_input_samples_schema_chunk_bytes
+                <= self.MAX_BYTES
+            ):
+                input_samples_schema_chunks[-1].append(input_sample_schema)
+                current_input_samples_schema_chunk_bytes += (
+                    current_input_sample_schema_bytes
+                )
+                continue
+
+            input_samples_schema_chunks.append([input_sample_schema])
+            current_input_samples_schema_chunk_bytes = current_input_sample_schema_bytes
+
+        return input_samples_schema_chunks
+
     @abstractmethod
-    def predict_batch(self, inputs: List[Any]) -> List[Any]:
+    def get_output_sample_schema_class(self) -> Type[OutputSampleSchema]:
         raise NotImplementedError
 
-    def predict_single(self, single: Any) -> Any:
+    def _predict_batch(
+        self,
+        input_samples_schema: List[InputSampleSchema],
+        max_tries: int = 5,
+        base_retry_delay: float = 1.0,
+        max_retry_delay: float = 32.0,
+        current_try: int = 0,
+    ) -> List[OutputSampleSchema]:
+        if len(input_samples_schema) == 0:
+            return []
+
+        endpoint = self._try_get_endpoint()
+
+        try:
+            return [
+                self.get_output_sample_schema_class().from_serialized_attributes_dict(
+                    prediction
+                )
+                for prediction in endpoint.predict(
+                    [
+                        input_sample_schema.serialized_attributes_dict()
+                        for input_sample_schema in input_samples_schema
+                    ]
+                ).predictions
+            ]
+        except ServiceUnavailable as service_unavailable:
+            current_try += 1
+            if current_try > max_tries:
+                raise service_unavailable
+
+            # exponential backoff with random
+            delay = min(base_retry_delay * (2**current_try), max_retry_delay)
+            delay_with_random = random.uniform(base_retry_delay, delay)
+
+            time.sleep(delay_with_random)
+
+            # we divide the initial list into smaller chunks in case the size of the
+            # initial list was an issue to be handled properly by the endpoint
+            (
+                left_input_samples_schema_chunk,
+                right_input_samples_schema_chunk,
+            ) = split_list_into_two_parts(input_samples_schema)
+
+            return self._predict_batch(
+                input_samples_schema=left_input_samples_schema_chunk,
+                max_tries=max_tries,
+                current_try=current_try,
+            ) + self._predict_batch(
+                input_samples_schema=right_input_samples_schema_chunk,
+                max_tries=max_tries,
+                current_try=current_try,
+            )
+
+    @abstractmethod
+    def _batch_sample_to_input_sample_schema(
+        self, batch_sample: Any, **input_sample_schema_kwargs: Optional[Dict[str, Any]]
+    ) -> InputSampleSchema:
+        raise NotImplementedError
+
+    def _preprocess_batch(
+        self, batch: List[Any], **input_sample_schema_kwargs: Optional[Dict[str, Any]]
+    ) -> List[InputSampleSchema]:
+
+        return [
+            self._batch_sample_to_input_sample_schema(
+                sample, **input_sample_schema_kwargs
+            )
+            for sample in batch
+        ]
+
+    # pylint: disable=arguments-renamed
+    def predict_batch(
+        self,
+        batch: List[Any],
+        **input_sample_schema_kwargs,
+    ) -> List[Any]:
+        input_samples_schema = self._preprocess_batch(
+            batch, **input_sample_schema_kwargs
+        )
+
+        input_samples_schema_chunks = self._split_into_chunks(input_samples_schema)
+
+        return [
+            output_sample_schema.result
+            for output_sample_schema in merge_chunks_get_elements(
+                self._predict_batch(input_samples_schema_chunk)
+                for input_samples_schema_chunk in input_samples_schema_chunks
+            )
+        ]
+
+    def predict_single(
+        self,
+        single: Any,
+        **input_sample_schema_kwargs,
+    ) -> Any:
         """
         input: Any input
         """
-        return self.predict_batch([single])[0]
+        return self.predict_batch(
+            [single],
+            **input_sample_schema_kwargs,
+        )[0]

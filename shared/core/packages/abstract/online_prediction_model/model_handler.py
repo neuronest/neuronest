@@ -10,7 +10,11 @@ from ts.torch_handler.base_handler import BaseHandler
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
-from core.schemas.abstract.online_prediction_model import Device, OutputSampleSchema
+from core.schemas.abstract.online_prediction_model import (
+    Device,
+    InputSampleSchema,
+    OutputSampleSchema,
+)
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -33,28 +37,6 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         self._context = None
         self.model: Optional[OnlinePredictionModel] = None
 
-    @staticmethod
-    def get_input_sample_schema_class() -> Type:
-        raise NotImplementedError
-
-    @abstractmethod
-    def build_inference_args_kwargs_from_input_samples(
-        self,
-        input_samples: List[Any],
-    ) -> Tuple[Tuple, dict]:
-        """
-        Returns the data in the format expected by the model to predict,
-        the arguments and the key arguments of the prediction function
-        """
-        raise NotImplementedError
-
-    def preprocess(self, data: List) -> Tuple[Tuple, dict]:
-        # pylint: disable=invalid-name
-        InputSampleSchema = self.get_input_sample_schema_class()
-        input_samples = [InputSampleSchema.parse_obj(sample) for sample in data]
-
-        return self.build_inference_args_kwargs_from_input_samples(input_samples)
-
     def _retrieve_model_path(self) -> str:
         properties = self._context.system_properties
         manifest = self._context.manifest
@@ -71,6 +53,56 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
 
         return model_path
 
+    def initialize(self, context: Context):
+        """
+        Initialize model. This will be called during model loading time
+        :param context: Initial context contains model server system properties.
+        :return:
+        """
+        self._context = context
+        self.model = self.create_new_model()
+        self.model.load(path=self._retrieve_model_path())
+        self.model.to(self.device)
+
+    @abstractmethod
+    def create_new_model(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_input_sample_schema_class(self) -> Type[InputSampleSchema]:
+        raise NotImplementedError(
+            f"The class inherited from {InputSampleSchema} and used at runtime "
+            f"must be known to know on which class exactly to call certain methods"
+        )
+
+    def _get_input_sample_schema_from_data_sample(self, data_sample: Dict):
+        raise self._get_input_sample_schema_class().from_serialized_attributes_dict(
+            **data_sample
+        )
+
+    @abstractmethod
+    def build_inference_args_kwargs_from_input_samples_schema(
+        self,
+        input_samples_schema: List[InputSampleSchema],
+    ) -> Tuple[Tuple, dict]:
+        """
+        Returns the data in the format expected by the model to predict,
+        the arguments and the key arguments of the prediction function
+        """
+        raise NotImplementedError
+
+    # pylint: disable=arguments-renamed
+    def preprocess(self, data_samples: List[Dict]) -> Tuple[Tuple, Dict]:
+        # pylint: disable=invalid-name
+        input_samples_schema = [
+            self._get_input_sample_schema_from_data_sample(data_sample)
+            for data_sample in data_samples
+        ]
+
+        return self.build_inference_args_kwargs_from_input_samples_schema(
+            input_samples_schema
+        )
+
     def inference(self, *args, **kwargs) -> List[Any]:
         with torch.no_grad():
             self.model.eval()
@@ -86,36 +118,6 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     ) -> List[OutputSampleSchema]:
         raise NotImplementedError
 
-    def initialize_model_pt(self, context: Context):
-        self._context = context
-
-        model_pt_path = self._retrieve_model_path()
-
-        if not os.path.isfile(model_pt_path):
-            raise RuntimeError("The model.pt file is missing")
-
-        model_pt = OnlinePredictionModel.get_model_pt_from_path(
-            model_pt_path=model_pt_path
-        )
-        model_pt.to(self.device)
-
-        return model_pt
-
-    @abstractmethod
-    def create_new_model(self):
-        raise NotImplementedError
-
-    def initialize(self, context: Context):
-        """
-        Initialize model. This will be called during model loading time
-        :param context: Initial context contains model server system properties.
-        :return:
-        """
-        self._context = context
-        self.model = self.create_new_model()
-        self.model.load(path=self._retrieve_model_path())
-        self.model.to(self.device)
-
     def handle(self, data: List[Dict], context: Context) -> List[Dict[str, str]]:
         """
         Invoke by TorchServe for prediction request.
@@ -129,9 +131,12 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         if len(data) == 0:
             return []
 
-        inference_args, inference_kwargs = self.preprocess(data=data)
-        model_inferences = self.inference(*inference_args, **inference_kwargs)
-        output_samples = self.postprocess(model_inferences)
-        if not isinstance(output_samples, list):
-            output_samples = [output_samples]
-        return [output_sample.dict() for output_sample in output_samples]
+        inference_args, inference_kwargs = self.preprocess(data_samples=data)
+        inferences = self.inference(*inference_args, **inference_kwargs)
+        output_samples_schema = self.postprocess(inferences)
+        # if not isinstance(output_samples, list):
+        #     output_samples = [output_samples]
+        return [
+            output_sample.serialized_attributes_dict()
+            for output_sample in output_samples_schema
+        ]

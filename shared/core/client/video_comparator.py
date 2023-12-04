@@ -1,17 +1,12 @@
-from typing import Iterable, List, Union
+from typing import Iterable, Union
 
 import numpy as np
 
 from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
-from core.schemas.video_comparator import (
-    InputSchema,
-    InputSchemaSample,
-    OutputSchemaSample,
-    PredictionType,
-)
-from core.tools import generate_file_id, get_chunks_from_iterable
+from core.schemas.video_comparator import InputSampleSchema, PredictionType
+from core.tools import generate_file_id
 
 Video = Union[str, np.ndarray]
 Sample = Union[Video, Iterable[Video]]
@@ -51,14 +46,17 @@ class VideoComparatorClient(OnlinePredictionModelClient):
 
     def _preprocess_batch_sample_video(self, batch_sample_video: Video):
         if isinstance(batch_sample_video, str):
-            return self._upload_video_to_storage(batch_sample_video)
+            return self._upload_video_to_storage(GSPath(batch_sample_video))
         if isinstance(batch_sample_video, np.ndarray):
             return batch_sample_video
         raise ValueError
 
-    def _preprocess_batch_sample(self, batch_sample: Sample) -> InputSchemaSample:
+    # pylint: disable=arguments-differ
+    def _batch_sample_to_input_sample_schema(
+        self, batch_sample: Sample
+    ) -> InputSampleSchema:
         if isinstance(batch_sample, (np.ndarray, str)):
-            return InputSchemaSample(
+            return InputSampleSchema(
                 video=self._preprocess_batch_sample_video(batch_sample),
                 other_video=None,
                 prediction_type=PredictionType.VIDEO_FEATURES,
@@ -68,35 +66,8 @@ class VideoComparatorClient(OnlinePredictionModelClient):
         if not len(batch_sample) == 2:
             raise ValueError
         video, other_video = tuple(batch_sample)
-        return InputSchemaSample(
+        return InputSampleSchema(
             video=self._preprocess_batch_sample_video(video),
             other_video=self._preprocess_batch_sample_video(other_video),
             prediction_type=PredictionType.SIMILARITY,
         )
-
-    def preprocess_batch(self, batch: Iterable[Sample]) -> InputSchema:
-        return InputSchema(
-            samples=[self._preprocess_batch_sample(sample) for sample in batch]
-        )
-
-    # pylint: disable=arguments-renamed
-    def predict_batch(
-        self,
-        batch: List[Sample],
-    ) -> List[np.ndarray]:
-        """
-        video_path_pairs: List of pairs of videos paths
-        """
-        input_schema = self.preprocess_batch(batch)
-        endpoint = self._try_get_endpoint()
-        endpoint_predictions = []
-        for input_samples_chunk in get_chunks_from_iterable(
-            input_schema.samples, chunk_size=self.MAX_BATCH_SIZE
-        ):
-            endpoint_predictions += endpoint.predict(
-                InputSchema(samples=input_samples_chunk).to_serialized_dict()["samples"]
-            ).predictions
-        return [
-            OutputSchemaSample.parse_obj(endpoint_prediction).results
-            for endpoint_prediction in endpoint_predictions
-        ]

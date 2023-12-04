@@ -3,9 +3,8 @@ from __future__ import annotations
 import os
 import tempfile
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any, List, Optional
 
-import pandas as pd
 import torch
 from torch import nn
 
@@ -23,14 +22,14 @@ class OnlinePredictionModel(ABC):
 
         self._model: Optional[nn.Module] = None
         if retrieve_remote_model:
-            self._model = self._retrieve_remote_model()
+            self._model = self._retrieve_remote_model(pretrained=True)
 
     @abstractmethod
-    def __call__(self, *args, **kwargs) -> List[pd.DataFrame]:
+    def __call__(self, *args, **kwargs) -> List[Any]:
         raise NotImplementedError
 
     @abstractmethod
-    def _retrieve_remote_model(self):
+    def _retrieve_remote_model(self, pretrained: bool = False):
         raise NotImplementedError
 
     @abstractmethod
@@ -38,11 +37,8 @@ class OnlinePredictionModel(ABC):
         raise NotImplementedError
 
     @staticmethod
-    def get_model_pt_from_path(model_pt_path: str):
-        return torch.load(model_pt_path)
-
-    def set_model(self, model):
-        self._model = model
+    def _load_hub_model(model_type: str, model_name: str, pretrained: bool = False):
+        return torch.hub.load(model_type, model_name, pretrained=pretrained)
 
     # pylint: disable=invalid-name
     def to(self, device: str):
@@ -77,5 +73,8 @@ class OnlinePredictionModel(ABC):
             )
 
     def load(self, path: str) -> OnlinePredictionModel:
-        self._model = self.get_model_pt_from_path(path)
+        # loads in memory the project architecture of the model so that it is visible
+        # to the interpreter when loading the MODEL.pt
+        self._retrieve_remote_model(pretrained=False)
+        self._model = torch.load(path)
         return self

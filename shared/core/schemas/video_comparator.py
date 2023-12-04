@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 from pydantic import BaseModel, validator
@@ -16,9 +16,9 @@ class PredictionType(str, Enum):
     SIMILARITY = "SIMILARITY"
 
 
-class InputSchemaSample(BaseModel):
-    video: Union[GSPath, np.ndarray, str]
-    other_video: Optional[Union[GSPath, np.ndarray, str]] = None
+class InputSampleSchema(BaseModel):
+    video: Union[GSPath, np.ndarray]
+    other_video: Optional[Union[GSPath, np.ndarray]] = None
     prediction_type: PredictionType
 
     class Config:
@@ -27,12 +27,14 @@ class InputSchemaSample(BaseModel):
     @validator("video", "other_video")
     # pylint: disable=no-self-argument
     def validate_results(cls, video):
-        if isinstance(video, GSPath):
-            return video
         if isinstance(video, str):
-            video = array_from_string(video)
+            return GSPath(video)
+        if isinstance(video, np.ndarray):
+            return video
+        # if isinstance(video, str):
+        #     return array_from_string(video)
 
-        return video
+        raise ValueError
 
     @validator("prediction_type")
     # pylint: disable=no-self-argument
@@ -56,38 +58,89 @@ class InputSchemaSample(BaseModel):
             )
         return prediction_type
 
-    def to_serialized_dict(self):
-        return {
-            key: array_to_string(value) if isinstance(value, np.ndarray) else value
-            for key, value in self.dict().items()
-        }
+    def serialized_attributes_dict(self) -> Dict:
+        serialized_attributes_dict = {}
+        for key, value in self.dict().items():
+            if key not in ("video", "other_video"):
+                serialized_attributes_dict[key] = value
+                continue
+            if isinstance(value, GSPath):
+                serialized_attributes_dict[key] = value
+                continue
+            serialized_attributes_dict[key] = array_to_string(value)
+
+        return serialized_attributes_dict
+
+    @classmethod
+    def from_serialized_attributes_dict(
+        cls, serialized_attributes_dict: Dict
+    ) -> "InputSampleSchema":
+        deserialized_attributes_dict = {}
+        for key, value in serialized_attributes_dict.items():
+            if key not in ("video", "other_video"):
+                serialized_attributes_dict[key] = value
+                continue
+            if GSPath.is_valid(value):
+                deserialized_attributes_dict[key] = GSPath(value)
+                continue
+            deserialized_attributes_dict[key] = array_from_string(value)
+
+        return cls(**deserialized_attributes_dict)
 
 
 class InputSchema(online_prediction_model.InputSchema):
-    samples: List[InputSchemaSample]
-
-    def to_serialized_dict(self):
-        return {
-            key: [
-                InputSchemaSample.parse_obj(sample).to_serialized_dict()
-                for sample in value
-            ]
-            if key == "samples"
-            else value
-            for key, value in self.dict().items()
-        }
+    samples: List[InputSampleSchema]
 
 
-class OutputSchemaSample(online_prediction_model.OutputSampleSchema):
-    results: Union[float, str, np.ndarray]
+def is_castable_to_float(element: Any):
+    try:
+        # Attempt to cast the element to float
+        float(element)
+        # If successful, the element is castable to float
+        return True
+    except ValueError:
+        # If an error occurs, it's an actual string
+        return False
 
-    class Config:
-        arbitrary_types_allowed = True
+
+class OutputSampleSchema(online_prediction_model.OutputSampleSchema):
+    results: Union[float, np.ndarray]
 
     @validator("results")
     # pylint: disable=no-self-argument
     def validate_results(cls, results):
-        if isinstance(results, str):
-            results = array_from_string(results)
+        if isinstance(results, (float, np.ndarray)):
+            return results
 
-        return results
+        raise ValueError(
+            f"The expected return type is a float or a numpy, received a {cls}"
+        )
+
+    def serialized_attributes_dict(self) -> Dict:
+        serialized_attributes_dict = {}
+        for key, value in self.dict().items():
+            if key != "results":
+                serialized_attributes_dict[key] = value
+                continue
+            if is_castable_to_float(value):
+                serialized_attributes_dict[key] = float(value)
+                continue
+            serialized_attributes_dict[key] = array_to_string(value)
+
+        return serialized_attributes_dict
+
+    @classmethod
+    def from_serialized_attributes_dict(
+        cls, serialized_attributes_dict: Dict
+    ) -> "OutputSampleSchema":
+        deserialized_attributes_dict = {}
+        for key, value in serialized_attributes_dict.items():
+            if key != "results":
+                deserialized_attributes_dict[key] = value
+                continue
+            if is_castable_to_float(value):
+                deserialized_attributes_dict[key] = float(value)
+                continue
+            deserialized_attributes_dict[key] = array_from_string(value)
+
+        return cls(**deserialized_attributes_dict)
