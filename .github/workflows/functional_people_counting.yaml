@@ -270,4 +270,9 @@ jobs:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           run_integration_tests: true
           run_unit_tests: false
-          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.deploy_functional_people_counting.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_people_counting.outputs.model_instantiator_url }}
+          environment_variables: |
+            -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} \
+            -e PEOPLE_COUNTING_URL=${{ needs.deploy_functional_people_counting.outputs.people_counting_url }} \
+            -e PROJECT_ID=${{ env.PROJECT_ID }} \
+            -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_people_counting.outputs.model_instantiator_url }} \
+            -e SERVICE_EVALUATOR_HOST=${{ needs.deploy_functional_people_counting.outputs.service_evaluator_url }}

@@ -25,7 +25,6 @@ class ScoringJob(BigQueryModel):
     service_name: str
     service_image_name: ImageNameWithTag
     metric_name: MetricName
-    scoring_id: str
     dataset_id: str
 
 

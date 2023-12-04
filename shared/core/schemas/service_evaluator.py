@@ -83,11 +83,27 @@ class DatasetName(str):
         return EvaluatedServiceName(re.fullmatch(self.REGEX, self).groups(1))
 
 
+class ResourcesOutput(BaseModel):
+    resource: str
+
+
 class EvaluateJobDocument(BaseModel):
     job_id: str
     job_date: datetime
     service_name: EvaluatedServiceName
     image_name: ImageNameWithTag
+
+
+class EvaluateResultsDocument(BaseModel):
+    job_id: str
+    dataset_id: str
+    job_date: datetime
+    service_name: EvaluatedServiceName
+    service_image_name: ImageNameWithTag
+    metric_name: MetricName
+    scoring_ids: List[str]
+    paths: List[str]
+    scores: List[float]
 
 
 class ServiceEvaluatorInput(BaseModel):

@@ -1,4 +1,3 @@
-import uuid
 from typing import Dict, List, Optional, Tuple, Type, Union
 
 from core.schemas.bigquery.base import BigQueryModel
@@ -18,20 +17,16 @@ from service_evaluator.dataset_manager import DatasetManager
 from service_evaluator.scorer.base import ScorableDocument
 
 
-class ResultsHandler:
+class ResultsReader:
     def __init__(
         self,
         big_query_client: bigquery.Client,
         bigquery_storage_client: bigquery_storage.BigQueryReadClient,
-        bigquery_writer: BigQueryWriter,
-        service_name: EvaluatedServiceName,
         big_query_dataset_name: str,
         location: str,
     ):
         self.big_query_client = big_query_client
         self.bigquery_storage_client = bigquery_storage_client
-        self.bigquery_writer = bigquery_writer
-        self.service_name = service_name
         self.big_query_dataset_name = big_query_dataset_name
         self.location = location
 
@@ -123,6 +118,61 @@ class ResultsHandler:
 
         return scoring_dataset, True
 
+    def read_existing_predictions(
+        self,
+        dataset_manager: DatasetManager,
+        service_image_name: ImageNameWithTag,
+        scorable_document_class: Type[ScorableDocument],
+    ) -> List[ScorableDocument]:
+        scoring_dataset, _ = self.build_scoring_dataset_instance(
+            dataset_manager.scoring_dataset
+        )
+
+        jobs_instances = self._retrieve_jobs_instances_if_any(
+            service_image_name=service_image_name, dataset_id=scoring_dataset.id
+        )
+
+        if jobs_instances is None or len(jobs_instances) == 0:
+            return []
+
+        latest_matching_job = sorted(
+            jobs_instances,
+            key=lambda job_instance: job_instance.created_date,
+            reverse=True,
+        )[0]
+
+        predictions_instances = self._retrieve_predictions_instances_if_any(
+            scoring_id=latest_matching_job.id
+        )
+
+        if predictions_instances is None:
+            return []
+
+        return [
+            scorable_document_class.parse_raw(prediction_instance.serialized_prediction)
+            for prediction_instance in predictions_instances
+        ]
+
+
+class ResultsReaderAndWriter(ResultsReader):
+    def __init__(
+        self,
+        big_query_client: bigquery.Client,
+        bigquery_storage_client: bigquery_storage.BigQueryReadClient,
+        bigquery_writer: BigQueryWriter,
+        service_name: EvaluatedServiceName,
+        big_query_dataset_name: str,
+        location: str,
+    ):
+        super().__init__(
+            big_query_client=big_query_client,
+            bigquery_storage_client=bigquery_storage_client,
+            big_query_dataset_name=big_query_dataset_name,
+            location=location,
+        )
+        self.bigquery_writer = bigquery_writer
+        self.service_name = service_name
+
     def build_scoring_job_instance(
         self,
         dataset_id: str,
@@ -133,7 +183,6 @@ class ResultsHandler:
             service_name=self.service_name,
             service_image_name=service_image_name,
             metric_name=metric_name,
-            scoring_id=str(uuid.uuid4()),
             dataset_id=dataset_id,
         )
 
@@ -161,41 +210,6 @@ class ResultsHandler:
             for asset_path, prediction_document in zip(
                 asset_paths, prediction_documents
             )
-        ]
-
-    def read_existing_predictions(
-        self,
-        dataset_manager: DatasetManager,
-        service_image_name: ImageNameWithTag,
-        scorable_document_class: Type[ScorableDocument],
-    ) -> List[ScorableDocument]:
-        scoring_dataset, _ = self.build_scoring_dataset_instance(
-            dataset_manager.scoring_dataset
-        )
-
-        jobs_instances = self._retrieve_jobs_instances_if_any(
-            service_image_name=service_image_name, dataset_id=scoring_dataset.id
-        )
-
-        if jobs_instances is None or len(jobs_instances) == 0:
-            return []
-
-        latest_matching_job = sorted(
-            jobs_instances,
-            key=lambda job_instance: job_instance.created_date,
-            reverse=True,
-        )[0]
-
-        predictions_instances = self._retrieve_predictions_instances_if_any(
-            scoring_id=latest_matching_job.scoring_id
-        )
-
-        if predictions_instances is None:
-            return []
-
-        return [
-            scorable_document_class.parse_raw(prediction_instance.serialized_prediction)
-            for prediction_instance in predictions_instances
         ]
 
     def write_predictions_and_scores(

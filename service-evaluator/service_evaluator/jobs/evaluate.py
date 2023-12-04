@@ -20,7 +20,7 @@ from service_evaluator.jobs.environment_variables import (
     SERVICE_NAME,
 )
 from service_evaluator.predictor.factory import ServicePredictorFactory
-from service_evaluator.results_handler import ResultsHandler
+from service_evaluator.results_handler import ResultsReaderAndWriter
 from service_evaluator.scorer.factory import ServiceScorerFactory
 
 
@@ -71,7 +71,7 @@ def main(
     bigquery_writer = make_bigquery_writer(
         bigquery_client=bigquery_client, bigquery_dataset_name=bigquery_dataset_name
     )
-    results_handler = ResultsHandler(
+    results_reader_and_writer = ResultsReaderAndWriter(
         big_query_client=bigquery_client,
         bigquery_storage_client=bigquery_storage_client,
         bigquery_writer=bigquery_writer,
@@ -94,10 +94,12 @@ def main(
 
     already_computed_predictions = []
     if reuse_already_computed_results is True:
-        already_computed_predictions = results_handler.read_existing_predictions(
-            dataset_manager=dataset_manager,
-            service_image_name=service_image_name,
-            scorable_document_class=service_scorer.scorable_document_class,
+        already_computed_predictions = (
+            results_reader_and_writer.read_existing_predictions(
+                dataset_manager=dataset_manager,
+                service_image_name=service_image_name,
+                scorable_document_class=service_scorer.scorable_document_class,
+            )
         )
 
     if len(already_computed_predictions) == 0:
@@ -116,7 +118,7 @@ def main(
         real_documents=real_documents, prediction_documents=prediction_documents
     )
 
-    results_handler.write_predictions_and_scores(
+    results_reader_and_writer.write_predictions_and_scores(
         dataset_manager=dataset_manager,
         service_image_name=service_image_name,
         prediction_documents=prediction_documents,
