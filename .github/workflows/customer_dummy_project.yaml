@@ -69,25 +69,25 @@ jobs:
           variable_prefix_to_filter_on: PEOPLE_COUNTING
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-#  functional_object_detection:
-#    needs: upload_variables_of_called_workflows
-#    uses: ./.github/workflows/functional_object_detection.yaml
-#    with:
-#      build: true
-#      deploy: true
-#      do_post_deployment: true
-#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
-#    secrets: inherit
+  functional_object_detection:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/functional_object_detection.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
+    secrets: inherit
 
-#  functional_video_comparator:
-#    needs: upload_variables_of_called_workflows
-#    uses: ./.github/workflows/functional_video_comparator.yaml
-#    with:
-#      build: true
-#      deploy: true
-#      do_post_deployment: true
-#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_video_comparator_env_file_artifact_name }}
-#    secrets: inherit
+  functional_video_comparator:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/functional_video_comparator.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_video_comparator_env_file_artifact_name }}
+    secrets: inherit
 
   functional_people_counting:
     needs: upload_variables_of_called_workflows
