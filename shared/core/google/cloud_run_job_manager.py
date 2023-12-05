@@ -23,7 +23,7 @@ from core.utils import hyphen_to_underscore
 
 class CloudRunJobManager(BaseClient):
     def __init__(self, project_id: str, location: str, key_path: Optional[str] = None):
-        super().__init__(key_path=key_path, project_id=self.project_id)
+        super().__init__(key_path=key_path, project_id=project_id)
         self._parent = f"projects/{project_id}/locations/{location}"
         self.jobs_client = JobsClient(credentials=self.credentials)
         self.executions_client = ExecutionsClient(credentials=self.credentials)

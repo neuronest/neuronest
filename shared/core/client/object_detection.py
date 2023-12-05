@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Type
 
 import numpy as np
 import pandas as pd
@@ -7,6 +7,9 @@ from imutils import resize
 from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
 from core.schemas.object_detection import (
     InputSampleSchema as ObjectDetectionInputSampleSchema,
+)
+from core.schemas.object_detection import (
+    OutputSampleSchema as ObjectDetectionOutputSampleSchema,
 )
 
 
@@ -51,6 +54,9 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
     #     self, image: np.ndarray
     # ) -> ObjectDetectionInputSampleSchema:
     #     return ObjectDetectionInputSampleSchema(image=image)
+
+    def get_output_sample_schema_class(self) -> Type[ObjectDetectionOutputSampleSchema]:
+        return ObjectDetectionOutputSampleSchema
 
     # pylint: disable=arguments-differ,arguments-renamed
     def _batch_sample_to_input_sample_schema(

@@ -1,11 +1,17 @@
-from typing import Iterable, Union
+from typing import Iterable, Type, Union
 
 import numpy as np
 
 from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
-from core.schemas.video_comparator import InputSampleSchema, PredictionType
+from core.schemas.video_comparator import (
+    InputSampleSchema as VideoComparatorInputSampleSchema,
+)
+from core.schemas.video_comparator import (
+    OutputSampleSchema as VideoComparatorOutputSampleSchema,
+)
+from core.schemas.video_comparator import PredictionType
 from core.tools import generate_file_id
 
 Video = Union[str, np.ndarray]
@@ -51,12 +57,15 @@ class VideoComparatorClient(OnlinePredictionModelClient):
             return batch_sample_video
         raise ValueError
 
+    def get_output_sample_schema_class(self) -> Type[VideoComparatorOutputSampleSchema]:
+        return VideoComparatorOutputSampleSchema
+
     # pylint: disable=arguments-differ
     def _batch_sample_to_input_sample_schema(
         self, batch_sample: Sample
-    ) -> InputSampleSchema:
+    ) -> VideoComparatorInputSampleSchema:
         if isinstance(batch_sample, (np.ndarray, str)):
-            return InputSampleSchema(
+            return VideoComparatorInputSampleSchema(
                 video=self._preprocess_batch_sample_video(batch_sample),
                 other_video=None,
                 prediction_type=PredictionType.VIDEO_FEATURES,
@@ -66,7 +75,7 @@ class VideoComparatorClient(OnlinePredictionModelClient):
         if not len(batch_sample) == 2:
             raise ValueError
         video, other_video = tuple(batch_sample)
-        return InputSampleSchema(
+        return VideoComparatorInputSampleSchema(
             video=self._preprocess_batch_sample_video(video),
             other_video=self._preprocess_batch_sample_video(other_video),
             prediction_type=PredictionType.SIMILARITY,
