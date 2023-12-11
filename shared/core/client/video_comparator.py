@@ -55,6 +55,7 @@ class VideoComparatorClient(OnlinePredictionModelClient):
             return self._upload_video_to_storage(GSPath(batch_sample_video))
         if isinstance(batch_sample_video, np.ndarray):
             return batch_sample_video
+
         raise ValueError
 
     def get_output_sample_schema_class(self) -> Type[VideoComparatorOutputSampleSchema]:
@@ -75,6 +76,7 @@ class VideoComparatorClient(OnlinePredictionModelClient):
         if not len(batch_sample) == 2:
             raise ValueError
         video, other_video = tuple(batch_sample)
+
         return VideoComparatorInputSampleSchema(
             video=self._preprocess_batch_sample_video(video),
             other_video=self._preprocess_batch_sample_video(other_video),

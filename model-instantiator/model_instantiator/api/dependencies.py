@@ -44,6 +44,7 @@ def use_cloud_run_job_manager(
 def use_firestore_client() -> FirestoreClient:
     return FirestoreClient(
         key_path=GOOGLE_APPLICATION_CREDENTIALS,
+        project_id=PROJECT_ID,
     )
 
 
