@@ -62,4 +62,4 @@ def use_deployment_status_manager(
 
 @lru_cache
 def use_logging_client() -> LoggingClient:
-    return LoggingClient(key_path=GOOGLE_APPLICATION_CREDENTIALS)
+    return LoggingClient(key_path=GOOGLE_APPLICATION_CREDENTIALS, project_id=PROJECT_ID)

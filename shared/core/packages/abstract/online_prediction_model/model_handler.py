@@ -76,8 +76,8 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         )
 
     def _get_input_sample_schema_from_data_sample(self, data_sample: Dict):
-        raise self._get_input_sample_schema_class().from_serialized_attributes_dict(
-            **data_sample
+        return self._get_input_sample_schema_class().from_serialized_attributes_dict(
+            data_sample
         )
 
     @abstractmethod

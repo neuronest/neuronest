@@ -114,8 +114,8 @@ class L2Constrain:
 
     def __call__(self, module):
         if hasattr(module, "weight"):
-            module_weight_data = module.weight.image
-            module.weight.image = F.normalize(
+            module_weight_data = module.weight.data
+            module.weight.data = F.normalize(
                 module_weight_data, p=2, dim=self.axis, eps=self.eps
             )
 

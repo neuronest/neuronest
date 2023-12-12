@@ -77,6 +77,9 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
             model_name=self.inner_model_name,
         )
 
+    def _get_input_sample_schema_class(self):
+        return ObjectDetectionInputSampleSchema
+
     # def _get_input_sample_schema_from_data_sample(self, data_sample: dict):
     #     raise ObjectDetectionInputSampleSchema.parse_obj(data_sample)
 
