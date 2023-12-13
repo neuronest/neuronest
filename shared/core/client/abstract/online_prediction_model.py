@@ -227,7 +227,7 @@ class OnlinePredictionModelClient(BaseClient, ABC):
         input_samples_schema_chunks = self._split_into_chunks(input_samples_schema)
 
         return [
-            output_sample_schema.result
+            output_sample_schema.results
             for output_sample_schema in merge_chunks_get_elements(
                 self._predict_batch(input_samples_schema_chunk)
                 for input_samples_schema_chunk in input_samples_schema_chunks

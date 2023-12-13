@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List
 
-from cachetools.func import ttl_cache
 from pydantic import BaseModel
 
 
@@ -15,7 +14,6 @@ class InputSampleSchema(BaseModel, ABC):
     class Config:
         arbitrary_types_allowed = True
 
-    @ttl_cache(ttl=60)
     @abstractmethod
     def serialized_attributes_dict(self) -> Dict[str, Any]:
         raise NotImplementedError

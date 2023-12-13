@@ -6,7 +6,6 @@ import uuid
 from typing import Dict, List, Optional
 
 import proto
-from cachetools.func import ttl_cache
 from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform import Endpoint
 from google.cloud.aiplatform_v1.types import training_pipeline
@@ -158,7 +157,6 @@ class VertexAIManager(BaseClient):
 
         endpoint.delete(force=undeploy_models)
 
-    @ttl_cache(ttl=60)
     def calculate_prediction_payload_size(
         self, instances: List[Dict], parameters: Optional[Dict] = None
     ) -> int:
