@@ -28,12 +28,14 @@ def use_config() -> DictConfig:
 
 @lru_cache
 def use_storage_client() -> StorageClient:
-    return StorageClient(key_path=GOOGLE_APPLICATION_CREDENTIALS)
+    return StorageClient(key_path=GOOGLE_APPLICATION_CREDENTIALS, project_id=PROJECT_ID)
 
 
 @lru_cache
 def use_firestore_client() -> FirestoreClient:
-    return FirestoreClient(key_path=GOOGLE_APPLICATION_CREDENTIALS)
+    return FirestoreClient(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS, project_id=PROJECT_ID
+    )
 
 
 @lru_cache

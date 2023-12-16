@@ -27,12 +27,12 @@ class InputSampleSchema(BaseModel):
     @validator("video", "other_video")
     # pylint: disable=no-self-argument
     def validate_results(cls, video):
+        if video is None:
+            return None
         if isinstance(video, str):
             return GSPath(video)
         if isinstance(video, np.ndarray):
             return video
-        # if isinstance(video, str):
-        #     return array_from_string(video)
 
         raise ValueError
 
@@ -61,13 +61,16 @@ class InputSampleSchema(BaseModel):
     def serialized_attributes_dict(self) -> Dict:
         serialized_attributes_dict = {}
         for key, value in self.dict().items():
-            if key not in ("video", "other_video"):
+            if isinstance(value, np.ndarray):
+                serialized_attributes_dict[key] = array_to_string(value)
+            elif isinstance(value, GSPath):
                 serialized_attributes_dict[key] = value
-                continue
-            if isinstance(value, GSPath):
-                serialized_attributes_dict[key] = value
-                continue
-            serialized_attributes_dict[key] = array_to_string(value)
+            elif isinstance(value, Enum):
+                serialized_attributes_dict[key] = value.value
+            elif value is None:
+                serialized_attributes_dict[key] = None
+            else:
+                raise NotImplementedError
 
         return serialized_attributes_dict
 
@@ -77,8 +80,11 @@ class InputSampleSchema(BaseModel):
     ) -> "InputSampleSchema":
         deserialized_attributes_dict = {}
         for key, value in serialized_attributes_dict.items():
+            if value is None:
+                deserialized_attributes_dict[key] = None
+                continue
             if key not in ("video", "other_video"):
-                serialized_attributes_dict[key] = value
+                deserialized_attributes_dict[key] = value
                 continue
             if GSPath.is_valid(value):
                 deserialized_attributes_dict[key] = GSPath(value)
@@ -98,8 +104,7 @@ def is_castable_to_float(element: Any):
         float(element)
         # If successful, the element is castable to float
         return True
-    except ValueError:
-        # If an error occurs, it's an actual string
+    except (ValueError, TypeError):
         return False
 
 
