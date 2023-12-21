@@ -3,7 +3,7 @@ repository_variables:
   - REPOSITORY_NAME=functional-people-counting
   - REPOSITORY_CODE=func-pc
   - MAIN_TERRAFORM_MODULE_NAME=functional_people_counting
-  - REPOSITORIES_DEPENDENCIES=people-counting,object-detection,model-instantiator
+  - REPOSITORIES_DEPENDENCIES=people-counting,object-detection,model-instantiator,service-evaluator
 multi_instance_resource_names: []
 other_variables:
   branch:

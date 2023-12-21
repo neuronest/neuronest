@@ -75,6 +75,7 @@ jobs:
       people_counting_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
       object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
       model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
+      service_evaluator_env_file_artifact_name: ${{ steps.upload_service_evaluator_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v3
       - name: upload_people_counting_variables
@@ -94,6 +95,12 @@ jobs:
         uses: ./.github/actions/upload_variables
         with:
           variable_prefix_to_filter_on: MODEL_INSTANTIATOR
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - name: upload_service_evaluator_variables
+        id: upload_service_evaluator_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: SERVICE_EVALUATOR
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
   build_test_push_people_counting:
@@ -126,15 +133,27 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
 
+  build_test_push_service_evaluator:
+    needs: [run_base_terraform, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/service_evaluator.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.service_evaluator_env_file_artifact_name }}
+    secrets: inherit
+
   deploy_functional_people_counting:
     needs:
      - run_base_terraform
      - build_test_push_people_counting
      - build_test_push_object_detection
      - build_test_push_model_instantiator
+     - build_test_push_service_evaluator
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
       people_counting_url: ${{ steps.get_people_counting_url.outputs.value }}
+      service_evaluator_url: ${{ steps.get_service_evaluator_url.outputs.value }}
     runs-on: neuronest-runner-set
     container:
       image: google/cloud-sdk
@@ -154,6 +173,7 @@ jobs:
         env:
           TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
           TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
+          TF_VAR_service_evaluator_image_name: ${{ needs.build_test_push_service_evaluator.outputs.gcp_image_name }}
       - id: get_model_instantiator_url
         uses: ./.github/actions/get_terraform_output
         with:
@@ -164,6 +184,11 @@ jobs:
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: people_counting_url
+      - id: get_service_evaluator_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: service_evaluator_url
 
 
   post_deploy_people_counting:
@@ -207,6 +232,16 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
 
+  post_deploy_service_evaluator:
+    needs: [deploy_functional_people_counting, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/service_evaluator.yaml
+    with:
+      build: false
+      deploy: false
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.service_evaluator_env_file_artifact_name }}
+    secrets: inherit
+
   run_integration_tests:
     runs-on: neuronest-runner-set
     needs:
@@ -214,6 +249,7 @@ jobs:
       - post_deploy_people_counting
       - post_deploy_object_detection
       - post_deploy_model_instantiator
+      - post_deploy_service_evaluator
       - deploy_functional_people_counting
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
@@ -234,4 +270,9 @@ jobs:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           run_integration_tests: true
           run_unit_tests: false
-          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.deploy_functional_people_counting.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_people_counting.outputs.model_instantiator_url }}
+          environment_variables: |
+            -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} \
+            -e PEOPLE_COUNTING_URL=${{ needs.deploy_functional_people_counting.outputs.people_counting_url }} \
+            -e PROJECT_ID=${{ env.PROJECT_ID }} \
+            -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_people_counting.outputs.model_instantiator_url }} \
+            -e SERVICE_EVALUATOR_HOST=${{ needs.deploy_functional_people_counting.outputs.service_evaluator_url }} \

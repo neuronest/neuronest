@@ -2,10 +2,10 @@ from typing import List
 
 from google.cloud import bigquery
 
-from core.schemas.training_metrics.tables import TrainingMetrics
+from core.schemas.bigquery.base import BigQueryModel
 
 
-class MetricsWriter:
+class BigQueryWriter:
     def __init__(
         self,
         dataset_name: str,
@@ -38,7 +38,6 @@ class MetricsWriter:
         )
 
     def get_or_create_dataset(self) -> bigquery.Dataset:
-        # noinspection PyTypeChecker
         dataset = bigquery.Dataset(dataset_ref=self.project_id_dot_dataset_name)
         dataset.location = self.location
 
@@ -46,23 +45,30 @@ class MetricsWriter:
             dataset, timeout=self.timeout, exists_ok=True
         )
 
-    def submit(self, training_metrics: TrainingMetrics):
+    def submit(self, rows: List[BigQueryModel]):
+        if len(rows) == 0:
+            return
+
+        first_row = rows[0]
+        bigquery_table_name = first_row.__bigquery_tablename__
+        if any(bigquery_table_name != row.__bigquery_tablename__ for row in rows):
+            raise ValueError("All rows should have the same bigquery table name")
+
+        schema = first_row.to_big_query_fields()
+
         dataset = self.get_or_create_dataset()
 
         self.big_query_client.create_table(
             bigquery.Table(
-                dataset.table(training_metrics.__bigquery_tablename__),
-                schema=training_metrics.to_big_query_fields(),
+                dataset.table(bigquery_table_name),
+                schema=schema,
             ),
             timeout=self.timeout,
             exists_ok=True,
         )
 
         self.big_query_client.load_table_from_json(
-            json_rows=[training_metrics.dict()],
-            destination=f"{self.project_id_dot_dataset_name}."
-            f"{training_metrics.__bigquery_tablename__}",
-            job_config=self._load_job_config_from_schema(
-                training_metrics.to_big_query_fields()
-            ),
+            json_rows=[row.dict() for row in rows],
+            destination=f"{self.project_id_dot_dataset_name}.{bigquery_table_name}",
+            job_config=self._load_job_config_from_schema(schema),
         )

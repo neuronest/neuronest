@@ -4,9 +4,12 @@ import time
 import uuid
 from typing import List, Optional
 
+import backoff
 import proto
+from google.api_core.exceptions import ResourceExhausted
 from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform import Endpoint
+from google.cloud.aiplatform_v1 import PipelineState
 from google.cloud.aiplatform_v1.types import training_pipeline
 from google.oauth2 import service_account
 
@@ -14,6 +17,8 @@ from core.exceptions import AlreadyExistingError
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
+
+VERTEX_API_MAX_TIME_IN_SECONDS = 120
 
 
 class VertexAIManager:
@@ -64,6 +69,9 @@ class VertexAIManager:
 
         return f"{model_name}_endpoint"
 
+    @backoff.on_exception(
+        backoff.expo, ResourceExhausted, max_time=VERTEX_API_MAX_TIME_IN_SECONDS
+    )
     def _get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
         models = aiplatform.models.Model.list(
             location=self.location,
@@ -82,6 +90,9 @@ class VertexAIManager:
 
         return matching_models
 
+    @backoff.on_exception(
+        backoff.expo, ResourceExhausted, max_time=VERTEX_API_MAX_TIME_IN_SECONDS
+    )
     def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
             location=self.location,
@@ -91,13 +102,38 @@ class VertexAIManager:
             order_by="create_time desc",
         )
 
-    def list_training_pipelines(self) -> List[training_pipeline.TrainingPipeline]:
+    def list_training_pipelines(
+        self,
+        exclude_terminated: bool = False,
+        display_name_filter: Optional[str] = None,
+    ) -> List[training_pipeline.TrainingPipeline]:
         parent = f"projects/{self.project_id}/locations/{self.location}"
         request = aiplatform_v1.ListTrainingPipelinesRequest({"parent": parent})
 
-        return list(
+        pipelines = list(
             self.pipeline_service_client.list_training_pipelines(request=request)
         )
+
+        pipelines = [
+            pipeline
+            for pipeline in pipelines
+            if display_name_filter is None
+            or pipeline.display_name == display_name_filter
+        ]
+
+        if exclude_terminated is False:
+            return pipelines
+
+        return [
+            pipeline
+            for pipeline in pipelines
+            if pipeline.state
+            not in (
+                PipelineState.PIPELINE_STATE_SUCCEEDED,
+                PipelineState.PIPELINE_STATE_FAILED,
+                PipelineState.PIPELINE_STATE_CANCELLED,
+            )
+        ]
 
     def get_training_pipeline_by_id(
         self,

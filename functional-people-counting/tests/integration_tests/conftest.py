@@ -3,6 +3,7 @@ from typing import Optional
 import pytest
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.people_counting import PeopleCountingClient
+from core.client.service_evaluator import ServiceEvaluatorClient
 from core.google.storage_client import StorageClient
 
 from tests.environment_variables import (
@@ -11,6 +12,7 @@ from tests.environment_variables import (
     MODEL_NAME,
     PEOPLE_COUNTING_URL,
     PROJECT_ID,
+    SERVICE_EVALUATOR_HOST,
 )
 
 
@@ -22,6 +24,11 @@ def fixture_model_instantiator_host() -> str:
 @pytest.fixture(name="people_counting_url", scope="session")
 def fixture_people_counting_url() -> str:
     return PEOPLE_COUNTING_URL
+
+
+@pytest.fixture(name="service_evaluator_host", scope="session")
+def fixture_service_evaluator_host() -> str:
+    return SERVICE_EVALUATOR_HOST
 
 
 @pytest.fixture(name="project_id", scope="session")
@@ -53,6 +60,13 @@ def fixture_people_counting_client(
     people_counting_url: str, project_id: str
 ) -> PeopleCountingClient:
     return PeopleCountingClient(host=people_counting_url, project_id=project_id)
+
+
+@pytest.fixture(name="service_evaluator_client", scope="session")
+def fixture_service_evaluator_client(
+    service_evaluator_host: str,
+) -> ServiceEvaluatorClient:
+    return ServiceEvaluatorClient(host=service_evaluator_host)
 
 
 @pytest.fixture(name="storage_client", scope="session")

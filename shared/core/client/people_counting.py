@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import datetime
 import json
 import time
-from typing import List, Optional
+from typing import Iterable, List, Optional
 
-from core.client.base import APIClient
+from core.client.base import CloudRunBasedClient, HTTPClient
 from core.exceptions import PredictionsNotFoundError
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
@@ -30,7 +32,7 @@ def make_results_document_id(
     return combine_hashes([job_id, asset_id])
 
 
-class PeopleCountingClient(APIClient):
+class PeopleCountingClient(HTTPClient, CloudRunBasedClient):
     def __init__(
         self,
         host: str,
@@ -48,6 +50,30 @@ class PeopleCountingClient(APIClient):
         )
         self.firestore_client = FirestoreClient(
             key_path=key_path, project_id=self.project_id
+        )
+
+    @classmethod
+    def from_primitive_attributes(cls, **kwargs) -> PeopleCountingClient:
+        mandatory_fields = ("host",)
+        optional_fields = ("key_path", "project_id")
+
+        try:
+            (host,) = [kwargs[mandatory_field] for mandatory_field in mandatory_fields]
+        except KeyError as key_error:
+            raise ValueError(
+                f"At least one mandatory field is missing, expected fields: "
+                f"{mandatory_fields}"
+            ) from key_error
+
+        optional_values = {
+            optional_field: kwargs[optional_field]
+            for optional_field in optional_fields
+            if optional_field in kwargs
+        }
+
+        return cls(
+            host=host,
+            **optional_values,
         )
 
     def _upload_video_to_storage(
@@ -181,7 +207,7 @@ class PeopleCountingClient(APIClient):
 
     def _count_people(
         self,
-        videos_paths: List[str],
+        videos_paths: Iterable[str],
         save_counted_videos_in_storage: bool = False,
     ) -> List[PeopleCounterOutput]:
         return [
@@ -247,7 +273,7 @@ class PeopleCountingClient(APIClient):
 
     def count_people_sync(
         self,
-        videos_paths: List[str],
+        videos_paths: Iterable[str],
         save_counted_videos_in_storage: bool = False,
     ) -> List[PeopleCounterAssetResultsDocument]:
         people_counter_outputs = self._count_people(

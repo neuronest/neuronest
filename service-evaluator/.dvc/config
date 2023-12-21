@@ -1,0 +1,2 @@
+['remote "people_counting_dataset"']
+    url = gs://neuronest-datasets-evaluation/people_counting_dataset

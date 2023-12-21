@@ -42,7 +42,7 @@ def add_namespace_to_string(
             namespace_and_string_binding_character = binding_character
             namespace = namespace[:-1]
 
-    if not string.startswith(namespace):
+    if not string.startswith(f"{namespace}{namespace_and_string_binding_character}"):
         return f"{namespace}{namespace_and_string_binding_character}{string}"
 
     if not already_added_ok:
@@ -97,6 +97,13 @@ class VariableLine:
         name, value = new_line.split(self.NAME_AND_VALUE_SEPARATOR)
         self.name = name
         self.value = value
+
+    @property
+    def left_value_namespace_chunk(self) -> Optional[str]:
+        if "-" not in self.value:
+            return None
+
+        return self.value.split("-")[0]
 
     @classmethod
     def can_be_built_from_string(cls, string: str) -> bool:
@@ -488,10 +495,8 @@ def get_all_repository_var_lines(
             add_namespace_to_name_of_multi_instance_resource
             and var_line.is_a_multi_instance_resource()
         ):
-            if var_line.value.startswith(
-                repository.get_base_code(
-                    prefix_to_remove=FUNCTIONAL_REPOSITORIES_PREFIX
-                )
+            if var_line.left_value_namespace_chunk == repository.get_base_code(
+                prefix_to_remove=FUNCTIONAL_REPOSITORIES_PREFIX
             ):
                 namespace = FUNCTIONAL_REPOSITORIES_PREFIX
             else:
