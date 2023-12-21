@@ -29,14 +29,20 @@ class ServiceClientFactory:
         except KeyError as key_error:
             raise ValueError(f"Unknown service_name: {service_name}") from key_error
 
-        service_client_parameters = set(
-            inspect.signature(service_client.__init__).parameters
-        ) - {"self"}
+        inspected_parameters = inspect.signature(service_client.__init__).parameters
+        service_client_parameters = set(inspected_parameters) - {"self"}
         if not set(service_client_parameters).issubset(kwargs):
-            raise RuntimeError(
-                f"At least one parameter is missing : "
-                f"{', '.join(set(kwargs).difference(service_client_parameters))}"
-            )
+            not_present_parameters = service_client_parameters.difference(kwargs)
+
+            if any(
+                inspected_parameters[not_present_parameter].default
+                is inspect.Parameter.empty
+                for not_present_parameter in not_present_parameters
+            ):
+                raise RuntimeError(
+                    f"At least one parameter is missing : "
+                    f"{', '.join(not_present_parameters)}"
+                )
 
         parameters = {
             parameter_name: parameter_value
