@@ -23,3 +23,8 @@ resource "google_project_iam_member" "evaluator_api_sa_run_admin" {
   role    = "roles/run.admin"
   member  = "serviceAccount:${google_service_account.evaluator_api_sa.email}"
 }
+resource "google_project_iam_member" "evaluator_api_sa_aiplatform_admin" {
+  project = var.project_id
+  role    = "roles/aiplatform.admin"
+  member  = "serviceAccount:${google_service_account.evaluator_api_sa.email}"
+}
