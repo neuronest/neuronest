@@ -5,7 +5,7 @@ from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.people_counting import PeopleCountingClient
 from core.google.storage_client import StorageClient
 
-from tests.environment_variables import (
+from ..environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
     MODEL_NAME,

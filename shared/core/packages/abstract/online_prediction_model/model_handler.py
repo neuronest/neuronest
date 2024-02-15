@@ -1,7 +1,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import torch
 from ts.context import Context
@@ -84,7 +84,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     def build_inference_args_kwargs_from_input_samples_schema(
         self,
         input_samples_schema: List[InputSampleSchema],
-    ) -> Tuple[Tuple, dict]:
+    ) -> Union[Tuple[Tuple, dict], List[List[Tuple[Any], Dict[str, Any]]]]:
         """
         Returns the data in the format expected by the model to predict,
         the arguments and the key arguments of the prediction function
@@ -92,7 +92,9 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         raise NotImplementedError
 
     # pylint: disable=arguments-renamed
-    def preprocess(self, data_samples: List[Dict]) -> Tuple[Tuple, Dict]:
+    def preprocess(
+        self, data_samples: List[Dict]
+    ) -> Union[Tuple[Tuple, dict], List[Tuple[Tuple[Any], Dict[str, Any]]]]:
         # pylint: disable=invalid-name
         input_samples_schema = [
             self._get_input_sample_schema_from_data_sample(data_sample)
@@ -107,7 +109,13 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         with torch.no_grad():
             self.model.eval()
             model_inferences = self.model(*args, **kwargs)
+
         return model_inferences
+
+    def non_batch_inference(
+        self, batch_args_kwargs: List[Tuple[Tuple[Any], Dict[str, Any]]]
+    ):
+        return [self.inference(*args, **kwargs) for args, kwargs in batch_args_kwargs]
 
     # the data argument of the BaseHandler.postprocess function has been renamed
     # predictions for more clarity on the fact that the function necessarily takes
@@ -118,6 +126,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     ) -> List[OutputSampleSchema]:
         raise NotImplementedError
 
+    # pylint: disable=unused-argument
     def handle(self, data: List[Dict], context: Context) -> List[Dict[str, str]]:
         """
         Invoke by TorchServe for prediction request.
@@ -131,11 +140,14 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         if len(data) == 0:
             return []
 
-        inference_args, inference_kwargs = self.preprocess(data_samples=data)
-        inferences = self.inference(*inference_args, **inference_kwargs)
+        inference_args_kwargs = self.preprocess(data_samples=data)
+        if isinstance(inference_args_kwargs, tuple):
+            inferences = self.inference(
+                *inference_args_kwargs[0], **inference_args_kwargs[1]
+            )
+        else:
+            inferences = self.non_batch_inference(inference_args_kwargs)
         output_samples_schema = self.postprocess(inferences)
-        # if not isinstance(output_samples, list):
-        #     output_samples = [output_samples]
         return [
             output_sample.serialized_attributes_dict()
             for output_sample in output_samples_schema

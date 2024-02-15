@@ -26,7 +26,7 @@ class ObjectDetectionModel(OnlinePredictionModel):
 
         return list(predictions.pandas().xyxy)
 
-    def _retrieve_remote_model(self, pretrained: bool = False):
+    def retrieve_remote_model(self, pretrained: bool = False):
         return self._load_hub_model(
             model_type=self.model_type,
             model_name=self.model_name,
@@ -35,4 +35,4 @@ class ObjectDetectionModel(OnlinePredictionModel):
 
     def fit(self, *args, **kwargs):
         # pylint: disable=attribute-defined-outside-init
-        self._model = self._retrieve_remote_model(pretrained=True)
+        self._model = self.retrieve_remote_model(pretrained=True)

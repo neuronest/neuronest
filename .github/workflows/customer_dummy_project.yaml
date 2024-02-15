@@ -79,6 +79,16 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
     secrets: inherit
 
+  functional_people_counting:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/functional_people_counting.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_people_counting_env_file_artifact_name }}
+    secrets: inherit
+
   functional_video_comparator:
     needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/functional_video_comparator.yaml
@@ -89,12 +99,12 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_video_comparator_env_file_artifact_name }}
     secrets: inherit
 
-  functional_people_counting:
+  functional_detect_anything:
     needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/functional_people_counting.yaml
+    uses: ./.github/workflows/functional_detect_anything.yaml
     with:
       build: true
       deploy: true
       do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_people_counting_env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_detect_anything_env_file_artifact_name }}
     secrets: inherit
