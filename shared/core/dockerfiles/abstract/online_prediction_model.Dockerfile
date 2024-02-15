@@ -57,7 +57,9 @@ RUN curl -sSL https://install.python-poetry.org | python3
 RUN poetry config virtualenvs.in-project true \
     && poetry config virtualenvs.create true \
     && poetry check  \
-    && poetry install
+    && poetry run poetry export --without-hashes --with dev -f requirements.txt --output requirements.txt \
+    && poetry run pip install -r requirements.txt \
+    && rm requirements.txt
 
 # COPY $REPOSITORY_NAME/config.yaml .
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
