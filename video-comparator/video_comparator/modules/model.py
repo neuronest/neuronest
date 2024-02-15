@@ -52,11 +52,11 @@ class VideoComparatorModel(OnlinePredictionModel):
             query=video_features, target=other_video_features
         )
 
-    def _retrieve_remote_model(self, pretrained: bool = False):
+    def retrieve_remote_model(self, pretrained: bool = False):
         visil = ViSiL(pretrained=pretrained)
         visil.eval()
         return visil
 
     def fit(self, *args, **kwargs):
         # pylint: disable=attribute-defined-outside-init
-        self._model = self._retrieve_remote_model(pretrained=True)
+        self._model = self.retrieve_remote_model(pretrained=True)
