@@ -8,8 +8,8 @@ on:
       - .github/workflows/functional_abstract_online_prediction_model.yaml
       - .github/workflows/abstract_online_prediction_model.yaml
       - .github/workflows/functional_people_counting.yaml
-      - .github/workflows/functional_video_comparator.yaml
       - .github/workflows/functional_object_detection.yaml
+      - .github/workflows/functional_detect_anything.yaml
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
