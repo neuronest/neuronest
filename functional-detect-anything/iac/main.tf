@@ -30,15 +30,15 @@ module "base" {
   mono_repository_name                 = var.mono_repository_name
 }
 
-module "functional_object_detection" {
-  source     = "../../shared/iac/modules/services/functional-object-detection"
+module "functional_detect_anything" {
+  source     = "../../shared/iac/modules/services/functional-detect-anything"
   project_id = var.project_id
   region     = var.region
   timezone   = var.timezone
 
-  object_detection_service_account_name = var.object_detection_service_account_name
-  object_detection_models_bucket        = var.object_detection_models_bucket
-  object_detection_model_name           = var.object_detection_model_name
+  detect_anything_service_account_name = var.detect_anything_service_account_name
+  detect_anything_models_bucket        = var.detect_anything_models_bucket
+  detect_anything_model_name           = var.detect_anything_model_name
 
   model_instantiator_image_name                           = var.model_instantiator_image_name
   model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name
