@@ -45,11 +45,18 @@ jobs:
     runs-on: neuronest-runner-set
     container: google/cloud-sdk
     outputs:
+      functional_people_counting_env_file_artifact_name: ${{ steps.upload_functional_people_counting_variables.outputs.env_file_artifact_name }}
       functional_object_detection_env_file_artifact_name: ${{ steps.upload_functional_object_detection_variables.outputs.env_file_artifact_name }}
       functional_video_comparator_env_file_artifact_name: ${{ steps.upload_functional_video_comparator_variables.outputs.env_file_artifact_name }}
-      functional_people_counting_env_file_artifact_name: ${{ steps.upload_functional_people_counting_variables.outputs.env_file_artifact_name }}
+      functional_detect_anything_env_file_artifact_name: ${{ steps.upload_functional_detect_anything_variables.outputs.env_file_artifact_name
     steps:
       - uses: actions/checkout@v3
+      - name: upload_functional_people_counting_variables
+        id: upload_functional_people_counting_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: PEOPLE_COUNTING
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - name: upload_functional_object_detection_variables
         id: upload_functional_object_detection_variables
         uses: ./.github/actions/upload_variables
@@ -62,11 +69,11 @@ jobs:
         with:
           variable_prefix_to_filter_on: VIDEO_COMPARATOR
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - name: upload_functional_video_comparator_variables
-        id: upload_functional_people_counting_variables
+      - name: upload_functional_detect_anything_variables
+        id: upload_functional_detect_anything_variables
         uses: ./.github/actions/upload_variables
         with:
-          variable_prefix_to_filter_on: PEOPLE_COUNTING
+          variable_prefix_to_filter_on: DETECT_ANYTHING
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
   functional_object_detection:

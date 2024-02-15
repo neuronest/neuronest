@@ -1,9 +1,9 @@
 repository_variables:
   # general repository
-  - REPOSITORY_NAME=functional-object-detection
-  - REPOSITORY_CODE=func-od
-  - MAIN_TERRAFORM_MODULE_NAME=functional_object_detection
-  - REPOSITORIES_DEPENDENCIES=object-detection,model-instantiator
+  - REPOSITORY_NAME=functional-detect-anything
+  - REPOSITORY_CODE=func-da
+  - MAIN_TERRAFORM_MODULE_NAME=functional_detect_anything
+  - REPOSITORIES_DEPENDENCIES=detect-anything,model-instantiator
 multi_instance_resource_names: []
 other_variables:
   branch:
