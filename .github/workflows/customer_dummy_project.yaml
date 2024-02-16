@@ -15,13 +15,14 @@ on:
       - people-counting/**
       - object-detection/**
       - model-instantiator/**
+      - detect-anything/**
+      - functional-people-counting/**
+      - functional-object-detection/**
+      - functional-detect-anything/**
       - .github/actions/**
       - .github/variables/**
       - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
-      - video-comparator/**
-      - object-detection/**
+
 #  pull_request:
 #    branches:
 #      - main
