@@ -22,6 +22,9 @@ class DetectAnythingPrediction(BaseModel):
     logit: np.ndarray
     phrase: str
 
+    class Config:
+        arbitrary_types_allowed = True
+
     # class Config:
     #     arbitrary_types_allowed = True
     #
@@ -54,6 +57,9 @@ class DetectAnythingPrediction(BaseModel):
 class DetectAnythingImagePredictions(BaseModel):
     predictions: List[DetectAnythingPrediction]
     annotated_image: Optional[np.ndarray]
+
+    class Config:
+        arbitrary_types_allowed = True
 
     def serialized_attributes_dict(self):
         serialized_attributes_dict = {}
@@ -92,8 +98,8 @@ class InputSampleSchema(BaseModel):
     text_threshold: float
     return_annotated_image: bool = False
 
-    # class Config:
-    #     arbitrary_types_allowed = True
+    class Config:
+        arbitrary_types_allowed = True
 
     # @validator("image")
     # # pylint: disable=no-self-argument
