@@ -504,6 +504,18 @@ files = [
 ]
 
 [[package]]
+name = "enum-compat"
+version = "0.0.3"
+description = "enum/enum34 compatibility package"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "enum-compat-0.0.3.tar.gz", hash = "sha256:3677daabed56a6f724451d585662253d8fb4e5569845aafa8bb0da36b1a8751e"},
+    {file = "enum_compat-0.0.3-py3-none-any.whl", hash = "sha256:88091b617c7fc3bbbceae50db5958023c48dc40b50520005aa3bf27f8f7ea157"},
+]
+
+[[package]]
 name = "exceptiongroup"
 version = "1.2.0"
 description = "Backport of PEP 654 (exception groups)"
@@ -1119,6 +1131,7 @@ url = "https://github.com/neuronest/Grounded-Segment-Anything.git"
 reference = "86dc4fd5e2bded355b966f75ec81fdc31755ba3e"
 resolved_reference = "86dc4fd5e2bded355b966f75ec81fdc31755ba3e"
 subdirectory = "GroundingDINO"
+
 [[package]]
 name = "grpc-google-iam-v1"
 version = "0.13.0"
@@ -2369,6 +2382,35 @@ files = [
 ]
 
 [[package]]
+name = "psutil"
+version = "5.9.8"
+description = "Cross-platform lib for process and system monitoring in Python."
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+files = [
+    {file = "psutil-5.9.8-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:26bd09967ae00920df88e0352a91cff1a78f8d69b3ecabbfe733610c0af486c8"},
+    {file = "psutil-5.9.8-cp27-cp27m-manylinux2010_i686.whl", hash = "sha256:05806de88103b25903dff19bb6692bd2e714ccf9e668d050d144012055cbca73"},
+    {file = "psutil-5.9.8-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:611052c4bc70432ec770d5d54f64206aa7203a101ec273a0cd82418c86503bb7"},
+    {file = "psutil-5.9.8-cp27-cp27mu-manylinux2010_i686.whl", hash = "sha256:50187900d73c1381ba1454cf40308c2bf6f34268518b3f36a9b663ca87e65e36"},
+    {file = "psutil-5.9.8-cp27-cp27mu-manylinux2010_x86_64.whl", hash = "sha256:02615ed8c5ea222323408ceba16c60e99c3f91639b07da6373fb7e6539abc56d"},
+    {file = "psutil-5.9.8-cp27-none-win32.whl", hash = "sha256:36f435891adb138ed3c9e58c6af3e2e6ca9ac2f365efe1f9cfef2794e6c93b4e"},
+    {file = "psutil-5.9.8-cp27-none-win_amd64.whl", hash = "sha256:bd1184ceb3f87651a67b2708d4c3338e9b10c5df903f2e3776b62303b26cb631"},
+    {file = "psutil-5.9.8-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:aee678c8720623dc456fa20659af736241f575d79429a0e5e9cf88ae0605cc81"},
+    {file = "psutil-5.9.8-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:8cb6403ce6d8e047495a701dc7c5bd788add903f8986d523e3e20b98b733e421"},
+    {file = "psutil-5.9.8-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d06016f7f8625a1825ba3732081d77c94589dca78b7a3fc072194851e88461a4"},
+    {file = "psutil-5.9.8-cp36-cp36m-win32.whl", hash = "sha256:7d79560ad97af658a0f6adfef8b834b53f64746d45b403f225b85c5c2c140eee"},
+    {file = "psutil-5.9.8-cp36-cp36m-win_amd64.whl", hash = "sha256:27cc40c3493bb10de1be4b3f07cae4c010ce715290a5be22b98493509c6299e2"},
+    {file = "psutil-5.9.8-cp37-abi3-win32.whl", hash = "sha256:bc56c2a1b0d15aa3eaa5a60c9f3f8e3e565303b465dbf57a1b730e7a2b9844e0"},
+    {file = "psutil-5.9.8-cp37-abi3-win_amd64.whl", hash = "sha256:8db4c1b57507eef143a15a6884ca10f7c73876cdf5d51e713151c1236a0e68cf"},
+    {file = "psutil-5.9.8-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:d16bbddf0693323b8c6123dd804100241da461e41d6e332fb0ba6058f630f8c8"},
+    {file = "psutil-5.9.8.tar.gz", hash = "sha256:6be126e3225486dff286a8fb9a06246a5253f4c7c53b475ea5f5ac934e64194c"},
+]
+
+[package.extras]
+test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
+
+[[package]]
 name = "py"
 version = "1.11.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
@@ -3489,6 +3531,32 @@ typing-extensions = "*"
 opt-einsum = ["opt-einsum (>=3.3)"]
 
 [[package]]
+name = "torch-model-archiver"
+version = "0.6.1"
+description = "Torch Model Archiver is used for creating archives of trained neural net models that can be consumed by TorchServe inference"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "torch_model_archiver-0.6.1-py3-none-any.whl", hash = "sha256:fd86d1be684bb1e220b2ca2d583d1654b0c28d46a6b4e306826b41a3093a0b55"},
+]
+
+[package.dependencies]
+enum-compat = "*"
+future = "*"
+
+[[package]]
+name = "torch-workflow-archiver"
+version = "0.2.11"
+description = "Torch Workflow Archiver is used for creating archives of workflow designed using trained neural net models that can be consumed by TorchServe inference"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "torch_workflow_archiver-0.2.11-py3-none-any.whl", hash = "sha256:67839716475dd9766a8720072f1faf98b0b3afd9d1b88b5f30fe91ac06a5718b"},
+]
+
+[[package]]
 name = "torchaudio"
 version = "2.0.2"
 description = "An audio package for PyTorch"
@@ -3520,6 +3588,28 @@ files = [
 
 [package.dependencies]
 torch = "2.0.1"
+
+[[package]]
+name = "torchserve"
+version = "0.6.1"
+description = "TorchServe is a tool for serving neural net models for inference"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "torchserve-0.6.1-py3-none-any.whl", hash = "sha256:221ce419224f75345bd26c2572a139dc82818f9376b52003c7755efffe2a549d"},
+]
+
+[package.dependencies]
+future = "*"
+packaging = "*"
+Pillow = "*"
+psutil = "*"
+wheel = "*"
+
+[package.extras]
+ipex = ["intel-extension-for-pytorch"]
+onnx = ["numpy", "onnx", "onnx-runtime"]
 
 [[package]]
 name = "torchvision"
@@ -3702,6 +3792,21 @@ docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx (>=7.1.2)", "sphinx-
 test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.4)", "pytest-env (>=0.8.2)", "pytest-freezer (>=0.4.8)", "pytest-mock (>=3.11.1)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=68)", "time-machine (>=2.10)"]
 
 [[package]]
+name = "wheel"
+version = "0.42.0"
+description = "A built-package format for Python"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "wheel-0.42.0-py3-none-any.whl", hash = "sha256:177f9c9b0d45c47873b619f5b650346d632cdc35fb5e4d25058e09c9e581433d"},
+    {file = "wheel-0.42.0.tar.gz", hash = "sha256:c45be39f7882c9d34243236f2d63cbd58039e360f85d0913425fbd7ceea617a8"},
+]
+
+[package.extras]
+test = ["pytest (>=6.0.0)", "setuptools (>=65)"]
+
+[[package]]
 name = "wrapt"
 version = "1.16.0"
 description = "Module for decorators, wrappers and monkey patching."
@@ -3817,4 +3922,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.8.1,<3.9"
-content-hash = "bb7ac0233869445d34e0e97e49b4aea15ccff43ae521e5341c8ae210f7be2f85"
+content-hash = "877e148499957cd5c9a97fdab57509e823650967c83e68dcf7cb5c7633cd9725"

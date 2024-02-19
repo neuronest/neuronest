@@ -22,9 +22,9 @@ python = ">3.8.1,<3.10"
 scipy = "^1.9.3"  # implicit torchhub ultralytics dependency
 seaborn = "^0.12.1"  # implicit torchhub ultralytics dependency
 torch = "^1.12.1"
-torch-model-archiver = "^0.6.0"
-torch-workflow-archiver = "^0.2.4"
-torchserve = "^0.6.0"
+torch-model-archiver = "^0.6.0" # common dependency of online prediction models, to be refactored to be shared
+torch-workflow-archiver = "^0.2.4" # common dependency of online prediction models, to be refactored to be shared
+torchserve = "^0.6.0" # common dependency of online prediction models, to be refactored to be shared
 torchvision = "^0.13.1"
 ultralytics = "^8.0.105"
 
