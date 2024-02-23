@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 import numpy as np
+from PIL import Image
 from pydantic import BaseModel
 
 from core.schemas.abstract import online_prediction_model
@@ -56,20 +57,28 @@ class DetectAnythingPrediction(BaseModel):
 
 class DetectAnythingImagePredictions(BaseModel):
     predictions: List[DetectAnythingPrediction]
-    annotated_image: Optional[np.ndarray]
+    annotated_image: Optional[Image.Image]
 
     class Config:
         arbitrary_types_allowed = True
 
     def serialized_attributes_dict(self):
         serialized_attributes_dict = {}
-        for key, value in self.dict().items():
-            if key == "predictions":
-                serialized_attributes_dict[key] = value.serialized_attributes_dict()
-            elif key == "annotated_image":
-                serialized_attributes_dict[key] = array_to_string(value)
+        for field_name in self.__fields__:
+            field_value = getattr(self, field_name)
+
+            if field_name == "predictions":
+                serialized_attributes_dict[field_name] = [
+                    element.serialized_attributes_dict() for element in field_value
+                ]
+            elif field_name == "annotated_image":
+                serialized_attributes_dict[field_name] = (
+                    array_to_string(np.array(field_value))
+                    if field_value is not None
+                    else field_value
+                )
             else:
-                serialized_attributes_dict[key] = value
+                serialized_attributes_dict[field_name] = field_value
 
         return serialized_attributes_dict
 
@@ -80,23 +89,28 @@ class DetectAnythingImagePredictions(BaseModel):
         deserialized_attributes_dict = {}
         for key, value in serialized_attributes_dict.items():
             if key == "predictions":
-                deserialized_attributes_dict[
-                    key
-                ] = DetectAnythingPrediction.from_serialized_attributes_dict(value)
+                deserialized_attributes_dict[key] = [
+                    DetectAnythingPrediction.from_serialized_attributes_dict(element)
+                    for element in value
+                ]
             elif key == "annotated_image":
-                serialized_attributes_dict[key] = array_from_string(value)
+                deserialized_attributes_dict[key] = (
+                    Image.fromarray(array_from_string(value))
+                    if value is not None
+                    else value
+                )
             else:
-                serialized_attributes_dict[key] = value
+                deserialized_attributes_dict[key] = value
 
         return cls(**deserialized_attributes_dict)
 
 
 class InputSampleSchema(BaseModel):
-    image: np.ndarray
-    text_prompt: str
+    rgb_image: np.ndarray
+    texts_prompt: List[str]
     box_threshold: float
     text_threshold: float
-    return_annotated_image: bool = False
+    annotate_image: bool = False
 
     class Config:
         arbitrary_types_allowed = True
@@ -183,11 +197,15 @@ class OutputSampleSchema(online_prediction_model.OutputSampleSchema):
 
     def serialized_attributes_dict(self) -> Dict:
         serialized_attributes_dict = {}
-        for key, value in self.dict().items():
-            if key == "results":
-                serialized_attributes_dict[key] = value.serialized_attributes_dict()
+        for field_name in self.__fields__:
+            field_value = getattr(self, field_name)
+
+            if field_name == "results":
+                serialized_attributes_dict[
+                    field_name
+                ] = field_value.serialized_attributes_dict()
             else:
-                serialized_attributes_dict[key] = value
+                serialized_attributes_dict[field_name] = field_value
 
         return serialized_attributes_dict
 

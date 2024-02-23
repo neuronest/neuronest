@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import os
+from typing import List
 
 import groundingdino
+import numpy as np
 import requests
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
@@ -11,7 +13,14 @@ from core.schemas.detect_anything import (
     DetectAnythingImagePredictions,
     DetectAnythingPrediction,
 )
-from groundingdino.util.inference import load_model, predict
+from groundingdino.util.inference import (
+    annotate,
+    load_model,
+    load_model_without_checkpoint,
+    predict,
+    transform_rgb_array_image,
+)
+from PIL import Image
 
 
 def download_file(url, filename, chunk_size: int = 8192, timeout: int = 120):
@@ -54,31 +63,60 @@ class DetectAnythingModel(OnlinePredictionModel):
     # pylint: disable=arguments-differ
     def __call__(
         self,
-        image,
-        text_prompt,
+        rgb_image: np.ndarray,
+        texts_prompt: List[str],
         box_threshold: float = 0.35,
         text_threshold: float = 0.25,
         device: str = "cuda",
+        annotate_image: bool = False,
     ) -> DetectAnythingImagePredictions:
+        image_source, transformed_image = transform_rgb_array_image(
+            rgb_array_image=rgb_image
+        )
         boxes, logits, phrases = predict(
             model=self._model,
-            image=image,
-            caption=text_prompt,
+            image=transformed_image,
+            caption=". ".join(texts_prompt),
             box_threshold=box_threshold,
             text_threshold=text_threshold,
             device=device,
         )
 
+        # is mostly suited to debugging purposes
+        if annotate_image:
+            annotated_image = Image.fromarray(
+                annotate(
+                    image_source=image_source,
+                    boxes=boxes,
+                    logits=logits,
+                    phrases=phrases,
+                )
+            )
+        else:
+            annotated_image = None
         return DetectAnythingImagePredictions(
             predictions=[
-                DetectAnythingPrediction(bbox=bbox, logit=logit, phrase=phrase)
+                DetectAnythingPrediction(
+                    bbox=bbox.numpy(),
+                    logit=logit.numpy(),
+                    phrase=phrase,
+                )
                 for bbox, logit, phrase in zip(boxes, logits, phrases)
-            ]
+            ],
+            annotated_image=annotated_image,
         )
 
     def retrieve_remote_model(self, pretrained: bool = False, device: str = "cuda"):
+        model_config_path = os.sep.join(
+            [
+                os.path.dirname(groundingdino.__file__),
+                "config",
+                "GroundingDINO_SwinT_OGC.py",
+            ]
+        )
+
         if not pretrained:
-            raise NotImplementedError
+            return load_model_without_checkpoint(model_config_path=model_config_path)
 
         if not os.path.exists(self.get_pretrained_weights_filename()):
             # Ensure the directory for the file exists
@@ -94,13 +132,7 @@ class DetectAnythingModel(OnlinePredictionModel):
             print("Download complete.")
 
         return load_model(
-            model_config_path=os.sep.join(
-                [
-                    os.path.dirname(groundingdino.__file__),
-                    "config",
-                    "GroundingDINO_SwinT_OGC.py",
-                ]
-            ),
+            model_config_path=model_config_path,
             model_checkpoint_path=self.get_pretrained_weights_filename(),
             device=device,
         )

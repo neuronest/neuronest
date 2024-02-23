@@ -15,7 +15,7 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 addict = "^2.4.0"
 core = {path="../shared", develop = true}
-groundingdino = { git = "https://github.com/neuronest/Grounded-Segment-Anything.git", subdirectory = "GroundingDINO", rev = "86dc4fd5e2bded355b966f75ec81fdc31755ba3e"}
+groundingdino = { git = "https://github.com/neuronest/Grounded-Segment-Anything.git", subdirectory = "GroundingDINO", rev = "196d0f1397453db15faad140798c3a109733b957"}
 pycocotools = "^2.0.7"
 python = ">3.8.1,<3.9"
 shapely = "1.8.5.post1"

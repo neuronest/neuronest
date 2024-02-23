@@ -57,14 +57,18 @@ class DetectAnythingModelHandler(OnlinePredictionModelHandler):
         self, input_samples_schema: List[DetectAnythingInputSampleSchema]
     ) -> List[Tuple[Tuple[Any], Dict[str, Any]]]:
         return [
-            (),
-            {
-                "image": input_samples_schema.image,
-                "text_prompt": input_samples_schema.text_prompt,
-                "box_threshold": input_samples_schema.box_threshold,
-                "text_threshold": input_samples_schema.text_threshold,
-                "device": "cuda",
-            },
+            (
+                (),
+                {
+                    "rgb_image": input_sample_schema.rgb_image,
+                    "texts_prompt": input_sample_schema.texts_prompt,
+                    "box_threshold": input_sample_schema.box_threshold,
+                    "text_threshold": input_sample_schema.text_threshold,
+                    "annotate_image": input_sample_schema.annotate_image,
+                    "device": "cuda",
+                },
+            )
+            for input_sample_schema in input_samples_schema
         ]
 
     # pylint: disable=arguments-differ

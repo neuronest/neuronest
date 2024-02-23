@@ -7,7 +7,7 @@ import requests
 # import torch
 from groundingdino.util.inference import (  # Model,
     annotate,
-    load_image,
+    load_and_transform_image_path,
     load_model,
     predict,
 )
@@ -54,7 +54,11 @@ CONFIG_PATH = (
     "/config/GroundingDINO_SwinT_OGC.py"
 )
 CONFIG_PATH = "./groundingdino/config/GroundingDINO_SwinT_OGC.py"
-CHECKPOINT_PATH = "./groundingdino_swint_ogc.pth"
+CHECKPOINT_PATH = os.path.expanduser(
+    "~/.cache/neuronest/detect-anything/"
+    "github.com_IDEA-Research_GroundingDINO_releases_"
+    "download_v0.1.0-alpha_groundingdino_swint_ogc.pth"
+)
 DEVICE = "cuda"
 # IMAGE_PATH = "Grounded-Segment-Anything/assets/demo7.jpg" #
 with open("downloaded_image.jpg", "wb") as file:
@@ -73,7 +77,7 @@ TEXT_PROMPT = "Woman. Clouds. Grasses. Sky. Hill."
 BOX_TRESHOLD = 0.35
 TEXT_TRESHOLD = 0.25
 
-image_source, image = load_image(IMAGE_PATH)
+image_source, image = load_and_transform_image_path(IMAGE_PATH)
 
 model = load_model(
     model_config_path=os.sep.join(
