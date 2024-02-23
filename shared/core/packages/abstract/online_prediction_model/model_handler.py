@@ -84,7 +84,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     def build_inference_args_kwargs_from_input_samples_schema(
         self,
         input_samples_schema: List[InputSampleSchema],
-    ) -> Union[Tuple[Tuple, dict], List[List[Tuple[Any], Dict[str, Any]]]]:
+    ) -> Union[Tuple[Tuple, dict], List[Tuple[Any, Dict[str, Any]]]]:
         """
         Returns the data in the format expected by the model to predict,
         the arguments and the key arguments of the prediction function

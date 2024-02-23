@@ -52,7 +52,7 @@ class VideoComparatorClient(OnlinePredictionModelClient):
 
     def _preprocess_batch_sample_video(self, batch_sample_video: Video):
         if isinstance(batch_sample_video, str):
-            return self._upload_video_to_storage(GSPath(batch_sample_video))
+            return self._upload_video_to_storage(batch_sample_video)
         if isinstance(batch_sample_video, np.ndarray):
             return batch_sample_video
 

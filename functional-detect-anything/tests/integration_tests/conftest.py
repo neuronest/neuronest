@@ -4,8 +4,8 @@ from typing import Optional
 import cv2 as cv
 import numpy as np
 import pytest
+from core.client.detect_anything import DetectAnythingClient
 from core.client.model_instantiator import ModelInstantiatorClient
-from core.client.object_detection import ObjectDetectionClient
 from core.google.vertex_ai_manager import VertexAIManager
 
 from ..environment_variables import (
@@ -75,13 +75,13 @@ def fixture_model_instantiator_client(
     )
 
 
-@pytest.fixture(name="object_detection_client", scope="session")
-def fixture_object_detection_client(
+@pytest.fixture(name="detect_anything_client", scope="session")
+def fixture_detect_anything_client(
     vertex_ai_manager: VertexAIManager,
     model_instantiator_client: ModelInstantiatorClient,
     model_name: str,
 ):
-    return ObjectDetectionClient(
+    return DetectAnythingClient(
         vertex_ai_manager=vertex_ai_manager,
         model_instantiator_client=model_instantiator_client,
         model_name=model_name,

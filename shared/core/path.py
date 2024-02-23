@@ -72,6 +72,7 @@ class Path(str, ABC):
 
 class GSPath(Path):
     PREFIX = "gs://"
+    SEPARATOR = "/"
 
     @classmethod
     def from_bucket_and_blob_names(

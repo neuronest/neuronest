@@ -39,14 +39,15 @@ def test_endpoint_inference(
 ):
     image_path = GSPath(image_path)
 
-    StorageClient().download_blob_to_file(
-        bucket_name=image_path.bucket,
-        source_blob_name=image_path.blob_name,
-        destination_file_name=image_path,
-    )
-
     prediction = detect_anything_client.predict_batch(
-        images_and_texts_prompts=[(image_path, [label])]
+        rgb_images_and_texts_prompts=[
+            (
+                StorageClient().download_blob_as_image(
+                    bucket_name=image_path.bucket, blob_name=image_path.blob_name
+                ),
+                [label],
+            )
+        ]
     )[0]
 
     acceptable_iou = 0.8

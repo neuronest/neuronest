@@ -1,6 +1,6 @@
 import math
 from functools import lru_cache
-from typing import List, Optional, Tuple, Type, Union
+from typing import List, Tuple, Type, Union
 
 import cv2 as cv
 import numpy as np
@@ -30,8 +30,15 @@ def get_new_height_width_preserve_ratio(
 class DetectAnythingClient(OnlinePredictionModelClient):
     MAX_PIXELS = 640 * 640
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        *online_prediction_model_client_args,
+        **online_prediction_model_client_kwargs
+    ):
+        super().__init__(
+            *online_prediction_model_client_args,
+            **online_prediction_model_client_kwargs
+        )
 
     @staticmethod
     def _are_shapes_correct(images: List[np.ndarray]) -> bool:
@@ -74,8 +81,8 @@ class DetectAnythingClient(OnlinePredictionModelClient):
     def _batch_sample_to_input_sample_schema(
         self,
         image_and_texts_prompts: Tuple[np.ndarray, str],
-        box_threshold: float = None,
-        text_threshold: float = None,
+        box_threshold: float = 0.35,
+        text_threshold: float = 0.25,
     ) -> DetectAnythingInputSampleSchema:
         resized_batch_sample_image = self._resize_images([image_and_texts_prompts[0]])[
             0
@@ -83,12 +90,12 @@ class DetectAnythingClient(OnlinePredictionModelClient):
 
         return DetectAnythingInputSampleSchema(
             image=resized_batch_sample_image,
-            texts_prompts=image_and_texts_prompts[1],
+            texts_prompt=image_and_texts_prompts[1],
             box_threshold=box_threshold,
             text_threshold=text_threshold,
         )
 
-    def _load_image(self, image: Optional[str, np.ndarray]) -> np.ndarray:
+    def _load_image(self, image: Union[str, np.ndarray]) -> np.ndarray:
         """
         Loads an image into a numpy array.
 
@@ -105,9 +112,9 @@ class DetectAnythingClient(OnlinePredictionModelClient):
     # pylint: disable=arguments-differ,arguments-renamed
     def predict_batch(
         self,
-        images_and_texts_prompts: List[Tuple[Union[np.ndarray, str], List[str]]],
-        box_threshold: float = None,
-        text_threshold: float = None,
+        rgb_images_and_texts_prompts: List[Tuple[Union[np.ndarray, str], List[str]]],
+        box_threshold: float = 0.35,
+        text_threshold: float = 0.25,
     ) -> List[pd.DataFrame]:
         """
         images: List of RGB images as NumPy arrays
@@ -115,16 +122,17 @@ class DetectAnythingClient(OnlinePredictionModelClient):
         # As the method is exposed to users who know nothing about the project,
         # we consider that the user may not know how to load the image, particularly
         # in RGB, and only want to provide the path of an image file
-        images_and_texts_prompts = [
-            self._load_image(image) for image, texts_prompt in images_and_texts_prompts
+        rgb_images_and_texts_prompts = [
+            (self._load_image(image), texts_prompt)
+            for image, texts_prompt in rgb_images_and_texts_prompts
         ]
         if not self._are_shapes_correct(
-            [image for image, texts_prompt in images_and_texts_prompts]
+            [image for image, texts_prompt in rgb_images_and_texts_prompts]
         ):
             raise ValueError("Incorrect received shapes")
 
         return super().predict_batch(
-            batch=images_and_texts_prompts,
+            batch=rgb_images_and_texts_prompts,
             box_threshold=box_threshold,
             text_threshold=text_threshold,
         )
