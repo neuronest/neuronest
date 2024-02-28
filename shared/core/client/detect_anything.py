@@ -89,7 +89,7 @@ class DetectAnythingClient(OnlinePredictionModelClient):
         ]
 
         return DetectAnythingInputSampleSchema(
-            image=resized_batch_sample_image,
+            rgb_image=resized_batch_sample_image,
             texts_prompt=image_and_texts_prompts[1],
             box_threshold=box_threshold,
             text_threshold=text_threshold,

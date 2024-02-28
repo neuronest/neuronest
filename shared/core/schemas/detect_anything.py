@@ -159,7 +159,7 @@ class InputSampleSchema(BaseModel):
             key: image_to_string(
                 value, extension=INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION
             )
-            if key == "image"
+            if key == "rgb_image"
             else value
             for key, value in self.dict().items()
         }
@@ -171,7 +171,7 @@ class InputSampleSchema(BaseModel):
 
         return cls(
             **{
-                key: image_from_string(value) if key == "image" else value
+                key: image_from_string(value) if key == "rgb_image" else value
                 for key, value in serialized_attributes_dict.items()
             }
         )
