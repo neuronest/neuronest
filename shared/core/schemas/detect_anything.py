@@ -38,7 +38,7 @@ class DetectAnythingPrediction(BaseModel):
 
     def serialized_attributes_dict(self):
         return {
-            key: array_to_string(value) if key in {"image", "logit"} else value
+            key: array_to_string(value) if key in {"bbox", "logit"} else value
             for key, value in self.dict().items()
         }
 
@@ -49,7 +49,7 @@ class DetectAnythingPrediction(BaseModel):
 
         return cls(
             **{
-                key: array_from_string(value) if key in {"image", "logit"} else value
+                key: array_from_string(value) if key in {"bbox", "logit"} else value
                 for key, value in serialized_attributes_dict.items()
             }
         )
