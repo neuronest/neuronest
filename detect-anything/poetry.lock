@@ -1129,8 +1129,8 @@ yapf = "*"
 [package.source]
 type = "git"
 url = "https://github.com/neuronest/Grounded-Segment-Anything.git"
-reference = "196d0f1397453db15faad140798c3a109733b957"
-resolved_reference = "196d0f1397453db15faad140798c3a109733b957"
+reference = "a66e6c1fc648ee1f96e317f1a828f7299fda39f8"
+resolved_reference = "a66e6c1fc648ee1f96e317f1a828f7299fda39f8"
 subdirectory = "GroundingDINO"
 [[package]]
 name = "grpc-google-iam-v1"
@@ -3922,4 +3922,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.8.1,<3.9"
-content-hash = "299127aa32664e94a5e966cba111979f579c9941dcdbd7a0349dd79d32dcfd89"
+content-hash = "7b7540a5832f76ed3710a23d52599e73489e29e83f0f35dbacadf93c7106020e"

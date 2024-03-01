@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.0.0-runtime-ubuntu20.04 as training
+FROM nvidia/cuda:11.7.1-devel-ubuntu20.04 as training
 
 RUN apt -qqy update  \
     && DEBIAN_FRONTEND=noninteractive apt install -qqy \
@@ -32,6 +32,14 @@ ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
 ARG POETRY_VERSION="1.3.2"
 
+# warning "chatgpt info": while compiling PyTorch extensions, CUDA architecture target
+# has to be known. Correct CUDA architecture is linked to the Compute Capability
+# (architectural feature set) of the targeted GPU.
+# This approach where target architectures is manually specified bypasses automatic
+# detection issues that arises while docker building in contexts without GPUs.
+# Here including multiple architectures/compute capabilities allows
+# to target multiple different types of GPUs
+ENV TORCH_CUDA_ARCH_LIST="6.1;6.2;7.0;7.2;7.5;8.0;8.6"
 ENV PIP_ROOT_USER_ACTION=ignore
 ENV REPOSITORY_NAME=$REPOSITORY_NAME
 ENV PACKAGE_NAME=$PACKAGE_NAME
