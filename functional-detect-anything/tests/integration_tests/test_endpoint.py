@@ -41,12 +41,6 @@ def test_endpoint_inference(
     detect_anything_client: DetectAnythingClient,
     uninstantiate_teardown,
 ):
-    print(
-        calculate_iou(
-            DetectAnythingPredictionBbox(min_x=220, min_y=550, max_x=310, max_y=680),
-            DetectAnythingPredictionBbox(min_x=225, min_y=535, max_x=314, max_y=677),
-        )
-    )
     image_path = GSPath(image_path)
 
     prediction = detect_anything_client.predict_batch(
@@ -61,7 +55,7 @@ def test_endpoint_inference(
     )[0]
 
     acceptable_iou = 0.75
-    if calculate_iou(bbox1=bbox, bbox2=prediction.shapely_bbox()) < acceptable_iou:
+    if calculate_iou(bbox1=bbox, bbox2=prediction.predictions[0].bbox) < acceptable_iou:
         raise RuntimeError(
             f"iOu is too low, < {acceptable_iou}, for tested image {image_path}"
         )
