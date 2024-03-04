@@ -18,8 +18,29 @@ from core.serialization.image import image_from_string, image_to_string
 INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION = ".jpg"
 
 
+class DetectAnythingPredictionBbox(BaseModel):
+    min_x: int
+    min_y: int
+    max_x: int
+    max_y: int
+    relative_min_x: Optional[float]
+    relative_min_y: Optional[float]
+    relative_max_x: Optional[float]
+    relative_max_y: Optional[float]
+
+    def serialized_attributes_dict(self):
+        return self.dict()
+
+    @classmethod
+    def from_serialized_attributes_dict(
+        cls, serialized_attributes_dict: Dict
+    ) -> "DetectAnythingPredictionBbox":
+
+        return cls(**serialized_attributes_dict)
+
+
 class DetectAnythingPrediction(BaseModel):
-    bbox: np.ndarray
+    bbox: DetectAnythingPredictionBbox
     logit: np.ndarray
     phrase: str
 
@@ -37,22 +58,39 @@ class DetectAnythingPrediction(BaseModel):
     #     raise TypeError(f"Expected {torch.Tensor} type, got {type(bbox_or_logit)}")
 
     def serialized_attributes_dict(self):
-        return {
-            key: array_to_string(value) if key in {"bbox", "logit"} else value
-            for key, value in self.dict().items()
-        }
+        serialized_attributes_dict = {}
+        for field_name in self.__fields__:
+            field_value = getattr(self, field_name)
+
+            if field_name == "bbox":
+                serialized_attributes_dict[
+                    field_name
+                ] = field_value.serialized_attributes_dict()
+            elif field_name == "logit":
+                serialized_attributes_dict[field_name] = array_to_string(
+                    np.array(field_value)
+                )
+            else:
+                serialized_attributes_dict[field_name] = field_value
+
+        return serialized_attributes_dict
 
     @classmethod
     def from_serialized_attributes_dict(
         cls, serialized_attributes_dict: Dict
     ) -> "DetectAnythingPrediction":
+        deserialized_attributes_dict = {}
+        for key, value in serialized_attributes_dict.items():
+            if key == "bbox":
+                deserialized_attributes_dict[
+                    key
+                ] = DetectAnythingPredictionBbox.from_serialized_attributes_dict(value)
+            elif key == "logit":
+                deserialized_attributes_dict[key] = array_from_string(value)
+            else:
+                deserialized_attributes_dict[key] = value
 
-        return cls(
-            **{
-                key: array_from_string(value) if key in {"bbox", "logit"} else value
-                for key, value in serialized_attributes_dict.items()
-            }
-        )
+        return cls(**deserialized_attributes_dict)
 
 
 class DetectAnythingImagePredictions(BaseModel):

@@ -6,15 +6,18 @@ from typing import List
 import groundingdino
 import numpy as np
 import requests
+import torch
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
 from core.schemas.detect_anything import (
     DetectAnythingImagePredictions,
     DetectAnythingPrediction,
+    DetectAnythingPredictionBbox,
 )
 from groundingdino.util.inference import (
     annotate,
+    convert_relative_cxcywh_to_absolute_xyxy,
     load_model,
     load_model_without_checkpoint,
     predict,
@@ -60,6 +63,44 @@ class DetectAnythingModel(OnlinePredictionModel):
 
         return os.path.expanduser(pretrained_weights_filename)
 
+    # pylint: disable=too-many-locals
+    def _raw_predictions_to_schema_predictions(
+        self,
+        image_source: np.ndarray,
+        boxes: torch.Tensor,
+        logits: torch.Tensor,
+        phrases: List[str],
+        annotated_image: Image,
+    ):
+        image_height, image_width, _ = image_source.shape
+        predictions = []
+        for bbox, logit, phrase in zip(boxes, logits, phrases):
+            x_min, y_min, x_max, y_max = convert_relative_cxcywh_to_absolute_xyxy(
+                image_height=image_height, image_width=image_width, relative_cxcywh=bbox
+            )
+            predictions.append(
+                DetectAnythingPrediction(
+                    bbox=DetectAnythingPredictionBbox(
+                        min_x=x_min,
+                        min_y=y_min,
+                        max_x=x_max,
+                        max_y=y_max,
+                        relative_min_x=x_min / image_width,
+                        relative_min_y=y_min / image_height,
+                        relative_max_x=x_max / image_width,
+                        relative_max_y=y_max / image_height,
+                    ),
+                    logit=logit.numpy(),
+                    phrase=phrase,
+                )
+            )
+
+        # annotated_image is mostly suited to debugging purposes
+        return DetectAnythingImagePredictions(
+            predictions=predictions,
+            annotated_image=annotated_image,
+        )
+
     # pylint: disable=arguments-differ
     def __call__(
         self,
@@ -82,9 +123,12 @@ class DetectAnythingModel(OnlinePredictionModel):
             device=device,
         )
 
-        # is mostly suited to debugging purposes
-        if annotate_image:
-            annotated_image = Image.fromarray(
+        return self._raw_predictions_to_schema_predictions(
+            image_source=image_source,
+            boxes=boxes,
+            logits=logits,
+            phrases=phrases,
+            annotated_image=Image.fromarray(
                 annotate(
                     image_source=image_source,
                     boxes=boxes,
@@ -92,18 +136,8 @@ class DetectAnythingModel(OnlinePredictionModel):
                     phrases=phrases,
                 )
             )
-        else:
-            annotated_image = None
-        return DetectAnythingImagePredictions(
-            predictions=[
-                DetectAnythingPrediction(
-                    bbox=bbox.numpy(),
-                    logit=logit.numpy(),
-                    phrase=phrase,
-                )
-                for bbox, logit, phrase in zip(boxes, logits, phrases)
-            ],
-            annotated_image=annotated_image,
+            if annotate_image
+            else None,
         )
 
     def retrieve_remote_model(self, pretrained: bool = False, device: str = "cuda"):

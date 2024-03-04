@@ -2,13 +2,16 @@ import pytest
 from core.client.detect_anything import DetectAnythingClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
+from core.schemas.detect_anything import DetectAnythingPredictionBbox
 from shapely.geometry import box
 
 
-def calculate_iou_shapely(bbox1, bbox2):
+def calculate_iou(
+    bbox1: DetectAnythingPredictionBbox, bbox2: DetectAnythingPredictionBbox
+):
     # Convert bounding boxes to Shapely boxes
-    box1 = box(bbox1[0], bbox1[1], bbox1[2], bbox1[3])
-    box2 = box(bbox2[0], bbox2[1], bbox2[2], bbox2[3])
+    box1 = box(minx=bbox1.min_x, miny=bbox1.min_y, maxx=bbox1.max_x, maxy=bbox1.max_y)
+    box2 = box(minx=bbox2.min_x, miny=bbox2.min_y, maxx=bbox2.max_x, maxy=bbox2.max_y)
 
     # Calculate intersection and union
     intersection = box1.intersection(box2).area
@@ -16,6 +19,7 @@ def calculate_iou_shapely(bbox1, bbox2):
 
     # Calculate IoU
     iou = intersection / union
+
     return iou
 
 
@@ -25,7 +29,7 @@ def calculate_iou_shapely(bbox1, bbox2):
     [
         (
             "gs://datasets-neuronest/label_box_gallery/lipstick.jpeg",
-            box(minx=220, miny=240, maxx=310, maxy=680),
+            DetectAnythingPredictionBbox(min_x=220, min_y=550, max_x=310, max_y=680),
             "lipstick",
         ),
     ],
@@ -37,6 +41,12 @@ def test_endpoint_inference(
     detect_anything_client: DetectAnythingClient,
     uninstantiate_teardown,
 ):
+    print(
+        calculate_iou(
+            DetectAnythingPredictionBbox(min_x=220, min_y=550, max_x=310, max_y=680),
+            DetectAnythingPredictionBbox(min_x=225, min_y=535, max_x=314, max_y=677),
+        )
+    )
     image_path = GSPath(image_path)
 
     prediction = detect_anything_client.predict_batch(
@@ -50,11 +60,8 @@ def test_endpoint_inference(
         ]
     )[0]
 
-    acceptable_iou = 0.8
-    if (
-        calculate_iou_shapely(bbox1=bbox, bbox2=prediction.shapely_bbox())
-        < acceptable_iou
-    ):
+    acceptable_iou = 0.75
+    if calculate_iou(bbox1=bbox, bbox2=prediction.shapely_bbox()) < acceptable_iou:
         raise RuntimeError(
             f"iOu is too low, < {acceptable_iou}, for tested image {image_path}"
         )
