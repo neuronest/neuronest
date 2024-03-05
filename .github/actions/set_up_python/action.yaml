@@ -17,10 +17,10 @@ runs:
       - name: Install the latest version of python
         run: |
           set_up_python() {
-            apt update && apt install -y python3 python3-pip python3-venv && pip install --upgrade pip
+            apt update --allow-releaseinfo-change && apt install -y python3 python3-pip python3-venv && pip install --upgrade pip
           }
           set_up_python_as_root() {
-            sudo apt update && sudo apt install -y python3 python3-pip python3-venv && pip install --upgrade pip
+            sudo apt update --allow-releaseinfo-change && sudo apt install -y python3 python3-pip python3-venv && pip install --upgrade pip
           }
           set_up_venv_and_path() {
             # default pip packages location
