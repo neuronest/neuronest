@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Optional
 
 import numpy as np
-from pydantic import BaseModel, validator
+from pydantic import root_validator, validator
 
 from core.path import GSPath
-from core.schemas.abstract import online_prediction_model
-from core.serialization.array import array_from_string, array_to_string
+from core.serialization.schema import Schema
 
 
 class PredictionType(str, Enum):
@@ -16,25 +15,27 @@ class PredictionType(str, Enum):
     SIMILARITY = "SIMILARITY"
 
 
-class InputSampleSchema(BaseModel):
-    video: Union[GSPath, np.ndarray]
-    other_video: Optional[Union[GSPath, np.ndarray]] = None
-    prediction_type: PredictionType
+class Video(Schema):
+    path: Optional[GSPath] = None
+    array: Optional[np.ndarray] = None
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    @validator("video", "other_video")
+    # validates whole model, before other validations occur
+    @root_validator(pre=True)
     # pylint: disable=no-self-argument
-    def validate_results(cls, video):
-        if video is None:
-            return None
-        if isinstance(video, str):
-            return GSPath(video)
-        if isinstance(video, np.ndarray):
-            return video
+    def check_path_and_array(cls, video):
+        video_path, video_array = video.get("path"), video.get("array")
+        if video_path is None and video_array is None:
+            raise ValueError("Both path and array cannot be None")
+        if video_path is not None and video_array is not None:
+            raise ValueError("One of path and array has to be None")
 
-        raise ValueError
+        return video
+
+
+class InputSampleSchema(Schema):
+    video: Video
+    other_video: Optional[Video] = None
+    prediction_type: PredictionType
 
     @validator("prediction_type")
     # pylint: disable=no-self-argument
@@ -58,94 +59,7 @@ class InputSampleSchema(BaseModel):
             )
         return prediction_type
 
-    def serialized_attributes_dict(self) -> Dict:
-        serialized_attributes_dict = {}
-        for key, value in self.dict().items():
-            if isinstance(value, np.ndarray):
-                serialized_attributes_dict[key] = array_to_string(value)
-            elif isinstance(value, GSPath):
-                serialized_attributes_dict[key] = value
-            elif isinstance(value, Enum):
-                serialized_attributes_dict[key] = value.value
-            elif value is None:
-                serialized_attributes_dict[key] = None
-            else:
-                raise NotImplementedError
 
-        return serialized_attributes_dict
-
-    @classmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict
-    ) -> "InputSampleSchema":
-        deserialized_attributes_dict = {}
-        for key, value in serialized_attributes_dict.items():
-            if value is None:
-                deserialized_attributes_dict[key] = None
-                continue
-            if key not in ("video", "other_video"):
-                deserialized_attributes_dict[key] = value
-                continue
-            if GSPath.is_valid(value):
-                deserialized_attributes_dict[key] = GSPath(value)
-                continue
-            deserialized_attributes_dict[key] = array_from_string(value)
-
-        return cls(**deserialized_attributes_dict)
-
-
-class InputSchema(online_prediction_model.InputSchema):
-    samples: List[InputSampleSchema]
-
-
-def is_castable_to_float(element: Any):
-    try:
-        # Attempt to cast the element to float
-        float(element)
-        # If successful, the element is castable to float
-        return True
-    except (ValueError, TypeError):
-        return False
-
-
-class OutputSampleSchema(online_prediction_model.OutputSampleSchema):
-    results: Union[float, np.ndarray]
-
-    @validator("results")
-    # pylint: disable=no-self-argument
-    def validate_results(cls, results):
-        if isinstance(results, (float, np.ndarray)):
-            return results
-
-        raise ValueError(
-            f"The expected return type is a float or a numpy, received a {cls}"
-        )
-
-    def serialized_attributes_dict(self) -> Dict:
-        serialized_attributes_dict = {}
-        for key, value in self.dict().items():
-            if key != "results":
-                serialized_attributes_dict[key] = value
-                continue
-            if is_castable_to_float(value):
-                serialized_attributes_dict[key] = float(value)
-                continue
-            serialized_attributes_dict[key] = array_to_string(value)
-
-        return serialized_attributes_dict
-
-    @classmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict
-    ) -> "OutputSampleSchema":
-        deserialized_attributes_dict = {}
-        for key, value in serialized_attributes_dict.items():
-            if key != "results":
-                deserialized_attributes_dict[key] = value
-                continue
-            if is_castable_to_float(value):
-                deserialized_attributes_dict[key] = float(value)
-                continue
-            deserialized_attributes_dict[key] = array_from_string(value)
-
-        return cls(**deserialized_attributes_dict)
+class OutputSampleSchema(Schema):
+    video_vector: Optional[np.ndarray]
+    similarity: Optional[float]

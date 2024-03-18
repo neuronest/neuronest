@@ -16,6 +16,7 @@ from core.schemas.abstract.online_prediction_model import (
     InputSampleSchema,
     OutputSampleSchema,
 )
+from core.serialization.schema import Schema
 from core.tools import merge_chunks_get_elements, split_list_into_two_parts
 
 
@@ -157,6 +158,14 @@ class OnlinePredictionModelClient(BaseClient, ABC):
 
         endpoint = self._try_get_endpoint()
 
+        output_sample_schema_class = self.get_output_sample_schema_class()
+
+        if not issubclass(output_sample_schema_class, Schema):
+            raise TypeError(
+                f"{output_sample_schema_class.__name__} is not a subclass of "
+                f"{Schema.__name__}"
+            )
+
         try:
             return [
                 self.get_output_sample_schema_class().from_serialized_attributes_dict(
@@ -219,7 +228,7 @@ class OnlinePredictionModelClient(BaseClient, ABC):
         self,
         batch: List[Any],
         **input_sample_schema_kwargs,
-    ) -> List[Any]:
+    ) -> List[OutputSampleSchema]:
         input_samples_schema = self._preprocess_batch(
             batch, **input_sample_schema_kwargs
         )
@@ -227,8 +236,7 @@ class OnlinePredictionModelClient(BaseClient, ABC):
         input_samples_schema_chunks = self._split_into_chunks(input_samples_schema)
 
         return [
-            output_sample_schema.results
-            for output_sample_schema in merge_chunks_get_elements(
+            merge_chunks_get_elements(
                 self._predict_batch(input_samples_schema_chunk)
                 for input_samples_schema_chunk in input_samples_schema_chunks
             )

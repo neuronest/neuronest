@@ -52,7 +52,7 @@ def test_endpoint_inference(
                 [label],
             )
         ]
-    )[0]
+    )[0].results
 
     acceptable_iou = 0.75
     if calculate_iou(bbox1=bbox, bbox2=prediction.predictions[0].bbox) < acceptable_iou:

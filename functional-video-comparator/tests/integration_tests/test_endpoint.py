@@ -35,7 +35,7 @@ def test_endpoint_inference(
                     video_and_other_video_path[1],
                 )
             ],
-        )[0],
+        )[0].similarity,
         reverse=True,
     )
 

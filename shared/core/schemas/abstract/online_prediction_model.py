@@ -1,8 +1,6 @@
-from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, List
 
-from pydantic import BaseModel
+from core.serialization.schema import Schema
 
 
 class Device(str, Enum):
@@ -10,39 +8,13 @@ class Device(str, Enum):
     CUDA = "cuda"
 
 
-class InputSampleSchema(BaseModel, ABC):
-    class Config:
-        arbitrary_types_allowed = True
-
-    @abstractmethod
-    def serialized_attributes_dict(self) -> Dict[str, Any]:
-        raise NotImplementedError
-
-    @classmethod
-    @abstractmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict[str, Any]
-    ) -> "InputSampleSchema":
-        raise NotImplementedError
+# dummy class not used to show which classes to implement and
+# what to inherit in online prediction models schemas
+class InputSampleSchema(Schema):
+    pass
 
 
-class InputSchema(BaseModel):
-    samples: List[InputSampleSchema]
-
-
-class OutputSampleSchema(BaseModel):
-    results: Any
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @abstractmethod
-    def serialized_attributes_dict(self) -> Dict[str, Any]:
-        raise NotImplementedError
-
-    @classmethod
-    @abstractmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict[str, Any]
-    ) -> "OutputSampleSchema":
-        raise NotImplementedError
+# dummy class not used to show which classes to implement and
+# what to inherit in online prediction models schemas
+class OutputSampleSchema(Schema):
+    pass

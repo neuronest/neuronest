@@ -15,6 +15,7 @@ from core.schemas.abstract.online_prediction_model import (
     InputSampleSchema,
     OutputSampleSchema,
 )
+from core.serialization.schema import Schema
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -76,9 +77,15 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         )
 
     def _get_input_sample_schema_from_data_sample(self, data_sample: Dict):
-        return self._get_input_sample_schema_class().from_serialized_attributes_dict(
-            data_sample
-        )
+        input_sample_schema_class = self._get_input_sample_schema_class()
+
+        if not issubclass(input_sample_schema_class, Schema):
+            raise TypeError(
+                f"{input_sample_schema_class.__name__} is not a subclass of "
+                f"{Schema.__name__}"
+            )
+
+        return input_sample_schema_class.from_serialized_attributes_dict(data_sample)
 
     @abstractmethod
     def build_inference_args_kwargs_from_input_samples_schema(

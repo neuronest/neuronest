@@ -8,13 +8,13 @@ from core.google.storage_client import StorageClient
 from core.packages.abstract.online_prediction_model.model_handler import (
     OnlinePredictionModelHandler,
 )
-from core.path import GSPath
 from core.schemas.video_comparator import (
     InputSampleSchema as VideoComparatorInputSampleSchema,
 )
 from core.schemas.video_comparator import (
     OutputSampleSchema as VideoComparatorOutputSampleSchema,
 )
+from core.schemas.video_comparator import Video
 
 from video_comparator.config import cfg
 from video_comparator.modules.model import VideoComparatorModel
@@ -34,17 +34,19 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         self.batch_size = batch_size or cfg.model.batch_size
         self.storage_client = StorageClient()
 
-    def _preprocess_video(self, video: Union[GSPath, np.ndarray]):
-        if isinstance(video, GSPath):
-            video_path = str(uuid.uuid4())
+    def _preprocess_video(self, video: Video):
+        if video.path is not None:
+            destination_video_file_name = str(uuid.uuid4())
             self.storage_client.download_blob_to_file(
-                bucket_name=video.bucket,
-                source_blob_name=video.blob_name,
-                destination_file_name=video_path,
+                bucket_name=video.path.bucket,
+                source_blob_name=video.path.blob_name,
+                destination_file_name=destination_video_file_name,
             )
-            return video_path
-        if isinstance(video, np.ndarray):
-            return video
+            return destination_video_file_name
+
+        if video.array is not None:
+            return video.array
+
         raise ValueError
 
     def create_new_model(self):
@@ -116,7 +118,9 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         self, predictions: Union[float, np.ndarray]
     ) -> List[VideoComparatorOutputSampleSchema]:
         return [
-            VideoComparatorOutputSampleSchema(results=prediction)
+            VideoComparatorOutputSampleSchema(video_vector=prediction)
+            if isinstance(prediction, np.ndarray)
+            else VideoComparatorOutputSampleSchema(similarity=prediction)
             for prediction in predictions
         ]
 
