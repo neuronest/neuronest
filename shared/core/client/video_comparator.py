@@ -1,4 +1,4 @@
-from typing import Iterable, Type, Union
+from typing import Iterable, List, Type, Union
 
 import numpy as np
 
@@ -12,6 +12,7 @@ from core.schemas.video_comparator import (
     OutputSampleSchema as VideoComparatorOutputSampleSchema,
 )
 from core.schemas.video_comparator import PredictionType
+from core.schemas.video_comparator import Video as VideoSchema
 from core.tools import generate_file_id
 
 Video = Union[str, np.ndarray]
@@ -52,16 +53,16 @@ class VideoComparatorClient(OnlinePredictionModelClient):
 
     def _preprocess_batch_sample_video(self, batch_sample_video: Video):
         if isinstance(batch_sample_video, str):
-            return self._upload_video_to_storage(batch_sample_video)
+            return VideoSchema(path=self._upload_video_to_storage(batch_sample_video))
         if isinstance(batch_sample_video, np.ndarray):
-            return batch_sample_video
+            return VideoSchema(array=batch_sample_video)
 
         raise ValueError
 
     def get_output_sample_schema_class(self) -> Type[VideoComparatorOutputSampleSchema]:
         return VideoComparatorOutputSampleSchema
 
-    # pylint: disable=arguments-differ
+    # pylint: disable=arguments-renamed,arguments-differ
     def _batch_sample_to_input_sample_schema(
         self, batch_sample: Sample
     ) -> VideoComparatorInputSampleSchema:
@@ -82,3 +83,10 @@ class VideoComparatorClient(OnlinePredictionModelClient):
             other_video=self._preprocess_batch_sample_video(other_video),
             prediction_type=PredictionType.SIMILARITY,
         )
+
+    # pylint: disable=arguments-differ
+    def predict_batch(
+        self, batch_sample: List[Sample]
+    ) -> List[VideoComparatorOutputSampleSchema]:
+
+        return super().predict_batch(batch=batch_sample)

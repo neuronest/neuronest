@@ -8,7 +8,7 @@ def test_endpoint_inference(
     image: np.ndarray,
     uninstantiate_teardown,
 ):
-    single_prediction_df = object_detection_client.predict_single(image)
+    single_prediction_df = object_detection_client.predict_single(image).results
     assert set(single_prediction_df.class_name) == {"dog", "bicycle", "truck"}
 
     batch_predictions_df = [

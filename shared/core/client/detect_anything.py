@@ -4,7 +4,6 @@ from typing import List, Tuple, Type, Union
 
 import cv2 as cv
 import numpy as np
-import pandas as pd
 from imutils import resize
 
 from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
@@ -115,7 +114,7 @@ class DetectAnythingClient(OnlinePredictionModelClient):
         rgb_images_and_texts_prompts: List[Tuple[Union[np.ndarray, str], List[str]]],
         box_threshold: float = 0.35,
         text_threshold: float = 0.25,
-    ) -> List[pd.DataFrame]:
+    ) -> List[DetectAnythingOutputSampleSchema]:
         """
         images: List of RGB images as NumPy arrays
         """
