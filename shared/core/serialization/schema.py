@@ -4,11 +4,19 @@ from typing import Any, Dict, List, Tuple, Union, get_args, get_origin, get_type
 import numpy as np
 import pandas as pd
 from PIL import Image
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 from core.path import GSPath
 from core.serialization.array import array_from_string, array_to_string
 from core.serialization.dataframe import dataframe_from_string, dataframe_to_string
+from core.serialization.image import image_from_string, image_to_string
+
+
+# dummy class to use for typing only to indicate that in addition to being
+# a numpy array, it encodes an image. This indicates to use more efficient,
+# image-specific compression methods during serialization
+class ImageAsNdarray(np.ndarray):
+    pass
 
 
 # pylint: disable=too-many-return-statements
@@ -19,10 +27,12 @@ def serialize(value: Any):
         return value
     if isinstance(value, GSPath):
         return value
+    if isinstance(value, ImageAsNdarray):
+        return image_to_string(value, extension=".jpg")
     if isinstance(value, np.ndarray):
         return array_to_string(value)
     if isinstance(value, Image.Image):
-        return array_to_string(np.array(value))
+        return image_to_string(np.array(value))
     if isinstance(value, pd.DataFrame):
         return dataframe_to_string(value)
     if isinstance(value, Enum):
@@ -62,12 +72,14 @@ def deserialize_normal_class(normal_class, value: Any):
         return value
     if normal_class is GSPath:
         return GSPath(value)
+    if normal_class is ImageAsNdarray:
+        return image_from_string(value)
     if normal_class is np.ndarray:
         return array_from_string(value)
     if normal_class is pd.DataFrame:
         return dataframe_from_string(value)
     if normal_class is Image.Image:
-        return Image.fromarray(array_from_string(value))
+        return Image.fromarray(image_from_string(value))
 
     # for example get_origin(List[str]) == list, get_origin(int) == None
     # container_typing = get_origin(class_or_container_typing)
@@ -129,6 +141,17 @@ def deserialize_normal_class_or_container_typing(
 class Schema(BaseModel):
     class Config:
         arbitrary_types_allowed = True
+
+    @root_validator(pre=True)
+    # pylint: disable=no-self-argument
+    def check_and_convert_ndarrays_that_are_actually_imageasndarray(cls, values):
+        for field, value in values.items():
+            expected_type = get_type_hints(cls)[field]
+            if expected_type is ImageAsNdarray and isinstance(value, np.ndarray):
+                # Convert np.ndarray to ImageAsNdarray
+                values[field] = value.view(ImageAsNdarray)
+
+        return values
 
     def serialized_attributes_dict(self) -> Dict[str, Any]:
         serialized_attributes_dict = {}

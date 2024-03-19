@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 
 from core.schemas.abstract import online_prediction_model
-from core.serialization.schema import Schema
+from core.serialization.schema import ImageAsNdarray, Schema
 
 INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION = ".jpg"
 
@@ -34,7 +34,7 @@ class DetectAnythingImagePredictions(Schema):
 
 
 class InputSampleSchema(Schema):
-    rgb_image: np.ndarray
+    rgb_image: ImageAsNdarray
     texts_prompt: List[str]
     box_threshold: float
     text_threshold: float

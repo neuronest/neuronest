@@ -1,10 +1,9 @@
 from typing import Dict, List, Optional, Union
 
-import numpy as np
 import pandas as pd
 from pydantic import validator
 
-from core.schemas.abstract import online_prediction_model
+from core.serialization.schema import ImageAsNdarray, Schema
 
 PREDICTION_COLUMNS = [
     "x_min",
@@ -19,8 +18,8 @@ PREDICTION_COLUMNS = [
 INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION = ".jpg"
 
 
-class InputSampleSchema(online_prediction_model.InputSampleSchema):
-    image: Union[np.ndarray]
+class InputSampleSchema(Schema):
+    image: ImageAsNdarray
     labels_to_predict: Optional[List[str]] = None
     confidence_threshold: Optional[float] = None
     overridden_image_width: Optional[int] = None
@@ -44,7 +43,7 @@ class InputSampleSchema(online_prediction_model.InputSampleSchema):
         }
 
 
-class OutputSampleSchema(online_prediction_model.OutputSampleSchema):
+class OutputSampleSchema(Schema):
     results: pd.DataFrame
 
     @validator("results")
