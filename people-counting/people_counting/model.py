@@ -21,7 +21,7 @@ class Model:
         self,
         images: List[np.ndarray],
     ) -> List[List[BoundingBox]]:
-        results_batch = self.object_detection_client.predict_batch(
+        images_predictions = self.object_detection_client.predict_batch(
             images,
             labels=[self.class_name],
             confidence_threshold=self.confidence_threshold,
@@ -36,9 +36,9 @@ class Model:
                     x_max=int(row.x_max),
                     y_max=int(row.y_max),
                 )
-                for row in results.itertuples()
+                for row in image_predictions.results.itertuples()
             ]
-            for results in results_batch
+            for image_predictions in images_predictions
         ]
 
     def predict(
