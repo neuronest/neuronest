@@ -69,10 +69,3 @@ async def log_info_to_reproduce_validation_exception(request, exc):
         f"url: {request.url} and body: {request.scope.get('body')}"
     )
     return await exception_handlers.request_validation_exception_handler(request, exc)
-
-
-if __name__ == "__main__":
-    # used for debugging purposes only
-    import uvicorn  # isort:skip
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)

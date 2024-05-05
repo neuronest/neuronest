@@ -4,17 +4,24 @@ from typing import List, Optional, Tuple
 
 from google.cloud import logging
 
+from core.client.base_client import BaseClient
+
 
 class LoggerName(str, Enum):
     PREDICTION_CONTAINER = "aiplatform.googleapis.com%2Fprediction_container"
 
 
-class LoggingClient:
-    def __init__(self, key_path: Optional[str] = None):
+class LoggingClient(BaseClient):
+    def __init__(
+        self, key_path: Optional[str] = None, project_id: Optional[str] = None
+    ):
+        super().__init__(key_path=key_path, project_id=project_id)
         self.client = (
-            logging.Client()
+            logging.Client(project=self.project_id)
             if key_path is None
-            else logging.Client.from_service_account_json(key_path)
+            else logging.Client.from_service_account_json(
+                json_credentials_path=key_path, project=project_id
+            )
         )
 
     @staticmethod

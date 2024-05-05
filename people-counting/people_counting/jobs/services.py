@@ -1,3 +1,5 @@
+from typing import Optional
+
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.object_detection import ObjectDetectionClient
 from core.google.firestore_client import FirestoreClient
@@ -49,9 +51,9 @@ def create_people_counter(
     )
 
 
-def create_storage_client() -> StorageClient:
-    return StorageClient()
+def create_storage_client(project_id: Optional[str] = None) -> StorageClient:
+    return StorageClient(project_id=project_id)
 
 
-def create_firestore_client() -> FirestoreClient:
-    return FirestoreClient()
+def create_firestore_client(project_id: Optional[str] = None) -> FirestoreClient:
+    return FirestoreClient(project_id=project_id)

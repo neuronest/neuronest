@@ -48,7 +48,7 @@ ENV POETRY_HOME="/opt/poetry"
 ENV PATH="$POETRY_HOME/bin:$ROOT_DIRECTORY/$REPOSITORY_NAME/.venv/bin:$PATH"
 
 ENV CLOUDSDK_INSTALL_DIR=/usr/local/gcloud
-RUN curl -sSL https://sdk.cloud.google.com | bash
+RUN curl -sSL https://sdk.cloud.google.com | bash > /dev/null 2>&1  # silent logs
 ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 
 COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
@@ -63,7 +63,7 @@ RUN poetry config virtualenvs.in-project true \
     && poetry check  \
     && poetry install
 
-COPY $REPOSITORY_NAME/config.yaml .
+# COPY $REPOSITORY_NAME/config.yaml .
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 
@@ -82,14 +82,7 @@ ENV MODEL_PACKAGE_NAME=$MODEL_PACKAGE_NAME
 ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
 RUN mkdir $MODEL_PACKAGE_NAME
-
-RUN cp -r \
-    $PACKAGE_NAME/model_handler.py  \
-    $PACKAGE_NAME/modules  \
-    $PACKAGE_NAME/config.py \
-    config.yaml \
-    $MODEL_PACKAGE_NAME
-
+RUN cp -r $PACKAGE_NAME $MODEL_PACKAGE_NAME
 WORKDIR $MODEL_PACKAGE_PATH
 
 # create torchserve configuration file
@@ -107,16 +100,20 @@ RUN mkdir -p $MODEL_STORE_NAME
 
 COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
+ENV TMP_PACKAGE_DIR=/tmp/$PACKAGE_NAME
+RUN mkdir $TMP_PACKAGE_DIR
+RUN cp -r $PACKAGE_NAME $TMP_PACKAGE_DIR
+
 # create model archive file packaging model artifacts and dependencies
 RUN torch-model-archiver -f \
   --model-name=$MODEL_NAME \
   --version=1.0 \
   --serialized-file=$LOCAL_MODEL_PATH \
-  --handler=model_handler.py \
-  --extra-files=modules,config.py,config.yaml \
+  --handler=$MODEL_PACKAGE_PATH/$PACKAGE_NAME/model_handler.py \
+  --extra-files=$TMP_PACKAGE_DIR \
   --export-path=$MODEL_STORE_NAME
 
-ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
+# ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
 
 # run Torchserve HTTP serve to respond to prediction requests
 ENTRYPOINT torchserve \

@@ -3,7 +3,7 @@ import json
 import time
 from typing import List, Optional
 
-from core.client.base import APIClient
+from core.client.api_client import APIClient
 from core.exceptions import PredictionsNotFoundError
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient

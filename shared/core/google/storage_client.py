@@ -13,6 +13,7 @@ from google.cloud import storage
 from google.cloud.storage import Bucket
 from tqdm import tqdm
 
+from core.client.base_client import BaseClient
 from core.exceptions import DependencyError
 from core.path import GSPath
 from core.serialization.encoding import NumpyEncoder
@@ -21,10 +22,11 @@ from core.serialization.image import image_from_binary
 logger = logging.getLogger(__name__)
 
 
-class StorageClient:
+class StorageClient(BaseClient):
     def __init__(
         self, key_path: Optional[str] = None, project_id: Optional[str] = None
     ):
+        super().__init__(key_path=key_path, project_id=project_id)
         self.client = (
             storage.Client(project=project_id)
             if key_path is None
@@ -32,7 +34,6 @@ class StorageClient:
                 json_credentials_path=key_path, project=project_id
             )
         )
-        self.project_id = project_id
 
     @staticmethod
     def generate_gs_link(bucket_name: str, blob_name: str) -> GSPath:

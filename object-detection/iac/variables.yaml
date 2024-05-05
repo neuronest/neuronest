@@ -7,7 +7,7 @@ repository_variables:
 multi_instance_resource_names:
   # docker image
   - BASE_IMAGE_NAME=object-detection
-  # service account names
+  # service account name
   - SERVICE_ACCOUNT_NAME=prediction-model
   # vertex
   - MODEL_NAME=model

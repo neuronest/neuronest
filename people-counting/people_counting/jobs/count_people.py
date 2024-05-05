@@ -35,8 +35,8 @@ def run_asset_counting(
     model_instantiator_host: str,
     firestore_results_collection: str,
 ):
-    storage_client = create_storage_client()
-    firestore_client = create_firestore_client()
+    storage_client = create_storage_client(project_id=project_id)
+    firestore_client = create_firestore_client(project_id=project_id)
     people_counter = create_people_counter(
         project_id=project_id,
         region=region,

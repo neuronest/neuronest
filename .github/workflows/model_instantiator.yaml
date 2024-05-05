@@ -54,7 +54,7 @@ env:
 jobs:
   run_base_terraform:
     runs-on: neuronest-runner-set
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
     outputs:
@@ -72,7 +72,7 @@ jobs:
     name: build_test_push
     runs-on: neuronest-runner-set
     needs: run_base_terraform
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     outputs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
@@ -101,7 +101,7 @@ jobs:
     needs:
       - run_base_terraform
       - build_test_push
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
     container:
       image: google/cloud-sdk

@@ -11,6 +11,7 @@ import requests
 from requests import HTTPError
 
 from core.auth import generate_identity_token, get_credentials
+from core.client.base_client import BaseClient
 
 # todo: make it configurable from inherited classes
 HTTP_CALL_MAX_RETRY_ATTEMPT = 3
@@ -28,15 +29,16 @@ class Protocol(str, Enum):
         return cls.HTTP
 
 
-class APIClient(ABC):
+class APIClient(BaseClient, ABC):
     def __init__(
         self,
         host: str,
         root: str,
-        key_path: Optional[str] = None,
+        key_path: Optional[str],
         ssl: Optional[bool] = None,
         project_id: Optional[str] = None,
     ):
+        super().__init__(key_path=key_path, project_id=project_id)
         self.host = host
         self.root = root
         self.key_path = key_path
@@ -77,7 +79,6 @@ class APIClient(ABC):
         identity_token = generate_identity_token(
             target_audience=self.protocol_with_host, key_path=self.key_path
         )
-
         return {"Authorization": f"Bearer {identity_token}"}
 
     # noinspection PyMethodMayBeStatic

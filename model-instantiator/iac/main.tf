@@ -47,4 +47,5 @@ module "model_instantiator" {
   cloud_scheduler_schedule             = var.cloud_scheduler_schedule
   cloud_uninstantiate_route            = var.cloud_uninstantiate_route
   cloud_scheduler_model_name           = var.cloud_scheduler_model_name
+  online_prediction_model_sa_name      = var.online_prediction_model_sa_name
 }

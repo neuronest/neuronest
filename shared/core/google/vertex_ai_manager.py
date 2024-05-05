@@ -1,22 +1,24 @@
+import json
 import logging
 import re
 import time
 import uuid
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import proto
 from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform import Endpoint
 from google.cloud.aiplatform_v1.types import training_pipeline
-from google.oauth2 import service_account
 
+from core.client.base_client import BaseClient
 from core.exceptions import AlreadyExistingError
+from core.google.utils import get_service_account_email
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
 
 
-class VertexAIManager:
+class VertexAIManager(BaseClient):
     MODEL_DISPLAY_SUFFIX_LENGTH = 8
     MODEL_DISPLAY_NAME_REGEX = re.compile(
         r"^([0-9a-z-]*?)-[0-9a-z]{" + str(MODEL_DISPLAY_SUFFIX_LENGTH) + "}$"
@@ -28,33 +30,13 @@ class VertexAIManager:
         key_path: Optional[str] = None,
         project_id: Optional[str] = None,
     ):
+        super().__init__(key_path=key_path, project_id=project_id)
         self.location = location
-
-        if key_path is None and project_id is None:
-            raise ValueError("Either key_path or project_id should be specified")
-
-        self.credentials = (
-            service_account.Credentials.from_service_account_file(key_path)
-            if key_path is not None
-            else None
-        )
-        self._project_id = project_id
 
         client_options = {"api_endpoint": f"{self.location}-aiplatform.googleapis.com"}
         # noinspection PyTypeChecker
         self.pipeline_service_client = aiplatform.gapic.PipelineServiceClient(
             credentials=self.credentials, client_options=client_options
-        )
-
-    @property
-    def project_id(self) -> str:
-        # we give priority on the project_id which was passed explicitly to the
-        # instantiation rather than to the project id to which the service account
-        # of the credentials is attached
-        return (
-            self._project_id
-            if self._project_id is not None
-            else self.credentials.project_id
         )
 
     @staticmethod
@@ -175,6 +157,17 @@ class VertexAIManager:
 
         endpoint.delete(force=undeploy_models)
 
+    def calculate_prediction_payload_size(
+        self, instances: List[Dict], parameters: Optional[Dict] = None
+    ) -> int:
+        # we use the google.cloud.aiplatform.models.Endpoint.predict function to best
+        # approximate the structure passed to the endpoint and its weight in bytes
+
+        if parameters is None:
+            parameters = {}
+
+        return len(json.dumps({"instances": instances, "parameters": parameters}))
+
     def upload_model(
         self,
         name: str,
@@ -278,7 +271,13 @@ class VertexAIManager:
             raise AlreadyExistingError(
                 "The last model version has already been deployed"
             )
-
+        if serving_deployment_config.service_account_name is not None:
+            service_account_email = get_service_account_email(
+                service_account_name=serving_deployment_config.service_account_name,
+                project_id=self.project_id,
+            )
+        else:
+            service_account_email = None
         endpoint = model.deploy(
             endpoint=endpoint,
             deployed_model_display_name=name,
@@ -288,6 +287,7 @@ class VertexAIManager:
             max_replica_count=serving_deployment_config.max_replica_count,
             accelerator_type=serving_deployment_config.accelerator_type,
             accelerator_count=serving_deployment_config.accelerator_count,
+            service_account=service_account_email,
             # sync=True doesn't seem to be trusted as it can timeout without being able
             # to do anything about it
             # (deploy_request_timeout parameter seems to be ineffective)

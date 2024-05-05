@@ -1,7 +1,12 @@
-from enum import Enum
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, validator
+import numpy as np
+import pandas as pd
+from pydantic import validator
+
+from core.schemas.abstract import online_prediction_model
+from core.serialization.dataframe import dataframe_from_string, dataframe_to_string
+from core.serialization.image import image_from_string, image_to_string
 
 PREDICTION_COLUMNS = [
     "x_min",
@@ -13,14 +18,11 @@ PREDICTION_COLUMNS = [
     "class_name",
 ]
 
-
-class Device(str, Enum):
-    CPU = "cpu"
-    CUDA = "cuda"
+INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION = ".jpg"
 
 
-class InputSampleSchema(BaseModel):
-    data: str
+class InputSampleSchema(online_prediction_model.InputSampleSchema):
+    image: Union[np.ndarray]
     labels_to_predict: Optional[List[str]] = None
     confidence_threshold: Optional[float] = None
     overridden_image_width: Optional[int] = None
@@ -43,10 +45,36 @@ class InputSampleSchema(BaseModel):
             if metadata_value is not None
         }
 
+    def serialized_attributes_dict(self):
+        return {
+            key: image_to_string(
+                value, extension=INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION
+            )
+            if key == "image"
+            else value
+            for key, value in self.dict().items()
+        }
 
-class InputSchema(BaseModel):
+    @classmethod
+    def from_serialized_attributes_dict(
+        cls, serialized_attributes_dict: Dict
+    ) -> "InputSampleSchema":
+
+        return cls(
+            **{
+                key: image_from_string(value) if key == "image" else value
+                for key, value in serialized_attributes_dict.items()
+            }
+        )
+
+
+class InputSchema(online_prediction_model.InputSchema):
     samples: List[InputSampleSchema]
 
+    # fixme: the InputSampleSchema structures are parsed and  # pylint: disable=W0511
+    #  validated one by one, but the InputSchema structure  # pylint: disable=W0511
+    #  which wraps them is never validated anywhere it seems to  # pylint: disable=W0511
+    #  me and therefore the sample validator is never executed  # pylint: disable=W0511
     @validator("samples")
     # pylint: disable=no-self-argument
     def validate_metadata_batch_unicity(
@@ -78,5 +106,37 @@ class InputSchema(BaseModel):
         return samples
 
 
-class OutputSchema(BaseModel):
-    results: str
+class OutputSampleSchema(online_prediction_model.OutputSampleSchema):
+    results: pd.DataFrame
+
+    @validator("results")
+    # pylint: disable=no-self-argument
+    def validate_results(cls, results):
+        if not isinstance(results, pd.DataFrame):
+            raise ValueError(
+                f"The expected return type is a pandas DataFrame, received a {cls}"
+            )
+        if not set(PREDICTION_COLUMNS) == set(results.columns):
+            raise ValueError(
+                f"The expected colums are {PREDICTION_COLUMNS}, "
+                f"received a {results.columns}"
+            )
+        return results
+
+    def serialized_attributes_dict(self) -> Dict:
+        return {
+            key: dataframe_to_string(value) if key == "results" else value
+            for key, value in self.dict().items()
+        }
+
+    @classmethod
+    def from_serialized_attributes_dict(
+        cls, serialized_attributes_dict: Dict
+    ) -> "OutputSampleSchema":
+
+        return cls(
+            **{
+                key: dataframe_from_string(value) if key == "results" else value
+                for key, value in serialized_attributes_dict.items()
+            }
+        )

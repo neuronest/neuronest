@@ -22,4 +22,6 @@ runs:
           source ./.github/functions/initialize_terraform.sh
           initialize_terraform ${{ env.REPOSITORY_NAME }} ${{ inputs.workspace }} $STATE_BUCKET
           echo "terraform_output_value=$(terraform output ${{ inputs.terraform_output_name }} | tr -d '"')" >> $GITHUB_OUTPUT
+          echo "${{ inputs.terraform_output_name }}=$terraform_output_value"
       shell: bash
+
