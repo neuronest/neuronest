@@ -44,7 +44,7 @@ ENV POETRY_HOME="/opt/poetry"
 ENV PATH="$POETRY_HOME/bin:$ROOT_DIRECTORY/$REPOSITORY_NAME/.venv/bin:$PATH"
 
 ENV CLOUDSDK_INSTALL_DIR=/usr/local/gcloud
-RUN curl -sSL https://sdk.cloud.google.com | bash
+RUN curl -sSL https://sdk.cloud.google.com | bash > /dev/null 2>&1  # silent logs
 ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 
 COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
