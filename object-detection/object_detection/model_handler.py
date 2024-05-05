@@ -80,14 +80,6 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
     def _get_input_sample_schema_class(self):
         return ObjectDetectionInputSampleSchema
 
-    # def _get_input_sample_schema_from_data_sample(self, data_sample: dict):
-    #     raise ObjectDetectionInputSampleSchema.parse_obj(data_sample)
-
-    # def _batch_sample_to_input_sample_schema(
-    #     self, image: np.ndarray
-    # ) -> ObjectDetectionInputSampleSchema:
-    #     return ObjectDetectionInputSampleSchema(image=image)
-
     def build_inference_args_kwargs_from_input_samples_schema(
         self, input_samples_schema: List[ObjectDetectionInputSampleSchema]
     ) -> Tuple[Tuple, dict]:
@@ -99,12 +91,6 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         self._fill_image_width(first_sample_schema.overridden_image_width)
 
         return (
-            # (
-            #     [
-            #         resize(image_from_string(input_sample_schema.image), width=self.image_width)
-            #         for input_sample_schema in input_samples_schema
-            #     ],
-            # ),
             (
                 [
                     resize(input_sample_schema.image, width=self.image_width)
@@ -119,12 +105,6 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
     ) -> List[ObjectDetectionOutputSampleSchema]:
         filtered_predictions = self._filter_predictions(predictions)
 
-        # return [
-        #     ObjectDetectionOutputSchemaSample(
-        #         results=array_to_string(prediction.values)
-        #     )
-        #     for prediction in filtered_predictions
-        # ]
         return [
             ObjectDetectionOutputSampleSchema(
                 results=pd.DataFrame(prediction.values, columns=PREDICTION_COLUMNS)

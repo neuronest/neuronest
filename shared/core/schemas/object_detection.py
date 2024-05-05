@@ -46,10 +46,6 @@ class InputSampleSchema(online_prediction_model.InputSampleSchema):
         }
 
     def serialized_attributes_dict(self):
-        # image_to_string(
-        #     frame=resized_batch_sample_image,
-        #     extension=self.PREPROCESSING_IMAGE_TYPE,
-        # )
         return {
             key: image_to_string(
                 value, extension=INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION

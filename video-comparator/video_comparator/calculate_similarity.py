@@ -9,9 +9,7 @@ from video_comparator.model.visil import ViSiL
 from video_comparator.utils import calculate_similarities_to_queries, extract_features
 
 if __name__ == "__main__":
-    # formatter = lambda prog: argparse.ArgumentDefaultsHelpFormatter(
-    #     prog, max_help_position=80
-    # )
+
     def get_formatter_class(prog):
         return argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=80)
 

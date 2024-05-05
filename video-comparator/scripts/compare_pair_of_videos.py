@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # # Load the two videos from the video files
+    # Load the two videos from the video files
     query_video = torch.from_numpy(load_video(args.video1_path))
     target_video = torch.from_numpy(load_video(args.video2_path))
 

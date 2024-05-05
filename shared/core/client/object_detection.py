@@ -49,12 +49,6 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
             for image in images
         ]
 
-    # # pylint: disable=arguments-differ,arguments-renamed
-    # def _batch_sample_to_input_sample_schema(
-    #     self, image: np.ndarray
-    # ) -> ObjectDetectionInputSampleSchema:
-    #     return ObjectDetectionInputSampleSchema(image=image)
-
     def get_output_sample_schema_class(self) -> Type[ObjectDetectionOutputSampleSchema]:
         return ObjectDetectionOutputSampleSchema
 
@@ -89,9 +83,3 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
         return super().predict_batch(
             batch=images, labels=labels, confidence_threshold=confidence_threshold
         )
-        # return [
-        #     pd.DataFrame(prediction, columns=PREDICTION_COLUMNS)
-        #     for prediction in super().predict_batch(
-        #         batch=images, labels=labels, confidence_threshold=confidence_threshold
-        #     )
-        # ]

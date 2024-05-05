@@ -28,15 +28,10 @@ class ChamferSimilarity(nn.Module):
         self.mean_axis = axes[1]
         super().__init__()
         if symmetric:
-            # self.sim_fun = lambda x: self.symmetric_chamfer_similarity(x, axes=axes)
             self.sim_fun = self.symmetric_chamfer_similarity
         else:
-            # self.sim_fun = lambda x: self.chamfer_similarity(
-            #     x, max_axis=axes[0], mean_axis=axes[1]
-            # )
             self.sim_fun = self.chamfer_similarity
 
-    # def chamfer_similarity(self, similarity, max_axis=1, mean_axis=0):
     def chamfer_similarity(self, similarity, max_axis=None, mean_axis=None):
         max_axis = max_axis or self.max_axis
         mean_axis = mean_axis or self.mean_axis
@@ -46,11 +41,9 @@ class ChamferSimilarity(nn.Module):
             min(max_axis, mean_axis)
         )
 
-    # def symmetric_chamfer_similarity(self, similarity, axes=None):
     def symmetric_chamfer_similarity(self, similarity, axes=None):
         axes = axes or self.axes
-        # if axes is None:
-        #     axes = [0, 1]
+
         return (
             self.chamfer_similarity(similarity, max_axis=axes[0], mean_axis=axes[1])
             + self.chamfer_similarity(similarity, max_axis=axes[1], mean_axis=axes[0])

@@ -50,24 +50,16 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
     def create_new_model(self):
         return VideoComparatorModel()
 
-    # def _get_input_sample_schema_from_data_sample(self, data_sample: dict):
-    #     raise VideoComparatorInputSampleSchema.parse_obj(data_sample)
-
     def _get_input_sample_schema_class(self) -> Type[VideoComparatorInputSampleSchema]:
         return VideoComparatorInputSampleSchema
 
     def build_inference_args_kwargs_from_input_samples_schema(
         self, input_samples_schema: List[VideoComparatorInputSampleSchema]
     ) -> Tuple[Tuple, dict]:
-        # sample = input_samples_schema[0]
         return (
             (),
             {
                 "prediction_type": input_samples_schema[0].prediction_type,
-                # "video": self._preprocess_video(sample.video),
-                # "other_video": self._preprocess_video(sample.other_video)
-                # if sample.other_video is not None
-                # else None,
                 "video_other_video_pairs": [
                     (
                         self._preprocess_video(input_sample_schema.video),
@@ -85,8 +77,6 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
     # pylint: disable=arguments-differ
     def inference(
         self,
-        # video: Union[str, np.ndarray],
-        # other_video: Optional[Union[str, np.ndarray]],
         video_other_video_pairs: List[
             Tuple[Union[str, np.ndarray], Optional[Union[str, np.ndarray]]]
         ],
@@ -129,10 +119,3 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
             )
 
         return super().handle(data=data, context=context)
-        # return [
-        #     {
-        #         key: array_to_string(value) if isinstance(value, np.ndarray) else value
-        #         for key, value in prediction.items()
-        #     }
-        #     for prediction in predictions
-        # ]

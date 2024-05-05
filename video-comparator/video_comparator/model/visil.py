@@ -14,7 +14,6 @@ class FeatureExtractor(nn.Module):
 
         self.cnn = models.resnet50(pretrained=True)
 
-        # self.rpool = layers.RMAC()
         self.layers = {"layer1": 28, "layer2": 14, "layer3": 6, "layer4": 3}
         if whiteninig or dims != 3840:
             self.pca = layers.PCA(dims)
@@ -26,7 +25,6 @@ class FeatureExtractor(nn.Module):
             if name not in {"avgpool", "fc", "classifier"}:
                 input_x = module(input_x).contiguous()
                 if name in self.layers:
-                    # region_vectors = self.rpool(x)
                     layer = self.layers[name]
                     region_vectors = F.max_pool2d(
                         input_x, [layer, layer], int(np.ceil(layer / 2))

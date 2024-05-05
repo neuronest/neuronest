@@ -19,83 +19,16 @@ class VideoNormalizer(nn.Module):
         return video.permute(0, 3, 1, 2)
 
 
-# class RMAC(nn.Module):
-#     def __init__(self, L=[3]):
-#         super(RMAC, self).__init__()
-#         self.L = L
-#
-#     def forward(self, x):
-#         return self.region_pooling(x, L=self.L)
-#
-#     def region_pooling(self, x, L=[3]):
-#         ovr = 0.4  # desired overlap of neighboring regions
-#         steps = torch.Tensor(
-#             [2, 3, 4, 5, 6, 7]
-#         )  # possible regions for the long dimension
-#
-#         W = x.shape[3]
-#         H = x.shape[2]
-#
-#         w = min(W, H)
-#         # w2 = math.floor(w / 2.0 - 1)
-#
-#         b = (max(H, W) - w) / (steps - 1)
-#         (tmp, idx) = torch.min(
-#             torch.abs(((w**2 - w * b) / w**2) - ovr), 0
-#         )  # steps(idx) regions for long dimension
-#
-#         # region overplus per dimension
-#         Wd = 0
-#         Hd = 0
-#         if H < W:
-#             Wd = idx.item() + 1
-#         elif H > W:
-#             Hd = idx.item() + 1
-#
-#         vecs = []
-#         for element in L:
-#             wl = math.floor(2 * w / (element + 1))
-#             wl2 = math.floor(wl / 2 - 1)
-#
-#             if element + Wd == 1:
-#                 b = 0
-#             else:
-#                 b = (W - wl) / (element + Wd - 1)
-#             cenW = (
-#                 torch.floor(wl2 + torch.tensor(range(element - 1 + Wd + 1)) * b) - wl2
-#             )  # center coordinates
-#             if element + Hd == 1:
-#                 b = 0
-#             else:
-#                 b = (H - wl) / (element + Hd - 1)
-#             cenH = (
-#                 torch.floor(wl2 + torch.tensor(range(element - 1 + Hd + 1)) * b) - wl2
-#             )  # center coordinates
-#
-#             # for i in cenH.tolist():
-#             #     for j in cenW.tolist():
-#             #         if wl == 0:
-#             #             continue
-#             #         R = x[:, :, (int(i_) + torch.Tensor(range(wl)).long()).tolist(), :]
-#             #         R = R[:, :, :, (int(j_) + torch.Tensor(range(wl)).long()).tolist()]
-#             #         vecs.append(F.max_pool2d(R, (R.size(-2), R.size(-1))))
-#         return torch.cat(vecs, dim=2)
-
-
 class PCA(nn.Module):
     def __init__(self, n_components=None):
         super().__init__()
         pretrained_url = "http://ndd.iti.gr/visil/pca_resnet50_vcdb_1M.pth"
         white = torch.hub.load_state_dict_from_url(pretrained_url)
         idx = torch.argsort(white["d"], descending=True)[:n_components]
-        # d = white["d"][idx]
-        # V = white["V"][:, idx]
-        # D = torch.diag(1.0 / torch.sqrt(d + 1e-7))
         white_d = white["d"][idx]
         white_v = white["V"][:, idx]
         one_over_white_d_square_root = torch.diag(1.0 / torch.sqrt(white_d + 1e-7))
         self.mean = nn.Parameter(white["mean"], requires_grad=False)
-        # self.DVt = nn.Parameter(torch.mm(D, V.T).T, requires_grad=False)
         self.dv_transpose = nn.Parameter(
             torch.mm(one_over_white_d_square_root, white_v.T).T, requires_grad=False
         )
