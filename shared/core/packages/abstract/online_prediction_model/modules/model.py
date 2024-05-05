@@ -11,6 +11,11 @@ from torch import nn
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 
+# workaround to avoid 403 HTTP errors from torch.hub,
+# see https://github.com/pytorch/pytorch/issues/61755
+# pylint: disable=protected-access
+torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
+
 
 class OnlinePredictionModel(ABC):
     def __init__(
