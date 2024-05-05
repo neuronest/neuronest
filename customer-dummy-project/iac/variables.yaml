@@ -11,5 +11,5 @@ other_variables:
     - PROJECT_CODE=cdp-64
     main:
     # GCP project
-    - PROJECT_ID=customer-dummy-project-main
-    - PROJECT_CODE=cdp-main
+    - PROJECT_ID=customer-dummy-project
+    - PROJECT_CODE=cdp
