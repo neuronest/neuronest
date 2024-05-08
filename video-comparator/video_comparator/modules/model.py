@@ -11,7 +11,6 @@ from core.schemas.abstract.online_prediction_model import Device
 from core.schemas.video_comparator import PredictionType
 
 from video_comparator.model.visil import ViSiL
-from video_comparator.utils import extract_features
 from video_comparator.utils import load_video as visil_video_load
 
 
@@ -31,7 +30,7 @@ class VideoComparatorModel(OnlinePredictionModel):
         if isinstance(video, np.ndarray):
             video_features = torch.from_numpy(video).to(device)
         else:
-            video_features = extract_features(
+            video_features = self._extract_features(
                 model=self._model,
                 frames=torch.from_numpy(visil_video_load(video)),
                 device=device,
@@ -42,7 +41,7 @@ class VideoComparatorModel(OnlinePredictionModel):
         if isinstance(other_video, np.ndarray):
             other_video_features = torch.from_numpy(other_video).to(device)
         else:
-            other_video_features = extract_features(
+            other_video_features = self._extract_features(
                 model=self._model,
                 frames=torch.from_numpy(visil_video_load(other_video)),
                 device=device,
@@ -52,9 +51,31 @@ class VideoComparatorModel(OnlinePredictionModel):
             query=video_features, target=other_video_features
         )
 
-    def _retrieve_remote_model(self, pretrained: bool = False):
+    @staticmethod
+    @torch.no_grad()
+    def _extract_features(
+        model: ViSiL,
+        frames: torch.Tensor,
+        batch_sz: int,
+        device: Union[int, str] = None,
+    ):
+        features = []
+        for i in range(frames.shape[0] // batch_sz + 1):
+            batch = frames[i * batch_sz : (i + 1) * batch_sz]
+            if batch.shape[0] > 0:
+                if device is not None:
+                    batch = batch.to(device).float()
+                features.append(model.extract_features(batch))
+        features = torch.cat(features, 0)
+        while features.shape[0] < 4:
+            features = torch.cat([features, features], 0)
+
+        return features
+
+    def _retrieve_remote_model(self, pretrained: bool = False) -> ViSiL:
         visil = ViSiL(pretrained=pretrained)
         visil.eval()
+
         return visil
 
     def fit(self, *args, **kwargs):
