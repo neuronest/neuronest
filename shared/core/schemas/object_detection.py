@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Dict, List, Optional, Union
 
 import numpy as np
@@ -58,7 +60,7 @@ class InputSampleSchema(online_prediction_model.InputSampleSchema):
     @classmethod
     def from_serialized_attributes_dict(
         cls, serialized_attributes_dict: Dict
-    ) -> "InputSampleSchema":
+    ) -> InputSampleSchema:
 
         return cls(
             **{
@@ -132,7 +134,7 @@ class OutputSampleSchema(online_prediction_model.OutputSampleSchema):
     @classmethod
     def from_serialized_attributes_dict(
         cls, serialized_attributes_dict: Dict
-    ) -> "OutputSampleSchema":
+    ) -> OutputSampleSchema:
 
         return cls(
             **{

@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.0.0-runtime-ubuntu20.04 as training
+FROM nvidia/cuda:12.5.0-runtime-ubuntu22.04 as training
 
 RUN apt -qqy update  \
     && DEBIAN_FRONTEND=noninteractive apt install -qqy \
@@ -17,8 +17,8 @@ RUN apt -qqy update  \
         openjdk-11-jdk \
         python3-crcmod \
         python3-pip \
-        python3.8 \
-        python3.8-dev \
+        python3.9 \
+        python3.9-dev \
         software-properties-common \
         uuid-runtime \
         wget \
@@ -30,7 +30,7 @@ ARG PACKAGE_NAME
 ARG MODEL_NAME
 ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
-ARG POETRY_VERSION="1.3.2"
+ARG POETRY_VERSION="1.8.3"
 ARG BATCH_SIZE="32"
 ARG MAX_BATCH_DELAY="50"
 

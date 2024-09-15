@@ -7,7 +7,7 @@ variable "image_name" {
 variable "webapp_service_account_name" {
   type = string
 }
-variable "firestore_results_collection" {
+variable "job_results_bucket" {
   type = string
 }
 variable "firestore_jobs_collection" {

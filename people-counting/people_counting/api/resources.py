@@ -7,7 +7,7 @@ from starlette import status
 from people_counting.api.dependencies import use_config
 from people_counting.environment_variables import (
     FIRESTORE_JOBS_COLLECTION,
-    FIRESTORE_RESULTS_COLLECTION,
+    JOB_RESULTS_BUCKET,
     VIDEOS_TO_COUNT_BUCKET,
 )
 
@@ -23,11 +23,11 @@ def get_videos_to_count_bucket() -> ResourcesOutput:
 
 
 @router.get(
-    routes.Resources.firestore_results_collection,
+    routes.Resources.job_results_bucket,
     status_code=status.HTTP_200_OK,
 )
-def get_firestore_results_collection() -> ResourcesOutput:
-    return ResourcesOutput(resource=FIRESTORE_RESULTS_COLLECTION)
+def get_job_results_bucket() -> ResourcesOutput:
+    return ResourcesOutput(resource=JOB_RESULTS_BUCKET)
 
 
 @router.get(

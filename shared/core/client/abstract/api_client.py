@@ -1,8 +1,5 @@
-from __future__ import annotations
-
 import json
 from abc import ABC
-from enum import Enum
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
@@ -11,22 +8,11 @@ import requests
 from requests import HTTPError
 
 from core.auth import generate_identity_token, get_credentials
-from core.client.base_client import BaseClient
+from core.client.abstract.base_client import BaseClient
+from core.schemas.protocol import Protocol
 
 # todo: make it configurable from inherited classes
 HTTP_CALL_MAX_RETRY_ATTEMPT = 3
-
-
-class Protocol(str, Enum):
-    HTTP = "http"
-    HTTPS = "https"
-
-    @classmethod
-    def from_ssl(cls, ssl: bool) -> Protocol:
-        if ssl is True:
-            return cls.HTTPS
-
-        return cls.HTTP
 
 
 class APIClient(BaseClient, ABC):
@@ -46,17 +32,6 @@ class APIClient(BaseClient, ABC):
         self.endpoint = f"{self.protocol_with_host}{root}"
         self.credentials = get_credentials(key_path=self.key_path)
         self._project_id = project_id
-
-    @property
-    def project_id(self) -> str:
-        # we give priority on the project_id which was passed explicitly to the
-        # instantiation rather than to the project id to which the service account
-        # of the credentials is attached
-        return (
-            self._project_id
-            if self._project_id is not None
-            else self.credentials.project_id
-        )
 
     @staticmethod
     def _build_host_with_protocol(host: str, ssl: Optional[bool]) -> str:

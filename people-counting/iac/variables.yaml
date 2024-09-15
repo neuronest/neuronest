@@ -10,11 +10,11 @@ multi_instance_resource_names:
   # service account names
   - SERVICE_ACCOUNT_NAME=webapp
   # firestore
-  - FIRESTORE_RESULTS_COLLECTION=counts
   - FIRESTORE_JOBS_COLLECTION=jobs
   # cloud run
   - CLOUD_RUN_NAME=webapp
   # storage
+  - JOB_RESULTS_BUCKET=job-results-${PROJECT_CODE}
   - VIDEOS_TO_COUNT_BUCKET=videos-to-count-${PROJECT_CODE}
   - COUNTED_VIDEOS_BUCKET=counted-videos-${PROJECT_CODE}
 other_variables:

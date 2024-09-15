@@ -1,151 +1,179 @@
 from __future__ import annotations
 
-from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from datetime import datetime
+from typing import Dict, List, Optional, Union
 
 import numpy as np
-from pydantic import BaseModel, validator
+import typing_inspect
+from pydantic import BaseModel, root_validator
 
 from core.path import GSPath
-from core.schemas.abstract import online_prediction_model
+from core.schemas.abstract.online_prediction_model import (
+    BaseInputSampleSchema,
+    BaseOutputSampleSchema,
+)
+from core.schemas.asset import VideoAsset
 from core.serialization.array import array_from_string, array_to_string
+from core.serialization.bytes import bytes_to_string, string_to_bytes
+from core.services.asset_reader import make_asset_from_bytes
+from core.utils import xor_not_none
+
+VIDEO_FORCED_EXTENSION: str = ".mp4"
 
 
-class PredictionType(str, Enum):
-    VIDEO_FEATURES = "VIDEO_FEATURES"
-    SIMILARITY = "SIMILARITY"
+class VideoComparatorInput(BaseModel):
+    videos_storage_paths: List[GSPath]
 
 
-class InputSampleSchema(BaseModel):
-    video: Union[GSPath, np.ndarray]
-    other_video: Optional[Union[GSPath, np.ndarray]] = None
-    prediction_type: PredictionType
+class VideoComparatorRealTimeInput(BaseModel):
+    video_storage_path: GSPath
+    other_video_storage_path: GSPath
 
-    class Config:
-        arbitrary_types_allowed = True
 
-    @validator("video", "other_video")
+class VideoComparatorOutput(BaseModel):
+    job_id: str
+
+
+class VideoComparatorRealTimeOutput(BaseModel):
+    similarity_score: float
+
+
+class VideoComparatorJobDocument(BaseModel):
+    job_id: str
+    job_date: datetime
+    assets_ids: List[str]
+
+
+class ResourcesOutput(BaseModel):
+    resource: str
+
+
+class InputSampleSchema(BaseInputSampleSchema):
+    video: Optional[VideoAsset] = None
+    other_video: Optional[VideoAsset] = None
+    video_embedding: Optional[np.ndarray] = None
+    other_video_embedding: Optional[np.ndarray] = None
+
+    @root_validator
     # pylint: disable=no-self-argument
-    def validate_results(cls, video):
-        if video is None:
-            return None
-        if isinstance(video, str):
-            return GSPath(video)
-        if isinstance(video, np.ndarray):
-            return video
+    def check_specified_videos_consistency(
+        cls, values: Dict[str, Union[Optional[VideoAsset], Optional[np.ndarray]]]
+    ) -> Dict[str, Union[Optional[VideoAsset], Optional[np.ndarray]]]:
+        video, other_video, video_embedding, other_video_embedding = (
+            values.get("video"),
+            values.get("other_video"),
+            values.get("video_embedding"),
+            values.get("other_video_embedding"),
+        )
 
-        raise ValueError
-
-    @validator("prediction_type")
-    # pylint: disable=no-self-argument
-    def check_consistency_between_prediction_type_and_paths(
-        cls, prediction_type, values
-    ):
-        video = values.get("video")
-        other_video = values.get("other_video")
-        if prediction_type == PredictionType.SIMILARITY and (
-            video is None or other_video is None
-        ):
+        if xor_not_none(video, video_embedding) is False:
             raise ValueError(
-                "Expected both video paths to be not None "
-                "for the prediction type 'similarity'"
+                "Either 'video' or 'video_embedding' must be specified, and not both"
             )
-        if prediction_type == PredictionType.VIDEO_FEATURES and (
-            other_video is not None
-        ):
-            raise ValueError(
-                "Expected only one video_path for the prediction type 'video_features'"
-            )
-        return prediction_type
 
-    def serialized_attributes_dict(self) -> Dict:
+        if xor_not_none(other_video, other_video_embedding) is False:
+            raise ValueError(
+                "Either 'other_video' or 'other_video_embedding' must be specified, "
+                "and not both"
+            )
+
+        return values
+
+    def serialize(self) -> Dict[str, Optional[str]]:
         serialized_attributes_dict = {}
+
         for key, value in self.dict().items():
+            if value is None:
+                serialized_attributes_dict[key] = None
+                continue
             if isinstance(value, np.ndarray):
                 serialized_attributes_dict[key] = array_to_string(value)
-            elif isinstance(value, GSPath):
-                serialized_attributes_dict[key] = value
-            elif isinstance(value, Enum):
-                serialized_attributes_dict[key] = value.value
-            elif value is None:
-                serialized_attributes_dict[key] = None
-            else:
-                raise NotImplementedError
+                continue
+            if isinstance(value, VideoAsset):
+                serialized_attributes_dict[key] = bytes_to_string(
+                    value.to_bytes(forced_extension=VIDEO_FORCED_EXTENSION)
+                )
+
+            raise NotImplementedError(f"Type of value not supported: {type(value)}")
 
         return serialized_attributes_dict
 
     @classmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict
-    ) -> "InputSampleSchema":
+    def deserialize(
+        cls, serialized_attributes: Dict[str, Optional[str]]
+    ) -> InputSampleSchema:
         deserialized_attributes_dict = {}
-        for key, value in serialized_attributes_dict.items():
+
+        for key, value in serialized_attributes.items():
+            fields_with_types = cls.__fields__
+
+            if key not in fields_with_types:
+                raise ValueError(f"Unexpected field '{key}'")
+
             if value is None:
                 deserialized_attributes_dict[key] = None
                 continue
-            if key not in ("video", "other_video"):
-                deserialized_attributes_dict[key] = value
+            if np.ndarray in typing_inspect.get_args(
+                fields_with_types[key].type_, evaluate=True
+            ):
+                deserialized_attributes_dict[key] = array_from_string(value)
                 continue
-            if GSPath.is_valid(value):
-                deserialized_attributes_dict[key] = GSPath(value)
+            if VideoAsset in typing_inspect.get_args(
+                fields_with_types[key].type_, evaluate=True
+            ):
+                deserialized_attributes_dict[key] = make_asset_from_bytes(
+                    string_to_bytes(value), extension=VIDEO_FORCED_EXTENSION
+                )
                 continue
-            deserialized_attributes_dict[key] = array_from_string(value)
+
+            raise NotImplementedError(f"Type of value not supported: {type(value)}")
 
         return cls(**deserialized_attributes_dict)
 
 
-class InputSchema(online_prediction_model.InputSchema):
-    samples: List[InputSampleSchema]
+class OutputSampleSchema(BaseOutputSampleSchema):
+    video_embedding: np.ndarray
+    other_video_embedding: np.ndarray
+    similarity_results: float
 
-
-def is_castable_to_float(element: Any):
-    try:
-        # Attempt to cast the element to float
-        float(element)
-        # If successful, the element is castable to float
-        return True
-    except (ValueError, TypeError):
-        return False
-
-
-class OutputSampleSchema(online_prediction_model.OutputSampleSchema):
-    results: Union[float, np.ndarray]
-
-    @validator("results")
-    # pylint: disable=no-self-argument
-    def validate_results(cls, results):
-        if isinstance(results, (float, np.ndarray)):
-            return results
-
-        raise ValueError(
-            f"The expected return type is a float or a numpy, received a {cls}"
-        )
-
-    def serialized_attributes_dict(self) -> Dict:
+    def serialize(self) -> Dict[str, Optional[str]]:
         serialized_attributes_dict = {}
+
         for key, value in self.dict().items():
-            if key != "results":
+            if isinstance(value, float):
                 serialized_attributes_dict[key] = value
                 continue
-            if is_castable_to_float(value):
-                serialized_attributes_dict[key] = float(value)
+            if isinstance(value, np.ndarray):
+                serialized_attributes_dict[key] = array_to_string(value)
                 continue
-            serialized_attributes_dict[key] = array_to_string(value)
+
+            raise NotImplementedError(f"Type of value not supported: {type(value)}")
 
         return serialized_attributes_dict
 
     @classmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict
-    ) -> "OutputSampleSchema":
+    def deserialize(
+        cls, serialized_attributes: Dict[str, Optional[str]]
+    ) -> OutputSampleSchema:
         deserialized_attributes_dict = {}
-        for key, value in serialized_attributes_dict.items():
-            if key != "results":
-                deserialized_attributes_dict[key] = value
-                continue
-            if is_castable_to_float(value):
+
+        for key, value in serialized_attributes.items():
+            fields_with_types = cls.__fields__
+
+            if key not in fields_with_types:
+                raise ValueError(f"Unexpected field '{key}'")
+
+            if float in typing_inspect.get_args(
+                fields_with_types[key].type_, evaluate=True
+            ):
                 deserialized_attributes_dict[key] = float(value)
                 continue
-            deserialized_attributes_dict[key] = array_from_string(value)
+            if np.ndarray in typing_inspect.get_args(
+                fields_with_types[key].type_, evaluate=True
+            ):
+                deserialized_attributes_dict[key] = array_from_string(value)
+                continue
+
+            raise NotImplementedError(f"Type of value not supported: {type(value)}")
 
         return cls(**deserialized_attributes_dict)

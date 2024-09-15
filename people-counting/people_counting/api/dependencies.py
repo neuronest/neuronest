@@ -1,7 +1,7 @@
 from functools import lru_cache
 
+from core.client.model_client import ObjectDetectionClient
 from core.client.model_instantiator import ModelInstantiatorClient
-from core.client.object_detection import ObjectDetectionClient
 from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient

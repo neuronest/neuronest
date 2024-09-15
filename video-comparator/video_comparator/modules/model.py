@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import torch
@@ -8,10 +8,9 @@ from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
 from core.schemas.abstract.online_prediction_model import Device
-from core.schemas.video_comparator import PredictionType
+from core.schemas.video_comparator import InputSampleSchema
 
 from video_comparator.model.visil import ViSiL
-from video_comparator.utils import load_video as visil_video_load
 
 
 class VideoComparatorModel(OnlinePredictionModel):
@@ -21,35 +20,68 @@ class VideoComparatorModel(OnlinePredictionModel):
     # pylint: disable=arguments-differ
     def __call__(
         self,
-        video: Union[str, np.ndarray],
-        other_video: Optional[Union[str, np.ndarray]] = None,
-        prediction_type: str = PredictionType.SIMILARITY,
-        device: Device = Device.CUDA,
-        batch_size: int = 128,
-    ) -> Union[torch.Tensor, float]:
-        if isinstance(video, np.ndarray):
-            video_features = torch.from_numpy(video).to(device)
-        else:
-            video_features = self._extract_features(
+        *,
+        sample: InputSampleSchema,
+        device: Device,
+        batch_size: int,
+        fps: int,
+        image_size: int,
+        center_crop_size: int,
+    ) -> List[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+        video_embedding = (
+            torch.from_numpy(sample.video_embedding).to(device)
+            if sample.video_embedding is not None
+            else self._extract_features(
                 model=self._model,
-                frames=torch.from_numpy(visil_video_load(video)),
+                frames=self._center_crop(
+                    frames=torch.from_numpy(sample.video.as_array_content),
+                    desired_size=center_crop_size,
+                ),
                 device=device,
                 batch_sz=batch_size,
             )
-        if prediction_type == PredictionType.VIDEO_FEATURES:
-            return video_features.cpu().numpy()
-        if isinstance(other_video, np.ndarray):
-            other_video_features = torch.from_numpy(other_video).to(device)
-        else:
-            other_video_features = self._extract_features(
-                model=self._model,
-                frames=torch.from_numpy(visil_video_load(other_video)),
-                device=device,
-                batch_sz=batch_size,
-            )
-        return self._model.calculate_video_similarity(
-            query=video_features, target=other_video_features
         )
+
+        other_video_embedding = (
+            torch.from_numpy(sample.other_video_embedding).to(device)
+            if sample.other_video_embedding is not None
+            else self._extract_features(
+                model=self._model,
+                frames=self._center_crop(
+                    frames=torch.from_numpy(sample.other_video.as_array_content),
+                    desired_size=center_crop_size,
+                ),
+                device=device,
+                batch_sz=batch_size,
+            )
+        )
+
+        return [
+            (
+                video_embedding.to(Device.CPU),
+                other_video_embedding.to(Device.CPU),
+                self._model.calculate_video_similarity(
+                    query=video_embedding,
+                    target=other_video_embedding,
+                ).to(Device.CPU),
+            )
+        ]
+
+    @staticmethod
+    @torch.no_grad()
+    def _center_crop(frames: torch.Tensor, desired_size: int) -> torch.Tensor:
+        if frames.ndim == 3:
+            old_size = frames.shape[:2]
+            top = int(np.maximum(0, (old_size[0] - desired_size) / 2))
+            left = int(np.maximum(0, (old_size[1] - desired_size) / 2))
+
+            return frames[top : top + desired_size, left : left + desired_size, :]
+
+        old_size = frames.shape[1:3]
+        top = int(np.maximum(0, (old_size[0] - desired_size) / 2))
+        left = int(np.maximum(0, (old_size[1] - desired_size) / 2))
+
+        return frames[:, top : top + desired_size, left : left + desired_size, :]
 
     @staticmethod
     @torch.no_grad()
@@ -72,12 +104,11 @@ class VideoComparatorModel(OnlinePredictionModel):
 
         return features
 
-    def _retrieve_remote_model(self, pretrained: bool = False) -> ViSiL:
+    def retrieve_remote_model(self, pretrained: bool = False) -> ViSiL:
         visil = ViSiL(pretrained=pretrained)
         visil.eval()
 
         return visil
 
     def fit(self, *args, **kwargs):
-        # pylint: disable=attribute-defined-outside-init
-        self._model = self._retrieve_remote_model(pretrained=True)
+        self._model = self.retrieve_remote_model(pretrained=True)

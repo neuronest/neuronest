@@ -1,5 +1,5 @@
 import numpy as np
-from core.client.object_detection import ObjectDetectionClient
+from core.client.model_client import ObjectDetectionClient
 
 
 # pylint: disable=unused-argument

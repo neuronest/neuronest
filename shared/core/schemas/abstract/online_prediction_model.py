@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, TypeVar
 
 from pydantic import BaseModel
 
@@ -10,39 +12,33 @@ class Device(str, Enum):
     CUDA = "cuda"
 
 
-class InputSampleSchema(BaseModel, ABC):
+InputSampleSchema = TypeVar("InputSampleSchema", bound="BaseInputSampleSchema")
+OutputSampleSchema = TypeVar("OutputSampleSchema", bound="BaseOutputSampleSchema")
+
+
+class SchemaMixin(BaseModel, ABC):
     class Config:
         arbitrary_types_allowed = True
 
     @abstractmethod
-    def serialized_attributes_dict(self) -> Dict[str, Any]:
+    def serialize(self) -> Dict[str, Any]:
         raise NotImplementedError
 
     @classmethod
     @abstractmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict[str, Any]
-    ) -> "InputSampleSchema":
+    def deserialize(cls, serialized_attributes: Dict[str, Any]) -> SchemaMixin:
         raise NotImplementedError
 
 
-class InputSchema(BaseModel):
-    samples: List[InputSampleSchema]
-
-
-class OutputSampleSchema(BaseModel):
-    results: Any
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @abstractmethod
-    def serialized_attributes_dict(self) -> Dict[str, Any]:
-        raise NotImplementedError
-
+class BaseInputSampleSchema(SchemaMixin, ABC):
     @classmethod
     @abstractmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict[str, Any]
-    ) -> "OutputSampleSchema":
+    def deserialize(cls, serialized_attributes: Dict[str, Any]) -> InputSampleSchema:
+        raise NotImplementedError
+
+
+class BaseOutputSampleSchema(SchemaMixin, ABC):
+    @classmethod
+    @abstractmethod
+    def deserialize(cls, serialized_attributes: Dict[str, Any]) -> OutputSampleSchema:
         raise NotImplementedError

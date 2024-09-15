@@ -4,7 +4,7 @@ import tempfile
 from typing import Dict, List, Optional
 
 import dlib
-from core.client.object_detection import ObjectDetectionClient
+from core.client.model_client import ObjectDetectionClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.schemas.asset import VideoAsset

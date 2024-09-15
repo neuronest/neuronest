@@ -1,11 +1,17 @@
 import logging
-from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel
 
 from core.path import GSPath
+from core.schemas.abstract.prediction_api_client import (
+    BaseInput,
+    BaseOutput,
+    BaseRealTimeIntput,
+    JobDocument,
+    RealTimeOutput,
+)
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
@@ -22,22 +28,20 @@ class Detection(BaseModel):
     direction: Direction
 
 
-class PeopleCounterInput(BaseModel):
-    videos_storage_paths: List[GSPath]
+class PeopleCounterInput(BaseInput):
     save_counted_videos: bool = False
 
 
-class PeopleCounterRealTimeInput(BaseModel):
-    video_storage_path: GSPath
+class PeopleCounterRealTimeInput(BaseRealTimeIntput):
     save_counted_video: bool = False
     enable_video_showing: bool = False
 
 
-class PeopleCounterOutput(BaseModel):
-    job_id: str
+class PeopleCounterOutput(BaseOutput):
+    pass
 
 
-class PeopleCounterRealTimeOutput(BaseModel):
+class PeopleCounterRealTimeOutput(RealTimeOutput):
     detections: List[Detection]
     counted_video_storage_path: Optional[GSPath] = None
 
@@ -46,10 +50,8 @@ class ResourcesOutput(BaseModel):
     resource: str
 
 
-class PeopleCounterJobDocument(BaseModel):
-    job_id: str
-    job_date: datetime
-    assets_ids: List[str]
+class PeopleCounterJobDocument(JobDocument):
+    one_result_per_job: bool = True
 
 
 class PeopleCounterAssetResultsDocument(BaseModel):

@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 
 from google.cloud import logging
 
-from core.client.base_client import BaseClient
+from core.client.abstract.base_client import BaseClient
 
 
 class LoggerName(str, Enum):

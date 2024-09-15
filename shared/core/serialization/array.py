@@ -1,7 +1,8 @@
-import base64
 from io import BytesIO
 
 import numpy as np
+
+from core.serialization.bytes import bytes_to_string, string_to_bytes
 
 
 def array_to_binary(array: np.ndarray) -> bytes:
@@ -14,7 +15,7 @@ def array_to_binary(array: np.ndarray) -> bytes:
 
 
 def array_to_string(array: np.ndarray, encoding: str = "utf-8") -> str:
-    return base64.b64encode(array_to_binary(array=array)).decode(encoding)
+    return bytes_to_string(array_to_binary(array=array), encoding=encoding)
 
 
 def array_from_binary(binary_array: bytes, allow_pickle: bool = True) -> np.ndarray:
@@ -28,6 +29,6 @@ def array_from_string(
     encoded_array: str, encoding: str = "utf-8", allow_pickle: bool = True
 ) -> np.ndarray:
     return array_from_binary(
-        binary_array=base64.b64decode(encoded_array.encode(encoding)),
+        binary_array=string_to_bytes(encoded_array, encoding=encoding),
         allow_pickle=allow_pickle,
     )

@@ -1,84 +1,265 @@
-from typing import Iterable, Type, Union
+import datetime
+import json
+import time
+from typing import List, Optional
 
-import numpy as np
-
-from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
+from core.client.abstract.api_client import APIClient
+from core.exceptions import PredictionsNotFoundError
+from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
-from core.path import GSPath
-from core.schemas.video_comparator import (
-    InputSampleSchema as VideoComparatorInputSampleSchema,
+from core.hashing import combine_hashes
+from core.path import GSPath, LocalPath
+from core.routes.video_comparator import routes
+from core.schemas.people_counting import (
+    PeopleCounterAssetResultsDocument,
+    PeopleCounterInput,
+    PeopleCounterJobDocument,
+    PeopleCounterJobResultsDocument,
+    PeopleCounterOutput,
+    PeopleCounterRealTimeInput,
+    PeopleCounterRealTimeOutput,
+    ResourcesOutput,
 )
-from core.schemas.video_comparator import (
-    OutputSampleSchema as VideoComparatorOutputSampleSchema,
-)
-from core.schemas.video_comparator import PredictionType
-from core.tools import generate_file_id
-
-Video = Union[str, np.ndarray]
-Sample = Union[Video, Iterable[Video]]
+from core.tools import generate_file_id, get_chunks_from_iterable
 
 
-class VideoComparatorClient(OnlinePredictionModelClient):
-    VIDEOS_TO_COMPARE_BASE_BUCKET_NAME = "vc-videos-to-compare"
-    MAX_BATCH_SIZE = 1
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class VideoComparatorClient(APIClient):
+    def __init__(
+        self,
+        host: str,
+        key_path: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ):
+        super().__init__(
+            host=host,
+            key_path=key_path,
+            root=routes.root,
+            project_id=project_id,
+        )
         self.storage_client = StorageClient(
-            key_path=self.key_path, project_id=self.project_id
+            key_path=key_path, project_id=self.project_id
+        )
+        self.firestore_client = FirestoreClient(
+            key_path=key_path, project_id=self.project_id
         )
 
-    @property
-    def videos_to_compare_bucket(self) -> str:
-        return f"{self.VIDEOS_TO_COMPARE_BASE_BUCKET_NAME}-{self.project_id}"
-
-    def _upload_video_to_storage(self, video_path: str) -> GSPath:
-        bucket = self.storage_client.client.bucket(self.videos_to_compare_bucket)
-
-        if not bucket.exists():
-            bucket.create()
-
-        video_blob_name = generate_file_id(file_path=video_path)
-
-        self.storage_client.upload_blob(
-            source_file_name=video_path,
-            bucket_name=bucket.name,
-            blob_name=video_blob_name,
-        )
-
-        return GSPath.from_bucket_and_blob_names(
-            bucket_name=bucket.name, blob_name=video_blob_name
-        )
-
-    def _preprocess_batch_sample_video(self, batch_sample_video: Video):
-        if isinstance(batch_sample_video, str):
-            return self._upload_video_to_storage(GSPath(batch_sample_video))
-        if isinstance(batch_sample_video, np.ndarray):
-            return batch_sample_video
-
-        raise ValueError
-
-    def get_output_sample_schema_class(self) -> Type[VideoComparatorOutputSampleSchema]:
-        return VideoComparatorOutputSampleSchema
-
-    # pylint: disable=arguments-differ
-    def _batch_sample_to_input_sample_schema(
-        self, batch_sample: Sample
-    ) -> VideoComparatorInputSampleSchema:
-        if isinstance(batch_sample, (np.ndarray, str)):
-            return VideoComparatorInputSampleSchema(
-                video=self._preprocess_batch_sample_video(batch_sample),
-                other_video=None,
-                prediction_type=PredictionType.VIDEO_FEATURES,
+    def _get_firestore_jobs_collection(self) -> str:
+        return ResourcesOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.Resources.prefix}"
+                    f"{routes.Resources.firestore_jobs_collection}",
+                    verb="get",
+                ).text
             )
-        if not isinstance(batch_sample, Iterable):
-            raise ValueError
-        if not len(batch_sample) == 2:
-            raise ValueError
-        video, other_video = tuple(batch_sample)
+        ).resource
 
-        return VideoComparatorInputSampleSchema(
-            video=self._preprocess_batch_sample_video(video),
-            other_video=self._preprocess_batch_sample_video(other_video),
-            prediction_type=PredictionType.SIMILARITY,
+    def _get_videos_to_count_bucket(self) -> str:
+        return ResourcesOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.Resources.prefix}"
+                    f"{routes.Resources.videos_to_count_bucket}",
+                    verb="get",
+                ).text
+            )
+        ).resource
+
+    def _get_maximum_videos_number(self) -> int:
+        return int(
+            ResourcesOutput(
+                **json.loads(
+                    self.call(
+                        resource=f"/{routes.Resources.prefix}"
+                        f"{routes.Resources.maximum_videos_number}",
+                        verb="get",
+                    ).text
+                )
+            ).resource
+        )
+
+    def _get_predictions(
+        self,
+        job_id: str,
+        asset_id: str,
+        wait_if_not_existing: bool,
+        timeout: int,
+        retry_wait_time: int = 60,
+        total_waited_time: int = 0,
+    ) -> PeopleCounterAssetResultsDocument:
+        results_document = self.firestore_client.get_document(
+            collection_name=self._get_job_results_bucket(),
+            document_id=make_results_document_id(job_id=job_id, asset_id=asset_id),
+        )
+
+        if results_document is not None:
+            return PeopleCounterAssetResultsDocument.parse_obj(results_document)
+
+        if wait_if_not_existing is False:
+            raise RuntimeError(
+                f"No predictions found for job_id={job_id} and asset_id={asset_id}"
+            )
+
+        if total_waited_time + retry_wait_time > timeout:
+            raise TimeoutError(
+                f"Failed to retrieve predictions for job_id={job_id} "
+                f"and asset_id={asset_id}, giving up after {timeout // 60} "
+                f"minutes of trying"
+            )
+
+        time.sleep(retry_wait_time)
+        total_waited_time += retry_wait_time
+
+        return self._get_predictions(
+            job_id=job_id,
+            asset_id=asset_id,
+            wait_if_not_existing=wait_if_not_existing,
+            total_waited_time=total_waited_time,
+            timeout=timeout,
+            retry_wait_time=retry_wait_time,
+        )
+
+    def _chunk_count_people(
+        self,
+        videos_paths: List[str],
+        save_counted_videos_in_storage: bool,
+    ) -> PeopleCounterOutput:
+        uploaded_videos_storage_paths = [
+            self._upload_video_to_storage(
+                video_path=LocalPath(video_path),
+                destination_bucket=self._get_videos_to_count_bucket(),
+            )
+            for video_path in videos_paths
+        ]
+
+        return PeopleCounterOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.PeopleCounter.prefix}"
+                    f"{routes.PeopleCounter.count_people}",
+                    verb="post",
+                    payload=PeopleCounterInput(
+                        videos_storage_paths=uploaded_videos_storage_paths,
+                        save_counted_videos=save_counted_videos_in_storage,
+                    ).dict(),
+                ).text
+            )
+        )
+
+    def _count_people(
+        self,
+        videos_paths: List[str],
+        save_counted_videos_in_storage: bool = False,
+    ) -> List[PeopleCounterOutput]:
+        return [
+            self._chunk_count_people(
+                videos_paths=chunk_videos_paths,
+                save_counted_videos_in_storage=save_counted_videos_in_storage,
+            )
+            for chunk_videos_paths in get_chunks_from_iterable(
+                iterable=videos_paths, chunk_size=self._get_maximum_videos_number()
+            )
+        ]
+
+    def get_predictions_from_job_id(
+        self,
+        job_id: str,
+        wait_if_not_existing: bool = False,
+        job_timeout: int = 2700,
+    ) -> PeopleCounterJobResultsDocument:
+        raw_job_document = self.firestore_client.get_document(
+            collection_name=self._get_firestore_jobs_collection(),
+            document_id=job_id,
+        )
+
+        if raw_job_document is None:
+            raise PredictionsNotFoundError(f"No predictions found for job_id={job_id}")
+
+        job_document = PeopleCounterJobDocument.parse_obj(raw_job_document)
+        job_time_delta = max(
+            (
+                job_timeout
+                - (datetime.datetime.utcnow() - job_document.job_date).seconds
+            ),
+            0,
+        )
+
+        try:
+            return PeopleCounterJobResultsDocument(
+                results=[
+                    self._get_predictions(
+                        job_id=job_id,
+                        asset_id=asset_id,
+                        wait_if_not_existing=wait_if_not_existing,
+                        timeout=job_time_delta,
+                    )
+                    for asset_id in job_document.assets_ids
+                ]
+            )
+        except TimeoutError as timeout_error:
+            raise TimeoutError(
+                f"At least one asset results could not be retrieved in time "
+                f"(targeted job UTC date: {job_document.job_date})"
+            ) from timeout_error
+
+    def count_people_async(
+        self,
+        videos_paths: List[str],
+        save_counted_videos_in_storage: bool = False,
+    ) -> List[PeopleCounterOutput]:
+        return self._count_people(
+            videos_paths=videos_paths,
+            save_counted_videos_in_storage=save_counted_videos_in_storage,
+        )
+
+    def count_people_sync(
+        self,
+        videos_paths: List[str],
+        save_counted_videos_in_storage: bool = False,
+    ) -> List[PeopleCounterAssetResultsDocument]:
+        people_counter_outputs = self._count_people(
+            videos_paths=videos_paths,
+            save_counted_videos_in_storage=save_counted_videos_in_storage,
+        )
+
+        people_counter_job_results_documents = [
+            self.get_predictions_from_job_id(
+                job_id=people_counter_output.job_id, wait_if_not_existing=True
+            )
+            for people_counter_output in people_counter_outputs
+        ]
+
+        return [
+            asset_results
+            for people_counter_job_results_document in (
+                people_counter_job_results_documents
+            )
+            for asset_results in people_counter_job_results_document.results
+        ]
+
+    def compare_videos_real_time(
+        self,
+        video_path: str,
+        other_video_path: str,
+        timeout: int = 2700,
+    ) -> PeopleCounterRealTimeOutput:
+        uploaded_video_storage_path = self._upload_video_to_storage(
+            video_path=LocalPath(video_path),
+            destination_bucket=self._get_videos_to_count_bucket(),
+        )
+
+        return PeopleCounterRealTimeOutput(
+            **json.loads(
+                self.call(
+                    resource=f"/{routes.PeopleCounter.prefix}"
+                    f"{routes.PeopleCounter.count_people_real_time}",
+                    verb="post",
+                    payload=PeopleCounterRealTimeInput(
+                        video_storage_path=uploaded_video_storage_path,
+                        save_counted_video=save_counted_video_in_storage,
+                        enable_video_showing=enable_video_showing,
+                    ).dict(),
+                    timeout=timeout,
+                ).text
+            )
         )

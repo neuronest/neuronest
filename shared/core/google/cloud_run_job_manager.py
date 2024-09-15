@@ -15,7 +15,7 @@ from google.cloud.run_v2 import (
     types,
 )
 
-from core.client.base_client import BaseClient
+from core.client.abstract.base_client import BaseClient
 from core.schemas.google.cloud_run import ExecutionSchema, JobConfig, JobSchema
 from core.serialization.protobuf import protobuf_to_dict
 from core.utils import hyphen_to_underscore

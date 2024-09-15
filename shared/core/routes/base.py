@@ -20,3 +20,11 @@ class _BaseRoutes(ABC, BaseModel):
         values["root"] = f"/{values['service_name']}{values['prefix']}"
 
         return values
+
+
+class BaseResources(ABC):
+    prefix = "resources"
+    firestore_jobs_collection: str = "/firestore_jobs_collection"
+    maximum_elements_number: str = "/maximum_videos_number"
+    elements_to_predict_bucket: str = "/job_results_bucket"
+    job_results_bucket: str = "/job_results_bucket"

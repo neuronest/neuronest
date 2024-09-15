@@ -10,7 +10,7 @@ from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform import Endpoint
 from google.cloud.aiplatform_v1.types import training_pipeline
 
-from core.client.base_client import BaseClient
+from core.client.abstract.base_client import BaseClient
 from core.exceptions import AlreadyExistingError
 from core.google.utils import get_service_account_email
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
@@ -45,6 +45,12 @@ class VertexAIManager(BaseClient):
             raise ValueError("Incorrect model_name")
 
         return f"{model_name}_endpoint"
+
+    @staticmethod
+    def calculate_prediction_payload_size(
+        instances: List[Dict], parameters: Optional[Dict] = None
+    ) -> int:
+        return len(json.dumps({"instances": instances, "parameters": parameters or {}}))
 
     def _get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
         models = aiplatform.models.Model.list(
@@ -156,17 +162,6 @@ class VertexAIManager(BaseClient):
             logger.warning(f"No endpoint named '{name}' has been found")
 
         endpoint.delete(force=undeploy_models)
-
-    def calculate_prediction_payload_size(
-        self, instances: List[Dict], parameters: Optional[Dict] = None
-    ) -> int:
-        # we use the google.cloud.aiplatform.models.Endpoint.predict function to best
-        # approximate the structure passed to the endpoint and its weight in bytes
-
-        if parameters is None:
-            parameters = {}
-
-        return len(json.dumps({"instances": instances, "parameters": parameters}))
 
     def upload_model(
         self,

@@ -2,7 +2,7 @@ import os
 from typing import List, Tuple
 
 import pytest
-from core.client.video_comparator import VideoComparatorClient
+from core.client.model_client.video_comparator import VideoComparatorClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 

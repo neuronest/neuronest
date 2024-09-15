@@ -1,10 +1,10 @@
-FROM python:3.8.14-buster
+FROM python:3.9.13-buster
 
-RUN apt -qqy update && apt install -qqy cmake
+RUN apt -qqy update && apt install -qqy cmake ffmpeg python3-opencv
 
+ARG REPOSITORY_NAME
+ARG PACKAGE_NAME
 ARG ROOT_DIRECTORY="/app"
-ARG REPOSITORY_NAME="model-instantiator"
-ARG PACKAGE_NAME="model_instantiator"
 ARG SHARED_REPOSITORY_NAME="shared"
 ARG PORT=80
 ARG WORKERS=4

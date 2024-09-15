@@ -1,0 +1,71 @@
+from functools import lru_cache
+
+from core.client.model_client.video_comparator import VideoComparatorModelClient
+from core.client.model_instantiator import ModelInstantiatorClient
+from core.google.cloud_run_job_manager import CloudRunJobManager
+from core.google.firestore_client import FirestoreClient
+from core.google.storage_client import StorageClient
+from core.google.vertex_ai_manager import VertexAIManager
+
+from video_comparator.config import Config, cfg
+from video_comparator.environment_variables import (
+    FIRESTORE_JOBS_COLLECTION,
+    GOOGLE_APPLICATION_CREDENTIALS,
+    MODEL_INSTANTIATOR_HOST,
+    MODEL_NAME,
+    PROJECT_ID,
+    REGION,
+    VIDEOS_TO_COMPARE_BUCKET,
+)
+
+
+@lru_cache
+def use_config() -> Config:
+    return cfg
+
+
+@lru_cache
+def use_storage_client() -> StorageClient:
+    return StorageClient(key_path=GOOGLE_APPLICATION_CREDENTIALS, project_id=PROJECT_ID)
+
+
+@lru_cache
+def use_firestore_client() -> FirestoreClient:
+    return FirestoreClient(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS, project_id=PROJECT_ID
+    )
+
+
+@lru_cache
+def use_firestore_jobs_collection() -> str:
+    return FIRESTORE_JOBS_COLLECTION
+
+
+@lru_cache
+def use_videos_to_compare_bucket() -> str:
+    return VIDEOS_TO_COMPARE_BUCKET
+
+
+@lru_cache
+def use_cloud_run_job_manager() -> CloudRunJobManager:
+    return CloudRunJobManager(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
+        project_id=PROJECT_ID,
+        location=REGION,
+    )
+
+
+@lru_cache
+def use_video_comparator_model_client() -> VideoComparatorModelClient:
+    return VideoComparatorModelClient(
+        vertex_ai_manager=VertexAIManager(
+            key_path=GOOGLE_APPLICATION_CREDENTIALS,
+            location=REGION,
+            project_id=PROJECT_ID,
+        ),
+        model_instantiator_client=ModelInstantiatorClient(
+            key_path=GOOGLE_APPLICATION_CREDENTIALS,
+            host=MODEL_INSTANTIATOR_HOST,
+        ),
+        model_name=MODEL_NAME,
+    )

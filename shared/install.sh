@@ -7,9 +7,9 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 RED='\033[0;31m'
 
-MIN_REQUIRED_PYTHON_VERSION=3.8.0
-MAX_EXCLUDED_REQUIRED_PYTHON_VERSION=3.9.0
-PATH_TO_PYTHON=$(which python3)
+MIN_REQUIRED_PYTHON_VERSION=3.9.0
+MAX_EXCLUDED_REQUIRED_PYTHON_VERSION=3.10.0
+PATH_TO_PYTHON=$(which python3.9)
 
 function green {
   printf "${GREEN}$@${NC}\n"
@@ -81,7 +81,7 @@ delete_poetry_env
 
 poetry env use $PATH_TO_PYTHON
 poetry run pip install --upgrade pip
-poetry install --with test
+poetry install -E dev
 
 ENV=$(poetry env info -p)
 ENV_BIN=$ENV/bin

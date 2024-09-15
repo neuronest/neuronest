@@ -34,8 +34,8 @@ resource "google_cloud_run_service" "people_counting_api" {
           value = var.counted_videos_bucket
         }
         env {
-          name  = "FIRESTORE_RESULTS_COLLECTION"
-          value = var.firestore_results_collection
+          name  = "JOB_RESULTS_BUCKET"
+          value = var.job_results_bucket
         }
         env {
           name  = "FIRESTORE_JOBS_COLLECTION"

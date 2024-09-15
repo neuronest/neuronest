@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import List, Optional
 
@@ -77,7 +79,7 @@ class Config(BaseModel):
     bigquery: Bigquery
 
     @classmethod
-    def read_yaml_file(cls, file_path: str):
+    def read_yaml_file(cls, file_path: str) -> Config:
         return cls.parse_obj(
             OmegaConf.to_container(cfg=OmegaConf.load(file_path), resolve=True)
         )

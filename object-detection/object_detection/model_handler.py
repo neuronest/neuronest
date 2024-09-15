@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
+    INPUT_SCHEMA = ObjectDetectionInputSampleSchema
+
     def __init__(
         self,
         *args,
@@ -76,9 +78,6 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
             model_type=self.inner_model_type,
             model_name=self.inner_model_name,
         )
-
-    def _get_input_sample_schema_class(self):
-        return ObjectDetectionInputSampleSchema
 
     def build_inference_args_kwargs_from_input_samples_schema(
         self, input_samples_schema: List[ObjectDetectionInputSampleSchema]

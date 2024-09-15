@@ -192,10 +192,10 @@ class VariableLine:
 
         Example:
             >>> var_line = VariableLine(
-            >>>                     "WEBAPP_SERVICE_ACCOUNT_EMAIL="
-            >>>                     "${WEBAPP_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam"
-            >>>                     ".gserviceaccount.com"
-            >>>                )
+            >>>     "WEBAPP_SERVICE_ACCOUNT_EMAIL="
+            >>>     "${WEBAPP_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam"
+            >>>      ".gserviceaccount.com"
+            >>> )
             >>> var_line.replace_variable_inside_value(
             ...     variable="WEBAPP_SERVICE_ACCOUNT_NAME",
             ...     other_variable="PEOPLE_COUNTING_WEBAPP_SERVICE_ACCOUNT_NAME",

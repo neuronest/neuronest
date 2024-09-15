@@ -1,6 +1,6 @@
 import pytest
+from core.client.model_client.video_comparator import VideoComparatorClient
 from core.client.model_instantiator import ModelInstantiatorClient
-from core.client.video_comparator import VideoComparatorClient
 from core.google.vertex_ai_manager import VertexAIManager
 from tests.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,

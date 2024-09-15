@@ -1,14 +1,11 @@
-from core.routes.base import _BaseRoutes
+from core.routes.base import BaseResources, _BaseRoutes
 
 
 class _PeopleCountingRoutes(_BaseRoutes):
     service_name: str = "people_counting"
 
-    class Resources:
-        prefix = "resources"
+    class Resources(BaseResources):
         videos_to_count_bucket: str = "/videos_to_count_bucket"
-        firestore_results_collection: str = "/firestore_results_collection"
-        firestore_jobs_collection: str = "/firestore_jobs_collection"
         maximum_videos_number: str = "/maximum_videos_number"
 
     class PeopleCounter:

@@ -2,9 +2,24 @@ module "online_prediction_model" {
   source               = "../online-prediction-model"
   project_id           = var.project_id
   region               = var.region
+
   service_account_name = var.online_prediction_model_service_account_name
   models_bucket        = var.online_prediction_model_models_bucket
   model_name           = var.online_prediction_model_model_name
+
+  cloud_run_name       = var.online_prediction_model_cloud_run_name
+  cloud_run_memory     = var.online_prediction_model_cloud_run_memory
+  cloud_run_cpu        = var.online_prediction_model_cloud_run_cpu
+  cloud_run_image_name = var.online_prediction_model_cloud_run_image_name
+  cloud_run_min_scale  = var.online_prediction_model_cloud_run_min_scale
+  cloud_run_max_scale  = var.online_prediction_model_cloud_run_max_scale
+
+  cloud_run_env_vars = merge(
+    var.online_prediction_model_cloud_run_env_vars,
+    {
+      MODEL_INSTANTIATOR_HOST = module.model_instantiator.url
+    }
+  )
 }
 module "model_instantiator" {
   source                               = "../../services/model-instantiator"
@@ -24,5 +39,5 @@ module "model_instantiator" {
   cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
 
   cloud_scheduler_model_name      = module.online_prediction_model.model_name
-  online_prediction_model_sa_name = module.online_prediction_model.service_account_name
+  online_prediction_model_sa_name = var.online_prediction_model_service_account_name
 }

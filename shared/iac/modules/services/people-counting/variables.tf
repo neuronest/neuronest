@@ -4,7 +4,7 @@ variable "image_name" {
 variable "service_account_name" {
   type = string
 }
-variable "firestore_results_collection" {
+variable "job_results_bucket" {
   type = string
 }
 variable "firestore_jobs_collection" {

@@ -32,7 +32,7 @@ module "people_counting" {
   region                       = var.region
   image_name                   = var.people_counting_image_name
   service_account_name         = var.people_counting_service_account_name
-  firestore_results_collection = var.people_counting_firestore_results_collection
+  job_results_bucket           = var.people_counting_job_results_bucket
   firestore_jobs_collection    = var.people_counting_firestore_jobs_collection
   videos_to_count_bucket       = var.people_counting_videos_to_count_bucket
   counted_videos_bucket        = var.people_counting_counted_videos_bucket

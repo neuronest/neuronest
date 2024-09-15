@@ -35,7 +35,7 @@ from people_counting.api.dependencies import (
 from people_counting.common import Statistics
 from people_counting.environment_variables import (
     COUNTED_VIDEOS_BUCKET,
-    FIRESTORE_RESULTS_COLLECTION,
+    JOB_RESULTS_BUCKET,
     MODEL_INSTANTIATOR_HOST,
     OBJECT_DETECTION_MODEL_NAME,
     PROJECT_ID,
@@ -197,7 +197,7 @@ def count_people(
         "REGION": REGION,
         "OBJECT_DETECTION_MODEL_NAME": OBJECT_DETECTION_MODEL_NAME,
         "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
-        "FIRESTORE_RESULTS_COLLECTION": FIRESTORE_RESULTS_COLLECTION,
+        "JOB_RESULTS_BUCKET": JOB_RESULTS_BUCKET,
         "JOB_ID": job_id,
         "VIDEOS_STORAGE_PATHS": " ".join(people_counter_input.videos_storage_paths),
     }

@@ -3,12 +3,13 @@ import json
 import time
 from typing import List, Optional
 
-from core.client.api_client import APIClient
+from core.client.abstract.api_client import APIClient
+from core.client.common import upload_object_to_storage
 from core.exceptions import PredictionsNotFoundError
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
 from core.hashing import combine_hashes
-from core.path import GSPath, LocalPath
+from core.path import LocalPath
 from core.routes.people_counting import routes
 from core.schemas.people_counting import (
     PeopleCounterAssetResultsDocument,
@@ -20,14 +21,15 @@ from core.schemas.people_counting import (
     PeopleCounterRealTimeOutput,
     ResourcesOutput,
 )
-from core.tools import generate_file_id, get_chunks_from_iterable
+from core.services.job_results_manager import JobResultsManager
+from core.tools import get_chunks_from_iterable
 
 
-def make_results_document_id(
+def make_results_id(
     job_id: str,
     asset_id: str,
 ) -> str:
-    return combine_hashes([job_id, asset_id])
+    return "/".join([job_id, asset_id])
 
 
 class PeopleCountingClient(APIClient):
@@ -46,31 +48,17 @@ class PeopleCountingClient(APIClient):
         self.storage_client = StorageClient(
             key_path=key_path, project_id=self.project_id
         )
-        self.firestore_client = FirestoreClient(
-            key_path=key_path, project_id=self.project_id
+        self.job_results_manager = JobResultsManager(
+            storage_client=self.storage_client,
+            bucket_name=self._get_job_results_bucket(),
         )
 
-    def _upload_video_to_storage(
-        self, video_path: LocalPath, destination_bucket: str
-    ) -> GSPath:
-        video_blob_name = generate_file_id(file_path=video_path)
-
-        self.storage_client.upload_blob(
-            source_file_name=video_path,
-            bucket_name=destination_bucket,
-            blob_name=video_blob_name,
-        )
-
-        return GSPath.from_bucket_and_blob_names(
-            bucket_name=destination_bucket, blob_name=video_blob_name
-        )
-
-    def _get_firestore_results_collection(self) -> str:
+    def _get_job_results_bucket(self) -> str:
         return ResourcesOutput(
             **json.loads(
                 self.call(
                     resource=f"/{routes.Resources.prefix}"
-                    f"{routes.Resources.firestore_results_collection}",
+                    f"{routes.Resources.job_results_bucket}",
                     verb="get",
                 ).text
             )
@@ -120,9 +108,9 @@ class PeopleCountingClient(APIClient):
         retry_wait_time: int = 60,
         total_waited_time: int = 0,
     ) -> PeopleCounterAssetResultsDocument:
-        results_document = self.firestore_client.get_document(
-            collection_name=self._get_firestore_results_collection(),
-            document_id=make_results_document_id(job_id=job_id, asset_id=asset_id),
+        results_document = self.job_results_manager.retrieve_results(
+            collection_name=self._get_job_results_bucket(),
+            document_id=make_results_id(job_id=job_id, asset_id=asset_id),
         )
 
         if results_document is not None:
@@ -158,7 +146,8 @@ class PeopleCountingClient(APIClient):
         save_counted_videos_in_storage: bool,
     ) -> PeopleCounterOutput:
         uploaded_videos_storage_paths = [
-            self._upload_video_to_storage(
+            upload_object_to_storage(
+                storage_client=self.storage_client,
                 video_path=LocalPath(video_path),
                 destination_bucket=self._get_videos_to_count_bucket(),
             )
@@ -278,7 +267,8 @@ class PeopleCountingClient(APIClient):
         enable_video_showing: bool = False,
         timeout: int = 2700,
     ) -> PeopleCounterRealTimeOutput:
-        uploaded_video_storage_path = self._upload_video_to_storage(
+        uploaded_video_storage_path = upload_object_to_storage(
+            storage_client=self.storage_client,
             video_path=LocalPath(video_path),
             destination_bucket=self._get_videos_to_count_bucket(),
         )

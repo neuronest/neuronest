@@ -49,6 +49,7 @@ on:
 
 env:
   REPOSITORY_NAME: people-counting
+  WEB_SERVING_DOCKERFILE_PATH: shared/core/dockerfiles/abstract/web_serving.Dockerfile
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
@@ -94,6 +95,7 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
   deploy:
     name: deploy

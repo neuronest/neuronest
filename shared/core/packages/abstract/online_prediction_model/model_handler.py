@@ -1,7 +1,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Type
 
 import torch
 from ts.context import Context
@@ -14,6 +14,7 @@ from core.schemas.abstract.online_prediction_model import (
     Device,
     InputSampleSchema,
     OutputSampleSchema,
+    SchemaMixin,
 )
 
 logging.basicConfig(level="INFO")
@@ -21,8 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 # See https://pytorch.org/serve/custom_service.html
-# pylint: disable=too-many-instance-attributes
 class OnlinePredictionModelHandler(BaseHandler, ABC):
+    INPUT_SAMPLE_SCHEMA: Optional[Type[InputSampleSchema]] = None
+    OUTPUT_SAMPLE_SCHEMA: Optional[Type[OutputSampleSchema]] = None
+
     def __init__(
         self,
         device: Device = Device.CUDA,
@@ -37,12 +40,23 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         self._context = None
         self.model: Optional[OnlinePredictionModel] = None
 
+    @staticmethod
+    def _validate_all_instance_of(
+        elements: List[SchemaMixin], data_class: Type[SchemaMixin]
+    ):
+        for element in elements:
+            if isinstance(element, data_class) is False:
+                raise ValueError(
+                    f"At least one element of the list is not an instance of "
+                    f"{data_class}"
+                )
+
     def _retrieve_model_path(self) -> str:
         properties = self._context.system_properties
         manifest = self._context.manifest
 
-        model_dir = properties.get("model_dir")
-        serialized_file = manifest["model"]["serializedFile"]
+        model_dir: str = properties.get("model_dir")
+        serialized_file: str = manifest["model"]["serializedFile"]
 
         model_path = os.path.join(model_dir, serialized_file)
 
@@ -68,40 +82,8 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     def create_new_model(self):
         raise NotImplementedError
 
-    @abstractmethod
-    def _get_input_sample_schema_class(self) -> Type[InputSampleSchema]:
-        raise NotImplementedError(
-            f"The class inherited from {InputSampleSchema} and used at runtime "
-            f"must be known to know on which class exactly to call certain methods"
-        )
-
-    def _get_input_sample_schema_from_data_sample(self, data_sample: Dict):
-        return self._get_input_sample_schema_class().from_serialized_attributes_dict(
-            data_sample
-        )
-
-    @abstractmethod
-    def build_inference_args_kwargs_from_input_samples_schema(
-        self,
-        input_samples_schema: List[InputSampleSchema],
-    ) -> Tuple[Tuple, dict]:
-        """
-        Returns the data in the format expected by the model to predict,
-        the arguments and the key arguments of the prediction function
-        """
-        raise NotImplementedError
-
-    # pylint: disable=arguments-renamed
-    def preprocess(self, data_samples: List[Dict]) -> Tuple[Tuple, Dict]:
-        # pylint: disable=invalid-name
-        input_samples_schema = [
-            self._get_input_sample_schema_from_data_sample(data_sample)
-            for data_sample in data_samples
-        ]
-
-        return self.build_inference_args_kwargs_from_input_samples_schema(
-            input_samples_schema
-        )
+    def preprocess(self, data: List[Dict]) -> List[InputSampleSchema]:
+        return [self.INPUT_SAMPLE_SCHEMA.deserialize(sample) for sample in data]
 
     def inference(self, *args, **kwargs) -> List[Any]:
         with torch.no_grad():
@@ -109,14 +91,8 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
             model_inferences = self.model(*args, **kwargs)
         return model_inferences
 
-    # the data argument of the BaseHandler.postprocess function has been renamed
-    # predictions for more clarity on the fact that the function necessarily takes
-    # as input the result of the prediction part of the model
-    @abstractmethod
-    def postprocess(  # pylint: disable=arguments-renamed
-        self, predictions: List[Any]
-    ) -> List[OutputSampleSchema]:
-        raise NotImplementedError
+    def postprocess(self, data: List[Any]) -> List[OutputSampleSchema]:
+        return [self.OUTPUT_SAMPLE_SCHEMA.deserialize(sample) for sample in data]
 
     def handle(self, data: List[Dict], context: Context) -> List[Dict[str, str]]:
         """
@@ -131,12 +107,15 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         if len(data) == 0:
             return []
 
-        inference_args, inference_kwargs = self.preprocess(data_samples=data)
-        inferences = self.inference(*inference_args, **inference_kwargs)
-        output_samples_schema = self.postprocess(inferences)
-        # if not isinstance(output_samples, list):
-        #     output_samples = [output_samples]
-        return [
-            output_sample.serialized_attributes_dict()
-            for output_sample in output_samples_schema
-        ]
+        preprocessed_data = self.preprocess(data)
+
+        self._validate_all_instance_of(preprocessed_data, self.INPUT_SAMPLE_SCHEMA)
+
+        predictions = self.inference(preprocessed_data)
+        postprocessed_predictions = self.postprocess(predictions)
+
+        self._validate_all_instance_of(
+            postprocessed_predictions, self.OUTPUT_SAMPLE_SCHEMA
+        )
+
+        return [sample.serialize() for sample in postprocessed_predictions]

@@ -63,10 +63,12 @@ class Path(str, ABC):
     def __get_validators__(cls):
         yield cls.validate
 
-    def get_file_extension(self):
+    def get_file_extension(self) -> Optional[str]:
         _, file_extension = os.path.splitext(self)
-        if file_extension:
+
+        if file_extension is not None and file_extension != "":
             return file_extension.lower()
+
         return None
 
 

@@ -1,14 +1,11 @@
 import logging
-import os
-import uuid
-from typing import Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
-from core.google.storage_client import StorageClient
+import torch
 from core.packages.abstract.online_prediction_model.model_handler import (
     OnlinePredictionModelHandler,
 )
-from core.path import GSPath
+from core.schemas.abstract.online_prediction_model import Device
 from core.schemas.video_comparator import (
     InputSampleSchema as VideoComparatorInputSampleSchema,
 )
@@ -24,90 +21,56 @@ logger = logging.getLogger(__name__)
 
 
 class VideoComparatorModelHandler(OnlinePredictionModelHandler):
+    INPUT_SAMPLE_SCHEMA = VideoComparatorInputSampleSchema
+    OUTPUT_SAMPLE_SCHEMA = VideoComparatorOutputSampleSchema
+
     def __init__(
         self,
         *args,
         batch_size: Optional[int] = None,
+        image_size: Optional[int] = None,
+        center_crop_size: Optional[int] = None,
+        fps: Optional[int] = None,
+        device: Device = Device.CUDA,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.batch_size = batch_size or cfg.model.batch_size
-        self.storage_client = StorageClient()
-
-    def _preprocess_video(self, video: Union[GSPath, np.ndarray]):
-        if isinstance(video, GSPath):
-            video_path = str(uuid.uuid4())
-            self.storage_client.download_blob_to_file(
-                bucket_name=video.bucket,
-                source_blob_name=video.blob_name,
-                destination_file_name=video_path,
-            )
-            return video_path
-        if isinstance(video, np.ndarray):
-            return video
-        raise ValueError
+        self.image_size = image_size or cfg.preprocessing.image_size
+        self.center_crop_size = center_crop_size or cfg.preprocessing.center_crop_size
+        self.fps = fps or cfg.preprocessing.fps
+        self.device = device
 
     def create_new_model(self):
         return VideoComparatorModel()
 
-    def _get_input_sample_schema_class(self) -> Type[VideoComparatorInputSampleSchema]:
-        return VideoComparatorInputSampleSchema
+    def inference(
+        self, data: List[VideoComparatorInputSampleSchema], **kwargs
+    ) -> List[Any]:
+        sample = data[0]  # expected to be only one sample
 
-    def build_inference_args_kwargs_from_input_samples_schema(
-        self, input_samples_schema: List[VideoComparatorInputSampleSchema]
-    ) -> Tuple[Tuple, dict]:
-        return (
-            (),
-            {
-                "prediction_type": input_samples_schema[0].prediction_type,
-                "video_other_video_pairs": [
-                    (
-                        self._preprocess_video(input_sample_schema.video),
-                        self._preprocess_video(input_sample_schema.other_video)
-                        if input_sample_schema.other_video is not None
-                        else None,
-                    )
-                    for input_sample_schema in input_samples_schema
-                ],
-                "batch_size": self.batch_size,
-                "delete_videos_after_inference": True,
-            },
+        return super().inference(
+            sample=sample,
+            device=self.device,
+            batch_size=self.batch_size,
+            fps=self.fps,
+            image_size=self.image_size,
+            center_crop_size=self.center_crop_size,
         )
 
-    # pylint: disable=arguments-differ
-    def inference(
-        self,
-        video_other_video_pairs: List[
-            Tuple[Union[str, np.ndarray], Optional[Union[str, np.ndarray]]]
-        ],
-        prediction_type: str,
-        batch_size: int = 128,
-        delete_videos_after_inference: bool = True,
-    ) -> list:
-        predictions = []
-        for video, other_video in video_other_video_pairs:
-            predictions.append(
-                super().inference(
-                    video=video,
-                    other_video=other_video,
-                    prediction_type=prediction_type,
-                    batch_size=batch_size,
-                )
-            )
-            if isinstance(video, str) and delete_videos_after_inference:
-                os.remove(video)
-            if isinstance(other_video, str) and delete_videos_after_inference:
-                os.remove(other_video)
-
-        return predictions
-
-    # pylint: disable=arguments-renamed
     def postprocess(
-        self, predictions: Union[float, np.ndarray]
+        self, data: List[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]
     ) -> List[VideoComparatorOutputSampleSchema]:
+        sample = data[0]  # expected to be only one sample
+
+        video_embedding, other_video_embedding, similarity_results = sample
+
         return [
-            VideoComparatorOutputSampleSchema(results=prediction)
-            for prediction in predictions
+            VideoComparatorOutputSampleSchema(
+                video_embedding=video_embedding.numpy(),
+                other_video_embedding=other_video_embedding.numpy(),
+                similarity_results=similarity_results.item(),
+            )
         ]
 
     def handle(self, data: List[Dict], context) -> List[Dict[str, str]]:
