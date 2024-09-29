@@ -1,12 +1,13 @@
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, Tuple, cast
 
 from core.api_exceptions import abort
 from core.client.model_client.video_comparator import VideoComparatorModelClient
 from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
+from core.hashing import combine_hashes
 from core.path import GSPath
 from core.routes.video_comparator import routes
 from core.schemas.asset import AssetType
@@ -20,8 +21,8 @@ from core.schemas.modules.video_comparator import (
     VideoComparatorRealTimeInput,
     VideoComparatorRealTimeOutput,
 )
-from core.services.asset_reader import make_assets
-from core.utils import contains_only_n_element
+from core.services.asset_reader import make_asset, make_assets
+from core.utils import contains_only_n_elements
 from fastapi import APIRouter, Depends, Response
 from starlette import status
 
@@ -78,12 +79,16 @@ def _validate_video_storage_path(video_storage_path: GSPath, expected_bucket_nam
         )
 
 
-def _validate_video_storage_paths(
-    videos_storage_paths: List[GSPath], expected_bucket_name: str
+def _validate_video_path_pairs(
+    video_path_pairs: List[Tuple[GSPath, GSPath]], expected_bucket_name: str
 ):
-    for video_storage_path in videos_storage_paths:
+    for video_storage_path, other_video_storage_path in video_path_pairs:
         _validate_video_storage_path(
             video_storage_path=video_storage_path,
+            expected_bucket_name=expected_bucket_name,
+        )
+        _validate_video_storage_path(
+            video_storage_path=other_video_storage_path,
             expected_bucket_name=expected_bucket_name,
         )
 
@@ -92,10 +97,10 @@ def _upload_job_document(
     firestore_client: FirestoreClient,
     firestore_jobs_collection: str,
     job_id: str,
-    assets_ids: List[str],
+    samples_ids: List[str],
 ):
     video_comparator_job_document = VideoComparatorJobDocument(
-        job_id=job_id, job_date=datetime.utcnow(), assets_ids=assets_ids
+        job_id=job_id, job_date=datetime.utcnow(), samples_ids=samples_ids
     )
     firestore_client.upload_document(
         collection_name=firestore_jobs_collection,
@@ -120,37 +125,64 @@ def compare_videos(
 ) -> VideoComparatorOutput:
     job_id = uuid.uuid4().hex
 
-    if (
-        len(video_comparator_input.videos_storage_paths)
-        > config.api.maximum_elements_number
-    ):
+    if len(video_comparator_input.samples) > config.api.maximum_elements_number:
         abort(
             code=status.HTTP_400_BAD_REQUEST,
-            detail=f"The number of videos exceeds the maximum currently allowed "
-            f"({len(video_comparator_input.videos_storage_paths)} > "
+            detail=f"The number of samples exceeds the maximum currently allowed "
+            f"({len(video_comparator_input.samples)} > "
             f"{config.api.maximum_elements_number})",
         )
 
+    if (
+        all(
+            contains_only_n_elements(sample.paths, n=2)
+            for sample in video_comparator_input.samples
+        )
+        is True
+    ):
+        video_path_pairs = cast(
+            List[Tuple[GSPath, GSPath]],
+            [sample.paths for sample in video_comparator_input.samples],
+        )
+    else:
+        return abort(
+            code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one sample does not contains exactly two videos, "
+            "which is not supported",
+        )
+
     try:
-        _validate_video_storage_paths(
-            videos_storage_paths=video_comparator_input.videos_storage_paths,
+        _validate_video_path_pairs(
+            video_path_pairs=video_path_pairs,
             expected_bucket_name=samples_bucket,
         )
     except ValueError as value_error:
         abort(code=status.HTTP_400_BAD_REQUEST, detail=str(value_error))
 
-    video_assets = make_assets(
-        assets_paths=video_comparator_input.videos_storage_paths,
-        storage_client=storage_client,
-        asset_type=AssetType.VIDEO,
-    )
-    assets_ids = [video_asset.get_hash() for video_asset in video_assets]
+    samples_ids = [
+        combine_hashes(
+            [
+                make_asset(
+                    asset_path=video_path,
+                    storage_client=storage_client,
+                    asset_type=AssetType.VIDEO,
+                ).get_hash(),
+                make_asset(
+                    asset_path=other_video_path,
+                    storage_client=storage_client,
+                    asset_type=AssetType.VIDEO,
+                ).get_hash(),
+            ],
+            reorder=False,
+        )
+        for video_path, other_video_path in video_path_pairs
+    ]
 
     _upload_job_document(
         firestore_client=firestore_client,
         firestore_jobs_collection=firestore_jobs_collection,
         job_id=job_id,
-        assets_ids=assets_ids,
+        samples_ids=samples_ids,
     )
 
     job_name = f"compare-videos-{job_id}"
@@ -166,7 +198,7 @@ def compare_videos(
         "JOB_ID": job_id,
         "EMBEDDINGS_BUCKET": EMBEDDINGS_BUCKET,
         "RESULTS_BUCKET": RESULTS_BUCKET,
-        "VIDEOS_STORAGE_PATHS": " ".join(video_comparator_input.videos_storage_paths),
+        "VIDEO_PATH_PAIRS": str(video_path_pairs),
     }
 
     cloud_run_job_manager.create_job(
@@ -205,7 +237,7 @@ def compare_videos_real_time(
 ) -> VideoComparatorRealTimeOutput:
     paths = video_comparator_input.sample.paths
 
-    if contains_only_n_element(paths, n=2) is True:
+    if contains_only_n_elements(paths, n=2) is True:
         video_storage_path, other_video_storage_path = paths
     else:
         return abort(
@@ -214,8 +246,8 @@ def compare_videos_real_time(
             f"received {len(paths)}",
         )
 
-    _validate_video_storage_paths(
-        videos_storage_paths=[video_storage_path, other_video_storage_path],
+    _validate_video_path_pairs(
+        video_path_pairs=[(video_storage_path, other_video_storage_path)],
         expected_bucket_name=samples_bucket,
     )
 

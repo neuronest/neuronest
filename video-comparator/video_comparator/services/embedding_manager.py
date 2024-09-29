@@ -40,3 +40,11 @@ class EmbeddingManager:
                 return None
 
             raise dependency_error
+
+    def retrieve_multiple_embeddings(
+        self, asset_ids: List[str], is_missing_ok: bool = True
+    ) -> List[Optional[np.ndarray]]:
+        return [
+            self.retrieve_embedding(asset_id=asset_id, is_missing_ok=is_missing_ok)
+            for asset_id in asset_ids
+        ]

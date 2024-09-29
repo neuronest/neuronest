@@ -1,13 +1,18 @@
-import itertools
-from typing import List
+import ast
+import os
+from typing import List, Tuple
 
-import numpy as np
-from core.client.model_client.video_comparator import VideoComparatorModelClient
-from core.google.storage_client import StorageClient
-from core.schemas.asset import AssetType, VideoAsset
-from core.schemas.modules.video_comparator import InputSampleSchema, OutputSampleSchema
+from core.client.abstract.prediction_api_client import make_results_blob_name
+from core.hashing import combine_hashes
+from core.path import GSPath
+from core.schemas.asset import AssetType
+from core.schemas.modules.video_comparator import (
+    InputSampleSchema,
+    OutputSampleSchema,
+    VideoComparatorSampleResultsDocument,
+)
 from core.services.asset_reader import make_assets
-from core.tools import unflatten_iterable
+from joblib import Parallel, delayed
 
 from video_comparator.jobs.environment_variables import (
     EMBEDDINGS_BUCKET,
@@ -17,143 +22,25 @@ from video_comparator.jobs.environment_variables import (
     PROJECT_ID,
     REGION,
     RESULTS_BUCKET,
-    VIDEOS_STORAGE_PATHS,
+    VIDEO_PATH_PAIRS,
 )
 from video_comparator.jobs.services import (
     create_embedding_manager,
     create_storage_client,
     create_video_comparator_model_client,
 )
-from video_comparator.services.embedding_manager import EmbeddingManager
 
 
-def compare_first_video_to_others(
-    video_assets: List[VideoAsset],
-    existing_embeddings: List[np.ndarray],
-    video_comparator_model_client: VideoComparatorModelClient,
-) -> List[OutputSampleSchema]:
-    first_video_asset, first_existing_embedding = (
-        video_assets[0],
-        existing_embeddings[0],
-    )
-    first_batch = [
-        InputSampleSchema(
-            video=first_video_asset if first_existing_embedding is None else None,
-            other_video=video_asset if existing_embedding is None else None,
-            video_embedding=first_existing_embedding,
-            other_video_embedding=existing_embedding,
-        )
-        for video_asset, existing_embedding in zip(
-            video_assets[1:], existing_embeddings[1:]
-        )
-    ]
-
-    return video_comparator_model_client.predict_batch(samples=first_batch)
-
-
-def compare_remaining_videos_to_others(
-    first_video_to_others_outputs: List[OutputSampleSchema],
-    video_comparator_model_client: VideoComparatorModelClient,
-) -> List[OutputSampleSchema]:
-    remaining_batch = [
-        InputSampleSchema(
-            video_embedding=left_video.other_video_embedding,
-            other_video_embedding=right_video.other_video_embedding,
-        )
-        for left_video, right_video in itertools.combinations(
-            first_video_to_others_outputs, 2
-        )
-    ]
-
-    return video_comparator_model_client.predict_batch(samples=remaining_batch)
-
-
-def create_similarities_matrix(
-    first_video_to_others_outputs: List[OutputSampleSchema],
-    remaining_videos_to_others_outputs: List[OutputSampleSchema],
-) -> np.ndarray:
-    unflattened_remaining_videos_to_others_outputs = list(
-        unflatten_iterable(
-            remaining_videos_to_others_outputs,
-            sizes=list(range(len(first_video_to_others_outputs) - 1, 0, -1)),
-        )
-    )
-    unflattened_outputs = [
-        first_video_to_others_outputs
-    ] + unflattened_remaining_videos_to_others_outputs
-
-    videos_number = len(first_video_to_others_outputs) + 1
-
-    scores_matrix = np.full((videos_number, videos_number), 1)
-    for i, batch_outputs in enumerate(unflattened_outputs):
-        for j, batch_output in enumerate(batch_outputs):
-            scores_matrix[i, j + i + 1] = batch_output.similarity_results
-            scores_matrix[j + i + 1, i] = batch_output.similarity_results
-
-    return scores_matrix
-
-
-def run_videos_comparisons(
-    storage_client: StorageClient,
-    embedding_manager: EmbeddingManager,
-    video_comparator_model_client: VideoComparatorModelClient,
-    videos_storage_paths: List[str],
-) -> np.ndarray:
-    if len(videos_storage_paths) == 0:
-        return np.array([], dtype=np.float32)
-
-    video_assets = make_assets(
-        assets_paths=videos_storage_paths,
-        storage_client=storage_client,
-        asset_type=AssetType.VIDEO,
-    )
-    assets_ids = [video_asset.get_hash() for video_asset in video_assets]
-
-    existing_embeddings = [
-        embedding_manager.retrieve_embedding(asset_id=asset_id, is_missing_ok=True)
-        for asset_id in assets_ids
-    ]
-
-    # we compare the first video with all the others in a first batch in order to
-    # compute the embeddings once for all
-    first_video_to_others_outputs = compare_first_video_to_others(
-        video_assets=video_assets,
-        existing_embeddings=existing_embeddings,
-        video_comparator_model_client=video_comparator_model_client,
-    )
-
-    embedding_manager.store_embedding(
-        asset_id=assets_ids[0],
-        embedding=first_video_to_others_outputs[0].video_embedding,
-    )
-    embedding_manager.store_multiple_embeddings(
-        asset_ids=assets_ids[1:],
-        embeddings=[
-            first_batch_output.other_video_embedding
-            for first_batch_output in first_video_to_others_outputs
-        ],
-    )
-
-    remaining_videos_to_others_outputs = compare_remaining_videos_to_others(
-        first_video_to_others_outputs=first_video_to_others_outputs,
-        video_comparator_model_client=video_comparator_model_client,
-    )
-
-    return create_similarities_matrix(
-        first_video_to_others_outputs=first_video_to_others_outputs,
-        remaining_videos_to_others_outputs=remaining_videos_to_others_outputs,
-    )
-
-
-def main(
+def run_videos_comparison(
+    video_storage_path: GSPath,
+    other_video_storage_path: GSPath,
     project_id: str,
     region: str,
-    model_name: str,
-    model_instantiator_host: str,
-    job_id: str,
     embeddings_bucket: str,
     results_bucket: str,
-    videos_storage_paths: List[str],
+    model_instantiator_host: str,
+    job_id: str,
+    model_name: str,
 ):
     storage_client = create_storage_client(project_id=project_id)
     embedding_manager = create_embedding_manager(
@@ -166,16 +53,80 @@ def main(
         model_name=model_name,
     )
 
-    similarities = run_videos_comparisons(
+    video_asset, other_video_asset = make_assets(
+        assets_paths=[video_storage_path, other_video_storage_path],
         storage_client=storage_client,
-        embedding_manager=embedding_manager,
-        video_comparator_model_client=video_comparator_model_client,
-        videos_storage_paths=videos_storage_paths,
+        asset_type=AssetType.VIDEO,
+    )
+    video_asset_id, other_video_asset_id = (
+        video_asset.get_hash(),
+        other_video_asset.get_hash(),
     )
 
-    VideoComparatorAssetResultsDocument
+    sample_id = combine_hashes(
+        hashes=[video_asset_id, other_video_asset_id], reorder=False
+    )
 
-    job_results_manager.store_results(job_id=job_id, results=similarities)
+    (
+        video_asset_existing_embedding,
+        other_video_asset_existing_embedding,
+    ) = embedding_manager.retrieve_multiple_embeddings(
+        asset_ids=[video_asset_id, other_video_asset_id], is_missing_ok=True
+    )
+
+    prediction: OutputSampleSchema = video_comparator_model_client.predict_single(
+        sample=InputSampleSchema(
+            video=video_asset if video_asset_existing_embedding is None else None,
+            other_video=other_video_asset
+            if other_video_asset_existing_embedding is None
+            else None,
+            video_embedding=video_asset_existing_embedding,
+            other_video_embedding=other_video_asset_existing_embedding,
+        )
+    )
+
+    embedding_manager.store_multiple_embeddings(
+        asset_ids=[video_asset_id, other_video_asset_id],
+        embeddings=[prediction.video_embedding, prediction.other_video_embedding],
+    )
+
+    video_comparator_document = VideoComparatorSampleResultsDocument(
+        similarity_results=prediction.similarity_results
+    )
+    storage_client.upload_blob_from_dict(
+        bucket_name=results_bucket,
+        blob_name=make_results_blob_name(job_id=job_id, sample_id=sample_id),
+        content=video_comparator_document.dict(),
+    )
+
+
+def main(
+    project_id: str,
+    region: str,
+    model_name: str,
+    model_instantiator_host: str,
+    job_id: str,
+    embeddings_bucket: str,
+    results_bucket: str,
+    video_path_pairs: List[Tuple[str, str]],
+):
+    if len(video_path_pairs) == 0:
+        raise ValueError("The received list of video paths pairs has a length of 0")
+
+    return Parallel(n_jobs=os.cpu_count())(
+        delayed(run_videos_comparison)(
+            video_storage_path=GSPath(video_storage_path),
+            other_video_storage_path=GSPath(other_video_storage_path),
+            project_id=project_id,
+            region=region,
+            embeddings_bucket=embeddings_bucket,
+            results_bucket=results_bucket,
+            model_instantiator_host=model_instantiator_host,
+            job_id=job_id,
+            model_name=model_name,
+        )
+        for video_storage_path, other_video_storage_path in video_path_pairs
+    )
 
 
 if __name__ == "__main__":
@@ -187,5 +138,5 @@ if __name__ == "__main__":
         job_id=JOB_ID,
         embeddings_bucket=EMBEDDINGS_BUCKET,
         results_bucket=RESULTS_BUCKET,
-        videos_storage_paths=VIDEOS_STORAGE_PATHS,
+        video_path_pairs=ast.literal_eval(VIDEO_PATH_PAIRS),
     )

@@ -119,7 +119,7 @@ def _upload_people_job_document(
     assets_ids: List[str],
 ):
     people_job_document = PeopleCounterJobDocument(
-        job_id=job_id, job_date=datetime.utcnow(), assets_ids=assets_ids
+        job_id=job_id, job_date=datetime.utcnow(), samples_ids=assets_ids
     )
     firestore_client.upload_document(
         collection_name=firestore_jobs_collection,
@@ -146,7 +146,7 @@ def count_people(
     if len(people_counter_input.samples) > config.api.maximum_elements_number:
         abort(
             code=status.HTTP_400_BAD_REQUEST,
-            detail=f"The number of videos exceeds the maximum currently allowed "
+            detail=f"The number of samples exceeds the maximum currently allowed "
             f"({len(people_counter_input.samples)} > "
             f"{config.api.maximum_elements_number})",
         )

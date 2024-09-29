@@ -37,7 +37,7 @@ def xor_not_none(value: Optional[Any], other_value: Optional[Any]) -> bool:
     return (value is not None) != (other_value is not None)
 
 
-def contains_only_n_element(
+def contains_only_n_elements(
     elements: Union[List[Any], Set[Any], Tuple[Any, ...]], n: int
 ) -> bool:
     return len(elements) == n
@@ -46,4 +46,4 @@ def contains_only_n_element(
 def contains_only_one_element(
     elements: Union[List[Any], Set[Any], Tuple[Any, ...]]
 ) -> bool:
-    return contains_only_n_element(elements=elements, n=1)
+    return contains_only_n_elements(elements=elements, n=1)

@@ -27,9 +27,9 @@ from core.tools import generate_file_id, get_chunks_from_iterable
 
 def make_results_blob_name(
     job_id: str,
-    asset_id: str,
+    sample_id: str,
 ) -> str:
-    return combine_hashes([job_id, asset_id])
+    return combine_hashes([job_id, sample_id])
 
 
 class PredictionAPIClient(APIClient, ABC):
@@ -106,7 +106,7 @@ class PredictionAPIClient(APIClient, ABC):
         self,
         job_id: str,
         results_bucket_name: str,
-        asset_id: str,
+        sample_id: str,
         wait_if_not_existing: bool,
         timeout: int,
         retry_wait_time: int = 60,
@@ -114,7 +114,7 @@ class PredictionAPIClient(APIClient, ABC):
     ) -> SampleResultsDocument:
         raw_results = self.storage_client.download_blob(
             bucket_name=results_bucket_name,
-            blob_name=make_results_blob_name(job_id=job_id, asset_id=asset_id),
+            blob_name=make_results_blob_name(job_id=job_id, sample_id=sample_id),
             as_json=True,
         )
 
@@ -123,13 +123,13 @@ class PredictionAPIClient(APIClient, ABC):
 
         if wait_if_not_existing is False:
             raise RuntimeError(
-                f"No predictions found for job_id={job_id} and asset_id={asset_id}"
+                f"No predictions found for job_id={job_id} and sample_id={sample_id}"
             )
 
         if total_waited_time + retry_wait_time > timeout:
             raise TimeoutError(
                 f"Failed to retrieve predictions for job_id={job_id} "
-                f"and asset_id={asset_id}, giving up after {timeout // 60} "
+                f"and asset_id={sample_id}, giving up after {timeout // 60} "
                 f"minutes of trying"
             )
 
@@ -139,7 +139,7 @@ class PredictionAPIClient(APIClient, ABC):
         return self._get_predictions(
             job_id=job_id,
             results_bucket_name=results_bucket_name,
-            asset_id=asset_id,
+            sample_id=sample_id,
             wait_if_not_existing=wait_if_not_existing,
             total_waited_time=total_waited_time,
             timeout=timeout,
@@ -223,11 +223,11 @@ class PredictionAPIClient(APIClient, ABC):
                     self._get_predictions(
                         job_id=job_id,
                         results_bucket_name=results_bucket_name,
-                        asset_id=asset_id,
+                        sample_id=sample_id,
                         wait_if_not_existing=wait_if_not_existing,
                         timeout=job_time_delta,
                     )
-                    for asset_id in job_document.assets_ids
+                    for sample_id in job_document.samples_ids
                 ]
             )
         except TimeoutError as timeout_error:

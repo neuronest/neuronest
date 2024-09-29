@@ -2,6 +2,7 @@ import os
 from typing import List, Optional
 
 from core.client.abstract.prediction_api_client import make_results_blob_name
+from core.path import GSPath
 from core.schemas.modules.people_counting import PeopleCounterSampleResultsDocument
 from core.services.asset_reader import make_asset
 from joblib import Parallel, delayed
@@ -22,8 +23,8 @@ from people_counting.people_counter import count_people_with_upload
 
 
 def run_asset_counting(
-    video_storage_path: str,
-    counted_video_storage_path: Optional[str],
+    video_storage_path: GSPath,
+    counted_video_storage_path: Optional[GSPath],
     project_id: str,
     region: str,
     job_id: str,
@@ -62,7 +63,7 @@ def run_asset_counting(
 
     storage_client.upload_blob_from_dict(
         bucket_name=results_bucket,
-        blob_name=make_results_blob_name(asset_id=asset_id, job_id=job_id),
+        blob_name=make_results_blob_name(job_id=job_id, sample_id=asset_id),
         content=people_counter_document.dict(),
     )
 
@@ -88,8 +89,10 @@ def main(
 
     return Parallel(n_jobs=os.cpu_count())(
         delayed(run_asset_counting)(
-            video_storage_path=video_storage_path,
-            counted_video_storage_path=counted_video_storage_path,
+            video_storage_path=GSPath(video_storage_path),
+            counted_video_storage_path=GSPath(counted_video_storage_path)
+            if counted_video_storage_path is not None
+            else None,
             project_id=project_id,
             region=region,
             job_id=job_id,
