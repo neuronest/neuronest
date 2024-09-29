@@ -1,5 +1,5 @@
 from core.routes.video_comparator import routes
-from core.schemas.video_comparator import ResourcesOutput
+from core.schemas.abstract.prediction_api_client import ResourcesOutput
 from fastapi import APIRouter, Depends
 from starlette import status
 
@@ -7,27 +7,27 @@ from video_comparator.api.dependencies import use_config
 from video_comparator.config import Config
 from video_comparator.environment_variables import (
     FIRESTORE_JOBS_COLLECTION,
-    JOB_RESULTS_BUCKET,
-    VIDEOS_TO_COMPARE_BUCKET,
+    RESULTS_BUCKET,
+    SAMPLES_BUCKET,
 )
 
 router = APIRouter(prefix=f"/{routes.Resources.prefix}", tags=[routes.Resources.prefix])
 
 
 @router.get(
-    routes.Resources.videos_to_compare_bucket,
+    routes.Resources.samples_bucket,
     status_code=status.HTTP_200_OK,
 )
-def get_videos_to_compare_bucket() -> ResourcesOutput:
-    return ResourcesOutput(resource=VIDEOS_TO_COMPARE_BUCKET)
+def get_samples_bucket() -> ResourcesOutput:
+    return ResourcesOutput(resource=SAMPLES_BUCKET)
 
 
 @router.get(
-    routes.Resources.job_results_bucket,
+    routes.Resources.results_bucket,
     status_code=status.HTTP_200_OK,
 )
-def get_job_results_bucket() -> ResourcesOutput:
-    return ResourcesOutput(resource=JOB_RESULTS_BUCKET)
+def get_results_bucket() -> ResourcesOutput:
+    return ResourcesOutput(resource=RESULTS_BUCKET)
 
 
 @router.get(
@@ -39,10 +39,10 @@ def get_firestore_jobs_collection() -> ResourcesOutput:
 
 
 @router.get(
-    routes.Resources.maximum_videos_number,
+    routes.Resources.maximum_elements_number,
     status_code=status.HTTP_200_OK,
 )
-def get_maximum_videos_number(
+def get_maximum_elements_number(
     config: Config = Depends(use_config),
 ) -> ResourcesOutput:
-    return ResourcesOutput(resource=str(config.api.maximum_videos_number))
+    return ResourcesOutput(resource=str(config.api.maximum_elements_number))

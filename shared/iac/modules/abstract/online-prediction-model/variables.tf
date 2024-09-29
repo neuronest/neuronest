@@ -26,6 +26,6 @@ variable "cloud_run_max_scale" {
   type = string
 }
 variable "cloud_run_env_vars" {
-  type = map(string)
+  type    = map(string)
   default = {}
 }

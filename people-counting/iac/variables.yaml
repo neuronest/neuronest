@@ -14,8 +14,8 @@ multi_instance_resource_names:
   # cloud run
   - CLOUD_RUN_NAME=webapp
   # storage
-  - JOB_RESULTS_BUCKET=job-results-${PROJECT_CODE}
-  - VIDEOS_TO_COUNT_BUCKET=videos-to-count-${PROJECT_CODE}
+  - RESULTS_BUCKET=results-${PROJECT_CODE}
+  - SAMPLES_BUCKET=samples-${PROJECT_CODE}
   - COUNTED_VIDEOS_BUCKET=counted-videos-${PROJECT_CODE}
 other_variables:
   branch:

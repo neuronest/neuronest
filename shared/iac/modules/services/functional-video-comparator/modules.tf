@@ -15,14 +15,14 @@ module "functional_video_comparator" {
   online_prediction_model_cloud_run_max_scale  = var.video_comparator_cloud_run_max_scale
 
   online_prediction_model_cloud_run_env_vars = {
-    PROJECT_ID = var.project_id
-    REGION = var.region
-    IMAGE_NAME = var.video_comparator_cloud_run_image_name
-    MODEL_NAME = var.video_comparator_model_name
+    PROJECT_ID                = var.project_id
+    REGION                    = var.region
+    IMAGE_NAME                = var.video_comparator_cloud_run_image_name
+    MODEL_NAME                = var.video_comparator_model_name
     FIRESTORE_JOBS_COLLECTION = var.video_comparator_firestore_jobs_collection
-    EMBEDDINGS_BUCKET = var.video_comparator_embeddings_bucket
-    JOB_RESULTS_BUCKET = var.video_comparator_job_results_bucket
-    VIDEOS_TO_COMPARE_BUCKET = var.video_comparator_videos_to_compare_bucket
+    EMBEDDINGS_BUCKET         = var.video_comparator_embeddings_bucket
+    RESULTS_BUCKET            = var.video_comparator_results_bucket
+    SAMPLES_BUCKET            = var.video_comparator_samples_bucket
   }
 
   model_instantiator_image_name                           = var.model_instantiator_image_name

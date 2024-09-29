@@ -261,7 +261,7 @@ class StorageClient(BaseClient):
         :param bucket_name: The bucket name.
         :param blob_name: The source blob name.
         :param as_json: Whether to consider to retrieved blob as JSON. If applicable,
-        it will be casted as dictionary.
+        it will be cast as dictionary.
 
         :return: The blob found content as binary or dictionary.
         """

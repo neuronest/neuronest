@@ -47,8 +47,8 @@ module "functional_video_comparator" {
   video_comparator_cloud_run_max_scale       = var.video_comparator_cloud_run_max_scale
   video_comparator_firestore_jobs_collection = var.video_comparator_firestore_jobs_collection
   video_comparator_embeddings_bucket         = var.video_comparator_embeddings_bucket
-  video_comparator_job_results_bucket        = var.video_comparator_job_results_bucket
-  video_comparator_videos_to_compare_bucket  = var.video_comparator_videos_to_compare_bucket
+  video_comparator_results_bucket            = var.video_comparator_results_bucket
+  video_comparator_samples_bucket            = var.video_comparator_samples_bucket
 
   model_instantiator_image_name                           = var.model_instantiator_image_name
   model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name

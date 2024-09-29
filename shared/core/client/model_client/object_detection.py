@@ -7,10 +7,10 @@ from core.client.model_client.abstract.online_prediction_model import (
     OnlinePredictionModelClient,
 )
 from core.schemas.abstract.online_prediction_model import InputSampleSchema
-from core.schemas.object_detection import (
+from core.schemas.modules.object_detection import (
     InputSampleSchema as ObjectDetectionInputSampleSchema,
 )
-from core.schemas.object_detection import (
+from core.schemas.modules.object_detection import (
     OutputSampleSchema as ObjectDetectionOutputSampleSchema,
 )
 

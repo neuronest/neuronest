@@ -5,7 +5,7 @@ name: '${oc.env:REPOSITORY_NAME,null}'
 package_name: '${oc.env:PACKAGE_NAME,null}'
 
 api:
-  maximum_videos_number: 100
+  maximum_elements_number: 100
 
 job:
   container_uri: '${oc.env:IMAGE_NAME}'

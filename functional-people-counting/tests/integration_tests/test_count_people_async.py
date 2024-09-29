@@ -5,7 +5,7 @@ from core.client.people_counting import PeopleCountingClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.schemas.asset import AssetType
-from core.schemas.people_counting import PeopleCounterAssetResultsDocument
+from core.schemas.modules.people_counting import PeopleCounterAssetResultsDocument
 from core.services.asset_reader import make_assets
 
 from tests.integration_tests.common import are_detections_correct

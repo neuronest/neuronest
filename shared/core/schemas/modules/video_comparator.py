@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Dict, List, Optional, Union
 
 import numpy as np
@@ -12,6 +11,15 @@ from core.schemas.abstract.online_prediction_model import (
     BaseInputSampleSchema,
     BaseOutputSampleSchema,
 )
+from core.schemas.abstract.prediction_api_client import (
+    BaseInput,
+    BaseJobDocument,
+    BaseJobResultsDocument,
+    BaseOutput,
+    BaseRealTimeInput,
+    BaseRealTimeOutput,
+    BaseSampleResultsDocument,
+)
 from core.schemas.asset import VideoAsset
 from core.serialization.array import array_from_string, array_to_string
 from core.serialization.bytes import bytes_to_string, string_to_bytes
@@ -21,31 +29,32 @@ from core.utils import xor_not_none
 VIDEO_FORCED_EXTENSION: str = ".mp4"
 
 
-class VideoComparatorInput(BaseModel):
-    videos_storage_paths: List[GSPath]
+class VideoComparatorInput(BaseInput):
+    pass
 
 
-class VideoComparatorRealTimeInput(BaseModel):
-    video_storage_path: GSPath
-    other_video_storage_path: GSPath
+class VideoComparatorRealTimeInput(BaseRealTimeInput):
+    pass
 
 
-class VideoComparatorOutput(BaseModel):
-    job_id: str
+class VideoComparatorOutput(BaseOutput):
+    pass
 
 
-class VideoComparatorRealTimeOutput(BaseModel):
+class VideoComparatorRealTimeOutput(BaseRealTimeOutput):
     similarity_score: float
 
 
-class VideoComparatorJobDocument(BaseModel):
-    job_id: str
-    job_date: datetime
-    assets_ids: List[str]
+class VideoComparatorJobDocument(BaseJobDocument):
+    pass
 
 
-class ResourcesOutput(BaseModel):
-    resource: str
+class VideoComparatorSampleResultsDocument(BaseSampleResultsDocument):
+    similarity_results: float
+
+
+class VideoComparatorJobResultsDocument(BaseJobResultsDocument):
+    results: List[VideoComparatorSampleResultsDocument]
 
 
 class InputSampleSchema(BaseInputSampleSchema):

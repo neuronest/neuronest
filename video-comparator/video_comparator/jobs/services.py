@@ -5,7 +5,6 @@ from core.client.model_instantiator import ModelInstantiatorClient
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import VertexAIManager
-from core.services.job_results_manager import JobResultsManager
 
 from video_comparator.services.embedding_manager import EmbeddingManager
 
@@ -37,9 +36,3 @@ def create_embedding_manager(
     storage_client: StorageClient, bucket_name: str
 ) -> EmbeddingManager:
     return EmbeddingManager(storage_client=storage_client, bucket_name=bucket_name)
-
-
-def create_job_results_manager(
-    storage_client: StorageClient, bucket_name: str
-) -> JobResultsManager:
-    return JobResultsManager(storage_client=storage_client, bucket_name=bucket_name)

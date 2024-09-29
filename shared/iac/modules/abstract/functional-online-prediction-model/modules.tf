@@ -1,7 +1,7 @@
 module "online_prediction_model" {
-  source               = "../online-prediction-model"
-  project_id           = var.project_id
-  region               = var.region
+  source     = "../online-prediction-model"
+  project_id = var.project_id
+  region     = var.region
 
   service_account_name = var.online_prediction_model_service_account_name
   models_bucket        = var.online_prediction_model_models_bucket

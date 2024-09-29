@@ -2,32 +2,45 @@ import datetime
 import json
 import time
 from abc import ABC
-from typing import Any, Dict, List, Optional, Type
-
-from pydantic import BaseModel
+from typing import Any, Dict, Iterable, List, Optional, Type
 
 from core.client.abstract.api_client import APIClient
 from core.exceptions import PredictionsNotFoundError
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
 from core.hashing import combine_hashes
-from core.path import GSPath, LocalPath
-from core.routes.video_comparator import routes
-from core.schemas.abstract.prediction_api_client import RealTimeInput, RealTimeOutput
-from core.schemas.people_counting import (
-    PeopleCounterAssetResultsDocument,
-    PeopleCounterInput,
-    PeopleCounterJobDocument,
-    PeopleCounterJobResultsDocument,
-    PeopleCounterOutput,
-    PeopleCounterRealTimeInput,
-    PeopleCounterRealTimeOutput,
+from core.path import GSPath
+from core.schemas.abstract.prediction_api_client import (
+    GSSample,
+    Input,
+    JobDocument,
+    JobResultsDocument,
+    LocalSample,
+    Output,
+    RealTimeInput,
+    RealTimeOutput,
     ResourcesOutput,
+    SampleResultsDocument,
 )
 from core.tools import generate_file_id, get_chunks_from_iterable
 
 
+def make_results_blob_name(
+    job_id: str,
+    asset_id: str,
+) -> str:
+    return combine_hashes([job_id, asset_id])
+
+
 class PredictionAPIClient(APIClient, ABC):
+    InputSchema: Type[Input]
+    OutputSchema: Type[Output]
+    RealTimeInputSchema: Type[RealTimeInput]
+    RealTimeOutputSchema: Type[RealTimeOutput]
+    JobDocumentSchema: Type[JobDocument]
+    SampleResultsDocumentSchema: Type[SampleResultsDocument]
+    JobResultsDocumentSchema: Type[JobResultsDocument]
+
     def __init__(
         self,
         host: str,
@@ -48,68 +61,65 @@ class PredictionAPIClient(APIClient, ABC):
             key_path=key_path, project_id=self.project_id
         )
 
-    @staticmethod
-    def _make_results_document_id(
-        job_id: str,
-        asset_id: str,
-    ) -> str:
-        return combine_hashes([job_id, asset_id])
-
-    def _upload_object_to_storage(
-        self, object_path: LocalPath, destination_bucket: str
-    ) -> GSPath:
-        blob_name = generate_file_id(file_path=object_path)
-
-        self.storage_client.upload_blob(
-            source_file_name=object_path,
-            bucket_name=destination_bucket,
-            blob_name=blob_name,
-        )
-
-        return GSPath.from_bucket_and_blob_names(
-            bucket_name=destination_bucket, blob_name=blob_name
-        )
-
-    def _get_elements_to_predict_bucket(self) -> str:
+    def _get_resource(self, resource: str) -> str:
         return ResourcesOutput(
             **json.loads(
                 self.call(
-                    resource=f"/{routes.Resources.prefix}"
-                    f"{routes.Resources.elements_to_predict_bucket}",
+                    resource=resource,
                     verb="get",
                 ).text
             )
         ).resource
 
-    def _get_firestore_jobs_collection(self) -> str:
-        return ResourcesOutput(
-            **json.loads(
-                self.call(
-                    resource=f"/{routes.Resources.prefix}"
-                    f"{routes.Resources.firestore_jobs_collection}",
-                    verb="get",
-                ).text
+    def _upload_sample_to_storage(
+        self, sample: LocalSample, destination_bucket: str
+    ) -> GSSample:
+        gs_paths = []
+        for local_path in sample.paths:
+            blob_name = generate_file_id(file_path=local_path)
+
+            self.storage_client.upload_blob(
+                source_file_name=local_path,
+                bucket_name=destination_bucket,
+                blob_name=blob_name,
             )
-        ).resource
+
+            gs_paths.append(
+                GSPath.from_bucket_and_blob_names(
+                    bucket_name=destination_bucket, blob_name=blob_name
+                )
+            )
+
+        return GSSample(paths=tuple(gs_paths))
+
+    def _upload_samples_to_storage(
+        self, samples: Iterable[LocalSample], destination_bucket: str
+    ) -> List[GSSample]:
+        return [
+            self._upload_sample_to_storage(
+                sample=sample, destination_bucket=destination_bucket
+            )
+            for sample in samples
+        ]
 
     def _get_predictions(
         self,
         job_id: str,
+        results_bucket_name: str,
         asset_id: str,
         wait_if_not_existing: bool,
         timeout: int,
         retry_wait_time: int = 60,
         total_waited_time: int = 0,
-    ) -> PeopleCounterAssetResultsDocument:
-        results_document = self.firestore_client.get_document(
-            collection_name=self._get_job_results_bucket(),
-            document_id=self._make_results_document_id(
-                job_id=job_id, asset_id=asset_id
-            ),
+    ) -> SampleResultsDocument:
+        raw_results = self.storage_client.download_blob(
+            bucket_name=results_bucket_name,
+            blob_name=make_results_blob_name(job_id=job_id, asset_id=asset_id),
+            as_json=True,
         )
 
-        if results_document is not None:
-            return PeopleCounterAssetResultsDocument.parse_obj(results_document)
+        if raw_results is not None:
+            return self.SampleResultsDocumentSchema.parse_obj(raw_results)
 
         if wait_if_not_existing is False:
             raise RuntimeError(
@@ -128,6 +138,7 @@ class PredictionAPIClient(APIClient, ABC):
 
         return self._get_predictions(
             job_id=job_id,
+            results_bucket_name=results_bucket_name,
             asset_id=asset_id,
             wait_if_not_existing=wait_if_not_existing,
             total_waited_time=total_waited_time,
@@ -137,62 +148,67 @@ class PredictionAPIClient(APIClient, ABC):
 
     def _chunk_predict(
         self,
-        videos_paths: List[str],
-        save_counted_videos_in_storage: bool,
-    ) -> PeopleCounterOutput:
-        uploaded_videos_storage_paths = [
-            upload_object_to_storage(
-                storage_client=self.storage_client,
-                video_path=LocalPath(video_path),
-                destination_bucket=self._get_videos_to_count_bucket(),
-            )
-            for video_path in videos_paths
-        ]
+        samples: List[LocalSample],
+        resource: str,
+        samples_bucket_name: str,
+        input_kwargs: Optional[Dict[str, Any]],
+        timeout: int,
+    ) -> Output:
+        gs_samples = self._upload_samples_to_storage(
+            samples=samples, destination_bucket=samples_bucket_name
+        )
 
-        return PeopleCounterOutput(
+        return self.OutputSchema(
             **json.loads(
                 self.call(
-                    resource=f"/{routes.PeopleCounter.prefix}"
-                    f"{routes.PeopleCounter.count_people}",
+                    resource=resource,
                     verb="post",
-                    payload=PeopleCounterInput(
-                        videos_storage_paths=uploaded_videos_storage_paths,
-                        save_counted_videos=save_counted_videos_in_storage,
-                    ).dict(),
+                    payload=self.InputSchema(samples=gs_samples, **input_kwargs).dict(),
+                    timeout=timeout,
                 ).text
             )
         )
 
     def _predict(
         self,
-        videos_paths: List[str],
-        save_counted_videos_in_storage: bool = False,
-    ) -> List[PeopleCounterOutput]:
+        samples: List[LocalSample],
+        resource: str,
+        samples_bucket_name: str,
+        input_kwargs: Optional[Dict[str, Any]],
+        timeout: int,
+        maximum_elements_number: int,
+    ) -> List[Output]:
         return [
             self._chunk_predict(
-                videos_paths=chunk_videos_paths,
-                save_counted_videos_in_storage=save_counted_videos_in_storage,
+                samples=chunk_samples,
+                resource=resource,
+                samples_bucket_name=samples_bucket_name,
+                input_kwargs=input_kwargs,
+                timeout=timeout,
             )
-            for chunk_videos_paths in get_chunks_from_iterable(
-                iterable=videos_paths, chunk_size=self._get_maximum_videos_number()
+            for chunk_samples in get_chunks_from_iterable(
+                iterable=samples, chunk_size=maximum_elements_number
             )
         ]
 
-    def get_predictions_from_job_id(
+    def _get_predictions_from_job_id(
         self,
+        results_bucket_name: str,
+        job_collection_name: str,
         job_id: str,
         wait_if_not_existing: bool = False,
         job_timeout: int = 2700,
-    ) -> PeopleCounterJobResultsDocument:
+    ) -> JobResultsDocument:
         raw_job_document = self.firestore_client.get_document(
-            collection_name=self._get_firestore_jobs_collection(),
+            collection_name=job_collection_name,
             document_id=job_id,
         )
 
         if raw_job_document is None:
             raise PredictionsNotFoundError(f"No predictions found for job_id={job_id}")
 
-        job_document = PeopleCounterJobDocument.parse_obj(raw_job_document)
+        job_document = self.JobDocumentSchema.parse_obj(raw_job_document)
+
         job_time_delta = max(
             (
                 job_timeout
@@ -202,10 +218,11 @@ class PredictionAPIClient(APIClient, ABC):
         )
 
         try:
-            return PeopleCounterJobResultsDocument(
+            return self.JobResultsDocumentSchema(
                 results=[
                     self._get_predictions(
                         job_id=job_id,
+                        results_bucket_name=results_bucket_name,
                         asset_id=asset_id,
                         wait_if_not_existing=wait_if_not_existing,
                         timeout=job_time_delta,
@@ -221,60 +238,80 @@ class PredictionAPIClient(APIClient, ABC):
 
     def predict_async(
         self,
-        videos_paths: List[str],
-        save_counted_videos_in_storage: bool = False,
-    ) -> List[PeopleCounterOutput]:
+        samples: List[LocalSample],
+        resource: str,
+        samples_bucket_name: str,
+        maximum_elements_number: int,
+        input_kwargs: Optional[Dict[str, Any]] = None,
+        timeout: int = 2700,
+    ) -> List[Output]:
         return self._predict(
-            videos_paths=videos_paths,
-            save_counted_videos_in_storage=save_counted_videos_in_storage,
+            samples=samples,
+            resource=resource,
+            samples_bucket_name=samples_bucket_name,
+            input_kwargs=input_kwargs,
+            timeout=timeout,
+            maximum_elements_number=maximum_elements_number,
         )
 
     def predict_sync(
         self,
-        elements_paths: List[LocalPath],
+        samples: List[LocalSample],
+        resource: str,
+        samples_bucket_name: str,
+        results_bucket_name: str,
+        job_collection_name: str,
+        maximum_elements_number: int,
         input_kwargs: Optional[Dict[str, Any]] = None,
-    ) -> List[PeopleCounterAssetResultsDocument]:
+        timeout: int = 60,
+        job_timeout: int = 2700,
+    ) -> List[SampleResultsDocument]:
         prediction_outputs = self._predict(
-            elements_paths=elements_paths,
+            samples=samples,
+            resource=resource,
+            samples_bucket_name=samples_bucket_name,
             input_kwargs=input_kwargs,
+            timeout=timeout,
+            maximum_elements_number=maximum_elements_number,
         )
 
         job_results = [
-            self.get_predictions_from_job_id(
-                job_id=people_counter_output.job_id, wait_if_not_existing=True
+            self._get_predictions_from_job_id(
+                results_bucket_name=results_bucket_name,
+                job_collection_name=job_collection_name,
+                job_id=prediction_output.job_id,
+                wait_if_not_existing=True,
+                job_timeout=job_timeout,
             )
             for prediction_output in prediction_outputs
         ]
 
         return [
             asset_results
-            for people_counter_job_results_document in (
-                people_counter_job_results_documents
-            )
-            for asset_results in people_counter_job_results_document.results
+            for job_result in job_results
+            for asset_results in job_result.results
         ]
 
     def predict_real_time(
         self,
-        element_path: LocalPath,
+        sample: LocalSample,
         resource: str,
-        input_class: Type[RealTimeInput],
-        output_class: Type[RealTimeOutput],
+        samples_bucket_name: str,
         input_kwargs: Optional[Dict[str, Any]] = None,
         timeout: int = 2700,
     ) -> RealTimeOutput:
-        uploaded_video_storage_path = self._upload_object_to_storage(
-            object_path=element_path,
-            destination_bucket=self._get_elements_to_predict_bucket(),
+        gs_sample = self._upload_sample_to_storage(
+            sample=sample,
+            destination_bucket=samples_bucket_name,
         )
 
-        return output_class(
+        return self.RealTimeOutputSchema(
             **json.loads(
                 self.call(
                     resource=resource,
                     verb="post",
-                    payload=input_class(
-                        element_storage_path=uploaded_video_storage_path, **input_kwargs
+                    payload=self.RealTimeInputSchema(
+                        sample=gs_sample, **input_kwargs
                     ).dict(),
                     timeout=timeout,
                 ).text

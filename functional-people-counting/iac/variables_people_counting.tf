@@ -9,13 +9,13 @@ variable "people_counting_image_name" {
 variable "people_counting_service_account_name" {
   type = string
 }
-variable "people_counting_job_results_bucket" {
+variable "people_counting_results_bucket" {
   type = string
 }
 variable "people_counting_firestore_jobs_collection" {
   type = string
 }
-variable "people_counting_videos_to_count_bucket" {
+variable "people_counting_samples_bucket" {
   type = string
 }
 variable "people_counting_counted_videos_bucket" {

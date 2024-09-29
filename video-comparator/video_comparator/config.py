@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class Api(BaseModel):
-    maximum_videos_number: int
+    maximum_elements_number: int
 
 
 class Job(BaseModel):

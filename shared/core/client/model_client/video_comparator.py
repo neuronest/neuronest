@@ -1,7 +1,7 @@
 from core.client.model_client.abstract.online_prediction_model import (
     OnlinePredictionModelClient,
 )
-from core.schemas.video_comparator import InputSampleSchema, OutputSampleSchema
+from core.schemas.modules.video_comparator import InputSampleSchema, OutputSampleSchema
 
 
 class VideoComparatorModelClient(OnlinePredictionModelClient):

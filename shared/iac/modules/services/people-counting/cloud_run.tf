@@ -34,8 +34,8 @@ resource "google_cloud_run_service" "people_counting_api" {
           value = var.counted_videos_bucket
         }
         env {
-          name  = "JOB_RESULTS_BUCKET"
-          value = var.job_results_bucket
+          name  = "RESULTS_BUCKET"
+          value = var.results_bucket
         }
         env {
           name  = "FIRESTORE_JOBS_COLLECTION"
@@ -50,8 +50,8 @@ resource "google_cloud_run_service" "people_counting_api" {
           value = var.model_instantiator_host
         }
         env {
-          name  = "VIDEOS_TO_COUNT_BUCKET"
-          value = var.videos_to_count_bucket
+          name  = "SAMPLES_BUCKET"
+          value = var.samples_bucket
         }
       }
       service_account_name = google_service_account.people_counting_api_sa.email

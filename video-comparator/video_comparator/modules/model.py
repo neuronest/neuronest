@@ -8,7 +8,7 @@ from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
 from core.schemas.abstract.online_prediction_model import Device
-from core.schemas.video_comparator import InputSampleSchema
+from core.schemas.modules.video_comparator import InputSampleSchema
 
 from video_comparator.model.visil import ViSiL
 

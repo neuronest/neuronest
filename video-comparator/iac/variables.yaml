@@ -17,9 +17,9 @@ multi_instance_resource_names:
   - MODEL_NAME=model
   # storage
   - MODELS_BUCKET=models-${PROJECT_ID}
-  - VIDEOS_TO_COMPARE_BUCKET=videos-to-compare-${PROJECT_CODE}
+  - SAMPLES_BUCKET=samples-${PROJECT_CODE}
   - EMBEDDINGS_BUCKET=embeddings-${PROJECT_CODE}
-  - JOB_RESULTS_BUCKET=job-results-${PROJECT_CODE}
+  - RESULTS_BUCKET=results-${PROJECT_CODE}
 other_variables:
   branch:
     default:

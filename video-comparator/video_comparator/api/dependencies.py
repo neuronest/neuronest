@@ -15,7 +15,7 @@ from video_comparator.environment_variables import (
     MODEL_NAME,
     PROJECT_ID,
     REGION,
-    VIDEOS_TO_COMPARE_BUCKET,
+    SAMPLES_BUCKET,
 )
 
 
@@ -42,8 +42,8 @@ def use_firestore_jobs_collection() -> str:
 
 
 @lru_cache
-def use_videos_to_compare_bucket() -> str:
-    return VIDEOS_TO_COMPARE_BUCKET
+def use_samples_bucket() -> str:
+    return SAMPLES_BUCKET
 
 
 @lru_cache

@@ -4,7 +4,6 @@ from core.client.model_client.object_detection import ObjectDetectionClient
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import VertexAIManager
-from core.services.job_results_manager import JobResultsManager
 from omegaconf import DictConfig
 
 from people_counting.people_counter import PeopleCounter
@@ -53,9 +52,3 @@ def create_people_counter(
 
 def create_storage_client(project_id: Optional[str] = None) -> StorageClient:
     return StorageClient(project_id=project_id)
-
-
-def create_job_results_manager(
-    storage_client: StorageClient, bucket_name: str
-) -> JobResultsManager:
-    return JobResultsManager(storage_client=storage_client, bucket_name=bucket_name)

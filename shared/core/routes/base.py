@@ -25,6 +25,6 @@ class _BaseRoutes(ABC, BaseModel):
 class BaseResources(ABC):
     prefix = "resources"
     firestore_jobs_collection: str = "/firestore_jobs_collection"
-    maximum_elements_number: str = "/maximum_videos_number"
-    elements_to_predict_bucket: str = "/job_results_bucket"
-    job_results_bucket: str = "/job_results_bucket"
+    maximum_elements_number: str = "/maximum_elements_number"
+    samples_bucket: str = "/samples_bucket"
+    results_bucket: str = "/results_bucket"

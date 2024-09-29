@@ -5,8 +5,7 @@ class _VideoComparatorRoutes(_BaseRoutes):
     service_name: str = "video_comparator"
 
     class Resources(BaseResources):
-        videos_to_compare_bucket: str = "/videos_to_compare_bucket"
-        maximum_videos_number: str = "/maximum_videos_number"
+        pass
 
     class VideoComparator:
         prefix = "video_comparator"

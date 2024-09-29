@@ -5,8 +5,7 @@ class _PeopleCountingRoutes(_BaseRoutes):
     service_name: str = "people_counting"
 
     class Resources(BaseResources):
-        videos_to_count_bucket: str = "/videos_to_count_bucket"
-        maximum_videos_number: str = "/maximum_videos_number"
+        pass
 
     class PeopleCounter:
         prefix = "people_counter"

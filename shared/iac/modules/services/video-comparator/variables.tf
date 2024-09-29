@@ -13,13 +13,13 @@ variable "model_name" {
 variable "firestore_jobs_collection" {
   type = string
 }
-variable "videos_to_compare_bucket" {
+variable "samples_bucket" {
   type = string
 }
 variable "embeddings_bucket" {
   type = string
 }
-variable "job_results_bucket" {
+variable "results_bucket" {
   type = string
 }
 variable "model_instantiator_host" {

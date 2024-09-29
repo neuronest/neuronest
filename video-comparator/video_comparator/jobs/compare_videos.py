@@ -5,23 +5,22 @@ import numpy as np
 from core.client.model_client.video_comparator import VideoComparatorModelClient
 from core.google.storage_client import StorageClient
 from core.schemas.asset import AssetType, VideoAsset
-from core.schemas.video_comparator import InputSampleSchema, OutputSampleSchema
+from core.schemas.modules.video_comparator import InputSampleSchema, OutputSampleSchema
 from core.services.asset_reader import make_assets
 from core.tools import unflatten_iterable
 
 from video_comparator.jobs.environment_variables import (
     EMBEDDINGS_BUCKET,
     JOB_ID,
-    JOB_RESULTS_BUCKET,
     MODEL_INSTANTIATOR_HOST,
     MODEL_NAME,
     PROJECT_ID,
     REGION,
+    RESULTS_BUCKET,
     VIDEOS_STORAGE_PATHS,
 )
 from video_comparator.jobs.services import (
     create_embedding_manager,
-    create_job_results_manager,
     create_storage_client,
     create_video_comparator_model_client,
 )
@@ -153,15 +152,12 @@ def main(
     model_instantiator_host: str,
     job_id: str,
     embeddings_bucket: str,
-    job_results_bucket: str,
+    results_bucket: str,
     videos_storage_paths: List[str],
 ):
     storage_client = create_storage_client(project_id=project_id)
     embedding_manager = create_embedding_manager(
         storage_client=storage_client, bucket_name=embeddings_bucket
-    )
-    job_results_manager = create_job_results_manager(
-        storage_client=storage_client, bucket_name=job_results_bucket
     )
     video_comparator_model_client = create_video_comparator_model_client(
         project_id=project_id,
@@ -177,6 +173,8 @@ def main(
         videos_storage_paths=videos_storage_paths,
     )
 
+    VideoComparatorAssetResultsDocument
+
     job_results_manager.store_results(job_id=job_id, results=similarities)
 
 
@@ -188,6 +186,6 @@ if __name__ == "__main__":
         model_instantiator_host=MODEL_INSTANTIATOR_HOST,
         job_id=JOB_ID,
         embeddings_bucket=EMBEDDINGS_BUCKET,
-        job_results_bucket=JOB_RESULTS_BUCKET,
+        results_bucket=RESULTS_BUCKET,
         videos_storage_paths=VIDEOS_STORAGE_PATHS,
     )

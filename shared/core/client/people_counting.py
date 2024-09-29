@@ -1,38 +1,40 @@
-import datetime
-import json
-import time
-from typing import List, Optional
+from typing import List, Optional, Type
 
-from core.client.abstract.api_client import APIClient
-from core.client.common import upload_object_to_storage
-from core.exceptions import PredictionsNotFoundError
-from core.google.firestore_client import FirestoreClient
-from core.google.storage_client import StorageClient
-from core.hashing import combine_hashes
+from core.client.abstract.prediction_api_client import PredictionAPIClient
 from core.path import LocalPath
 from core.routes.people_counting import routes
-from core.schemas.people_counting import (
-    PeopleCounterAssetResultsDocument,
+from core.schemas.abstract.prediction_api_client import (
+    Input,
+    JobDocument,
+    JobResultsDocument,
+    LocalSample,
+    Output,
+    RealTimeInput,
+    RealTimeOutput,
+    SampleResultsDocument,
+)
+from core.schemas.modules.people_counting import (
     PeopleCounterInput,
     PeopleCounterJobDocument,
     PeopleCounterJobResultsDocument,
     PeopleCounterOutput,
     PeopleCounterRealTimeInput,
     PeopleCounterRealTimeOutput,
-    ResourcesOutput,
+    PeopleCounterSampleResultsDocument,
 )
-from core.services.job_results_manager import JobResultsManager
-from core.tools import get_chunks_from_iterable
 
 
-def make_results_id(
-    job_id: str,
-    asset_id: str,
-) -> str:
-    return "/".join([job_id, asset_id])
+class PeopleCountingClient(PredictionAPIClient):
+    InputSchema: Type[Input] = PeopleCounterInput
+    OutputSchema: Type[Output] = PeopleCounterOutput
+    RealTimeInputSchema: Type[RealTimeInput] = PeopleCounterRealTimeInput
+    RealTimeOutputSchema: Type[RealTimeOutput] = PeopleCounterRealTimeOutput
+    JobDocumentSchema: Type[JobDocument] = PeopleCounterJobDocument
+    SampleResultsDocumentSchema: Type[
+        SampleResultsDocument
+    ] = PeopleCounterSampleResultsDocument
+    JobResultsDocumentSchema: Type[JobResultsDocument] = PeopleCounterJobResultsDocument
 
-
-class PeopleCountingClient(APIClient):
     def __init__(
         self,
         host: str,
@@ -45,143 +47,30 @@ class PeopleCountingClient(APIClient):
             root=routes.root,
             project_id=project_id,
         )
-        self.storage_client = StorageClient(
-            key_path=key_path, project_id=self.project_id
-        )
-        self.job_results_manager = JobResultsManager(
-            storage_client=self.storage_client,
-            bucket_name=self._get_job_results_bucket(),
+
+    def _get_results_bucket_name(self) -> str:
+        return self._get_resource(
+            resource=f"/{routes.Resources.prefix}{routes.Resources.results_bucket}"
         )
 
-    def _get_job_results_bucket(self) -> str:
-        return ResourcesOutput(
-            **json.loads(
-                self.call(
-                    resource=f"/{routes.Resources.prefix}"
-                    f"{routes.Resources.job_results_bucket}",
-                    verb="get",
-                ).text
-            )
-        ).resource
+    def _get_firestore_jobs_collection_name(self) -> str:
+        return self._get_resource(
+            resource=f"/{routes.Resources.prefix}"
+            f"{routes.Resources.firestore_jobs_collection}"
+        )
 
-    def _get_firestore_jobs_collection(self) -> str:
-        return ResourcesOutput(
-            **json.loads(
-                self.call(
-                    resource=f"/{routes.Resources.prefix}"
-                    f"{routes.Resources.firestore_jobs_collection}",
-                    verb="get",
-                ).text
-            )
-        ).resource
+    def _get_samples_bucket_name(self) -> str:
+        return self._get_resource(
+            resource=f"/{routes.Resources.prefix}{routes.Resources.samples_bucket}"
+        )
 
-    def _get_videos_to_count_bucket(self) -> str:
-        return ResourcesOutput(
-            **json.loads(
-                self.call(
-                    resource=f"/{routes.Resources.prefix}"
-                    f"{routes.Resources.videos_to_count_bucket}",
-                    verb="get",
-                ).text
-            )
-        ).resource
-
-    def _get_maximum_videos_number(self) -> int:
+    def _get_maximum_elements_number(self) -> int:
         return int(
-            ResourcesOutput(
-                **json.loads(
-                    self.call(
-                        resource=f"/{routes.Resources.prefix}"
-                        f"{routes.Resources.maximum_videos_number}",
-                        verb="get",
-                    ).text
-                )
-            ).resource
-        )
-
-    def _get_predictions(
-        self,
-        job_id: str,
-        asset_id: str,
-        wait_if_not_existing: bool,
-        timeout: int,
-        retry_wait_time: int = 60,
-        total_waited_time: int = 0,
-    ) -> PeopleCounterAssetResultsDocument:
-        results_document = self.job_results_manager.retrieve_results(
-            collection_name=self._get_job_results_bucket(),
-            document_id=make_results_id(job_id=job_id, asset_id=asset_id),
-        )
-
-        if results_document is not None:
-            return PeopleCounterAssetResultsDocument.parse_obj(results_document)
-
-        if wait_if_not_existing is False:
-            raise RuntimeError(
-                f"No predictions found for job_id={job_id} and asset_id={asset_id}"
-            )
-
-        if total_waited_time + retry_wait_time > timeout:
-            raise TimeoutError(
-                f"Failed to retrieve predictions for job_id={job_id} "
-                f"and asset_id={asset_id}, giving up after {timeout // 60} "
-                f"minutes of trying"
-            )
-
-        time.sleep(retry_wait_time)
-        total_waited_time += retry_wait_time
-
-        return self._get_predictions(
-            job_id=job_id,
-            asset_id=asset_id,
-            wait_if_not_existing=wait_if_not_existing,
-            total_waited_time=total_waited_time,
-            timeout=timeout,
-            retry_wait_time=retry_wait_time,
-        )
-
-    def _chunk_count_people(
-        self,
-        videos_paths: List[str],
-        save_counted_videos_in_storage: bool,
-    ) -> PeopleCounterOutput:
-        uploaded_videos_storage_paths = [
-            upload_object_to_storage(
-                storage_client=self.storage_client,
-                video_path=LocalPath(video_path),
-                destination_bucket=self._get_videos_to_count_bucket(),
-            )
-            for video_path in videos_paths
-        ]
-
-        return PeopleCounterOutput(
-            **json.loads(
-                self.call(
-                    resource=f"/{routes.PeopleCounter.prefix}"
-                    f"{routes.PeopleCounter.count_people}",
-                    verb="post",
-                    payload=PeopleCounterInput(
-                        videos_storage_paths=uploaded_videos_storage_paths,
-                        save_counted_videos=save_counted_videos_in_storage,
-                    ).dict(),
-                ).text
+            self._get_resource(
+                resource=f"/{routes.Resources.prefix}"
+                f"{routes.Resources.maximum_elements_number}"
             )
         )
-
-    def _count_people(
-        self,
-        videos_paths: List[str],
-        save_counted_videos_in_storage: bool = False,
-    ) -> List[PeopleCounterOutput]:
-        return [
-            self._chunk_count_people(
-                videos_paths=chunk_videos_paths,
-                save_counted_videos_in_storage=save_counted_videos_in_storage,
-            )
-            for chunk_videos_paths in get_chunks_from_iterable(
-                iterable=videos_paths, chunk_size=self._get_maximum_videos_number()
-            )
-        ]
 
     def get_predictions_from_job_id(
         self,
@@ -189,75 +78,57 @@ class PeopleCountingClient(APIClient):
         wait_if_not_existing: bool = False,
         job_timeout: int = 2700,
     ) -> PeopleCounterJobResultsDocument:
-        raw_job_document = self.firestore_client.get_document(
-            collection_name=self._get_firestore_jobs_collection(),
-            document_id=job_id,
+        return self._get_predictions_from_job_id(
+            results_bucket_name=self._get_results_bucket_name(),
+            job_collection_name=self._get_firestore_jobs_collection_name(),
+            job_id=job_id,
+            wait_if_not_existing=wait_if_not_existing,
+            job_timeout=job_timeout,
         )
-
-        if raw_job_document is None:
-            raise PredictionsNotFoundError(f"No predictions found for job_id={job_id}")
-
-        job_document = PeopleCounterJobDocument.parse_obj(raw_job_document)
-        job_time_delta = max(
-            (
-                job_timeout
-                - (datetime.datetime.utcnow() - job_document.job_date).seconds
-            ),
-            0,
-        )
-
-        try:
-            return PeopleCounterJobResultsDocument(
-                results=[
-                    self._get_predictions(
-                        job_id=job_id,
-                        asset_id=asset_id,
-                        wait_if_not_existing=wait_if_not_existing,
-                        timeout=job_time_delta,
-                    )
-                    for asset_id in job_document.assets_ids
-                ]
-            )
-        except TimeoutError as timeout_error:
-            raise TimeoutError(
-                f"At least one asset results could not be retrieved in time "
-                f"(targeted job UTC date: {job_document.job_date})"
-            ) from timeout_error
 
     def count_people_async(
         self,
         videos_paths: List[str],
         save_counted_videos_in_storage: bool = False,
+        timeout: int = 60,
     ) -> List[PeopleCounterOutput]:
-        return self._count_people(
-            videos_paths=videos_paths,
-            save_counted_videos_in_storage=save_counted_videos_in_storage,
+        return self.predict_async(
+            samples=[
+                LocalSample(paths=(LocalPath(video_path),))
+                for video_path in videos_paths
+            ],
+            resource=(
+                f"/{routes.PeopleCounter.prefix}{routes.PeopleCounter.count_people}"
+            ),
+            samples_bucket_name=self._get_samples_bucket_name(),
+            maximum_elements_number=self._get_maximum_elements_number(),
+            input_kwargs={"save_counted_videos": save_counted_videos_in_storage},
+            timeout=timeout,
         )
 
     def count_people_sync(
         self,
         videos_paths: List[str],
         save_counted_videos_in_storage: bool = False,
-    ) -> List[PeopleCounterAssetResultsDocument]:
-        people_counter_outputs = self._count_people(
-            videos_paths=videos_paths,
-            save_counted_videos_in_storage=save_counted_videos_in_storage,
+        timeout: int = 60,
+        job_timeout: int = 2700,
+    ) -> List[PeopleCounterSampleResultsDocument]:
+        return self.predict_sync(
+            samples=[
+                LocalSample(paths=(LocalPath(video_path),))
+                for video_path in videos_paths
+            ],
+            resource=(
+                f"/{routes.PeopleCounter.prefix}{routes.PeopleCounter.count_people}"
+            ),
+            samples_bucket_name=self._get_samples_bucket_name(),
+            results_bucket_name=self._get_results_bucket_name(),
+            job_collection_name=self._get_firestore_jobs_collection_name(),
+            maximum_elements_number=self._get_maximum_elements_number(),
+            input_kwargs={"save_counted_videos": save_counted_videos_in_storage},
+            timeout=timeout,
+            job_timeout=job_timeout,
         )
-
-        people_counter_job_results_documents = [
-            self.get_predictions_from_job_id(
-                job_id=people_counter_output.job_id, wait_if_not_existing=True
-            )
-            for people_counter_output in people_counter_outputs
-        ]
-
-        return [
-            asset_results
-            for people_counter_job_results_document in (
-                people_counter_job_results_documents
-            )
-            for asset_results in people_counter_job_results_document.results
-        ]
 
     # used for debugging purposes only
     def count_people_real_time(
@@ -267,24 +138,14 @@ class PeopleCountingClient(APIClient):
         enable_video_showing: bool = False,
         timeout: int = 2700,
     ) -> PeopleCounterRealTimeOutput:
-        uploaded_video_storage_path = upload_object_to_storage(
-            storage_client=self.storage_client,
-            video_path=LocalPath(video_path),
-            destination_bucket=self._get_videos_to_count_bucket(),
-        )
-
-        return PeopleCounterRealTimeOutput(
-            **json.loads(
-                self.call(
-                    resource=f"/{routes.PeopleCounter.prefix}"
-                    f"{routes.PeopleCounter.count_people_real_time}",
-                    verb="post",
-                    payload=PeopleCounterRealTimeInput(
-                        video_storage_path=uploaded_video_storage_path,
-                        save_counted_video=save_counted_video_in_storage,
-                        enable_video_showing=enable_video_showing,
-                    ).dict(),
-                    timeout=timeout,
-                ).text
-            )
+        return self.predict_real_time(
+            sample=LocalSample(paths=(LocalPath(video_path),)),
+            resource=f"/{routes.PeopleCounter.prefix}"
+            f"{routes.PeopleCounter.count_people_real_time}",
+            samples_bucket_name=self._get_samples_bucket_name(),
+            input_kwargs={
+                "save_counted_video": save_counted_video_in_storage,
+                "enable_video_showing": enable_video_showing,
+            },
+            timeout=timeout,
         )

@@ -1,8 +1,8 @@
 #############################################
 #    Google Storage Buckets    #
 #############################################
-resource "google_storage_bucket" "videos_to_compare_bucket" {
-  name          = var.videos_to_compare_bucket
+resource "google_storage_bucket" "samples_bucket" {
+  name          = var.samples_bucket
   project       = var.project_id
   force_destroy = true
   location      = var.region
@@ -21,8 +21,8 @@ resource "google_storage_bucket" "embeddings_bucket" {
     enabled = false
   }
 }
-resource "google_storage_bucket" "job_results_bucket" {
-  name          = var.job_results_bucket
+resource "google_storage_bucket" "results_bucket" {
+  name          = var.results_bucket
   project       = var.project_id
   force_destroy = true
   location      = var.region

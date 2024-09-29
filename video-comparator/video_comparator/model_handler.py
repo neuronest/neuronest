@@ -6,10 +6,10 @@ from core.packages.abstract.online_prediction_model.model_handler import (
     OnlinePredictionModelHandler,
 )
 from core.schemas.abstract.online_prediction_model import Device
-from core.schemas.video_comparator import (
+from core.schemas.modules.video_comparator import (
     InputSampleSchema as VideoComparatorInputSampleSchema,
 )
-from core.schemas.video_comparator import (
+from core.schemas.modules.video_comparator import (
     OutputSampleSchema as VideoComparatorOutputSampleSchema,
 )
 

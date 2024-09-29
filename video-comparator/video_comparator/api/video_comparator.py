@@ -11,7 +11,7 @@ from core.path import GSPath
 from core.routes.video_comparator import routes
 from core.schemas.asset import AssetType
 from core.schemas.google.cloud_run import JobConfig
-from core.schemas.video_comparator import (
+from core.schemas.modules.video_comparator import (
     InputSampleSchema,
     OutputSampleSchema,
     VideoComparatorInput,
@@ -21,6 +21,7 @@ from core.schemas.video_comparator import (
     VideoComparatorRealTimeOutput,
 )
 from core.services.asset_reader import make_assets
+from core.utils import contains_only_n_element
 from fastapi import APIRouter, Depends, Response
 from starlette import status
 
@@ -29,18 +30,18 @@ from video_comparator.api.dependencies import (
     use_config,
     use_firestore_client,
     use_firestore_jobs_collection,
+    use_samples_bucket,
     use_storage_client,
     use_video_comparator_model_client,
-    use_videos_to_compare_bucket,
 )
 from video_comparator.config import Config
 from video_comparator.environment_variables import (
     EMBEDDINGS_BUCKET,
-    JOB_RESULTS_BUCKET,
     MODEL_INSTANTIATOR_HOST,
     MODEL_NAME,
     PROJECT_ID,
     REGION,
+    RESULTS_BUCKET,
 )
 
 router = APIRouter(
@@ -115,25 +116,25 @@ def compare_videos(
     storage_client: StorageClient = Depends(use_storage_client),
     firestore_client: FirestoreClient = Depends(use_firestore_client),
     firestore_jobs_collection: str = Depends(use_firestore_jobs_collection),
-    videos_to_compare_bucket: str = Depends(use_videos_to_compare_bucket),
+    samples_bucket: str = Depends(use_samples_bucket),
 ) -> VideoComparatorOutput:
     job_id = uuid.uuid4().hex
 
     if (
         len(video_comparator_input.videos_storage_paths)
-        > config.api.maximum_videos_number
+        > config.api.maximum_elements_number
     ):
         abort(
             code=status.HTTP_400_BAD_REQUEST,
             detail=f"The number of videos exceeds the maximum currently allowed "
             f"({len(video_comparator_input.videos_storage_paths)} > "
-            f"{config.api.maximum_videos_number})",
+            f"{config.api.maximum_elements_number})",
         )
 
     try:
         _validate_video_storage_paths(
             videos_storage_paths=video_comparator_input.videos_storage_paths,
-            expected_bucket_name=videos_to_compare_bucket,
+            expected_bucket_name=samples_bucket,
         )
     except ValueError as value_error:
         abort(code=status.HTTP_400_BAD_REQUEST, detail=str(value_error))
@@ -164,7 +165,7 @@ def compare_videos(
         "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
         "JOB_ID": job_id,
         "EMBEDDINGS_BUCKET": EMBEDDINGS_BUCKET,
-        "JOB_RESULTS_BUCKET": JOB_RESULTS_BUCKET,
+        "RESULTS_BUCKET": RESULTS_BUCKET,
         "VIDEOS_STORAGE_PATHS": " ".join(video_comparator_input.videos_storage_paths),
     }
 
@@ -200,16 +201,22 @@ def compare_videos_real_time(
         use_video_comparator_model_client
     ),
     storage_client: StorageClient = Depends(use_storage_client),
-    videos_to_compare_bucket: str = Depends(use_videos_to_compare_bucket),
+    samples_bucket: str = Depends(use_samples_bucket),
 ) -> VideoComparatorRealTimeOutput:
-    video_storage_path, other_video_storage_path = (
-        video_comparator_input.video_storage_path,
-        video_comparator_input.other_video_storage_path,
-    )
+    paths = video_comparator_input.sample.paths
+
+    if contains_only_n_element(paths, n=2) is True:
+        video_storage_path, other_video_storage_path = paths
+    else:
+        return abort(
+            code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Two and only two videos should be specified, "
+            f"received {len(paths)}",
+        )
 
     _validate_video_storage_paths(
         videos_storage_paths=[video_storage_path, other_video_storage_path],
-        expected_bucket_name=videos_to_compare_bucket,
+        expected_bucket_name=samples_bucket,
     )
 
     video, other_video = make_assets(

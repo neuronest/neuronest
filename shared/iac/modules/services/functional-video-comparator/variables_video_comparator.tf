@@ -31,9 +31,9 @@ variable "video_comparator_firestore_jobs_collection" {
 variable "video_comparator_embeddings_bucket" {
   type = string
 }
-variable "video_comparator_job_results_bucket" {
+variable "video_comparator_results_bucket" {
   type = string
 }
-variable "video_comparator_videos_to_compare_bucket" {
+variable "video_comparator_samples_bucket" {
   type = string
 }

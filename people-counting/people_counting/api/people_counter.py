@@ -11,7 +11,7 @@ from core.path import GSPath
 from core.routes.people_counting import routes
 from core.schemas.asset import AssetType
 from core.schemas.google.cloud_run import JobConfig
-from core.schemas.people_counting import (
+from core.schemas.modules.people_counting import (
     PeopleCounterInput,
     PeopleCounterJobDocument,
     PeopleCounterOutput,
@@ -20,6 +20,7 @@ from core.schemas.people_counting import (
 )
 from core.services.asset_reader import make_asset, make_assets
 from core.tools import extract_file_extension
+from core.utils import contains_only_one_element
 from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
 from starlette import status
@@ -35,12 +36,12 @@ from people_counting.api.dependencies import (
 from people_counting.common import Statistics
 from people_counting.environment_variables import (
     COUNTED_VIDEOS_BUCKET,
-    JOB_RESULTS_BUCKET,
     MODEL_INSTANTIATOR_HOST,
     OBJECT_DETECTION_MODEL_NAME,
     PROJECT_ID,
     REGION,
-    VIDEOS_TO_COUNT_BUCKET,
+    RESULTS_BUCKET,
+    SAMPLES_BUCKET,
 )
 from people_counting.people_counter import PeopleCounter, count_people_with_upload
 
@@ -142,27 +143,41 @@ def count_people(
 ) -> PeopleCounterOutput:
     job_id = uuid.uuid4().hex
 
-    if (
-        len(people_counter_input.videos_storage_paths)
-        > config.api.maximum_videos_number
-    ):
+    if len(people_counter_input.samples) > config.api.maximum_elements_number:
         abort(
             code=status.HTTP_400_BAD_REQUEST,
             detail=f"The number of videos exceeds the maximum currently allowed "
-            f"({len(people_counter_input.videos_storage_paths)} > "
-            f"{config.api.maximum_videos_number})",
+            f"({len(people_counter_input.samples)} > "
+            f"{config.api.maximum_elements_number})",
+        )
+
+    if (
+        all(
+            contains_only_one_element(sample.paths)
+            for sample in people_counter_input.samples
+        )
+        is True
+    ):
+        video_storage_paths = [
+            sample.paths[0] for sample in people_counter_input.samples
+        ]
+    else:
+        return abort(
+            code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one sample contains multiple videos, "
+            "which is not supported",
         )
 
     try:
         _validate_video_storage_paths(
-            videos_storage_paths=people_counter_input.videos_storage_paths,
-            expected_bucket_name=VIDEOS_TO_COUNT_BUCKET,
+            videos_storage_paths=video_storage_paths,
+            expected_bucket_name=SAMPLES_BUCKET,
         )
     except ValueError as value_error:
         abort(code=status.HTTP_400_BAD_REQUEST, detail=str(value_error))
 
     video_assets = make_assets(
-        assets_paths=people_counter_input.videos_storage_paths,
+        assets_paths=video_storage_paths,
         storage_client=storage_client,
         asset_type=AssetType.VIDEO,
     )
@@ -197,9 +212,9 @@ def count_people(
         "REGION": REGION,
         "OBJECT_DETECTION_MODEL_NAME": OBJECT_DETECTION_MODEL_NAME,
         "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
-        "JOB_RESULTS_BUCKET": JOB_RESULTS_BUCKET,
+        "RESULTS_BUCKET": RESULTS_BUCKET,
         "JOB_ID": job_id,
-        "VIDEOS_STORAGE_PATHS": " ".join(people_counter_input.videos_storage_paths),
+        "VIDEOS_STORAGE_PATHS": " ".join(video_storage_paths),
     }
     if counted_videos_storage_paths is not None:
         job_environment_variables["COUNTED_VIDEOS_STORAGE_PATHS"] = " ".join(
@@ -237,15 +252,26 @@ def count_people_real_time(
     people_counter: PeopleCounter = Depends(use_people_counter),
     storage_client: StorageClient = Depends(use_storage_client),
 ) -> PeopleCounterRealTimeOutput:
-    video_storage_path = people_counter_input.video_storage_path
+    paths = people_counter_input.sample.paths
 
-    _validate_video_storage_path(
-        video_storage_path=video_storage_path,
-        expected_bucket_name=VIDEOS_TO_COUNT_BUCKET,
-    )
+    if contains_only_one_element(paths) is True:
+        video_storage_path = paths[0]
+    else:
+        return abort(
+            code=status.HTTP_400_BAD_REQUEST,
+            detail=f"One and only one video should be specified, received {len(paths)}",
+        )
+
+    try:
+        _validate_video_storage_path(
+            video_storage_path=video_storage_path,
+            expected_bucket_name=SAMPLES_BUCKET,
+        )
+    except ValueError as value_error:
+        abort(code=status.HTTP_400_BAD_REQUEST, detail=str(value_error))
 
     video_asset = make_asset(
-        asset_path=people_counter_input.video_storage_path,
+        asset_path=video_storage_path,
         storage_client=storage_client,
     )
 

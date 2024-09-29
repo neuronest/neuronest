@@ -5,11 +5,11 @@ import pandas as pd
 from core.packages.abstract.online_prediction_model.model_handler import (
     OnlinePredictionModelHandler,
 )
-from core.schemas.object_detection import PREDICTION_COLUMNS
-from core.schemas.object_detection import (
+from core.schemas.modules.object_detection import PREDICTION_COLUMNS
+from core.schemas.modules.object_detection import (
     InputSampleSchema as ObjectDetectionInputSampleSchema,
 )
-from core.schemas.object_detection import (
+from core.schemas.modules.object_detection import (
     OutputSampleSchema as ObjectDetectionOutputSampleSchema,
 )
 from imutils import resize

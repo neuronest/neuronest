@@ -31,22 +31,22 @@ module "base" {
 }
 
 module "video_comparator" {
-  source                       = "../../shared/iac/modules/services/video-comparator"
-  project_id                   = var.project_id
-  region                       = var.region
-  model_image_name             = var.model_image_name
-  service_account_name         = var.webapp_service_account_name
-  firestore_jobs_collection    = var.firestore_jobs_collection
-  videos_to_compare_bucket     = var.videos_to_compare_bucket
-  embeddings_bucket            = var.embeddings_bucket
-  job_results_bucket           = var.job_results_bucket
-  model_instantiator_host      = var.model_instantiator_host
-  models_bucket                = var.models_bucket
-  model_name                   = var.model_name
-  cloud_run_name               = var.cloud_run_name
-  cloud_run_memory             = var.cloud_run_memory
-  cloud_run_cpu                = var.cloud_run_cpu
-  cloud_run_image_name         = var.cloud_run_image_name
-  cloud_run_min_scale          = var.cloud_run_min_scale
-  cloud_run_max_scale          = var.cloud_run_max_scale
+  source                    = "../../shared/iac/modules/services/video-comparator"
+  project_id                = var.project_id
+  region                    = var.region
+  model_image_name          = var.model_image_name
+  service_account_name      = var.webapp_service_account_name
+  firestore_jobs_collection = var.firestore_jobs_collection
+  samples_bucket            = var.samples_bucket
+  embeddings_bucket         = var.embeddings_bucket
+  results_bucket            = var.results_bucket
+  model_instantiator_host   = var.model_instantiator_host
+  models_bucket             = var.models_bucket
+  model_name                = var.model_name
+  cloud_run_name            = var.cloud_run_name
+  cloud_run_memory          = var.cloud_run_memory
+  cloud_run_cpu             = var.cloud_run_cpu
+  cloud_run_image_name      = var.cloud_run_image_name
+  cloud_run_min_scale       = var.cloud_run_min_scale
+  cloud_run_max_scale       = var.cloud_run_max_scale
 }

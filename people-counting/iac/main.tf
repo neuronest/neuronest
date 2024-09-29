@@ -31,20 +31,20 @@ module "base" {
 }
 
 module "people_counting" {
-  source                       = "../../shared/iac/modules/services/people-counting"
-  project_id                   = var.project_id
-  region                       = var.region
-  image_name                   = var.image_name
-  service_account_name         = var.webapp_service_account_name
-  job_results_bucket           = var.job_results_bucket
-  firestore_jobs_collection    = var.firestore_jobs_collection
-  videos_to_count_bucket       = var.videos_to_count_bucket
-  counted_videos_bucket        = var.counted_videos_bucket
-  model_instantiator_host      = var.model_instantiator_host
-  object_detection_model_name  = var.object_detection_model_name
-  cloud_run_name               = var.cloud_run_name
-  cloud_run_memory             = var.cloud_run_memory
-  cloud_run_cpu                = var.cloud_run_cpu
-  cloud_run_min_scale          = var.cloud_run_min_scale
-  cloud_run_max_scale          = var.cloud_run_max_scale
+  source                      = "../../shared/iac/modules/services/people-counting"
+  project_id                  = var.project_id
+  region                      = var.region
+  image_name                  = var.image_name
+  service_account_name        = var.webapp_service_account_name
+  results_bucket              = var.results_bucket
+  firestore_jobs_collection   = var.firestore_jobs_collection
+  samples_bucket              = var.samples_bucket
+  counted_videos_bucket       = var.counted_videos_bucket
+  model_instantiator_host     = var.model_instantiator_host
+  object_detection_model_name = var.object_detection_model_name
+  cloud_run_name              = var.cloud_run_name
+  cloud_run_memory            = var.cloud_run_memory
+  cloud_run_cpu               = var.cloud_run_cpu
+  cloud_run_min_scale         = var.cloud_run_min_scale
+  cloud_run_max_scale         = var.cloud_run_max_scale
 }
