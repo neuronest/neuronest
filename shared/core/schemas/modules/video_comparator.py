@@ -4,9 +4,8 @@ from typing import Dict, List, Optional, Union
 
 import numpy as np
 import typing_inspect
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
 
-from core.path import GSPath
 from core.schemas.abstract.online_prediction_model import (
     BaseInputSampleSchema,
     BaseOutputSampleSchema,
