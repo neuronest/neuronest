@@ -24,10 +24,11 @@ COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
-RUN pip install --upgrade pip \
-  && pip install poetry \
-  && poetry export --without-hashes -f requirements.txt --output requirements.txt \
-  && pip install -r requirements.txt
+RUN curl -sSL https://install.python-poetry.org | python3.9
+RUN poetry config virtualenvs.in-project true \
+    && poetry config virtualenvs.create true \
+    && poetry check  \
+    && poetry install
 
 COPY $REPOSITORY_NAME/conf/ conf
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME

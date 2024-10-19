@@ -17,8 +17,6 @@ RUN apt -qqy update \
         libxext6 \
         libxrender-dev \
         openjdk-11-jdk \
-        python3-crcmod \
-        python3-pip \
         python3.9 \
         python3.9-dev \
         uuid-runtime \
@@ -58,7 +56,7 @@ WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 # using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at
 # the root of the project
-RUN curl -sSL https://install.python-poetry.org | python3
+RUN curl -sSL https://install.python-poetry.org | python3.9
 RUN poetry config virtualenvs.in-project true \
     && poetry config virtualenvs.create true \
     && poetry check  \
