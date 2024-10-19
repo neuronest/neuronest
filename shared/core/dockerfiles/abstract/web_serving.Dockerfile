@@ -23,14 +23,14 @@ ENV PYTHONUNBUFFERED True
 COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
-COPY pyproject.toml poetry.lock ./
+COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 RUN pip install --upgrade pip \
   && pip install poetry \
   && poetry export --without-hashes -f requirements.txt --output requirements.txt \
   && pip install -r requirements.txt
 
-COPY conf/ conf
-COPY $PACKAGE_NAME $PACKAGE_NAME
+COPY $REPOSITORY_NAME/conf/ conf
+COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 EXPOSE $PORT
 

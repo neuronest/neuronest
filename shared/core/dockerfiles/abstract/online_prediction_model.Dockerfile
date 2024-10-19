@@ -1,8 +1,9 @@
 FROM nvidia/cuda:12.5.0-runtime-ubuntu22.04 as training
 
-RUN apt -qqy update
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN DEBIAN_FRONTEND=noninteractive apt install -qqy \
+RUN apt -qqy update \
+&& apt install -qqy software-properties-common \
+&& add-apt-repository ppa:deadsnakes/ppa \
+&& DEBIAN_FRONTEND=noninteractive apt install -qqy \
         build-essential \
         curl \
         ffmpeg \
@@ -20,7 +21,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt install -qqy \
         python3-pip \
         python3.9 \
         python3.9-dev \
-        software-properties-common \
         uuid-runtime \
         wget \
         x264 \
@@ -55,7 +55,7 @@ ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
-COPY pyproject.toml poetry.lock ./
+COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 # using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at
 # the root of the project
 RUN curl -sSL https://install.python-poetry.org | python3
@@ -64,7 +64,7 @@ RUN poetry config virtualenvs.in-project true \
     && poetry check  \
     && poetry install
 
-COPY $PACKAGE_NAME $PACKAGE_NAME
+COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 
 FROM training as serving
