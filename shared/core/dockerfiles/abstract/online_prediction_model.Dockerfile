@@ -19,6 +19,7 @@ RUN apt -qqy update \
         openjdk-11-jdk \
         python3.9 \
         python3.9-dev \
+        python3.9-distutils \
         uuid-runtime \
         wget \
         x264 \
