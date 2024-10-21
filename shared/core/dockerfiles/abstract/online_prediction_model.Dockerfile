@@ -20,6 +20,7 @@ RUN apt -qqy update > /dev/null \
         python3.12 \
         python3.12-dev \
         python3.12-distutils \
+        python3-pip \
         uuid-runtime \
         wget \
         x264 \
@@ -30,7 +31,7 @@ ARG PACKAGE_NAME
 ARG MODEL_NAME
 ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
-ARG POETRY_VERSION="1.8.3"
+ARG POETRY_VERSION="1.8.4"
 ARG BATCH_SIZE="32"
 ARG MAX_BATCH_DELAY="50"
 
