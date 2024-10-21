@@ -21,11 +21,14 @@ ENV WORKERS=$WORKERS
 ENV TIMEOUT=$TIMEOUT
 ENV PYTHONUNBUFFERED True
 
+ENV PATH="/root/.local/bin:$PATH"
+
 COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
-RUN curl -sSL https://install.python-poetry.org | python3.12
+RUN curl -sSL https://install.python-poetry.org | python
+
 RUN poetry config virtualenvs.in-project true \
     && poetry config virtualenvs.create true \
     && poetry check  \
