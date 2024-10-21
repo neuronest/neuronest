@@ -1,6 +1,7 @@
 FROM python:3.12.7-slim-bookworm
 
-RUN apt -qqy update && apt install -qqy cmake ffmpeg python3-opencv
+RUN apt -qqy update > /dev/null \
+    && apt install -qqy cmake curl ffmpeg python3-opencv > /dev/null
 
 ARG REPOSITORY_NAME
 ARG PACKAGE_NAME

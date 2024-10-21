@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
-      - run: apt update && apt install -y cmake ffmpeg git libsm6 libxext6
+      - run: apt -qqy update > /dev/null && apt install -qqy cmake ffmpeg git libsm6 libxext6 > /dev/null
       - run: pip install --upgrade pip
       - run: pip install poetry==$POETRY_VERSION
       - run: |

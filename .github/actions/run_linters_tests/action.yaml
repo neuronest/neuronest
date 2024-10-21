@@ -37,8 +37,8 @@ runs:
       - run: |
           # handle detected dubious ownership git issue
           run_linters_tests_cmd="
-            apt update \
-            && apt install -y git \
+            apt -qqy update > /dev/null \
+            && apt install -qqy git > /dev/null \
             && ([ ! -d \".git\" ] && git init || echo \".git directory already exists. Skipping git init.\") \
             && git config \
             --global \

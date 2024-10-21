@@ -1,7 +1,7 @@
 FROM nvidia/cuda:12.5.0-runtime-ubuntu22.04 as training
 
-RUN apt -qqy update \
-&& apt install -qqy software-properties-common \
+RUN apt -qqy update > /dev/null \
+&& apt install -qqy software-properties-common > /dev/null \
 && add-apt-repository ppa:deadsnakes/ppa \
 && DEBIAN_FRONTEND=noninteractive apt install -qqy \
         build-essential \
@@ -23,7 +23,7 @@ RUN apt -qqy update \
         uuid-runtime \
         wget \
         x264 \
-        zip
+        zip > /dev/null
 
 ARG REPOSITORY_NAME
 ARG PACKAGE_NAME
