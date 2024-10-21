@@ -15,32 +15,37 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 backoff = "2.2.1"
-black = { version = "22.12.0", optional = true }
+black = { version = "24.10.0", optional = true }
 ffmpeg-python = "0.2.0"
-flake8 = { version = "6.0.0", optional = true }
-google-cloud-aiplatform = "1.22.1"
-google-cloud-bigquery = "2.34.4"
-google-cloud-firestore = "2.10.0"
-google-cloud-logging = "3.5.0"
-google-cloud-run = "0.7.0"
-google-cloud-storage = "2.7.0"
+flake8 = { version = "7.1.1", optional = true }
+google-cloud-aiplatform = "1.70.0"
+google-cloud-bigquery = "3.26.0"
+google-cloud-firestore = "2.19.0"
+google-cloud-logging = "3.11.3"
+google-cloud-run = "0.10.9"
+google-cloud-storage = "2.18.2"
 imutils = "0.5.4"
-isort = { version = "5.12.0", optional = true }
-librosa = "0.9.2"
+isort = { version = "5.13.2", optional = true }
+librosa = "0.10.2.post1"
 moviepy = "1.0.3"
-numpy = "1.26.4"
-omegaconf = "2.2.3"
-opencv-contrib-python-headless = "4.7.0.68"
-pandas = "1.5.3"
-pre-commit = { version = "2.21.0", optional = true }
-pydantic = "1.10.6"
-pylint = { version = "2.17.0", optional = true }
-pytest = { version = "7.2.2", optional = true }
-pytest-xdist = { version = "^2.5.0", optional = true }
-python = ">3.9,<3.11"
-toml-sort = { version = "0.20.2", optional = true }
-tqdm = "4.65.0"
-typing-inspect = "^0.9.0"
+numpy = "2.1.2"
+omegaconf = "2.3.0"
+opencv-contrib-python-headless = "4.10.0.84"
+pandas = "2.2.3"
+pre-commit = { version = "4.0.1", optional = true }
+pydantic = "2.9.2"
+pylint = { version = "3.3.1", optional = true }
+pytest = { version = "8.3.3", optional = true }
+pytest-xdist = { version = "3.6.1", optional = true }
+python = ">3.12,<3.13"
+toml-sort = { version = "0.23.1", optional = true }
+torch = { version = "2.5.0", optional = true }
+torch-model-archiver = { version = "0.12.0", optional = true }
+torch-workflow-archiver = { version = "0.2.15", optional = true }
+torchserve = { version = "0.12.0", optional = true }
+tqdm = "4.66.5"
+typing-inspect = "0.9.0"
 
 [tool.poetry.extras]
 dev = ["black", "flake8", "isort", "pre-commit", "pylint", "pytest", "pytest-xdist", "toml-sort"]
+torch = ["torch", "torch-model-archiver", "torch-workflow-archiver", "torchserve"]
