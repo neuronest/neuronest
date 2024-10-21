@@ -57,8 +57,9 @@ WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 # using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at
 # the root of the project
-RUN curl -sSL https://install.python-poetry.org | python3.12
-RUN poetry config virtualenvs.in-project true \
+RUN curl -sSL https://install.python-poetry.org | python3.12 \
+    && poetry env use python3.12 \
+    && poetry config virtualenvs.in-project true \
     && poetry config virtualenvs.create true \
     && poetry check  \
     && poetry install
