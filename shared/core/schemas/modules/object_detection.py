@@ -49,11 +49,13 @@ class InputSampleSchema(online_prediction_model.InputSampleSchema):
 
     def serialized_attributes_dict(self):
         return {
-            key: image_to_string(
-                value, extension=INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION
+            key: (
+                image_to_string(
+                    value, extension=INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION
+                )
+                if key == "image"
+                else value
             )
-            if key == "image"
-            else value
             for key, value in self.dict().items()
         }
 

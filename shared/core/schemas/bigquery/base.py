@@ -56,11 +56,13 @@ class BigQueryModel(ABC, BaseModel):
                 name=model_field_name,
                 field_type=BIG_QUERY_TYPES_MAPPING.get(model_field.type_)
                 or bigquery.enums.SqlTypeNames.STRING,
-                mode="REQUIRED"
-                if model_field.required is True
-                or model_field.default_factory is not None
-                or model_field.default is not None
-                else "NULLABLE",
+                mode=(
+                    "REQUIRED"
+                    if model_field.required is True
+                    or model_field.default_factory is not None
+                    or model_field.default is not None
+                    else "NULLABLE"
+                ),
             )
             for model_field_name, model_field in cls.__fields__.items()
         ]

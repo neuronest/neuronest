@@ -47,14 +47,18 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
             ObjectDetectionInputSampleSchema(
                 image=resize(
                     image=sample.image,
-                    height=self.MAX_SIZE[0]
-                    if sample.image.shape[0] > self.MAX_SIZE[0]
-                    and sample.image.shape[0] > sample.image.shape[1]
-                    else None,
-                    width=self.MAX_SIZE[1]
-                    if sample.image.shape[1] > self.MAX_SIZE[1]
-                    and sample.image.shape[1] > sample.image.shape[0]
-                    else None,
+                    height=(
+                        self.MAX_SIZE[0]
+                        if sample.image.shape[0] > self.MAX_SIZE[0]
+                        and sample.image.shape[0] > sample.image.shape[1]
+                        else None
+                    ),
+                    width=(
+                        self.MAX_SIZE[1]
+                        if sample.image.shape[1] > self.MAX_SIZE[1]
+                        and sample.image.shape[1] > sample.image.shape[0]
+                        else None
+                    ),
                 ),
                 labels_to_predict=sample.labels_to_predict,
                 confidence_threshold=sample.confidence_threshold,

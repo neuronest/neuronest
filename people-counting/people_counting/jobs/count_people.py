@@ -90,9 +90,11 @@ def main(
     return Parallel(n_jobs=os.cpu_count())(
         delayed(run_asset_counting)(
             video_storage_path=GSPath(video_storage_path),
-            counted_video_storage_path=GSPath(counted_video_storage_path)
-            if counted_video_storage_path is not None
-            else None,
+            counted_video_storage_path=(
+                GSPath(counted_video_storage_path)
+                if counted_video_storage_path is not None
+                else None
+            ),
             project_id=project_id,
             region=region,
             job_id=job_id,

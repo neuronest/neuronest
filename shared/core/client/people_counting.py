@@ -30,9 +30,9 @@ class PeopleCountingClient(PredictionAPIClient):
     RealTimeInputSchema: Type[RealTimeInput] = PeopleCounterRealTimeInput
     RealTimeOutputSchema: Type[RealTimeOutput] = PeopleCounterRealTimeOutput
     JobDocumentSchema: Type[JobDocument] = PeopleCounterJobDocument
-    SampleResultsDocumentSchema: Type[
-        SampleResultsDocument
-    ] = PeopleCounterSampleResultsDocument
+    SampleResultsDocumentSchema: Type[SampleResultsDocument] = (
+        PeopleCounterSampleResultsDocument
+    )
     JobResultsDocumentSchema: Type[JobResultsDocument] = PeopleCounterJobResultsDocument
 
     def __init__(

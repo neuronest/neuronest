@@ -45,12 +45,12 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         return VideoComparatorModel()
 
     def inference(
-        self, data: List[VideoComparatorInputSampleSchema], **kwargs
+        self, data: List[VideoComparatorInputSampleSchema], *args, **kwargs
     ) -> List[Any]:
         sample = data[0]  # expected to be only one sample
 
         return super().inference(
-            sample=sample,
+            data=sample,
             device=self.device,
             batch_size=self.batch_size,
             fps=self.fps,

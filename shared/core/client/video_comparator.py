@@ -30,12 +30,12 @@ class VideoComparatorClient(PredictionAPIClient):
     RealTimeInputSchema: Type[RealTimeInput] = VideoComparatorRealTimeInput
     RealTimeOutputSchema: Type[RealTimeOutput] = VideoComparatorRealTimeOutput
     JobDocumentSchema: Type[JobDocument] = VideoComparatorJobDocument
-    SampleResultsDocumentSchema: Type[
-        SampleResultsDocument
-    ] = VideoComparatorSampleResultsDocument
-    JobResultsDocumentSchema: Type[
-        JobResultsDocument
-    ] = VideoComparatorJobResultsDocument
+    SampleResultsDocumentSchema: Type[SampleResultsDocument] = (
+        VideoComparatorSampleResultsDocument
+    )
+    JobResultsDocumentSchema: Type[JobResultsDocument] = (
+        VideoComparatorJobResultsDocument
+    )
 
     def __init__(
         self,

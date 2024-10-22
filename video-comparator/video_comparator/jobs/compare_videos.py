@@ -77,9 +77,11 @@ def run_videos_comparison(
     prediction: OutputSampleSchema = video_comparator_model_client.predict_single(
         sample=InputSampleSchema(
             video=video_asset if video_asset_existing_embedding is None else None,
-            other_video=other_video_asset
-            if other_video_asset_existing_embedding is None
-            else None,
+            other_video=(
+                other_video_asset
+                if other_video_asset_existing_embedding is None
+                else None
+            ),
             video_embedding=video_asset_existing_embedding,
             other_video_embedding=other_video_asset_existing_embedding,
         )
