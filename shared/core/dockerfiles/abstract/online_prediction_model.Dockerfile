@@ -17,14 +17,16 @@ RUN apt -qqy update > /dev/null \
         libxext6 \
         libxrender-dev \
         openjdk-11-jdk \
-        python3.12 \
-        python3.12-dev \
-        python3.12-distutils \
-        python3-pip \
         uuid-runtime \
         wget \
         x264 \
         zip > /dev/null
+
+# Install Python 3.12
+RUN apt -qqy update > /dev/null && DEBIAN_FRONTEND=noninteractive apt install -qqy python3.12 python3.12-dev python3.12-distutils > /dev/null
+
+# Install pip for Python 3.12
+RUN wget https://bootstrap.pypa.io/get-pip.py && python3.12 get-pip.py
 
 ARG REPOSITORY_NAME
 ARG PACKAGE_NAME
@@ -55,11 +57,15 @@ ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
+# make python3.12 the default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 2
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.12 2
+
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 # using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at
 # the root of the project
-RUN curl -sSL https://install.python-poetry.org | python3.12 \
-    && poetry env use python3.12 \
+RUN curl -sSL https://install.python-poetry.org | python \
+    && poetry env use python \
     && poetry config virtualenvs.in-project true \
     && poetry config virtualenvs.create true \
     && poetry check  \
