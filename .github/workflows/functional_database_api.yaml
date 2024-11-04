@@ -157,7 +157,6 @@ jobs:
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
-        shell: bash
       - id: test_integration
         uses: ./.github/actions/run_linters_tests
         with:
