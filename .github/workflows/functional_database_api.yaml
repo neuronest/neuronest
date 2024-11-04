@@ -118,7 +118,7 @@ jobs:
     needs:
       - deploy_functional_database_api
       - upload_variables_of_called_workflows
-    uses: ./.github/workflows/abstract_online_prediction_model.yaml
+    uses: ./.github/workflows/database_api.yaml
     with:
       build: false
       deploy: false
