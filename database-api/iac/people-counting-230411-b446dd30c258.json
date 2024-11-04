@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "people-counting-230411",
+  "private_key_id": "b446dd30c258c345574ee79daa3a64dc69b099e5",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDan+Wm6BKArC0a\nEDU37kR6lrHTdqX/YNfvj5f9Pl+ocjsqSgxQKnrPNL3tKP25RFAgTh2uSIYToBl5\nJ9TYxDFwpzd4P8q7uSsUYSjAjcvLJyhzu13FmRpGLMUpTwBG799/77rM+Ab9SC8/\nJ7qQPrvavAH2TOdzWRvZWQEwupYvj9zrxM0RPPM7IZoAyYYFOixRmGQ0DnGthZ9M\n/P20AwQDFteISQyiBeSD5CyrJHxPqs/ge354tevt/WloEpwDZnLloh98T8MSdrxU\n2Gn6pef8/0BzyF27iLoSVBsn5GNftkNp4UkFf+1eVe6679zulzalypYOMyqNa/Ir\nJG4HfrQTAgMBAAECggEADYU3+aN+iXCcdXEtKWFV4NLy+mXrDCkcEZeqyaGS3uL5\nn7rmmgqWf7v+Ru1zC4MbBXRvR3j6ubn7+U8qTaGMgTAGMSyYyBVCgcckcwwR32Vz\njfy3ZuH6Cv73zn8xQDHTe6ECx2xLWlydd2Vol0UZ7wQThvzoj2yiWUW02iOf6B77\nQqx5YFqztSK3/3w4kUv0X4u3sMB0U3h7BJC0aOxLwWM1A7Vv8rHchN7lQ+Z/hi6w\nS687iOWF0Zei7txAiBWxaijWGmYn0B1SSVyQBKBWs7sbu4MnWpe3SWCOPayASwCr\nwx+IrPI99z9lqqE8EdstSKCda1xWMGuc9nJsC5ZneQKBgQDtTsqIxR0uyYptuq7d\nNqfFXGCQ4ChtHLbuc93gao2E5cMJQVcgXAiQS5UpggorGZskb7lLzek4NTvvyf7b\nO+X04TnvP+DaDecCFw+zDUpwvTiehrH9Oyc5B1vC1LxL2cnqAB5mnijQJ1QpHh5i\nYDPnnW0xqn2Nt1LRZJPSw9SDlwKBgQDr2F4f3PO9IIZ9TJiab6r+VAUnXj+D2BFM\nCXV1vSERW2tG7Ie0TXRw6bUjcyUXX7xDo9L8Ro5gyAMx1TTzuwtrZLb/1pkW+8X1\nkk5Hz7YViAvkpnpvjOH8RKXgzkcbaE1RyIzkhVkT5iKfRVf40EBe5iMGyIh6vlx/\ntLqEBQqy5QKBgQDcUIYgLEBHq7zk2qh1n8RqqrTMTA+8HSiIgPHA46u3ckh8Uzk8\nRbV9oW4+NwiRsxgh38e75NNc569Zk8MUbquziVZsFHYAe1+4xQhCR1iRCluCcbLV\nUxG7FGXQoAigsvWOVcXjp3pkpd6wvdGfq4kEw1cZARvHcidlV2cWCdFGyQKBgQCk\nL2SXWgJ0z4fRAtnZ6ZNoqqVL2tjsuCaSgKM87AVxR+tO3Ks8Yg+F660mmKphs0wk\n6o+fAJ9t0NAoiPzsEHLKuLqNMKAy1+PgKZJFe9yO8L8W1q61qaZJMKEp93CZK+tn\n2+35yLtSlwvTRTsRBClL53rK5h/dE1jhrreJ4Nip4QKBgQDnBjxyhEfi6Sv7Gy5W\nK/jEIhWQv7wfQjLbntkCF/kTl3kvxG9TEdw0OqMd6xlWIsbZf89jfVbIQd4B/zFa\nO/m50IlgmO0Nk+K3Dhf4x4D0HonI9ox0TV+YDZX3Ujc3FLuKiqXsDfvOLGtUCvLX\nyyqawUfre8tegVbOueLD1mPwFg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "people-counting-230411-owner@people-counting-230411.iam.gserviceaccount.com",
+  "client_id": "104431240490677844745",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/people-counting-230411-owner%40people-counting-230411.iam.gserviceaccount.com"
+}
