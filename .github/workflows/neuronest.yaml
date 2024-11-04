@@ -10,11 +10,13 @@ on:
       - .github/workflows/functional_people_counting.yaml
       - .github/workflows/functional_video_comparator.yaml
       - .github/workflows/functional_object_detection.yaml
+      - .github/workflows/functional_database_api.yaml
       - .pre-commit-config.yaml
       - shared/**
       - people-counting/**
       - object-detection/**
       - model-instantiator/**
+      - .github/workflows/database_api.yaml
       - .github/actions/**
       - .github/variables/**
       - .pre-commit-config.yaml
