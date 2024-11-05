@@ -94,7 +94,7 @@ jobs:
 #      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
 #    secrets: inherit
 
-  database_api:
+  functional_database_api:
     # needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/functional_database_api.yaml
     with:

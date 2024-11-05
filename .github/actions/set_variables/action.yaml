@@ -32,25 +32,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Set PROJECT_ID and PROJECT_CODE based on branch
-      run: |
-        if [[ "${{ env.GITHUB_BRANCH }}" == "main" ]]; then
-          PROJECT_ID=${{ env.MAIN_GCP_PROJECT_ID }}
-        elif [[ "${{ env.GITHUB_BRANCH }}" == "def" ]]; then
-          PROJECT_ID=${{ env.DEV_GCP_PROJECT_ID }}
-        elif [[ -z "${{ env.DEFAULT_GCP_PROJECT_ID }}" ]]; then
-          echo "Error: DEFAULT_GCP_PROJECT_ID is not set for feature branch '${{ env.GITHUB_BRANCH }}'." >&2
-          exit 1
-        else
-          PROJECT_ID=${{ env.DEFAULT_GCP_PROJECT_ID }}
-        fi
-        echo "PROJECT_ID=${PROJECT_ID}" >> $GITHUB_ENV
-        
-        # If the project name contains "-", extract the first letter of each word split by "-"
-        # Otherwise, take the first 5 characters of the project name
-        PROJECT_CODE=$(echo "$project_name" | awk -F '-' '{if (NF>1) {for (i=1;i<=NF;i++) printf "%s", substr($i,1,1)} else {print substr($0,1,5)}}')
-        echo "PROJECT_CODE=${PROJECT_CODE}" >> $GITHUB_ENV
-      shell: bash
     - run: echo "NEW_PYTHON_ENVIRONMENT_LOCATION"="$(pwd)/venv" >> $GITHUB_ENV
       shell: bash
     - id: set_created_env_file_path
@@ -113,3 +94,22 @@ runs:
       with:
         envFile: ${{ steps.set_created_env_file_path.outputs.value }}
         expand: 'true'
+    - name: Set PROJECT_ID and PROJECT_CODE based on branch
+      run: |
+        if [[ "${{ env.GITHUB_BRANCH }}" == "main" ]]; then
+          PROJECT_ID=${{ env.MAIN_GCP_PROJECT_ID }}
+        elif [[ "${{ env.GITHUB_BRANCH }}" == "dev" ]]; then
+          PROJECT_ID=${{ env.DEV_GCP_PROJECT_ID }}
+        elif [[ -z "${{ env.DEFAULT_GCP_PROJECT_ID }}" ]]; then
+          echo "Error: DEFAULT_GCP_PROJECT_ID is not set for feature branch '${{ env.GITHUB_BRANCH }}'." >&2
+          exit 1
+        else
+          PROJECT_ID=${{ env.DEFAULT_GCP_PROJECT_ID }}
+        fi
+        echo "PROJECT_ID=${PROJECT_ID}" >> $GITHUB_ENV
+        
+        # If the project name contains "-", extract the first letter of each word split by "-"
+        # Otherwise, take the first 5 characters of the project name
+        PROJECT_CODE=$(echo "$project_name" | awk -F '-' '{if (NF>1) {for (i=1;i<=NF;i++) printf "%s", substr($i,1,1)} else {print substr($0,1,5)}}')
+        echo "PROJECT_CODE=${PROJECT_CODE}" >> $GITHUB_ENV
+      shell: bash
