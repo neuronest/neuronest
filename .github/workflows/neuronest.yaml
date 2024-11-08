@@ -41,10 +41,10 @@ on:
 
 env:
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
-  MAIN_GCP_PROJECT_ID: neuronest
-  DEV_GCP_PROJECT_ID: neuronest-dev
-  # Must be manually set when working on a feature branch
-  DEFAULT_GCP_PROJECT_ID: "database-api"
+#  MAIN_GCP_PROJECT_ID: neuronest
+#  DEV_GCP_PROJECT_ID: neuronest-dev
+#  # Must be manually set when working on a feature branch
+#  DEFAULT_GCP_PROJECT_ID: "database-api"
 
 jobs:
 #  upload_variables_of_called_workflows:
