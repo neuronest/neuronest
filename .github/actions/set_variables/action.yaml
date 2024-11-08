@@ -25,6 +25,10 @@ inputs:
     description: 'Whether to execute apt commands as root'
     required: false
     default: 'false'
+  other_variables_branch:
+    description: 'The branch we fetched variables for, in the other_variables section of the YAML files'
+    required: false
+    default: ''
 outputs:
   created_env_file_path:
     description: 'The environment variables file to load'
@@ -68,7 +72,7 @@ runs:
     - run: |
         python3 .github/actions/set_variables/create_env_file.py \
           --repository_name ${{ env.REPOSITORY_NAME }} \
-          --branch_name ${{ env.GITHUB_BRANCH }} \
+          $( [ -n "${{ inputs.other_variables_branch }}" ] && echo "--branch_name ${{ inputs.other_variables_branch }}" ) \
           --environment_variables_file_path ${{ steps.set_created_env_file_path.outputs.value }} \
           --add_terraform_variables ${{ inputs.set_up_terraform_variables }} \
           --variable_prefix_to_filter_on "${{ inputs.variable_prefix_to_filter_on }}" \
