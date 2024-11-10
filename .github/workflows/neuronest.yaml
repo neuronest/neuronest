@@ -1,4 +1,4 @@
-name: customer_dummy_project
+name: neuronest
 
 on:
   workflow_dispatch:
