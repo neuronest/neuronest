@@ -62,7 +62,7 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 2
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 2
 
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
-RUN curl -sSL https://install.python-poetry.org | python \
+RUN curl -sSL https://install.python-poetry.org | python
 
 # using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at
 # the root of the project
