@@ -9,6 +9,8 @@ multi_instance_resource_names:
   - BASE_IMAGE_NAME=database-api
   # service account name
   - SERVICE_ACCOUNT_NAME=database-api
+  - CLOUD_SQL_NAME=neuronest
+
 other_variables:
   branch:
     default:
