@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
-from people_counting.api.routes import router
+from people_counting.app.routes import router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

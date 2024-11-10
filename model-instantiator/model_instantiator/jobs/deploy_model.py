@@ -8,7 +8,7 @@ from core.services.deployment_status_manager import (
 )
 from google.cloud import aiplatform
 
-from model_instantiator.api.dependencies import (
+from model_instantiator.app.dependencies import (
     use_config,
     use_deployment_status_manager,
     use_firestore_client,

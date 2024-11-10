@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
 from starlette import status
 
-from model_instantiator.api.dependencies import (
+from model_instantiator.app.dependencies import (
     use_cloud_run_job_manager,
     use_config,
     use_vertex_ai_manager,

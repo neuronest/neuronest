@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from omegaconf import DictConfig
 from starlette import status
 
-from people_counting.api.dependencies import use_config
+from people_counting.app.dependencies import use_config
 from people_counting.environment_variables import (
     FIRESTORE_JOBS_COLLECTION,
     RESULTS_BUCKET,
@@ -45,4 +45,4 @@ def get_firestore_jobs_collection() -> ResourcesOutput:
 def get_maximum_elements_number(
     config: DictConfig = Depends(use_config),
 ) -> ResourcesOutput:
-    return ResourcesOutput(resource=str(config.api.maximum_elements_number))
+    return ResourcesOutput(resource=str(config.app.maximum_elements_number))

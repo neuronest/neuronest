@@ -4,7 +4,7 @@ from core.packages.abstract.online_prediction_model import config
 from pydantic import BaseModel
 
 
-class Api(BaseModel):
+class App(BaseModel):
     maximum_elements_number: int
 
 
@@ -25,7 +25,7 @@ class Preprocessing(BaseModel):
 
 
 class Config(config.Config):
-    api: Api
+    app: App
     job: Job
     model: Model
     preprocessing: Preprocessing

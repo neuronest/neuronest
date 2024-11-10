@@ -3,7 +3,7 @@ from core.schemas.abstract.prediction_api_client import ResourcesOutput
 from fastapi import APIRouter, Depends
 from starlette import status
 
-from video_comparator.api.dependencies import use_config
+from video_comparator.app.dependencies import use_config
 from video_comparator.config import Config
 from video_comparator.environment_variables import (
     FIRESTORE_JOBS_COLLECTION,
@@ -45,4 +45,4 @@ def get_firestore_jobs_collection() -> ResourcesOutput:
 def get_maximum_elements_number(
     config: Config = Depends(use_config),
 ) -> ResourcesOutput:
-    return ResourcesOutput(resource=str(config.api.maximum_elements_number))
+    return ResourcesOutput(resource=str(config.app.maximum_elements_number))

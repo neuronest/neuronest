@@ -47,7 +47,7 @@ on:
 env:
   REPOSITORY_NAME: functional-object-detection
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
-  TESTING_BASE_IMAGE: python:3.12.7-slim-bookworm
+  TESTING_BASE_IMAGE: python:3.11.10-slim-bookworm
 
 jobs:
   upload_variables_of_called_workflows:

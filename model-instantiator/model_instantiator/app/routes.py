@@ -1,8 +1,8 @@
 from core.routes.model_instantiator import routes
 from fastapi import APIRouter
 
-from model_instantiator.api.instantiate import router as instantiate_router
-from model_instantiator.api.uninstantiate import router as uninstantiate_router
+from model_instantiator.app.instantiate import router as instantiate_router
+from model_instantiator.app.uninstantiate import router as uninstantiate_router
 
 router = APIRouter(prefix=routes.root)
 

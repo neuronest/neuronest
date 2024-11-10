@@ -14,12 +14,21 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 core = {path="../shared", develop = true}
+python = ">3.11,<3.12"
+
+[tool.poetry.group.app]
+optional = true
+
+[tool.poetry.group.app.dependencies]
 fastapi = "0.115.2"
 gunicorn = "23.0.0"
-python = ">3.12,<3.13"
-scikit-learn = "1.5.2"
-torchvision = "0.20.0"
 uvicorn = "0.32.0"
+
+[tool.poetry.group.model]
+optional = true
+
+[tool.poetry.group.model.dependencies]
+torchvision = "0.20.0"
 
 [tool.poetry.group.dev]
 optional = true

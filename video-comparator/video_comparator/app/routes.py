@@ -1,8 +1,8 @@
 from core.routes.video_comparator import routes
 from fastapi import APIRouter
 
-from video_comparator.api.resources import router as resources_router
-from video_comparator.api.video_comparator import router as video_comparator_router
+from video_comparator.app.resources import router as resources_router
+from video_comparator.app.video_comparator import router as video_comparator_router
 
 router = APIRouter(prefix=routes.root)
 

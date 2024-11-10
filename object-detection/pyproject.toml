@@ -13,11 +13,22 @@ name = "object-detection"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
-PyYAML = "6.0.2"  # implicit torchhub ultralytics dependency
 core = {path="../shared", develop = true}
+python = ">3.11,<3.12"
+
+[tool.poetry.group.app]
+optional = true
+
+[tool.poetry.group.app.dependencies]
+
+[tool.poetry.group.model]
+optional = true
+
+[tool.poetry.group.model.dependencies]
+PyYAML = "6.0.2"  # implicit torchhub ultralytics dependency
 imutils = "0.5.4"
 ipython = "8.28.0"  # implicit torchhub ultralytics dependency
-python = ">3.12,<3.13"
+python = ">3.11,<3.12"
 scipy = "1.14.1"  # implicit torchhub ultralytics dependency
 seaborn = "0.13.2"  # implicit torchhub ultralytics dependency
 torchvision = "0.20.0"

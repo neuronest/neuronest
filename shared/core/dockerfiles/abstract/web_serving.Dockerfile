@@ -1,4 +1,4 @@
-FROM python:3.12.7-slim-bookworm
+FROM python:3.11.10-slim-bookworm
 
 RUN apt -qqy update > /dev/null \
     && apt install -qqy cmake curl ffmpeg python3-opencv > /dev/null
@@ -33,7 +33,8 @@ RUN curl -sSL https://install.python-poetry.org | python
 RUN poetry config virtualenvs.in-project true \
     && poetry config virtualenvs.create true \
     && poetry check  \
-    && poetry install
+    && poetry install --with app \
+    && rm -rf /root/.cache/pypoetry
 
 COPY $REPOSITORY_NAME/conf/ conf
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
@@ -46,4 +47,4 @@ CMD gunicorn \
     --access-logfile - \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:$PORT \
-    $PACKAGE_NAME.api.main:app
+    $PACKAGE_NAME.app.main:app

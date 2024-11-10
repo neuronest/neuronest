@@ -26,7 +26,7 @@ from core.utils import contains_only_n_elements
 from fastapi import APIRouter, Depends, Response
 from starlette import status
 
-from video_comparator.api.dependencies import (
+from video_comparator.app.dependencies import (
     use_cloud_run_job_manager,
     use_config,
     use_firestore_client,
@@ -125,12 +125,12 @@ def compare_videos(
 ) -> VideoComparatorOutput:
     job_id = uuid.uuid4().hex
 
-    if len(video_comparator_input.samples) > config.api.maximum_elements_number:
+    if len(video_comparator_input.samples) > config.app.maximum_elements_number:
         abort(
             code=status.HTTP_400_BAD_REQUEST,
             detail=f"The number of samples exceeds the maximum currently allowed "
             f"({len(video_comparator_input.samples)} > "
-            f"{config.api.maximum_elements_number})",
+            f"{config.app.maximum_elements_number})",
         )
 
     if (

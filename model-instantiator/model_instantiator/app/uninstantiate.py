@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
 from starlette import status
 
-from model_instantiator.api.dependencies import (
+from model_instantiator.app.dependencies import (
     use_config,
     use_deployment_status_manager,
     use_logging_client,

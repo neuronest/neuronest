@@ -1,8 +1,8 @@
 from core.routes.people_counting import routes
 from fastapi import APIRouter
 
-from people_counting.api.people_counter import router as people_counter_router
-from people_counting.api.resources import router as resources_router
+from people_counting.app.people_counter import router as people_counter_router
+from people_counting.app.resources import router as resources_router
 
 router = APIRouter(prefix=routes.root)
 

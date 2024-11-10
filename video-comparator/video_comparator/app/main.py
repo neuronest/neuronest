@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
-from video_comparator.api.routes import router
+from video_comparator.app.routes import router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

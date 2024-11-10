@@ -25,7 +25,7 @@ from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
 from starlette import status
 
-from people_counting.api.dependencies import (
+from people_counting.app.dependencies import (
     use_cloud_run_job_manager,
     use_config,
     use_firestore_client,
@@ -143,12 +143,12 @@ def count_people(
 ) -> PeopleCounterOutput:
     job_id = uuid.uuid4().hex
 
-    if len(people_counter_input.samples) > config.api.maximum_elements_number:
+    if len(people_counter_input.samples) > config.app.maximum_elements_number:
         abort(
             code=status.HTTP_400_BAD_REQUEST,
             detail=f"The number of samples exceeds the maximum currently allowed "
             f"({len(people_counter_input.samples)} > "
-            f"{config.api.maximum_elements_number})",
+            f"{config.app.maximum_elements_number})",
         )
 
     if (
