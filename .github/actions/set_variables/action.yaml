@@ -72,7 +72,6 @@ runs:
     - run: |
         python3 .github/actions/set_variables/create_env_file.py \
           --repository_name ${{ env.REPOSITORY_NAME }} \
-          # $( [ -n "${{ inputs.other_variables_branch }}" ] && echo "--branch_name ${{ inputs.other_variables_branch }}" ) \
           --branch_name ${{ env.GITHUB_BRANCH }} \
           --environment_variables_file_path ${{ steps.set_created_env_file_path.outputs.value }} \
           --add_terraform_variables ${{ inputs.set_up_terraform_variables }} \
