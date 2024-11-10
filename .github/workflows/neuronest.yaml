@@ -12,19 +12,16 @@ on:
       - .github/workflows/functional_object_detection.yaml
       - .github/workflows/functional_database_api.yaml
       - .pre-commit-config.yaml
-      - shared/**
       - people-counting/**
       - object-detection/**
       - model-instantiator/**
+      - video-comparator/**
+      - database-api/**
+      - functional-database-api/**
       - .github/workflows/database_api.yaml
       - .github/actions/**
       - .github/variables/**
       - .pre-commit-config.yaml
-      - shared/**
-      - model-instantiator/**
-      - video-comparator/**
-      - object-detection/**
-      - customer-dummy-project/**
 #  pull_request:
 #    branches:
 #      - main
