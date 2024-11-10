@@ -231,8 +231,8 @@ jobs:
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     outputs:
-      dockerhub_serving_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
-      gcp_serving_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
+      dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
+      gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables
@@ -285,4 +285,4 @@ jobs:
       - id: model_upload
         run: python -m ${PACKAGE_NAME}.cli --actions model_upload
         env:
-          SERVING_IMAGE_NAME: ${{ needs.build_test_push_model_serving_image.outputs.gcp_serving_image_name }}
+          SERVING_IMAGE_NAME: ${{ needs.build_test_push_model_serving_image.outputs.gcp_image_name }}
