@@ -54,7 +54,12 @@ ENV CLOUDSDK_INSTALL_DIR=/usr/local/gcloud
 RUN curl -sSL https://sdk.cloud.google.com | bash > /dev/null 2>&1  # silent logs
 ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 
-COPY $SHARED_REPOSITORY_NAME/core $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME/core
+COPY $SHARED_REPOSITORY_NAME/core \
+    $SHARED_REPOSITORY_NAME/pyproject.toml \
+    $SHARED_REPOSITORY_NAME/poetry.lock \
+    $SHARED_REPOSITORY_NAME/__init__.py \
+    $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
+
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
 # make python3.11 the default
