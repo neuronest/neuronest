@@ -18,7 +18,6 @@ variable "video_comparator_cloud_run_cpu" {
 }
 variable "video_comparator_cloud_run_image_name" {
   type    = string
-  default = "video_comparator_cloud_run_image_name_dummy"
 }
 variable "video_comparator_cloud_run_min_scale" {
   type = string
