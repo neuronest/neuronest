@@ -3,6 +3,7 @@ module "video_comparator" {
   project_id = var.project_id
   region     = var.region
 
+  image_name           = var.image_name
   service_account_name = var.service_account_name
   models_bucket        = var.models_bucket
   model_name           = var.model_name
@@ -10,14 +11,13 @@ module "video_comparator" {
   cloud_run_name       = var.cloud_run_name
   cloud_run_memory     = var.cloud_run_memory
   cloud_run_cpu        = var.cloud_run_cpu
-  cloud_run_image_name = var.cloud_run_image_name
   cloud_run_min_scale  = var.cloud_run_min_scale
   cloud_run_max_scale  = var.cloud_run_max_scale
 
   cloud_run_env_vars = {
     project_id                = var.project_id
     REGION                    = var.region
-    IMAGE_NAME                = var.cloud_run_image_name
+    IMAGE_NAME                = var.image_name
     MODEL_NAME                = var.model_name
     MODEL_INSTANTIATOR_HOST   = var.model_instantiator_host
     FIRESTORE_JOBS_COLLECTION = var.firestore_jobs_collection

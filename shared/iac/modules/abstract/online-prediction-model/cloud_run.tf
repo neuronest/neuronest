@@ -10,7 +10,7 @@ resource "google_cloud_run_service" "web_serving" {
   template {
     spec {
       containers {
-        image = var.cloud_run_image_name
+        image = var.image_name
         resources {
           limits = {
             "memory" = var.cloud_run_memory
