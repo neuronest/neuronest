@@ -71,5 +71,6 @@ jobs:
       deploy: true
       do_post_deployment: true
       online_prediction_model_repository: functional-object-detection
+      online_prediction_model_image_variable_name: object_detection_image_name
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit
