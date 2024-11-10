@@ -121,11 +121,7 @@ jobs:
         run: |
           # Construct the dynamic environment variable name with "TF_VAR_" prefix
           DYNAMIC_VAR_NAME="TF_VAR_${{ inputs.online_prediction_model_image_variable_name }}"
-
-          # Retrieve the value (e.g., the gcp_image_name output from build_test_push_online_prediction_model)
-          DYNAMIC_VAR_VALUE="${{ needs.build_test_push_online_prediction_model.outputs.gcp_image_name }}"
-
-          # Export and set the environment variable in GitHub Actions environment
+          DYNAMIC_VAR_VALUE="${{ needs.build_test_push_online_prediction_model.outputs.gcp_web_serving_image_name }}"
           echo "${DYNAMIC_VAR_NAME}=${DYNAMIC_VAR_VALUE}" >> $GITHUB_ENV
       - id: run_functional_online_prediction_model_terraform
         uses: ./.github/actions/run_terraform

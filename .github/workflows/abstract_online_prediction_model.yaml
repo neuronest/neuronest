@@ -35,6 +35,12 @@ on:
         required: true
         type: string
     outputs:
+      gcp_web_serving_image_name:
+        description: "The gcp web serving image name"
+        value: ${{ jobs.get_training_images.outputs.gcp_image }}
+      dockerhub_web_serving_image_name:
+        description: "The dockerhub web serving image name"
+        value: ${{ jobs.get_training_images.outputs.dockerhub_image }}
       gcp_training_image_name:
         description: "The gcp training image name"
         value: ${{ jobs.get_training_images.outputs.gcp_image }}
