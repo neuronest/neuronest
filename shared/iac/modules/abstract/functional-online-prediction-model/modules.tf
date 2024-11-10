@@ -3,16 +3,16 @@ module "online_prediction_model" {
   project_id = var.project_id
   region     = var.region
 
+  image_name           = var.online_prediction_model_image_name
   service_account_name = var.online_prediction_model_service_account_name
   models_bucket        = var.online_prediction_model_models_bucket
   model_name           = var.online_prediction_model_model_name
 
-  cloud_run_name       = var.online_prediction_model_cloud_run_name
-  cloud_run_memory     = var.online_prediction_model_cloud_run_memory
-  cloud_run_cpu        = var.online_prediction_model_cloud_run_cpu
-  cloud_run_image_name = var.online_prediction_model_cloud_run_image_name
-  cloud_run_min_scale  = var.online_prediction_model_cloud_run_min_scale
-  cloud_run_max_scale  = var.online_prediction_model_cloud_run_max_scale
+  cloud_run_name      = var.online_prediction_model_cloud_run_name
+  cloud_run_memory    = var.online_prediction_model_cloud_run_memory
+  cloud_run_cpu       = var.online_prediction_model_cloud_run_cpu
+  cloud_run_min_scale = var.online_prediction_model_cloud_run_min_scale
+  cloud_run_max_scale = var.online_prediction_model_cloud_run_max_scale
 
   cloud_run_env_vars = merge(
     var.online_prediction_model_cloud_run_env_vars,

@@ -36,13 +36,13 @@ module "functional_video_comparator" {
   region     = var.region
   timezone   = var.timezone
 
+  video_comparator_image_name                = var.video_comparator_image_name
   video_comparator_service_account_name      = var.video_comparator_service_account_name
   video_comparator_models_bucket             = var.video_comparator_models_bucket
   video_comparator_model_name                = var.video_comparator_model_name
   video_comparator_cloud_run_name            = var.video_comparator_cloud_run_name
   video_comparator_cloud_run_memory          = var.video_comparator_cloud_run_memory
   video_comparator_cloud_run_cpu             = var.video_comparator_cloud_run_cpu
-  video_comparator_cloud_run_image_name      = var.video_comparator_cloud_run_image_name
   video_comparator_cloud_run_min_scale       = var.video_comparator_cloud_run_min_scale
   video_comparator_cloud_run_max_scale       = var.video_comparator_cloud_run_max_scale
   video_comparator_firestore_jobs_collection = var.video_comparator_firestore_jobs_collection

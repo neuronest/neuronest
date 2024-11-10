@@ -1,3 +1,6 @@
+variable "video_comparator_image_name" {
+  type = string
+}
 variable "video_comparator_service_account_name" {
   type = string
 }
@@ -14,9 +17,6 @@ variable "video_comparator_cloud_run_memory" {
   type = string
 }
 variable "video_comparator_cloud_run_cpu" {
-  type = string
-}
-variable "video_comparator_cloud_run_image_name" {
   type = string
 }
 variable "video_comparator_cloud_run_min_scale" {

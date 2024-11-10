@@ -34,7 +34,7 @@ module "video_comparator" {
   source                    = "../../shared/iac/modules/services/video-comparator"
   project_id                = var.project_id
   region                    = var.region
-  model_image_name          = var.model_image_name
+  image_name                = var.image_name
   service_account_name      = var.webapp_service_account_name
   firestore_jobs_collection = var.firestore_jobs_collection
   samples_bucket            = var.samples_bucket
@@ -46,7 +46,6 @@ module "video_comparator" {
   cloud_run_name            = var.cloud_run_name
   cloud_run_memory          = var.cloud_run_memory
   cloud_run_cpu             = var.cloud_run_cpu
-  cloud_run_image_name      = var.cloud_run_image_name
   cloud_run_min_scale       = var.cloud_run_min_scale
   cloud_run_max_scale       = var.cloud_run_max_scale
 }
