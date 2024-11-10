@@ -1,26 +1,19 @@
 repository_variables:
   # general repository
-  - REPOSITORY_NAME=object-detection
-  - REPOSITORY_CODE=od
-  - PACKAGE_NAME=object_detection
+  - REPOSITORY_NAME=database-api
+  - REPOSITORY_CODE=da
+  - PACKAGE_NAME=database_api
   - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
 multi_instance_resource_names:
   # docker image
-  - BASE_IMAGE_NAME=object-detection
+  - BASE_IMAGE_NAME=database-api
   # service account name
-  - SERVICE_ACCOUNT_NAME=prediction-model
-  # vertex
-  - MODEL_NAME=model
-  # storage
-  - MODELS_BUCKET=models-${PROJECT_CODE}
+  - SERVICE_ACCOUNT_NAME=database-api
 other_variables:
   branch:
     default:
-    # GCP project
-    - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
-    - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}
-    # vertex
-    - SERVING_ACCELERATOR_TYPE=NVIDIA_TESLA_T4
-    - SERVING_ACCELERATOR_COUNT=1
-    - BATCH_SIZE=32
-    - MAX_BATCH_DELAY=50
+    # cloud run
+    - CLOUD_RUN_MEMORY=1Gi
+    - CLOUD_RUN_CPU=1000m
+    - CLOUD_RUN_MIN_SCALE=0
+    - CLOUD_RUN_MAX_SCALE=1

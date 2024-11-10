@@ -69,7 +69,16 @@ class VariableLine:
 
     def __init__(self, line: str, variable_type: Optional[VariableType] = None):
         if not self.can_be_built_from_string(line):
-            raise ValueError("line structure is not good for being VariableLine")
+            raise ValueError(
+                f"Invalid line structure for VariableLine: '{line}'. "
+                "Expected format is 'NAME=VALUE' without leading/trailing characters, "
+                "comments, or line breaks."
+            )
+        self._value = None
+        self._name = None
+        self.line = line
+        self.variable_type = variable_type
+
         self._value = None
         self._name = None
         self.line = line
@@ -340,7 +349,7 @@ class VariableLine:
 
 
 class BranchConditionedSection(BaseModel):
-    branch: Dict[str, List[str]]
+    branch: Dict[str, Optional[List[str]]]
 
 
 class YamlEnvFile(BaseModel):
@@ -355,31 +364,105 @@ class YamlEnvFile(BaseModel):
 
         return cls.parse_obj(yaml_data)
 
+    def get_repository_variables(self) -> List[VariableLine]:
+
+        return [
+            VariableLine(line=variable, variable_type=VariableType.REPOSITORY)
+            for variable in self.repository_variables
+        ]
+
+    def get_multi_instance_resource_variables(self) -> List[VariableLine]:
+
+        return [
+            VariableLine(
+                line=variable, variable_type=VariableType.MULTI_INSTANCE_RESOURCE
+            )
+            for variable in self.multi_instance_resource_names
+        ]
+
+    def get_other_variables(
+        self, branch_name: Optional[str] = None
+    ) -> Optional[List[VariableLine]]:
+        other_variables = None
+        if branch_name is not None:
+            # If a branch name is provided, attempt to retrieve the branch variables
+            other_variables = self.other_variables.branch.get(branch_name, None)
+        # If branch_name is not provided or variables for the specified branch
+        # are not found, default to using the 'default' section variables
+        if other_variables is None:
+            other_variables = self.other_variables.branch[
+                OTHER_VARIABLES_DEFAULT_SECTION
+            ]
+
+        # If neither branch-specific nor default variables are found, return None
+        # (no other variables available)
+        if other_variables is None:
+            return None
+
+        return [
+            VariableLine(line=variable, variable_type=VariableType.OTHER)
+            for variable in other_variables
+        ]
+
     def to_variables_lines(
         self,
         branch_name: Optional[str] = None,
     ) -> List[VariableLine]:
-        other_variables_section = self.other_variables.branch.get(
-            branch_name or OTHER_VARIABLES_DEFAULT_SECTION,
-            self.other_variables.branch[OTHER_VARIABLES_DEFAULT_SECTION],
-        )
+        """
+        Generate a list of VariableLine instances representing all variables
+        for the specified branch.
+
+        This method aggregates variables from three sources:
+        - Repository-specific variables
+        - Multi-instance resource variables
+        - Other variables (branch-specific or default)
+
+        If a `branch_name` is provided, it retrieves branch-specific variables.
+        If `branch_name` is None, it defaults to the pre-defined default branch section.
+
+        Args:
+            branch_name (Optional[str]): The name of the branch for which to
+                                         retrieve variables.
+                                         If None, uses the default branch section.
+
+        Returns:
+            List[VariableLine]: A list of `VariableLine` instances, combining repository
+                                variables, multi-instance resource variables, and other
+                                (branch-specific or default) variables.
+        """
+        repository_variables = self.get_repository_variables()
+        multi_instance_resource_variables = self.get_multi_instance_resource_variables()
+        other_variables = self.get_other_variables(branch_name=branch_name) or []
 
         return (
-            [
-                VariableLine(line=variable, variable_type=VariableType.REPOSITORY)
-                for variable in self.repository_variables
-            ]
-            + [
-                VariableLine(
-                    line=variable, variable_type=VariableType.MULTI_INSTANCE_RESOURCE
-                )
-                for variable in self.multi_instance_resource_names
-            ]
-            + [
-                VariableLine(line=variable, variable_type=VariableType.OTHER)
-                for variable in other_variables_section
-            ]
+            repository_variables + multi_instance_resource_variables + other_variables
         )
+
+    def get_variable_line(
+        self,
+        variable_name: str,
+        branch_name: Optional[str] = None,
+    ) -> Optional[VariableLine]:
+        """
+        Retrieve a specific variable line by its name.
+
+        This method searches for a variable line with the specified `variable_name`
+        within the context of the given `branch_name`. If a matching variable is found,
+        it returns the corresponding `VariableLine` object; otherwise, it returns `None`.
+
+        Args:
+            variable_name (str): The name of the variable to retrieve.
+            branch_name (Optional[str]): The branch context for variable selection.
+                                         Defaults to None, which selects the default branch.
+
+        Returns:
+            Optional[VariableLine]: The `VariableLine` object with the specified name
+                                    if found, otherwise `None`.
+        """
+        for variable in self.to_variables_lines(branch_name=branch_name):
+            if variable.name == variable_name:
+                return variable
+        return None
 
 
 class EnvFile:
@@ -406,9 +489,8 @@ class Repository:
     VARIABLES_FILE_PATH = "iac/variables.yaml"
     FUNCTIONAL_REPOSITORIES_PREFIX = FUNCTIONAL_REPOSITORIES_PREFIX
 
-    def __init__(self, name: str, branch_name: Optional[str] = None):
+    def __init__(self, name: str):
         self.name = name
-        self.branch_name = branch_name
 
     @property
     def yaml_env_file_path(self) -> str:
@@ -425,14 +507,12 @@ class Repository:
         return YamlEnvFile.read_file(self.yaml_env_file_path)
 
     def get_dependency_repositories(self) -> List[Repository]:
-        variable_name_value = {
+        repository_variable_name_value = {
             var_line.name: var_line.value
-            for var_line in self.get_yaml_env_file().to_variables_lines(
-                branch_name=self.branch_name
-            )
+            for var_line in self.get_yaml_env_file().get_repository_variables()
         }
         if (
-            dependency_repositories := variable_name_value.get(
+            dependency_repositories := repository_variable_name_value.get(
                 DEPENDENT_REPOSITORY_VAR_LINE_NAME
             )
         ) is not None:
@@ -440,7 +520,7 @@ class Repository:
                 ARRAY_SEPARATOR
             )
             return [
-                Repository(name=dependency_repository, branch_name=self.branch_name)
+                Repository(name=dependency_repository)
                 for dependency_repository in dependency_repositories
             ]
 
@@ -451,9 +531,7 @@ class Repository:
         # since it is configuration, we don't test it explicitly
         return [
             var_line
-            for var_line in self.get_yaml_env_file().to_variables_lines(
-                branch_name=self.branch_name
-            )
+            for var_line in self.get_yaml_env_file().get_repository_variables()
             if var_line.is_a_repository_code()
         ][0].value
 
@@ -477,6 +555,7 @@ def get_all_repository_var_lines(
     add_namespace: bool = True,
     variables_to_which_not_add_namespace: Optional[Set[str]] = None,
     add_namespace_to_name_of_multi_instance_resource: bool = True,
+    branch_name: Optional[str] = None,
 ) -> List[VariableLine]:
     if variables_to_which_not_add_namespace is None:
         variables_to_which_not_add_namespace = {}
@@ -488,11 +567,12 @@ def get_all_repository_var_lines(
             repository=dependency_repository,
             add_namespace=True,
             variables_to_which_not_add_namespace=variables_to_which_not_add_namespace,
+            branch_name=branch_name,
         )
         all_repository_var_lines += dependency_repository_var_lines
 
     all_repository_var_lines += repository.get_yaml_env_file().to_variables_lines(
-        branch_name=repository.branch_name
+        branch_name=branch_name
     )
 
     for var_line in all_repository_var_lines:
@@ -536,6 +616,57 @@ def get_all_repository_var_lines(
     return all_repository_var_lines
 
 
+def determine_project_id(
+    branch_name: str,
+    main_gcp_project_id: str,
+    dev_gcp_project_id: str,
+    default_gcp_project_id: str,
+) -> VariableLine:
+    if branch_name == "main":
+        project_id = main_gcp_project_id
+    elif branch_name == "dev":
+        project_id = dev_gcp_project_id
+    else:
+        project_id = default_gcp_project_id
+        if not default_gcp_project_id:
+            raise ValueError(
+                f"Error: DEFAULT_GCP_PROJECT_ID is not set "
+                f"for feature branch '{branch_name}'."
+            )
+    return VariableLine(
+        line=f"PROJECT_ID={project_id}", variable_type=VariableType.OTHER
+    )
+
+
+def determine_project_code(project_id: str) -> VariableLine:
+    """
+    Generate a `VariableLine` containing the project code based on the `project_id`.
+
+    The project code is generated as follows:
+    - If `project_id` contains hyphens, the code consists of the first letter of each
+    part separated by hyphens.
+    - If there are no hyphens, the code is the first five characters of `project_id`.
+
+    Args:
+        project_id (str): The identifier of the project.
+
+    Returns:
+        VariableLine: A `VariableLine` instance with `line` set to "PROJECT_CODE=<code>"
+                      and `variable_type` set to `VariableType.OTHER`.
+    """
+    parts = project_id.split("-")
+    if len(parts) > 1:
+        # Take the first letter of each part and join them
+        project_code = "".join(part[0] for part in parts)
+    else:
+        # Return the first five characters if no hyphen is found
+        project_code = project_id[:5]
+
+    return VariableLine(
+        line=f"PROJECT_CODE={project_code}", variable_type=VariableType.OTHER
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -543,7 +674,7 @@ if __name__ == "__main__":
         type=str,
         required=True,
     )
-    parser.add_argument("--branch_name", type=str, required=False, default=None)
+    parser.add_argument("--branch_name", type=str, required=True)
     parser.add_argument(
         "--environment_variables_file_path",
         type=str,
@@ -578,14 +709,33 @@ if __name__ == "__main__":
 
     shared_variables_lines = YamlEnvFile.read_file(
         file_path=".github/variables/variables.yaml"
-    ).to_variables_lines(branch_name=args.branch_name)
+    )
+
+    shared_project_id = determine_project_id(
+        branch_name=args.branch_name,
+        main_gcp_project_id=shared_variables_lines.get_variable_line(
+            "MAIN_GCP_PROJECT_ID"
+        ).value,
+        dev_gcp_project_id=shared_variables_lines.get_variable_line(
+            "DEV_GCP_PROJECT_ID"
+        ).value,
+        default_gcp_project_id=shared_variables_lines.get_variable_line(
+            "DEFAULT_GCP_PROJECT_ID"
+        ).value,
+    )
+
+    shared_project_code = determine_project_code(project_id=shared_project_id.value)
+
+    shared_variables_lines = shared_variables_lines.to_variables_lines() + [
+        shared_project_id,
+        shared_project_code,
+    ]
+
     shared_variables_lines_names = set(
         shared_var_line.name for shared_var_line in shared_variables_lines
     )
 
-    main_repository = Repository(
-        name=args.repository_name, branch_name=args.branch_name
-    )
+    main_repository = Repository(name=args.repository_name)
 
     if main_repository.has_yaml_env_file():
         repository_variables_lines = get_all_repository_var_lines(
@@ -593,6 +743,7 @@ if __name__ == "__main__":
             add_namespace=False,
             add_namespace_to_name_of_multi_instance_resource=True,
             variables_to_which_not_add_namespace=shared_variables_lines_names,
+            branch_name=args.branch_name,
         )
     else:
         repository_variables_lines = []
