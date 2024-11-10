@@ -1,29 +1,6 @@
 name: video_comparator
 
 on:
-#  push:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/video_comparator.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - video-comparator/**
-#  pull_request:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/video_comparator.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - video-comparator/**
-#  workflow_dispatch:
   workflow_call:
     inputs:
       build:

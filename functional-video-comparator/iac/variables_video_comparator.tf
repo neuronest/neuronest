@@ -1,5 +1,6 @@
 variable "video_comparator_image_name" {
   type = string
+  default = "video_comparator_image_name_dummy"
 }
 variable "video_comparator_service_account_name" {
   type = string
