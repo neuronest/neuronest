@@ -62,7 +62,7 @@ class InputSampleSchema(BaseInputSampleSchema):
     video_embedding: Optional[np.ndarray] = None
     other_video_embedding: Optional[np.ndarray] = None
 
-    @model_validator
+    @model_validator(mode="after")
     def check_specified_videos_consistency(self) -> InputSampleSchema:
         if xor_not_none(self.video, self.video_embedding) is False:
             raise ValueError(

@@ -73,7 +73,7 @@ class AssetMeta(ABC, BaseModel):
     ratio: Optional[float] = None
     surface: Optional[float] = None
 
-    @model_validator
+    @model_validator(mode="after")
     def populate_ratio_and_surface(self) -> AssetMeta:
         self.ratio = self.width / self.height
         self.surface = self.width * self.height

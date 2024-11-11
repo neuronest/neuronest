@@ -36,7 +36,7 @@ class ServingDeploymentConfig(BaseModel):
     accelerator_count: int = 0
     service_account_name: Optional[str] = None
 
-    @model_validator
+    @model_validator(mode="after")
     def validate_accelerator_fields(self) -> ServingDeploymentConfig:
         """
         To disable GPUs during serving, the proper configuration is and only is:

@@ -13,7 +13,7 @@ class _BaseRoutes(ABC, BaseModel):
     prefix: str = None
     root: str = None
 
-    @model_validator
+    @model_validator(mode="after")
     def populate_version_name_prefix_root(self) -> _BaseRoutes:
         self.version_name = f"v{self.version_number}"
         self.prefix = f"/{self.api_tag}/{self.version_name}"

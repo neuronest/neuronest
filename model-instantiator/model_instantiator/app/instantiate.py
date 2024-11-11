@@ -2,7 +2,7 @@ from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.vertex_ai_manager import VertexAIManager
 from core.routes.model_instantiator import routes
 from core.schemas.google.cloud_run import JobConfig
-from core.schemas.services.model_instantiator import (
+from core.schemas.modules.model_instantiator import (
     InstantiateModelInput,
     InstantiateModelOutput,
 )
