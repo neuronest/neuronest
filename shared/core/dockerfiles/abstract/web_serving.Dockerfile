@@ -31,7 +31,8 @@ WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 RUN curl -sSL https://install.python-poetry.org | python
 
-RUN poetry config virtualenvs.path $ROOT_DIRECTORY/$REPOSITORY_NAME/.venv \
+RUN poetry config virtualenvs.in-project true \
+    && poetry config virtualenvs.path $ROOT_DIRECTORY/$REPOSITORY_NAME/.venv \
     && poetry config virtualenvs.create true \
     && poetry check  \
     && poetry install --with app \
