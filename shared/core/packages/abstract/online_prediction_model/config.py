@@ -4,7 +4,7 @@ import logging
 from typing import List, Optional
 
 from omegaconf import OmegaConf
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -41,9 +41,9 @@ class ServingDeployment(BaseModel):
 class Dataset(BaseModel):
     name: str
 
-    @validator("name")
-    # pylint: disable=no-self-argument
-    def validate_name(cls, name):
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, name: str) -> str:
         forbidden_characters = ["-"]
         replacement_characters_of_forbidden_characters = ["_"]
         for forbidden_character, replacement_character in zip(

@@ -2,7 +2,7 @@ import base64
 import json
 from typing import Optional, Tuple, Union
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 
 class InstantiateModelInput(BaseModel):
@@ -25,8 +25,8 @@ class UninstantiateModelLogsConditionedInput(UninstantiateModelInput):
 class PubSubUninstantiateModelLogsConditioned(BaseModel):
     data: UninstantiateModelLogsConditionedInput
 
-    @validator("data", pre=True)
-    # pylint: disable=no-self-argument
+    @field_validator("data", mode="before")
+    @classmethod
     def deserialize_and_check_data(
         cls, data: Union[str, UninstantiateModelLogsConditionedInput]
     ) -> UninstantiateModelLogsConditionedInput:

@@ -5,7 +5,7 @@ from typing import List
 from uuid import uuid4
 
 from google.cloud import bigquery
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from core.path import GSPath
 from core.schemas.environment import Environment
@@ -39,8 +39,8 @@ class BigQueryModel(ABC, BaseModel):
 
         return output
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def populate_datetimes(cls, values: dict) -> dict:
         date_now = datetime.now()
 

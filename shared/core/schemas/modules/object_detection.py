@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-from pydantic import validator
+from pydantic import field_validator
 
 from core.schemas.abstract import online_prediction_model
 from core.serialization.dataframe import dataframe_from_string, dataframe_to_string
@@ -79,8 +79,8 @@ class InputSchema(online_prediction_model.InputSchema):
     #  validated one by one, but the InputSchema structure  # pylint: disable=W0511
     #  which wraps them is never validated anywhere it seems to  # pylint: disable=W0511
     #  me and therefore the sample validator is never executed  # pylint: disable=W0511
-    @validator("samples")
-    # pylint: disable=no-self-argument
+    @field_validator("samples")
+    @classmethod
     def validate_metadata_batch_unicity(
         cls, samples: List[InputSampleSchema]
     ) -> List[InputSampleSchema]:
@@ -113,18 +113,20 @@ class InputSchema(online_prediction_model.InputSchema):
 class OutputSampleSchema(online_prediction_model.OutputSampleSchema):
     results: pd.DataFrame
 
-    @validator("results")
-    # pylint: disable=no-self-argument
-    def validate_results(cls, results):
+    @field_validator("results")
+    @classmethod
+    def validate_results(cls, results: pd.DataFrame) -> pd.DataFrame:
         if not isinstance(results, pd.DataFrame):
             raise ValueError(
                 f"The expected return type is a pandas DataFrame, received a {cls}"
             )
+
         if not set(PREDICTION_COLUMNS) == set(results.columns):
             raise ValueError(
-                f"The expected colums are {PREDICTION_COLUMNS}, "
+                f"The expected columns are {PREDICTION_COLUMNS}, "
                 f"received a {results.columns}"
             )
+
         return results
 
     def serialized_attributes_dict(self) -> Dict:

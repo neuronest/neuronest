@@ -12,7 +12,7 @@ import cv2 as cv
 import librosa
 import numpy as np
 from moviepy.audio.io.AudioFileClip import AudioFileClip
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from core.path import LocalPath
 from core.services.asset_resizer import get_targeted_shape, resize_image
@@ -73,13 +73,12 @@ class AssetMeta(ABC, BaseModel):
     ratio: Optional[float] = None
     surface: Optional[float] = None
 
-    @root_validator
-    # pylint: disable=no-self-argument
-    def populate_ratio_and_surface(cls, values: dict) -> dict:
-        values["ratio"] = values["width"] / values["height"]
-        values["surface"] = values["width"] * values["height"]
+    @model_validator
+    def populate_ratio_and_surface(self) -> AssetMeta:
+        self.ratio = self.width / self.height
+        self.surface = self.width * self.height
 
-        return values
+        return self
 
 
 class ImageAssetMeta(AssetMeta):
@@ -97,15 +96,15 @@ class VideoAssetMeta(AssetMeta):
     # custom fields
     sampled_fps: float
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def populate_duration(cls, values: dict) -> dict:
         values["duration"] = values["frames_number"] / values["initial_fps"]
 
         return values
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def populate_sampled_fps(cls, values: dict) -> dict:
         values["sampled_fps"] = 1 / values["time_step"]
 
@@ -133,8 +132,8 @@ class Asset(BaseModel, ABC):
     asset_path: LocalPath
     delete: bool = False
 
-    @validator("asset_path", pre=True)
-    # pylint: disable=no-self-argument
+    @field_validator("asset_path", mode="before")
+    @classmethod
     def assert_file_exists(cls, asset_path: str) -> LocalPath:
         if not os.path.exists(asset_path):
             raise ValueError(f"The following asset path is not existing: {asset_path}")
@@ -191,8 +190,8 @@ class ImageAsset(VisualAsset):
     # fields filled with validators
     image: np.ndarray
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def fill_image(cls, values: dict) -> dict:
         asset_path, resized_shape_or_minimal_value = (
             values["asset_path"],
@@ -211,8 +210,8 @@ class ImageAsset(VisualAsset):
 
         return values
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def fill_metadata(cls, values: dict) -> dict:
         values["extension"] = extract_file_extension(values["asset_path"])
 
@@ -298,8 +297,8 @@ class VideoAsset(VisualAsset):
             else:
                 raise ValueError(f"Could not open the following asset: {asset_path}")
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def fill_metadata(cls, values: dict) -> dict:
         asset_path, resized_shape_or_minimal_value = (
             values["asset_path"],
@@ -486,8 +485,8 @@ class AudioContent(Asset):
 
             return cls(asset_path=temporary_file.name, delete=True)
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def fill_audio_clip(cls, values: dict) -> dict:
         asset_path = values["asset_path"]
 

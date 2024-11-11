@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import numpy as np
 import typing_inspect
-from pydantic import root_validator
+from pydantic import model_validator
 
 from core.schemas.abstract.online_prediction_model import (
     BaseInputSampleSchema,
@@ -62,30 +62,20 @@ class InputSampleSchema(BaseInputSampleSchema):
     video_embedding: Optional[np.ndarray] = None
     other_video_embedding: Optional[np.ndarray] = None
 
-    @root_validator
-    # pylint: disable=no-self-argument
-    def check_specified_videos_consistency(
-        cls, values: Dict[str, Union[Optional[VideoAsset], Optional[np.ndarray]]]
-    ) -> Dict[str, Union[Optional[VideoAsset], Optional[np.ndarray]]]:
-        video, other_video, video_embedding, other_video_embedding = (
-            values.get("video"),
-            values.get("other_video"),
-            values.get("video_embedding"),
-            values.get("other_video_embedding"),
-        )
-
-        if xor_not_none(video, video_embedding) is False:
+    @model_validator
+    def check_specified_videos_consistency(self) -> InputSampleSchema:
+        if xor_not_none(self.video, self.video_embedding) is False:
             raise ValueError(
                 "Either 'video' or 'video_embedding' must be specified, and not both"
             )
 
-        if xor_not_none(other_video, other_video_embedding) is False:
+        if xor_not_none(self.other_video, self.other_video_embedding) is False:
             raise ValueError(
                 "Either 'other_video' or 'other_video_embedding' must be specified, "
                 "and not both"
             )
 
-        return values
+        return self
 
     def serialize(self) -> Dict[str, Optional[str]]:
         serialized_attributes_dict = {}
