@@ -34,11 +34,18 @@ module "functional_database_api" {
   source     = "../../shared/iac/modules/services/functional-database-api"
   project_id = var.project_id
   region     = var.region
-  timezone   = var.timezone
 
-  database_api_service_account_name = var.database_api_service_account_name
-  # object_detection_models_bucket        = var.object_detection_models_bucket
-  database_api_cloud_sql_name = var.database_api_cloud_sql_name
+  database_api_image_name                     = var.database_api_image_name
+  database_api_cloud_sql_instance_name        = var.database_api_cloud_sql_instance_name
+  database_api_cloud_sql_db_name              = var.database_api_cloud_sql_db_name
+  database_api_cloud_run_cloud_sql_username   = var.database_api_cloud_run_cloud_sql_username
+  database_api_cloud_run_service_account_name = var.database_api_cloud_run_service_account_name
+  database_api_cloud_run_name                 = var.database_api_cloud_run_name
+  database_api_cloud_run_memory               = var.database_api_cloud_run_memory
+  database_api_cloud_run_cpu                  = var.database_api_cloud_run_cpu
+  database_api_cloud_run_min_scale            = var.database_api_cloud_run_min_scale
+  database_api_cloud_run_max_scale            = var.database_api_cloud_run_max_scale
+
 
   #  model_instantiator_image_name                           = var.model_instantiator_image_name
   #  model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name

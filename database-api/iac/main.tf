@@ -30,11 +30,18 @@ module "base" {
   mono_repository_name                 = var.mono_repository_name
 }
 
-module "object_detection" {
-  source               = "../../shared/iac/modules/services/object-detection"
-  project_id           = var.project_id
-  region               = var.region
-  service_account_name = var.service_account_name
-  models_bucket        = var.models_bucket
-  model_name           = var.model_name
+module "database_api" {
+  source                         = "../../shared/iac/modules/services/database-api"
+  project_id                     = var.project_id
+  region                         = var.region
+  image_name                     = var.image_name
+  cloud_sql_instance_name        = var.cloud_sql_instance_name
+  cloud_sql_db_name              = var.cloud_sql_db_name
+  cloud_run_cloud_sql_username   = var.cloud_run_cloud_sql_username
+  cloud_run_service_account_name = var.cloud_run_service_account_name
+  cloud_run_name                 = var.cloud_run_name
+  cloud_run_memory               = var.cloud_run_memory
+  cloud_run_cpu                  = var.cloud_run_cpu
+  cloud_run_min_scale            = var.cloud_run_min_scale
+  cloud_run_max_scale            = var.cloud_run_max_scale
 }

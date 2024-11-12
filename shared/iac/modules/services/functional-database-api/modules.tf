@@ -20,3 +20,19 @@
 #  model_instantiator_cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
 #  model_instantiator_cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
 #}
+
+module "database_api" {
+  source                         = "../database-api"
+  project_id                     = var.project_id
+  region                         = var.region
+  image_name                     = var.database_api_image_name
+  cloud_sql_instance_name        = var.database_api_cloud_sql_instance_name
+  cloud_sql_db_name              = var.database_api_cloud_sql_db_name
+  cloud_run_cloud_sql_username   = var.database_api_cloud_run_cloud_sql_username
+  cloud_run_service_account_name = var.database_api_cloud_run_service_account_name
+  cloud_run_name                 = var.database_api_cloud_run_name
+  cloud_run_memory               = var.database_api_cloud_run_memory
+  cloud_run_cpu                  = var.database_api_cloud_run_cpu
+  cloud_run_min_scale            = var.database_api_cloud_run_min_scale
+  cloud_run_max_scale            = var.database_api_cloud_run_max_scale
+}
