@@ -30,7 +30,7 @@ RUN pip install --upgrade pip \
   && poetry export --without-hashes -f requirements.txt --output requirements.txt \
   && pip install --no-deps -r requirements.txt
 
-COPY $REPOSITORY_NAME/conf/ conf
+# COPY $REPOSITORY_NAME/conf/ conf
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 EXPOSE $PORT

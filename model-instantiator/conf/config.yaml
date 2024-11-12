@@ -1,5 +1,5 @@
-name: 'model-instantiator'
-package_name: 'model_instantiator'
+name: '${oc.env:REPOSITORY_NAME,null}'
+package_name: '${oc.env:PACKAGE_NAME,null}'
 project_id: '${oc.env:PROJECT_ID,null}'
 region: '${oc.env:REGION,null}'
 
