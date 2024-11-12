@@ -1,5 +1,6 @@
 variable "database_api_image_name" {
-  type = string
+  type    = string
+  default = "database_api_image_name_dummy"
 }
 variable "database_api_cloud_sql_instance_name" {
   type = string
