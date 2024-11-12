@@ -28,7 +28,7 @@ COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 RUN pip install --upgrade pip \
   && pip install poetry \
   && poetry export --without-hashes -f requirements.txt --output requirements.txt \
-  && pip install --no-deps -r requirements.txt
+  && pip install -r requirements.txt
 
 # COPY $REPOSITORY_NAME/conf/ conf
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
