@@ -91,15 +91,15 @@ jobs:
 #      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
 #    secrets: inherit
 
-  functional_database_api:
-    # needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/functional_database_api.yaml
-    with:
-      build: true
-      deploy: true
-      do_post_deployment: true
-      # env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.database_api_env_file_artifact_name }}
-    secrets: inherit
+#  functional_database_api:
+#    # needs: upload_variables_of_called_workflows
+#    uses: ./.github/workflows/functional_database_api.yaml
+#    with:
+#      build: true
+#      deploy: true
+#      do_post_deployment: true
+#      # env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.database_api_env_file_artifact_name }}
+#    secrets: inherit
 
   functional_people_counting:
     # needs: upload_variables_of_called_workflows
