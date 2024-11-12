@@ -35,7 +35,7 @@ resource "random_password" "database_api_db_password" {
 resource "google_secret_manager_secret" "database_api_db_password_secret" {
   secret_id = "database_api_db_password"
   replication {
-    automatic = true
+    auto {}
   }
 }
 
