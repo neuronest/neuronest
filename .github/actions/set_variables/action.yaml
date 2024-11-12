@@ -91,7 +91,7 @@ runs:
           --repository_where_variables_are_defined ${{ env.REPOSITORY_NAME }} \
           --caller_workflow_env_file_path $caller_workflow_env_file_path \
           --refactored_caller_workflow_env_file_path $refactored_caller_workflow_env_file_path
-        cat "hello there"
+        echo "hello there"
         cat $refactored_caller_workflow_env_file_path
         cat $refactored_caller_workflow_env_file_path >> ${{ steps.set_created_env_file_path.outputs.value }}
         cat "hello there again"
