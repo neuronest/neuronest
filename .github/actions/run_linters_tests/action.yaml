@@ -50,6 +50,7 @@ runs:
             --output requirements.txt \
           && pip install -r requirements.txt \
           && cd ${{ steps.set_container_mono_repository_path.outputs.value }} \
+          && sleep 9999999 \
           && source ./.github/functions/install_terraform.sh && install_terraform \
           && pre-commit install \
           && pre-commit run \
