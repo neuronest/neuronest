@@ -1,4 +1,4 @@
-FROM python:3.8.14-buster
+FROM python:3.11.10-slim-bookworm
 
 RUN apt -qqy update && apt install -qqy cmake
 
