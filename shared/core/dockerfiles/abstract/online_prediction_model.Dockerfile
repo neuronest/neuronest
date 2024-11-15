@@ -1,7 +1,9 @@
 FROM nvidia/cuda:12.5.0-runtime-ubuntu22.04 as training
 
-RUN apt -qqy update  \
-    && DEBIAN_FRONTEND=noninteractive apt install -qqy \
+RUN apt -qqy update > /dev/null \
+&& apt install -qqy software-properties-common > /dev/null \
+&& add-apt-repository ppa:deadsnakes/ppa \
+&& DEBIAN_FRONTEND=noninteractive apt install -qqy \
         build-essential \
         curl \
         ffmpeg \
@@ -15,22 +17,23 @@ RUN apt -qqy update  \
         libxext6 \
         libxrender-dev \
         openjdk-11-jdk \
-        python3-crcmod \
-        python3-pip \
-        python3.8 \
-        python3.8-dev \
-        software-properties-common \
         uuid-runtime \
         wget \
         x264 \
-        zip
+        zip > /dev/null
+
+# Install Python 3.11
+RUN apt -qqy update > /dev/null && DEBIAN_FRONTEND=noninteractive apt install -qqy python3.11 python3.11-dev python3.11-distutils > /dev/null
+
+# Install pip for Python 3.11
+RUN wget https://bootstrap.pypa.io/get-pip.py && python3.11 get-pip.py
 
 ARG REPOSITORY_NAME
 ARG PACKAGE_NAME
 ARG MODEL_NAME
 ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
-ARG POETRY_VERSION="1.3.2"
+ARG POETRY_VERSION="1.8.4"
 ARG BATCH_SIZE="32"
 ARG MAX_BATCH_DELAY="50"
 
@@ -52,18 +55,25 @@ RUN curl -sSL https://sdk.cloud.google.com | bash > /dev/null 2>&1  # silent log
 ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 
 COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
+
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
+# make python3.11 the default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 2
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 2
+
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
-# using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at
-# the root of the project
-RUN curl -sSL https://install.python-poetry.org | python3
-RUN poetry config virtualenvs.in-project true \
+RUN curl -sSL https://install.python-poetry.org | python
+
+RUN poetry env use python \
+    && poetry config virtualenvs.in-project true \
+    && poetry config virtualenvs.path $ROOT_DIRECTORY/$REPOSITORY_NAME/.venv \
     && poetry config virtualenvs.create true \
     && poetry check  \
-    && poetry install
+    && poetry install --with model \
+    && rm -rf /root/.cache/pypoetry
 
-# COPY $REPOSITORY_NAME/config.yaml .
+COPY $REPOSITORY_NAME/conf/ conf
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 
