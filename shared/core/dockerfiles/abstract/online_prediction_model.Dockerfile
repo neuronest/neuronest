@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.0.0-runtime-ubuntu20.04 as training
+FROM nvidia/cuda:12.5.0-runtime-ubuntu22.04 as training
 
 RUN apt -qqy update  \
     && DEBIAN_FRONTEND=noninteractive apt install -qqy \

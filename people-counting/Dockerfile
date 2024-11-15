@@ -1,6 +1,6 @@
 FROM python:3.11.10-slim-bookworm
 
-RUN apt -qqy update && apt install -y cmake ffmpeg python3-opencv
+RUN apt -qqy update && apt install -y cmake ffmpeg python3-opencv build-essential g++
 
 ARG ROOT_DIRECTORY="/app"
 ARG REPOSITORY_NAME="people-counting"
