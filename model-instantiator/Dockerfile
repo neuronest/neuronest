@@ -1,6 +1,6 @@
 FROM python:3.11.10-slim-bookworm
 
-RUN apt -qqy update && apt install -qqy cmake
+RUN apt -qqy update && apt install -y cmake ffmpeg python3-opencv
 
 ARG ROOT_DIRECTORY="/app"
 ARG REPOSITORY_NAME="model-instantiator"
