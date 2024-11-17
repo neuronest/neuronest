@@ -353,7 +353,7 @@ class YamlEnvFile(BaseModel):
         with open(file_path, "r") as self_reader:
             yaml_data = yaml.safe_load(self_reader)
 
-        return cls.parse_obj(yaml_data)
+        return cls.model_validate(yaml_data)
 
     def to_variables_lines(
         self,

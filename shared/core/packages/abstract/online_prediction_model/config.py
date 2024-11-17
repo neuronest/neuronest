@@ -80,6 +80,6 @@ class Config(BaseModel):
 
     @classmethod
     def read_yaml_file(cls, file_path: str) -> Config:
-        return cls.parse_obj(
+        return cls.model_validate(
             OmegaConf.to_container(cfg=OmegaConf.load(file_path), resolve=True)
         )

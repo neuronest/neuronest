@@ -4,7 +4,7 @@ service_account: '${oc.env:SERVICE_ACCOUNT_EMAIL,null}'
 name: '${oc.env:REPOSITORY_NAME,null}'
 package_name: '${oc.env:PACKAGE_NAME,null}'
 
-api:
+app:
   maximum_elements_number: 100
 
 job:

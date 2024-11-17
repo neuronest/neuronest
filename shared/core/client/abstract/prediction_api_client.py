@@ -119,7 +119,7 @@ class PredictionAPIClient(APIClient, ABC):
         )
 
         if raw_results is not None:
-            return self.SampleResultsDocumentSchema.parse_obj(raw_results)
+            return self.SampleResultsDocumentSchema.model_validate(raw_results)
 
         if wait_if_not_existing is False:
             raise RuntimeError(
@@ -207,7 +207,7 @@ class PredictionAPIClient(APIClient, ABC):
         if raw_job_document is None:
             raise PredictionsNotFoundError(f"No predictions found for job_id={job_id}")
 
-        job_document = self.JobDocumentSchema.parse_obj(raw_job_document)
+        job_document = self.JobDocumentSchema.model_validate(raw_job_document)
 
         job_time_delta = max(
             (

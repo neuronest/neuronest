@@ -31,7 +31,7 @@ class PubSubUninstantiateModelLogsConditioned(BaseModel):
         cls, data: Union[str, UninstantiateModelLogsConditionedInput]
     ) -> UninstantiateModelLogsConditionedInput:
         if isinstance(data, str):
-            data = UninstantiateModelLogsConditionedInput.parse_obj(
+            data = UninstantiateModelLogsConditionedInput.model_validate(
                 json.loads(base64.b64decode(data))
             )
         return data

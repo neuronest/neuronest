@@ -120,10 +120,10 @@ def build_asset_meta(
     asset_type = asset_meta["asset_type"]
 
     if asset_type == AssetType.VIDEO:
-        return VideoAssetMeta.parse_obj(asset_meta)
+        return VideoAssetMeta.model_validate(asset_meta)
 
     if asset_type == AssetType.IMAGE:
-        return ImageAssetMeta.parse_obj(asset_meta)
+        return ImageAssetMeta.model_validate(asset_meta)
 
     raise ValueError(f"Unknown asset type: {asset_type}")
 

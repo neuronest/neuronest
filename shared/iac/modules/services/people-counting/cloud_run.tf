@@ -45,9 +45,12 @@ resource "google_cloud_run_service" "people_counting_api" {
           name  = "OBJECT_DETECTION_MODEL_NAME"
           value = var.object_detection_model_name
         }
-        env {
-          name  = "MODEL_INSTANTIATOR_HOST"
-          value = var.model_instantiator_host
+        dynamic "env" {
+          for_each = var.model_instantiator_host != null ? [var.model_instantiator_host] : []
+          content {
+            name  = "MODEL_INSTANTIATOR_HOST"
+            value = env.value
+          }
         }
         env {
           name  = "SAMPLES_BUCKET"

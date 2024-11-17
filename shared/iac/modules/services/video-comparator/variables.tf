@@ -23,7 +23,8 @@ variable "results_bucket" {
   type = string
 }
 variable "model_instantiator_host" {
-  type = string
+  type    = string
+  default = null
 }
 variable "cloud_run_name" {
   type = string

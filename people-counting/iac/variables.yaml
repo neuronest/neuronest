@@ -25,9 +25,6 @@ other_variables:
     - CLOUD_RUN_CPU=1000m
     - CLOUD_RUN_MIN_SCALE=0
     - CLOUD_RUN_MAX_SCALE=1
-    # communications between services
-    - MODEL_INSTANTIATOR_HOST=dummy_model_instantiator_host
-    - OBJECT_DETECTION_MODEL_NAME=dummy_object_detection_model_name
     # GCP project
     - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
     - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}
