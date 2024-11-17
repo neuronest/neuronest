@@ -29,6 +29,7 @@ optional = true
 
 [tool.poetry.group.model.dependencies]
 torchvision = "0.20.0"
+core = { path="../shared", develop = true, extras = ["torch"] }
 
 [tool.poetry.group.dev]
 optional = true
