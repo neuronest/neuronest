@@ -71,11 +71,11 @@ def main(
 
     image_name = ImageNameWithTag(os.environ["IMAGE_NAME"])
     training_metrics = TrainingMetrics(
-        model_name=config.model.name,
+        trained_model_name=config.model.name,
         training_duration=training_duration,
         metrics={},
         parameters=config.dict(),
-        model_path=model_directory,
+        trained_model_path=model_directory,
         image_name=image_name,
     )
 
