@@ -1,6 +1,8 @@
 import logging
+from typing import Optional
 
 from core.packages.abstract.online_prediction_model import config
+from core.schemas.image_name import ImageNameWithTag
 from pydantic import BaseModel
 
 
@@ -9,7 +11,7 @@ class App(BaseModel):
 
 
 class Job(BaseModel):
-    container_uri: str
+    container_uri: Optional[ImageNameWithTag]
     cpu: str
     memory: str
 
