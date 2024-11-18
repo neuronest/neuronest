@@ -70,7 +70,8 @@ RUN poetry env use python \
     && poetry config virtualenvs.path $ROOT_DIRECTORY/$REPOSITORY_NAME/.venv \
     && poetry config virtualenvs.create true \
     && poetry check  \
-    && poetry install --with model \
+    # && poetry install --with model \
+    && poetry install \
     && rm -rf /root/.cache/pypoetry
 
 COPY $REPOSITORY_NAME/conf/ conf
