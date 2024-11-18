@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - shared/**
       - .github/workflows/neuronest.yaml
       - .github/workflows/functional_abstract_online_prediction_model.yaml
       - .github/workflows/abstract_online_prediction_model.yaml
