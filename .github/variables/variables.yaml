@@ -19,7 +19,7 @@ other_variables:
       - MAIN_GCP_PROJECT_ID=neuronest
       - DEV_GCP_PROJECT_ID=neuronest-dev
         # Must be manually set when working on a feature branch
-      - DEFAULT_GCP_PROJECT_ID=database-api-yolo
+      - DEFAULT_GCP_PROJECT_ID=database-api-yolo-0
 #      - PROJECT_ID=dummy-project-id
 #      - PROJECT_CODE=dpi
 #      - FUNCTIONAL_SERVICES_PROJECT_ID=functional-services
