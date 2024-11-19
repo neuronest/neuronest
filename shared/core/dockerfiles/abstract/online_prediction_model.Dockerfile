@@ -74,7 +74,7 @@ RUN poetry env use python \
     && poetry install \
     && rm -rf /root/.cache/pypoetry
 
-COPY $REPOSITORY_NAME/conf/ conf
+# COPY $REPOSITORY_NAME/conf/ conf
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 
