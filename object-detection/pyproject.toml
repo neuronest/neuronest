@@ -21,11 +21,11 @@ nvgpu = "^0.9.0"  # torchserve dependency
 python = ">3.11,<3.12"
 scipy = "^1.9.3"  # implicit torchhub ultralytics dependency
 seaborn = "^0.12.1"  # implicit torchhub ultralytics dependency
-torch = "^1.12.1"
-torch-model-archiver = "^0.6.0"
-torch-workflow-archiver = "^0.2.4"
-torchserve = "^0.6.0"
-torchvision = "^0.13.1"
+torch = { version = "2.5.0" }
+torch-model-archiver = { version = "0.12.0" }
+torch-workflow-archiver = { version = "0.2.15" }
+torchserve = { version = "0.12.0" }
+torchvision = "0.20.0"
 ultralytics = "^8.0.105"
 
 [tool.poetry.group.dev]

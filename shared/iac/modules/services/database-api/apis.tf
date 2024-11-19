@@ -31,6 +31,13 @@ resource "google_project_service" "secret_manager" {
   disable_on_destroy = false
 }
 
+# Enable Compute Engine API
+resource "google_project_service" "compute_engine" {
+  project            = var.project_id
+  service            = "compute.googleapis.com"
+  disable_on_destroy = false
+}
+
 # This is used so there is some time for the activation of the APIs to propagate through
 # Google Cloud before actually calling them.
 resource "time_sleep" "api_activation_waiting" {
@@ -38,7 +45,9 @@ resource "time_sleep" "api_activation_waiting" {
   depends_on = [
     google_project_service.cloud_run,
     google_project_service.cloud_sql,
+    google_project_service.secret_manager,
     google_project_service.service_networking,
-    google_project_service.secret_manager
+    google_project_service.compute_engine
   ]
 }
+
