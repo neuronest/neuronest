@@ -31,14 +31,10 @@ resource "google_cloud_run_service" "database_api" {
           value = var.cloud_run_cloud_sql_username
         }
         env {
-          name = "DB_PASSWORD"
-          value_from {
-            secret_key_ref {
-              name = google_secret_manager_secret.database_api_db_password_secret.secret_id
-              key  = data.google_secret_manager_secret_version.database_api_neuronest_instance_user_data.secret_data
-            }
-          }
+          name  = "DB_PASSWORD"
+          value = data.google_secret_manager_secret_version.database_api_neuronest_instance_user_data.secret_data
         }
+
         env {
           name  = "DB_NAME"
           value = google_sql_database.neuronest_database.name
