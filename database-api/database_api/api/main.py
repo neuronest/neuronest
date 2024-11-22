@@ -8,18 +8,27 @@ from sqlalchemy.orm import Session, sessionmaker
 
 app = FastAPI()
 
-# Configure database URL from environment variables
+# Configure database URL dynamically based on environment
+DB_USER = os.getenv("DB_USER")  # Default for local dev
+DB_PASSWORD = os.getenv("DB_PASSWORD")  # Default for local dev
+DB_NAME = os.getenv("DB_NAME", "local_db")  # Default for local dev
+CLOUD_SQL_CONNECTION_NAME = os.getenv("CLOUD_SQL_CONNECTION_NAME")
 
-# Makes sense to create a user dedicated to the cloud run
-DB_USER = os.getenv("DB_USER")
-DB_PASS = os.getenv("DB_PASS")
-DB_NAME = os.getenv("DB_NAME")
-INSTANCE_CONNECTION_NAME = os.getenv("INSTANCE_CONNECTION_NAME")
+if CLOUD_SQL_CONNECTION_NAME:
+    # Cloud SQL connection
+    DATABASE_URL = (
+        f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}"
+        f"?host=/cloudsql/{CLOUD_SQL_CONNECTION_NAME}"
+    )
+else:
+    # Local PostgreSQL connection
+    LOCAL_HOST = os.getenv("DB_HOST", "127.0.0.1")  # Default localhost
+    LOCAL_PORT = os.getenv("DB_PORT", "5432")  # Default port for PostgreSQL
+    DATABASE_URL = (
+        f"postgresql+psycopg2://"
+        f"{DB_USER}:{DB_PASSWORD}@{LOCAL_HOST}:{LOCAL_PORT}/{DB_NAME}"
+    )
 
-DATABASE_URL = (
-    f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@/{DB_NAME}"
-    f"?host=/cloudsql/{INSTANCE_CONNECTION_NAME}"
-)
 
 # Initialize Database
 engine = create_engine(DATABASE_URL)
@@ -62,8 +71,13 @@ def create_project(
     new_project = Project(gcp_project_id=project.gcp_project_id)
     database.add(new_project)
     database.commit()
-    # new_project.id might still be None here without refresh if the id
-    # is auto-generated
-    database.refresh(new_project)  # Ensures new_project.id now has the generated ID
+    database.refresh(new_project)
 
     return {"id": new_project.id, "gcp_project_id": new_project.gcp_project_id}
+
+
+if __name__ == "__main__":
+    # used for debugging purposes only
+    import uvicorn  # isort:skip
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -15,8 +15,12 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 core = {path="../shared", develop = true}
 fastapi = "^0.88.0"
+gunicorn = "23.0.0"
+psycopg2-binary = "^2.9.10"
+pydantic = "1.10.6"
 python = ">3.11,<3.12"  # Update the Python requirement here
 sqlalchemy = "1.4.44"
+uvicorn = "0.32.0"
 
 [tool.poetry.group.dev]
 optional = true

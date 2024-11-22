@@ -1,26 +1,4 @@
 ##############################################
-#        Private Services Configuration      #
-##############################################
-
-# Reserve Private IP Range
-resource "google_compute_global_address" "private_ip_address_range" {
-  name          = "private-ip-range"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  prefix_length = 16
-  network       = "default" # Use your network name
-}
-
-# Create Private Services Connection
-resource "google_service_networking_connection" "private_connection" {
-  network = "default" # Use your network name
-  service = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [
-    google_compute_global_address.private_ip_address_range.name
-  ]
-}
-
-##############################################
 #       Cloud SQL PostgreSQL Instance        #
 ##############################################
 
@@ -36,8 +14,7 @@ resource "google_sql_database_instance" "neuronest_instance" {
       enabled = true
     }
     ip_configuration {
-      ipv4_enabled    = false
-      private_network = "projects/${var.project_id}/global/networks/default" # Use the default network
+      ipv4_enabled = true
     }
   }
 }
