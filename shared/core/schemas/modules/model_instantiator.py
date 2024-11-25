@@ -6,15 +6,16 @@ from pydantic import BaseModel, field_validator
 
 
 class InstantiateModelInput(BaseModel):
-    model_name: str
+    # 'model_*' is a reserved Pydantic keyword, so we call it 'trained_model_name'
+    trained_model_name: str
 
 
 class UninstantiateModelInput(BaseModel):
-    model_name: str
+    trained_model_name: str
 
 
 class UpdateStatusInput(BaseModel):
-    model_name: str
+    trained_model_name: str
 
 
 class UninstantiateModelLogsConditionedInput(UninstantiateModelInput):

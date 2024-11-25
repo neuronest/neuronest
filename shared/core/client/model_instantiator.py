@@ -19,7 +19,7 @@ class ModelInstantiatorClient(APIClient):
             resource=f"/{routes.Instantiator.prefix}"
             f"{routes.Instantiator.instantiate}",
             verb="post",
-            payload=InstantiateModelInput(model_name=model_name).model_dump(),
+            payload=InstantiateModelInput(trained_model_name=model_name).model_dump(),
         )
 
     def uninstantiate(self, model_name: str) -> requests.Response:
@@ -27,5 +27,5 @@ class ModelInstantiatorClient(APIClient):
             resource=f"/{routes.Uninstantiator.prefix}"
             f"{routes.Uninstantiator.uninstantiate}",
             verb="post",
-            payload=UninstantiateModelInput(model_name=model_name).model_dump(),
+            payload=UninstantiateModelInput(trained_model_name=model_name).model_dump(),
         )

@@ -100,7 +100,7 @@ def uninstantiate_model(
         use_deployment_status_manager
     ),
 ):
-    model_name = uninstantiate_model_input.model_name
+    model_name = uninstantiate_model_input.trained_model_name
 
     endpoint = vertex_ai_manager.get_endpoint_by_name(model_name)
     if endpoint is None:
@@ -135,7 +135,7 @@ def uninstantiate_model_logs_conditioned(
     ),
     logging_client: LoggingClient = Depends(use_logging_client),
 ) -> UninstantiateModelOutput:
-    model_name = uninstantiate_model_input.model_name
+    model_name = uninstantiate_model_input.trained_model_name
     default_messages = uninstantiate_model_input.default_messages
 
     endpoint = vertex_ai_manager.get_endpoint_by_name(model_name)

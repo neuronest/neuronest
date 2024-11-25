@@ -70,7 +70,7 @@ def instantiate_model(
     vertex_ai_manager: VertexAIManager = Depends(use_vertex_ai_manager),
     cloud_run_job_manager: CloudRunJobManager = Depends(use_cloud_run_job_manager),
 ):
-    model_name = instantiate_model_input.model_name
+    model_name = instantiate_model_input.trained_model_name
 
     model = vertex_ai_manager.get_last_model_by_name(name=model_name)
 
@@ -82,7 +82,7 @@ def instantiate_model(
             response=response, model_name=model_name
         )
 
-    job_name = underscore_to_hyphen(instantiate_model_input.model_name)
+    job_name = underscore_to_hyphen(model_name)
     execution = cloud_run_job_manager.list_executions(job_name, exclude_terminated=True)
 
     if len(execution) > 0:
