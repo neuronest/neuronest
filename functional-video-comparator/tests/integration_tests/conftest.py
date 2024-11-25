@@ -13,6 +13,11 @@ from tests.environment_variables import (
 )
 
 
+@pytest.fixture(name="google_application_credentials", scope="session")
+def fixture_google_application_credentials() -> str:
+    return GOOGLE_APPLICATION_CREDENTIALS
+
+
 @pytest.fixture(name="model_instantiator_host", scope="session")
 def fixture_model_instantiator_host() -> str:
     return MODEL_INSTANTIATOR_HOST
@@ -34,24 +39,28 @@ def fixture_video_comparator_url() -> str:
 
 
 @pytest.fixture(name="storage_client", scope="session")
-def fixture_storage_client() -> StorageClient:
-    return StorageClient()
+def fixture_storage_client(google_application_credentials: str) -> StorageClient:
+    return StorageClient(key_path=google_application_credentials)
 
 
 @pytest.fixture(name="model_instantiator_client", scope="session")
 def fixture_model_instantiator_client(
-    model_instantiator_host: str,
+    model_instantiator_host: str, google_application_credentials: str
 ) -> ModelInstantiatorClient:
     return ModelInstantiatorClient(
-        host=model_instantiator_host,
+        host=model_instantiator_host, key_path=google_application_credentials
     )
 
 
 @pytest.fixture(name="video_comparator_client", scope="session")
 def fixture_video_comparator_client(
-    video_comparator_url: str, project_id: str
+    video_comparator_url: str, google_application_credentials: str, project_id: str
 ) -> VideoComparatorClient:
-    return VideoComparatorClient(host=video_comparator_url, project_id=project_id)
+    return VideoComparatorClient(
+        host=video_comparator_url,
+        key_path=google_application_credentials,
+        project_id=project_id,
+    )
 
 
 @pytest.fixture(name="uninstantiate_teardown", scope="session")
