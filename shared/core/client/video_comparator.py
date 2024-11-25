@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple, Type
 
 from core.client.abstract.prediction_api_client import PredictionAPIClient
 from core.path import LocalPath
+from core.routes.base import BaseRoutes
 from core.routes.video_comparator import routes
 from core.schemas.abstract.prediction_api_client import (
     Input,
@@ -36,6 +37,7 @@ class VideoComparatorClient(PredictionAPIClient):
     JobResultsDocumentSchema: Type[JobResultsDocument] = (
         VideoComparatorJobResultsDocument
     )
+    routes: BaseRoutes = routes
 
     def __init__(
         self,
@@ -46,32 +48,19 @@ class VideoComparatorClient(PredictionAPIClient):
         super().__init__(
             host=host,
             key_path=key_path,
-            root=routes.root,
             project_id=project_id,
         )
 
-    def _get_results_bucket_name(self) -> str:
-        return self._get_resource(
-            resource=f"/{routes.Resources.prefix}{routes.Resources.results_bucket}"
-        )
-
-    def _get_firestore_jobs_collection_name(self) -> str:
-        return self._get_resource(
-            resource=f"/{routes.Resources.prefix}"
-            f"{routes.Resources.firestore_jobs_collection}"
-        )
-
-    def _get_samples_bucket_name(self) -> str:
-        return self._get_resource(
-            resource=f"/{routes.Resources.prefix}{routes.Resources.samples_bucket}"
-        )
-
-    def _get_maximum_elements_number(self) -> int:
-        return int(
-            self._get_resource(
-                resource=f"/{routes.Resources.prefix}"
-                f"{routes.Resources.maximum_elements_number}"
-            )
+    def get_predictions_from_job_id(
+        self,
+        job_id: str,
+        wait_if_not_existing: bool = False,
+        job_timeout: int = 2700,
+    ) -> VideoComparatorJobResultsDocument:
+        return self.get_predictions_from_job_id(
+            job_id=job_id,
+            wait_if_not_existing=wait_if_not_existing,
+            job_timeout=job_timeout,
         )
 
     def compare_videos_async(
@@ -88,8 +77,6 @@ class VideoComparatorClient(PredictionAPIClient):
                 f"/{routes.VideoComparator.prefix}"
                 f"{routes.VideoComparator.compare_videos}"
             ),
-            samples_bucket_name=self._get_samples_bucket_name(),
-            maximum_elements_number=self._get_maximum_elements_number(),
             timeout=timeout,
         )
 
@@ -108,10 +95,6 @@ class VideoComparatorClient(PredictionAPIClient):
                 f"/{routes.VideoComparator.prefix}"
                 f"{routes.VideoComparator.compare_videos}"
             ),
-            samples_bucket_name=self._get_samples_bucket_name(),
-            results_bucket_name=self._get_results_bucket_name(),
-            job_collection_name=self._get_firestore_jobs_collection_name(),
-            maximum_elements_number=self._get_maximum_elements_number(),
             timeout=timeout,
             job_timeout=job_timeout,
         )
@@ -128,6 +111,5 @@ class VideoComparatorClient(PredictionAPIClient):
             ),
             resource=f"/{routes.VideoComparator.prefix}"
             f"{routes.VideoComparator.compare_videos_real_time}",
-            samples_bucket_name=self._get_samples_bucket_name(),
             timeout=timeout,
         )

@@ -1,8 +1,16 @@
 project_id: '${oc.env:PROJECT_ID,null}'
 region: '${oc.env:REGION,null}'
 service_account: '${oc.env:SERVICE_ACCOUNT_EMAIL,null}'
-name: 'object-detection'
+name: '${oc.env:REPOSITORY_NAME,null}'
 package_name: '${oc.env:PACKAGE_NAME,null}'
+
+app:
+  maximum_elements_number: 100
+
+job:
+  container_uri: '${oc.env:SERVING_IMAGE_NAME,null}'
+  cpu: '1.0'
+  memory: '4Gi'
 
 model:
   name: '${oc.env:MODEL_NAME,null}'
@@ -34,4 +42,3 @@ serving_deployment:
 bigquery:
   dataset:
     name: '${model.name}_training'
-

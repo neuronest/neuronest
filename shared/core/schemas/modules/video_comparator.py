@@ -49,7 +49,7 @@ class VideoComparatorJobDocument(BaseJobDocument):
 
 
 class VideoComparatorSampleResultsDocument(BaseSampleResultsDocument):
-    similarity_results: float
+    similarity_score: float
 
 
 class VideoComparatorJobResultsDocument(BaseJobResultsDocument):
@@ -80,7 +80,7 @@ class InputSampleSchema(BaseInputSampleSchema):
     def serialize(self) -> Dict[str, Optional[str]]:
         serialized_attributes_dict = {}
 
-        for key, value in self.dict().items():
+        for key, value in self.model_dump().items():
             if value is None:
                 serialized_attributes_dict[key] = None
                 continue
@@ -132,7 +132,7 @@ class InputSampleSchema(BaseInputSampleSchema):
 class OutputSampleSchema(BaseOutputSampleSchema):
     video_embedding: np.ndarray
     other_video_embedding: np.ndarray
-    similarity_results: float
+    similarity_score: float
 
     def serialize(self) -> Dict[str, Optional[str]]:
         serialized_attributes_dict = {}
@@ -156,7 +156,7 @@ class OutputSampleSchema(BaseOutputSampleSchema):
         deserialized_attributes_dict = {}
 
         for key, value in serialized_attributes.items():
-            fields_with_types = cls.__fields__
+            fields_with_types = cls.model_fields
 
             if key not in fields_with_types:
                 raise ValueError(f"Unexpected field '{key}'")

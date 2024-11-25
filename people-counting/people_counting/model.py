@@ -1,7 +1,7 @@
 from typing import List
 
 import numpy as np
-from core.client.model_client import ObjectDetectionClient
+from core.client.model_client.object_detection import ObjectDetectionModelClient
 
 from people_counting.common import BoundingBox
 
@@ -9,11 +9,11 @@ from people_counting.common import BoundingBox
 class Model:
     def __init__(
         self,
-        object_detection_client: ObjectDetectionClient,
+        object_detection_model_client: ObjectDetectionModelClient,
         confidence_threshold: float,
         class_name: str = "person",
     ):
-        self.object_detection_client = object_detection_client
+        self.object_detection_model_client = object_detection_model_client
         self.confidence_threshold = confidence_threshold
         self.class_name = class_name
 

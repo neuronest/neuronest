@@ -5,7 +5,7 @@ from core.client.people_counting import PeopleCountingClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.schemas.asset import AssetType
-from core.schemas.modules.people_counting import PeopleCounterAssetResultsDocument
+from core.schemas.modules.people_counting import PeopleCounterSampleResultsDocument
 from core.services.asset_reader import make_assets
 
 from tests.integration_tests.common import are_detections_correct
@@ -48,7 +48,7 @@ def test_count_people_async(
         )
         for people_counter_output in people_counter_outputs
     ]
-    all_assets_results: List[PeopleCounterAssetResultsDocument] = [
+    all_samples_results: List[PeopleCounterSampleResultsDocument] = [
         asset_results
         for people_counter_job_results_document in people_counter_job_results_documents
         for asset_results in people_counter_job_results_document.results
@@ -65,11 +65,11 @@ def test_count_people_async(
     )
     assert all(
         are_detections_correct(
-            detections=asset_results.detections,
+            detections=sample_results.detections,
             up_amount=up_amount,
             down_amount=down_amount,
         )
-        for asset_results, up_amount, down_amount in zip(
-            all_assets_results, up_amounts, down_amounts
+        for sample_results, up_amount, down_amount in zip(
+            all_samples_results, up_amounts, down_amounts
         )
     )

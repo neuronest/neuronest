@@ -66,7 +66,7 @@ def _real_time_response(
 ) -> VideoComparatorRealTimeOutput:
     response.status_code = status.HTTP_200_OK
 
-    return VideoComparatorRealTimeOutput(similarity_score=output.similarity_results)
+    return VideoComparatorRealTimeOutput(similarity_score=output.similarity_score)
 
 
 def _validate_video_storage_path(video_storage_path: GSPath, expected_bucket_name: str):

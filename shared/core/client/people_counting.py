@@ -2,6 +2,7 @@ from typing import List, Optional, Type
 
 from core.client.abstract.prediction_api_client import PredictionAPIClient
 from core.path import LocalPath
+from core.routes.base import BaseRoutes
 from core.routes.people_counting import routes
 from core.schemas.abstract.prediction_api_client import (
     Input,
@@ -34,6 +35,7 @@ class PeopleCountingClient(PredictionAPIClient):
         PeopleCounterSampleResultsDocument
     )
     JobResultsDocumentSchema: Type[JobResultsDocument] = PeopleCounterJobResultsDocument
+    routes: BaseRoutes = routes
 
     def __init__(
         self,
@@ -44,32 +46,7 @@ class PeopleCountingClient(PredictionAPIClient):
         super().__init__(
             host=host,
             key_path=key_path,
-            root=routes.root,
             project_id=project_id,
-        )
-
-    def _get_results_bucket_name(self) -> str:
-        return self._get_resource(
-            resource=f"/{routes.Resources.prefix}{routes.Resources.results_bucket}"
-        )
-
-    def _get_firestore_jobs_collection_name(self) -> str:
-        return self._get_resource(
-            resource=f"/{routes.Resources.prefix}"
-            f"{routes.Resources.firestore_jobs_collection}"
-        )
-
-    def _get_samples_bucket_name(self) -> str:
-        return self._get_resource(
-            resource=f"/{routes.Resources.prefix}{routes.Resources.samples_bucket}"
-        )
-
-    def _get_maximum_elements_number(self) -> int:
-        return int(
-            self._get_resource(
-                resource=f"/{routes.Resources.prefix}"
-                f"{routes.Resources.maximum_elements_number}"
-            )
         )
 
     def get_predictions_from_job_id(
@@ -78,9 +55,7 @@ class PeopleCountingClient(PredictionAPIClient):
         wait_if_not_existing: bool = False,
         job_timeout: int = 2700,
     ) -> PeopleCounterJobResultsDocument:
-        return self._get_predictions_from_job_id(
-            results_bucket_name=self._get_results_bucket_name(),
-            job_collection_name=self._get_firestore_jobs_collection_name(),
+        return self.get_predictions_from_job_id(
             job_id=job_id,
             wait_if_not_existing=wait_if_not_existing,
             job_timeout=job_timeout,
@@ -100,8 +75,6 @@ class PeopleCountingClient(PredictionAPIClient):
             resource=(
                 f"/{routes.PeopleCounter.prefix}{routes.PeopleCounter.count_people}"
             ),
-            samples_bucket_name=self._get_samples_bucket_name(),
-            maximum_elements_number=self._get_maximum_elements_number(),
             input_kwargs={"save_counted_videos": save_counted_videos_in_storage},
             timeout=timeout,
         )
@@ -121,10 +94,6 @@ class PeopleCountingClient(PredictionAPIClient):
             resource=(
                 f"/{routes.PeopleCounter.prefix}{routes.PeopleCounter.count_people}"
             ),
-            samples_bucket_name=self._get_samples_bucket_name(),
-            results_bucket_name=self._get_results_bucket_name(),
-            job_collection_name=self._get_firestore_jobs_collection_name(),
-            maximum_elements_number=self._get_maximum_elements_number(),
             input_kwargs={"save_counted_videos": save_counted_videos_in_storage},
             timeout=timeout,
             job_timeout=job_timeout,
@@ -142,7 +111,6 @@ class PeopleCountingClient(PredictionAPIClient):
             sample=LocalSample(paths=(LocalPath(video_path),)),
             resource=f"/{routes.PeopleCounter.prefix}"
             f"{routes.PeopleCounter.count_people_real_time}",
-            samples_bucket_name=self._get_samples_bucket_name(),
             input_kwargs={
                 "save_counted_video": save_counted_video_in_storage,
                 "enable_video_showing": enable_video_showing,

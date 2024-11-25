@@ -28,10 +28,6 @@ def create_storage_client(project_id: Optional[str] = None) -> StorageClient:
     return StorageClient(project_id=project_id)
 
 
-def create_firestore_client(project_id: Optional[str] = None) -> FirestoreClient:
-    return FirestoreClient(project_id=project_id)
-
-
 def create_embedding_manager(
     storage_client: StorageClient, bucket_name: str
 ) -> EmbeddingManager:

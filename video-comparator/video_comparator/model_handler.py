@@ -28,17 +28,13 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         self,
         *args,
         batch_size: Optional[int] = None,
-        image_size: Optional[int] = None,
         center_crop_size: Optional[int] = None,
-        fps: Optional[int] = None,
         device: Device = Device.CUDA,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.batch_size = batch_size or cfg.model.batch_size
-        self.image_size = image_size or cfg.preprocessing.image_size
         self.center_crop_size = center_crop_size or cfg.preprocessing.center_crop_size
-        self.fps = fps or cfg.preprocessing.fps
         self.device = device
 
     def create_new_model(self):
@@ -50,11 +46,9 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         sample = data[0]  # expected to be only one sample
 
         return super().inference(
-            data=sample,
+            data=[sample],
             device=self.device,
             batch_size=self.batch_size,
-            fps=self.fps,
-            image_size=self.image_size,
             center_crop_size=self.center_crop_size,
         )
 
@@ -63,13 +57,13 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
     ) -> List[VideoComparatorOutputSampleSchema]:
         sample = data[0]  # expected to be only one sample
 
-        video_embedding, other_video_embedding, similarity_results = sample
+        video_embedding, other_video_embedding, similarity_score = sample
 
         return [
             VideoComparatorOutputSampleSchema(
                 video_embedding=video_embedding.numpy(),
                 other_video_embedding=other_video_embedding.numpy(),
-                similarity_results=similarity_results.item(),
+                similarity_score=similarity_score.item(),
             )
         ]
 

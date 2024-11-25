@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import List, Tuple, TypeVar
 
@@ -8,12 +10,17 @@ from core.path import GSPath, LocalPath
 Input = TypeVar("Input", bound="BaseInput")
 Output = TypeVar("Output", bound="BaseOutput")
 RealTimeInput = TypeVar("RealTimeInput", bound="BaseRealTimeInput")
+RealTimeInlineInput = TypeVar("RealTimeInlineInput", bound="BaseRealTimeInlineInput")
 RealTimeOutput = TypeVar("RealTimeOutput", bound="BaseRealTimeOutput")
 JobDocument = TypeVar("JobDocument", bound="BaseJobDocument")
 SampleResultsDocument = TypeVar(
     "SampleResultsDocument", bound="BaseSampleResultsDocument"
 )
 JobResultsDocument = TypeVar("JobResultsDocument", bound="BaseJobResultsDocument")
+
+
+class InlineSample(BaseModel):
+    element: str
 
 
 class LocalSample(BaseModel):
@@ -41,6 +48,10 @@ class BaseJobResultsDocument(BaseModel):
 
 class BaseRealTimeInput(BaseModel):
     sample: GSSample
+
+
+class BaseRealTimeInlineInput(BaseModel):
+    inline_sample: InlineSample
 
 
 class BaseInput(BaseModel):

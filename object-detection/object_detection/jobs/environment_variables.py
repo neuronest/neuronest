@@ -1,0 +1,10 @@
+import os
+
+PROJECT_ID = os.environ["PROJECT_ID"]
+REGION = os.environ["REGION"]
+MODEL_NAME = os.environ["MODEL_NAME"]
+MODEL_INSTANTIATOR_HOST = os.environ["MODEL_INSTANTIATOR_HOST"]
+JOB_ID = os.environ["JOB_ID"]
+RESULTS_BUCKET = os.environ["RESULTS_BUCKET"]
+IMAGES_STORAGE_PATHS = os.environ["IMAGES_STORAGE_PATHS"]
+SAMPLE_METADATA = os.environ["SAMPLE_METADATA"]

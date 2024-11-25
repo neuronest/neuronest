@@ -1,42 +1,86 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-from pydantic import field_validator
+from pydantic import BaseModel, field_validator
 
 from core.schemas.abstract import online_prediction_model
+from core.schemas.abstract.online_prediction_model import (
+    BaseInputSampleSchema,
+    BaseOutputSampleSchema,
+)
+from core.schemas.abstract.prediction_api_client import (
+    BaseInput,
+    BaseJobDocument,
+    BaseJobResultsDocument,
+    BaseOutput,
+    BaseRealTimeInlineInput,
+    BaseRealTimeOutput,
+    BaseSampleResultsDocument,
+)
 from core.serialization.dataframe import dataframe_from_string, dataframe_to_string
 from core.serialization.image import image_from_string, image_to_string
-
-PREDICTION_COLUMNS = [
-    "x_min",
-    "y_min",
-    "x_max",
-    "y_max",
-    "score",
-    "class_id",
-    "class_name",
-]
 
 INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION = ".jpg"
 
 
-class InputSampleSchema(online_prediction_model.InputSampleSchema):
-    image: Union[np.ndarray]
+class OutputPrediction(BaseModel):
+    x_min: int
+    y_min: int
+    x_max: int
+    y_max: int
+    score: float
+    class_id: int
+    class_name: str
+
+
+class SampleMetadata(BaseModel):
     labels_to_predict: Optional[List[str]] = None
     confidence_threshold: Optional[float] = None
     overridden_image_width: Optional[int] = None
+
+
+class ObjectDetectionInput(BaseInput):
+    sample_metadata: SampleMetadata
+
+
+class ObjectDetectionRealTimeInlineInput(BaseRealTimeInlineInput):
+    sample_metadata: SampleMetadata
+
+
+class ObjectDetectionOutput(BaseOutput):
+    pass
+
+
+class ObjectDetectionRealTimeOutput(BaseRealTimeOutput):
+    predictions: List[OutputPrediction]
+
+
+class ObjectDetectionJobDocument(BaseJobDocument):
+    pass
+
+
+class ObjectDetectionSampleResultsDocument(BaseSampleResultsDocument):
+    predictions: List[OutputPrediction]
+
+
+class ObjectDetectionJobResultsDocument(BaseJobResultsDocument):
+    results: List[ObjectDetectionSampleResultsDocument]
+
+
+class InputSampleSchema(BaseInputSampleSchema):
+    image: np.ndarray
+    sample_metadata: SampleMetadata
 
     @property
     def metadata(
         self,
     ) -> Dict[str, Union[Optional[List[str]], Optional[float], Optional[int]]]:
         return {
-            "labels_to_predict": self.labels_to_predict,
-            "confidence_threshold": self.confidence_threshold,
-            "overridden_image_width": self.overridden_image_width,
+            metadata_name: getattr(self, metadata_name)
+            for metadata_name in SampleMetadata.model_fields
         }
 
     @property
@@ -47,27 +91,28 @@ class InputSampleSchema(online_prediction_model.InputSampleSchema):
             if metadata_value is not None
         }
 
-    def serialized_attributes_dict(self):
+    def serialize(self) -> Dict[str, Any]:
         return {
             key: (
                 image_to_string(
                     value, extension=INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION
                 )
-                if key == "image"
+                if key not in SampleMetadata.model_fields
                 else value
             )
-            for key, value in self.dict().items()
+            for key, value in self.model_dump().items()
         }
 
     @classmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict
-    ) -> InputSampleSchema:
-
+    def deserialize(cls, serialized_attributes: Dict[str, Any]) -> InputSampleSchema:
         return cls(
             **{
-                key: image_from_string(value) if key == "image" else value
-                for key, value in serialized_attributes_dict.items()
+                key: (
+                    image_from_string(value)
+                    if key not in SampleMetadata.model_fields
+                    else value
+                )
+                for key, value in serialized_attributes.items()
             }
         )
 
@@ -91,8 +136,8 @@ class InputSchema(online_prediction_model.InputSchema):
         first_sample_metadata_filtered = first_sample.metadata_filtered
 
         error_message = (
-            "If some metadata is specified for one sample, it has to be "
-            "equally specified for every samples"
+            "If some metadata is specified for one sample, it has to be equally "
+            "specified for every samples"
         )
 
         if len(first_sample_metadata_filtered) == 0:
@@ -110,39 +155,27 @@ class InputSchema(online_prediction_model.InputSchema):
         return samples
 
 
-class OutputSampleSchema(online_prediction_model.OutputSampleSchema):
+class OutputSampleSchema(BaseOutputSampleSchema):
     results: pd.DataFrame
 
     @field_validator("results")
     @classmethod
     def validate_results(cls, results: pd.DataFrame) -> pd.DataFrame:
-        if not isinstance(results, pd.DataFrame):
-            raise ValueError(
-                f"The expected return type is a pandas DataFrame, received a {cls}"
-            )
+        prediction_columns = list(OutputPrediction.model_fields)
 
-        if not set(PREDICTION_COLUMNS) == set(results.columns):
+        if not set(prediction_columns) == set(results.columns):
             raise ValueError(
-                f"The expected columns are {PREDICTION_COLUMNS}, "
+                f"The expected columns are {prediction_columns}, "
                 f"received a {results.columns}"
             )
 
         return results
 
-    def serialized_attributes_dict(self) -> Dict:
-        return {
-            key: dataframe_to_string(value) if key == "results" else value
-            for key, value in self.dict().items()
-        }
+    def serialize(self) -> Dict[str, Any]:
+        return {"results": dataframe_to_string(self.results)}
 
     @classmethod
-    def from_serialized_attributes_dict(
-        cls, serialized_attributes_dict: Dict
-    ) -> OutputSampleSchema:
-
+    def deserialize(cls, serialized_attributes: Dict[str, Any]) -> OutputSampleSchema:
         return cls(
-            **{
-                key: dataframe_from_string(value) if key == "results" else value
-                for key, value in serialized_attributes_dict.items()
-            }
+            **{"results": dataframe_from_string(serialized_attributes["results"])}
         )

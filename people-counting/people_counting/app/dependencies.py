@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from core.client.model_client import ObjectDetectionClient
+from core.client.model_client.object_detection import ObjectDetectionModelClient
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.firestore_client import FirestoreClient
@@ -53,8 +53,8 @@ def use_cloud_run_job_manager() -> CloudRunJobManager:
 
 
 @lru_cache
-def use_object_detection_client() -> ObjectDetectionClient:
-    return ObjectDetectionClient(
+def use_object_detection_model_client() -> ObjectDetectionModelClient:
+    return ObjectDetectionModelClient(
         vertex_ai_manager=VertexAIManager(
             key_path=GOOGLE_APPLICATION_CREDENTIALS,
             location=REGION,
@@ -71,12 +71,12 @@ def use_object_detection_client() -> ObjectDetectionClient:
 @lru_cache
 def use_people_counter(
     config: DictConfig = Depends(use_config),
-    object_detection_client: ObjectDetectionClient = Depends(
-        use_object_detection_client
+    object_detection_model_client: ObjectDetectionModelClient = Depends(
+        use_object_detection_model_client
     ),
 ) -> PeopleCounter:
     return PeopleCounter(
-        object_detection_client=object_detection_client,
+        object_detection_model_client=object_detection_model_client,
         confidence_threshold=config.postprocessing.confidence_threshold,
         algorithm_config=config.algorithm,
         image_width=config.preprocessing.image_width,

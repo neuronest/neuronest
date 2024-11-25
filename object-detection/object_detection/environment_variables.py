@@ -1,0 +1,14 @@
+import os
+
+# GOOGLE_APPLICATION_CREDENTIALS may not exist because authentication
+# may be different from a Google product
+GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+PROJECT_ID = os.environ["PROJECT_ID"]
+REGION = os.environ["REGION"]
+IMAGE_NAME = os.environ["IMAGE_NAME"]
+
+MODEL_NAME = os.environ["MODEL_NAME"]
+MODEL_INSTANTIATOR_HOST = os.environ["MODEL_INSTANTIATOR_HOST"]
+FIRESTORE_JOBS_COLLECTION = os.environ["FIRESTORE_JOBS_COLLECTION"]
+RESULTS_BUCKET = os.environ["RESULTS_BUCKET"]
+SAMPLES_BUCKET = os.environ["SAMPLES_BUCKET"]

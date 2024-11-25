@@ -14,6 +14,7 @@ from core.schemas.modules.video_comparator import (
 from core.services.asset_reader import make_assets
 from joblib import Parallel, delayed
 
+from video_comparator.config import cfg
 from video_comparator.jobs.environment_variables import (
     EMBEDDINGS_BUCKET,
     JOB_ID,
@@ -55,8 +56,10 @@ def run_videos_comparison(
 
     video_asset, other_video_asset = make_assets(
         assets_paths=[video_storage_path, other_video_storage_path],
-        storage_client=storage_client,
         asset_type=AssetType.VIDEO,
+        storage_client=storage_client,
+        time_step=1 / cfg.preprocessing.fps,
+        resized_shape_or_minimal_value=cfg.preprocessing.image_size,
     )
     video_asset_id, other_video_asset_id = (
         video_asset.get_hash(),
@@ -93,7 +96,9 @@ def run_videos_comparison(
     )
 
     video_comparator_document = VideoComparatorSampleResultsDocument(
-        similarity_results=prediction.similarity_results
+        sample_id=sample_id,
+        job_id=job_id,
+        similarity_score=prediction.similarity_score,
     )
     storage_client.upload_blob_from_dict(
         bucket_name=results_bucket,

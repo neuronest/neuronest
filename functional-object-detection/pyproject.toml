@@ -9,7 +9,7 @@ profile = "black"
 [tool.poetry]
 authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
 description = "Functional object detection project"
-name = "object-detection-functional"
+name = "functional-object-detection"
 version = "0.1.0"
 
 [tool.poetry.dependencies]

@@ -1,12 +1,14 @@
 from typing import List, cast
 
-import pandas as pd
 from imutils import resize
 
 from core.client.model_client.abstract.online_prediction_model import (
     OnlinePredictionModelClient,
 )
-from core.schemas.abstract.online_prediction_model import InputSampleSchema
+from core.schemas.abstract.online_prediction_model import (
+    InputSampleSchema,
+    OutputSampleSchema,
+)
 from core.schemas.modules.object_detection import (
     InputSampleSchema as ObjectDetectionInputSampleSchema,
 )
@@ -15,7 +17,7 @@ from core.schemas.modules.object_detection import (
 )
 
 
-class ObjectDetectionClient(OnlinePredictionModelClient):
+class ObjectDetectionModelClient(OnlinePredictionModelClient):
     INPUT_SAMPLE_SCHEMA = ObjectDetectionInputSampleSchema
     OUTPUT_SAMPLE_SCHEM = ObjectDetectionOutputSampleSchema
     MAX_SIZE = (640, 640)
@@ -60,20 +62,25 @@ class ObjectDetectionClient(OnlinePredictionModelClient):
                         else None
                     ),
                 ),
-                labels_to_predict=sample.labels_to_predict,
-                confidence_threshold=sample.confidence_threshold,
-                overridden_image_width=sample.overridden_image_width,
+                sample_metadata=sample.sample_metadata,
             )
             for sample in samples
         ]
 
-    # pylint: disable=arguments-differ,arguments-renamed
     def predict_batch(
         self,
         samples: List[InputSampleSchema],
-    ) -> List[pd.DataFrame]:
+    ) -> List[OutputSampleSchema]:
         samples = cast(List[ObjectDetectionInputSampleSchema], samples)
         if not self._are_shapes_correct(samples):
             raise ValueError("Incorrect received shapes")
 
         return super().predict_batch(samples=self._resize_images(samples))
+
+    def predict_single(
+        self,
+        sample: InputSampleSchema,
+    ) -> OutputSampleSchema:
+        sample = cast(ObjectDetectionInputSampleSchema, sample)
+
+        return self.predict_batch([sample])[0]

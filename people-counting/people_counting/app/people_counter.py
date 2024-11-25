@@ -84,7 +84,7 @@ def _validate_video_storage_path(video_storage_path: GSPath, expected_bucket_nam
         )
 
 
-def _validate_video_storage_paths(
+def _validate_videos_storage_paths(
     videos_storage_paths: List[GSPath], expected_bucket_name: str
 ):
     for video_storage_path in videos_storage_paths:
@@ -169,7 +169,7 @@ def count_people(
         )
 
     try:
-        _validate_video_storage_paths(
+        _validate_videos_storage_paths(
             videos_storage_paths=video_storage_paths,
             expected_bucket_name=SAMPLES_BUCKET,
         )

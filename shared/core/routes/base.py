@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
+from typing import TypeVar
 
 from pydantic import BaseModel, model_validator
 
@@ -20,6 +21,9 @@ class _BaseRoutes(ABC, BaseModel):
         self.root = f"/{self.service_name}{self.prefix}"
 
         return self
+
+
+BaseRoutes = TypeVar("BaseRoutes", bound="_BaseRoutes")
 
 
 class BaseResources(ABC):

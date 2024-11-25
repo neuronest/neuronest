@@ -24,8 +24,6 @@ class VideoComparatorModel(OnlinePredictionModel):
         sample: InputSampleSchema,
         device: Device,
         batch_size: int,
-        fps: int,
-        image_size: int,
         center_crop_size: int,
     ) -> List[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         video_embedding = (

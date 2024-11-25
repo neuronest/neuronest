@@ -2,7 +2,8 @@ import datetime
 import json
 import time
 from abc import ABC
-from typing import Any, Dict, Iterable, List, Optional, Type
+from functools import lru_cache
+from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
 from core.client.abstract.api_client import APIClient
 from core.exceptions import PredictionsNotFoundError
@@ -10,6 +11,7 @@ from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
 from core.hashing import combine_hashes
 from core.path import GSPath
+from core.routes.base import BaseRoutes
 from core.schemas.abstract.prediction_api_client import (
     GSSample,
     Input,
@@ -17,6 +19,7 @@ from core.schemas.abstract.prediction_api_client import (
     JobResultsDocument,
     LocalSample,
     Output,
+    RealTimeInlineInput,
     RealTimeInput,
     RealTimeOutput,
     ResourcesOutput,
@@ -35,22 +38,25 @@ def make_results_blob_name(
 class PredictionAPIClient(APIClient, ABC):
     InputSchema: Type[Input]
     OutputSchema: Type[Output]
-    RealTimeInputSchema: Type[RealTimeInput]
+    RealTimeInputSchema: Union[Type[RealTimeInput], Type[RealTimeInlineInput]]
     RealTimeOutputSchema: Type[RealTimeOutput]
     JobDocumentSchema: Type[JobDocument]
     SampleResultsDocumentSchema: Type[SampleResultsDocument]
     JobResultsDocumentSchema: Type[JobResultsDocument]
+    routes: BaseRoutes = None
 
     def __init__(
         self,
         host: str,
-        root: str,
         key_path: Optional[str] = None,
         project_id: Optional[str] = None,
     ):
+        if self.routes is None:
+            raise RuntimeError("The class attribute 'routes' has not been filled")
+
         super().__init__(
             host=host,
-            root=root,
+            root=self.routes.root,
             key_path=key_path,
             project_id=project_id,
         )
@@ -61,6 +67,7 @@ class PredictionAPIClient(APIClient, ABC):
             key_path=key_path, project_id=self.project_id
         )
 
+    @lru_cache
     def _get_resource(self, resource: str) -> str:
         return ResourcesOutput(
             **json.loads(
@@ -70,6 +77,32 @@ class PredictionAPIClient(APIClient, ABC):
                 ).text
             )
         ).resource
+
+    def _get_results_bucket_name(self) -> str:
+        return self._get_resource(
+            resource=f"/{self.routes.Resources.prefix}"
+            f"{self.routes.Resources.results_bucket}"
+        )
+
+    def _get_firestore_jobs_collection_name(self) -> str:
+        return self._get_resource(
+            resource=f"/{self.routes.Resources.prefix}"
+            f"{self.routes.Resources.firestore_jobs_collection}"
+        )
+
+    def _get_samples_bucket_name(self) -> str:
+        return self._get_resource(
+            resource=f"/{self.routes.Resources.prefix}"
+            f"{self.routes.Resources.samples_bucket}"
+        )
+
+    def _get_maximum_elements_number(self) -> int:
+        return int(
+            self._get_resource(
+                resource=f"/{self.routes.Resources.prefix}"
+                f"{self.routes.Resources.maximum_elements_number}"
+            )
+        )
 
     def _upload_sample_to_storage(
         self, sample: LocalSample, destination_bucket: str
@@ -173,11 +206,12 @@ class PredictionAPIClient(APIClient, ABC):
         self,
         samples: List[LocalSample],
         resource: str,
-        samples_bucket_name: str,
         input_kwargs: Optional[Dict[str, Any]],
         timeout: int,
-        maximum_elements_number: int,
     ) -> List[Output]:
+        samples_bucket_name = self._get_samples_bucket_name()
+        maximum_elements_number = self._get_maximum_elements_number()
+
         return [
             self._chunk_predict(
                 samples=chunk_samples,
@@ -191,16 +225,14 @@ class PredictionAPIClient(APIClient, ABC):
             )
         ]
 
-    def _get_predictions_from_job_id(
+    def get_predictions_from_job_id(
         self,
-        results_bucket_name: str,
-        job_collection_name: str,
         job_id: str,
         wait_if_not_existing: bool = False,
         job_timeout: int = 2700,
     ) -> JobResultsDocument:
         raw_job_document = self.firestore_client.get_document(
-            collection_name=job_collection_name,
+            collection_name=self._get_firestore_jobs_collection_name(),
             document_id=job_id,
         )
 
@@ -222,7 +254,7 @@ class PredictionAPIClient(APIClient, ABC):
                 results=[
                     self._get_predictions(
                         job_id=job_id,
-                        results_bucket_name=results_bucket_name,
+                        results_bucket_name=self._get_results_bucket_name(),
                         sample_id=sample_id,
                         wait_if_not_existing=wait_if_not_existing,
                         timeout=job_time_delta,
@@ -240,28 +272,20 @@ class PredictionAPIClient(APIClient, ABC):
         self,
         samples: List[LocalSample],
         resource: str,
-        samples_bucket_name: str,
-        maximum_elements_number: int,
         input_kwargs: Optional[Dict[str, Any]] = None,
         timeout: int = 2700,
     ) -> List[Output]:
         return self._predict(
             samples=samples,
             resource=resource,
-            samples_bucket_name=samples_bucket_name,
             input_kwargs=input_kwargs,
             timeout=timeout,
-            maximum_elements_number=maximum_elements_number,
         )
 
     def predict_sync(
         self,
         samples: List[LocalSample],
         resource: str,
-        samples_bucket_name: str,
-        results_bucket_name: str,
-        job_collection_name: str,
-        maximum_elements_number: int,
         input_kwargs: Optional[Dict[str, Any]] = None,
         timeout: int = 60,
         job_timeout: int = 2700,
@@ -269,16 +293,12 @@ class PredictionAPIClient(APIClient, ABC):
         prediction_outputs = self._predict(
             samples=samples,
             resource=resource,
-            samples_bucket_name=samples_bucket_name,
             input_kwargs=input_kwargs,
             timeout=timeout,
-            maximum_elements_number=maximum_elements_number,
         )
 
         job_results = [
-            self._get_predictions_from_job_id(
-                results_bucket_name=results_bucket_name,
-                job_collection_name=job_collection_name,
+            self.get_predictions_from_job_id(
                 job_id=prediction_output.job_id,
                 wait_if_not_existing=True,
                 job_timeout=job_timeout,
@@ -292,14 +312,34 @@ class PredictionAPIClient(APIClient, ABC):
             for asset_results in job_result.results
         ]
 
+    def predict_real_time_inline(
+        self,
+        sample: RealTimeInlineInput,
+        resource: str,
+        timeout: int = 2700,
+    ) -> RealTimeOutput:
+        if sample.inline_sample is None:
+            raise ValueError("No inline sample received (sample.inline_sample is None)")
+
+        return self.RealTimeOutputSchema(
+            **json.loads(
+                self.call(
+                    resource=resource,
+                    verb="post",
+                    payload=sample.model_dump(),
+                    timeout=timeout,
+                ).text
+            )
+        )
+
     def predict_real_time(
         self,
         sample: LocalSample,
         resource: str,
-        samples_bucket_name: str,
         input_kwargs: Optional[Dict[str, Any]] = None,
         timeout: int = 2700,
     ) -> RealTimeOutput:
+        samples_bucket_name = self._get_samples_bucket_name()
         gs_sample = self._upload_sample_to_storage(
             sample=sample,
             destination_bucket=samples_bucket_name,
@@ -312,7 +352,7 @@ class PredictionAPIClient(APIClient, ABC):
                     verb="post",
                     payload=self.RealTimeInputSchema(
                         sample=gs_sample, **input_kwargs
-                    ).dict(),
+                    ).model_dump(),
                     timeout=timeout,
                 ).text
             )

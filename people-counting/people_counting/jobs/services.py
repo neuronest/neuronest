@@ -1,6 +1,6 @@
 from typing import Optional
 
-from core.client.model_client.object_detection import ObjectDetectionClient
+from core.client.model_client.object_detection import ObjectDetectionModelClient
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import VertexAIManager
@@ -9,13 +9,13 @@ from omegaconf import DictConfig
 from people_counting.people_counter import PeopleCounter
 
 
-def create_object_detection_client(
+def create_object_detection_model_client(
     project_id: str,
     region: str,
     model_instantiator_host: str,
     object_detection_model_name: str,
-) -> ObjectDetectionClient:
-    return ObjectDetectionClient(
+) -> ObjectDetectionModelClient:
+    return ObjectDetectionModelClient(
         vertex_ai_manager=VertexAIManager(
             location=region,
             project_id=project_id,
@@ -34,7 +34,7 @@ def create_people_counter(
     object_detection_model_name: str,
     config: DictConfig,
 ) -> PeopleCounter:
-    object_detection_client = create_object_detection_client(
+    object_detection_model_client = create_object_detection_model_client(
         project_id=project_id,
         region=region,
         model_instantiator_host=model_instantiator_host,
@@ -42,7 +42,7 @@ def create_people_counter(
     )
 
     return PeopleCounter(
-        object_detection_client=object_detection_client,
+        object_detection_model_client=object_detection_model_client,
         confidence_threshold=config.postprocessing.confidence_threshold,
         algorithm_config=config.algorithm,
         image_width=config.preprocessing.image_width,
