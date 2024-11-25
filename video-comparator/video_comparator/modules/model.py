@@ -8,9 +8,9 @@ from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
 from core.schemas.abstract.online_prediction_model import Device
-from core.schemas.modules.video_comparator import InputSampleSchema
 
 from video_comparator.model.visil import ViSiL
+from video_comparator.modules.schemas import ModelInput
 
 
 class VideoComparatorModel(OnlinePredictionModel):
@@ -21,18 +21,18 @@ class VideoComparatorModel(OnlinePredictionModel):
     def __call__(
         self,
         *,
-        sample: InputSampleSchema,
+        model_input: ModelInput,
         device: Device,
         batch_size: int,
         center_crop_size: int,
     ) -> List[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         video_embedding = (
-            torch.from_numpy(sample.video_embedding).to(device)
-            if sample.video_embedding is not None
+            model_input.video_embedding.to(device)
+            if model_input.video_embedding is not None
             else self._extract_features(
                 model=self._model,
                 frames=self._center_crop(
-                    frames=torch.from_numpy(sample.video.as_array_content),
+                    frames=model_input.video,
                     desired_size=center_crop_size,
                 ),
                 device=device,
@@ -41,12 +41,12 @@ class VideoComparatorModel(OnlinePredictionModel):
         )
 
         other_video_embedding = (
-            torch.from_numpy(sample.other_video_embedding).to(device)
-            if sample.other_video_embedding is not None
+            model_input.other_video_embedding.to(device)
+            if model_input.other_video_embedding is not None
             else self._extract_features(
                 model=self._model,
                 frames=self._center_crop(
-                    frames=torch.from_numpy(sample.other_video.as_array_content),
+                    frames=model_input.other_video,
                     desired_size=center_crop_size,
                 ),
                 device=device,

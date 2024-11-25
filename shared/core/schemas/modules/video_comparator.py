@@ -4,7 +4,6 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import typing_inspect
-from pydantic import model_validator
 
 from core.schemas.abstract.online_prediction_model import (
     BaseInputSampleSchema,
@@ -23,7 +22,6 @@ from core.schemas.asset import VideoAsset
 from core.serialization.array import array_from_string, array_to_string
 from core.serialization.bytes import bytes_to_string, string_to_bytes
 from core.services.asset_reader import make_asset_from_bytes
-from core.utils import xor_not_none
 
 VIDEO_FORCED_EXTENSION: str = ".mp4"
 
@@ -61,21 +59,6 @@ class InputSampleSchema(BaseInputSampleSchema):
     other_video: Optional[VideoAsset] = None
     video_embedding: Optional[np.ndarray] = None
     other_video_embedding: Optional[np.ndarray] = None
-
-    @model_validator(mode="after")
-    def check_specified_videos_consistency(self) -> InputSampleSchema:
-        if xor_not_none(self.video, self.video_embedding) is False:
-            raise ValueError(
-                "Either 'video' or 'video_embedding' must be specified, and not both"
-            )
-
-        if xor_not_none(self.other_video, self.other_video_embedding) is False:
-            raise ValueError(
-                "Either 'other_video' or 'other_video_embedding' must be specified, "
-                "and not both"
-            )
-
-        return self
 
     def serialize(self) -> Dict[str, Optional[str]]:
         serialized_attributes_dict = {}

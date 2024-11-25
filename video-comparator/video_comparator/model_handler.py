@@ -15,6 +15,7 @@ from core.schemas.modules.video_comparator import (
 
 from video_comparator.config import cfg
 from video_comparator.modules.model import VideoComparatorModel
+from video_comparator.modules.schemas import ModelInput
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -43,10 +44,22 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
     def inference(
         self, data: List[VideoComparatorInputSampleSchema], *args, **kwargs
     ) -> List[Any]:
+        if len(data) == 0:
+            return []
+
         sample = data[0]  # expected to be only one sample
 
         return super().inference(
-            data=[sample],
+            data=[
+                ModelInput(
+                    video=torch.from_numpy(sample.video.as_array_content),
+                    other_video=torch.from_numpy(sample.other_video.as_array_content),
+                    video_embedding=torch.from_numpy(sample.video_embedding),
+                    other_video_embedding=torch.from_numpy(
+                        sample.other_video_embedding
+                    ),
+                )
+            ],
             device=self.device,
             batch_size=self.batch_size,
             center_crop_size=self.center_crop_size,

@@ -2,6 +2,7 @@ import logging
 from typing import Any, List, Optional
 
 import pandas as pd
+import torch
 from core.packages.abstract.online_prediction_model.model_handler import (
     OnlinePredictionModelHandler,
 )
@@ -94,7 +95,8 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         )
 
         images = [
-            resize(sample.image, width=self.overridden_image_width) for sample in data
+            torch.from_numpy(resize(sample.image, width=self.overridden_image_width))
+            for sample in data
         ]
 
         return super().inference(
