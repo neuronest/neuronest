@@ -4,11 +4,11 @@ from typing import Optional
 
 import torch
 from core.utils import xor_not_none
-from pydantic import model_validator
+from pydantic import ConfigDict, model_validator
 from pydantic.dataclasses import dataclass
 
 
-@dataclass
+@dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class ModelInput:
     video: Optional[torch.Tensor] = None
     other_video: Optional[torch.Tensor] = None
