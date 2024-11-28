@@ -7,3 +7,6 @@ output "online_prediction_model_url" {
 output "model_name" {
   value = module.online_prediction_model.model_name
 }
+output "service_account" {
+  value = module.online_prediction_model.service_account
+}
