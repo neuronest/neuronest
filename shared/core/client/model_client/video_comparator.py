@@ -6,4 +6,4 @@ from core.schemas.modules.video_comparator import InputSampleSchema, OutputSampl
 
 class VideoComparatorModelClient(OnlinePredictionModelClient):
     INPUT_SAMPLE_SCHEMA = InputSampleSchema
-    OUTPUT_SAMPLE_SCHEM = OutputSampleSchema
+    OUTPUT_SAMPLE_SCHEMA = OutputSampleSchema

@@ -187,6 +187,7 @@ class PredictionAPIClient(APIClient, ABC):
         input_kwargs: Optional[Dict[str, Any]],
         timeout: int,
     ) -> Output:
+        input_kwargs = input_kwargs or {}
         gs_samples = self._upload_samples_to_storage(
             samples=samples, destination_bucket=samples_bucket_name
         )
@@ -339,6 +340,8 @@ class PredictionAPIClient(APIClient, ABC):
         input_kwargs: Optional[Dict[str, Any]] = None,
         timeout: int = 2700,
     ) -> RealTimeOutput:
+        input_kwargs = input_kwargs or {}
+
         samples_bucket_name = self._get_samples_bucket_name()
         gs_sample = self._upload_sample_to_storage(
             sample=sample,

@@ -19,7 +19,7 @@ from core.schemas.modules.object_detection import (
 
 class ObjectDetectionModelClient(OnlinePredictionModelClient):
     INPUT_SAMPLE_SCHEMA = ObjectDetectionInputSampleSchema
-    OUTPUT_SAMPLE_SCHEM = ObjectDetectionOutputSampleSchema
+    OUTPUT_SAMPLE_SCHEMA = ObjectDetectionOutputSampleSchema
     MAX_SIZE = (640, 640)
 
     def __init__(self, *args, **kwargs):
