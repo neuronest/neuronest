@@ -7,6 +7,12 @@ variable "online_prediction_model_service_account_name" {
 variable "online_prediction_model_models_bucket" {
   type = string
 }
+variable "online_prediction_model_results_bucket" {
+  type = string
+}
+variable "online_prediction_model_samples_bucket" {
+  type = string
+}
 variable "online_prediction_model_model_name" {
   type = string
 }

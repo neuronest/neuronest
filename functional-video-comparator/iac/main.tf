@@ -25,16 +25,18 @@ module "base" {
   source                               = "../../shared/iac/modules/services/base"
   project_id                           = var.project_id
   region                               = var.region
+  vpc_network                          = var.vpc_network
   firestore_region                     = var.firestore_region
   project_builder_service_account_name = var.project_builder_service_account_name
   mono_repository_name                 = var.mono_repository_name
 }
 
 module "functional_video_comparator" {
-  source     = "../../shared/iac/modules/services/functional-video-comparator"
-  project_id = var.project_id
-  region     = var.region
-  timezone   = var.timezone
+  source      = "../../shared/iac/modules/services/functional-video-comparator"
+  project_id  = var.project_id
+  region      = var.region
+  vpc_network = var.vpc_network
+  timezone    = var.timezone
 
   video_comparator_image_name                = var.video_comparator_image_name
   video_comparator_service_account_name      = var.video_comparator_service_account_name

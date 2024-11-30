@@ -24,6 +24,7 @@ from object_detection.jobs.environment_variables import (
     REGION,
     RESULTS_BUCKET,
     SAMPLE_METADATA,
+    VPC_NETWORK,
 )
 from object_detection.jobs.services import (
     create_object_detection_model_client,
@@ -34,6 +35,7 @@ from object_detection.jobs.services import (
 def run_objects_detection(
     project_id: str,
     region: str,
+    vpc_network: str,
     results_bucket: str,
     model_instantiator_host: str,
     job_id: str,
@@ -45,6 +47,7 @@ def run_objects_detection(
     object_detection_model_client = create_object_detection_model_client(
         project_id=project_id,
         region=region,
+        vpc_network=vpc_network,
         model_instantiator_host=model_instantiator_host,
         model_name=model_name,
     )
@@ -80,6 +83,7 @@ def run_objects_detection(
 def main(
     project_id: str,
     region: str,
+    vpc_network: str,
     model_name: str,
     model_instantiator_host: str,
     job_id: str,
@@ -94,6 +98,7 @@ def main(
         delayed(run_objects_detection)(
             project_id=project_id,
             region=region,
+            vpc_network=vpc_network,
             results_bucket=results_bucket,
             model_instantiator_host=model_instantiator_host,
             job_id=job_id,
@@ -109,6 +114,7 @@ if __name__ == "__main__":
     main(
         project_id=PROJECT_ID,
         region=REGION,
+        vpc_network=VPC_NETWORK,
         model_name=MODEL_NAME,
         model_instantiator_host=MODEL_INSTANTIATOR_HOST,
         job_id=JOB_ID,

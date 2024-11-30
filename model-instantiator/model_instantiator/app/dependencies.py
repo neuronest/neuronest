@@ -12,6 +12,7 @@ from model_instantiator.config import cfg
 from model_instantiator.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     PROJECT_ID,
+    VPC_NETWORK,
 )
 
 
@@ -26,6 +27,7 @@ def use_vertex_ai_manager(config: DictConfig = Depends(use_config)) -> VertexAIM
         location=config.region,
         key_path=GOOGLE_APPLICATION_CREDENTIALS,
         project_id=PROJECT_ID,
+        vpc_network=VPC_NETWORK,
     )
 
 

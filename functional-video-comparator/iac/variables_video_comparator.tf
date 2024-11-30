@@ -8,6 +8,12 @@ variable "video_comparator_service_account_name" {
 variable "video_comparator_models_bucket" {
   type = string
 }
+variable "video_comparator_samples_bucket" {
+  type = string
+}
+variable "video_comparator_results_bucket" {
+  type = string
+}
 variable "video_comparator_model_name" {
   type = string
 }
@@ -30,11 +36,5 @@ variable "video_comparator_firestore_jobs_collection" {
   type = string
 }
 variable "video_comparator_embeddings_bucket" {
-  type = string
-}
-variable "video_comparator_results_bucket" {
-  type = string
-}
-variable "video_comparator_samples_bucket" {
   type = string
 }

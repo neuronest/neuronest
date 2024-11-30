@@ -1,12 +1,15 @@
 module "functional_video_comparator" {
-  source     = "../../abstract/functional-online-prediction-model"
-  project_id = var.project_id
-  region     = var.region
-  timezone   = var.timezone
+  source      = "../../abstract/functional-online-prediction-model"
+  project_id  = var.project_id
+  region      = var.region
+  timezone    = var.timezone
+  vpc_network = var.vpc_network
 
   online_prediction_model_image_name           = var.video_comparator_image_name
   online_prediction_model_service_account_name = var.video_comparator_service_account_name
   online_prediction_model_models_bucket        = var.video_comparator_models_bucket
+  online_prediction_model_samples_bucket       = var.video_comparator_samples_bucket
+  online_prediction_model_results_bucket       = var.video_comparator_results_bucket
   online_prediction_model_model_name           = var.video_comparator_model_name
   online_prediction_model_cloud_run_name       = var.video_comparator_cloud_run_name
   online_prediction_model_cloud_run_memory     = var.video_comparator_cloud_run_memory
@@ -17,6 +20,7 @@ module "functional_video_comparator" {
   online_prediction_model_cloud_run_env_vars = {
     PROJECT_ID                = var.project_id
     REGION                    = var.region
+    VPC_NETWORK               = var.vpc_network
     IMAGE_NAME                = var.video_comparator_image_name
     MODEL_NAME                = var.video_comparator_model_name
     FIRESTORE_JOBS_COLLECTION = var.video_comparator_firestore_jobs_collection

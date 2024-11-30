@@ -1,11 +1,14 @@
 module "online_prediction_model" {
-  source     = "../online-prediction-model"
-  project_id = var.project_id
-  region     = var.region
+  source      = "../online-prediction-model"
+  project_id  = var.project_id
+  region      = var.region
+  vpc_network = var.vpc_network
 
   image_name           = var.online_prediction_model_image_name
   service_account_name = var.online_prediction_model_service_account_name
   models_bucket        = var.online_prediction_model_models_bucket
+  results_bucket       = var.online_prediction_model_results_bucket
+  samples_bucket       = var.online_prediction_model_samples_bucket
   model_name           = var.online_prediction_model_model_name
 
   cloud_run_name      = var.online_prediction_model_cloud_run_name
@@ -22,10 +25,12 @@ module "online_prediction_model" {
   )
 }
 module "model_instantiator" {
-  source                               = "../../services/model-instantiator"
-  project_id                           = var.project_id
-  region                               = var.region
-  timezone                             = var.timezone
+  source      = "../../services/model-instantiator"
+  project_id  = var.project_id
+  region      = var.region
+  timezone    = var.timezone
+  vpc_network = var.vpc_network
+
   image_name                           = var.model_instantiator_image_name
   webapp_service_account_name          = var.model_instantiator_webapp_service_account_name
   cloud_scheduler_service_account_name = var.model_instantiator_cloud_scheduler_service_account_name

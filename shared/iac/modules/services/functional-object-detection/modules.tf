@@ -1,12 +1,15 @@
 module "functional_object_detection" {
-  source     = "../../abstract/functional-online-prediction-model"
-  project_id = var.project_id
-  region     = var.region
-  timezone   = var.timezone
+  source      = "../../abstract/functional-online-prediction-model"
+  project_id  = var.project_id
+  region      = var.region
+  timezone    = var.timezone
+  vpc_network = var.vpc_network
 
   online_prediction_model_image_name           = var.object_detection_image_name
   online_prediction_model_service_account_name = var.object_detection_service_account_name
   online_prediction_model_models_bucket        = var.object_detection_models_bucket
+  online_prediction_model_samples_bucket       = var.object_detection_samples_bucket
+  online_prediction_model_results_bucket       = var.object_detection_results_bucket
   online_prediction_model_model_name           = var.object_detection_model_name
   online_prediction_model_cloud_run_name       = var.object_detection_cloud_run_name
   online_prediction_model_cloud_run_memory     = var.object_detection_cloud_run_memory
@@ -17,6 +20,7 @@ module "functional_object_detection" {
   online_prediction_model_cloud_run_env_vars = {
     PROJECT_ID                = var.project_id
     REGION                    = var.region
+    VPC_NETWORK               = var.vpc_network
     IMAGE_NAME                = var.object_detection_image_name
     MODEL_NAME                = var.object_detection_model_name
     FIRESTORE_JOBS_COLLECTION = var.object_detection_firestore_jobs_collection

@@ -43,6 +43,7 @@ from object_detection.environment_variables import (
     PROJECT_ID,
     REGION,
     RESULTS_BUCKET,
+    VPC_NETWORK,
 )
 
 router = APIRouter(
@@ -181,6 +182,7 @@ def detect_objects(
     job_environment_variables = {
         "PROJECT_ID": PROJECT_ID,
         "REGION": REGION,
+        "VPC_NETWORK": VPC_NETWORK,
         "MODEL_NAME": MODEL_NAME,
         "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
         "JOB_ID": job_id,

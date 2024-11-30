@@ -42,6 +42,7 @@ from people_counting.environment_variables import (
     REGION,
     RESULTS_BUCKET,
     SAMPLES_BUCKET,
+    VPC_NETWORK,
 )
 from people_counting.people_counter import PeopleCounter, count_people_with_upload
 
@@ -210,6 +211,7 @@ def count_people(
     job_environment_variables = {
         "PROJECT_ID": PROJECT_ID,
         "REGION": REGION,
+        "VPC_NETWORK": VPC_NETWORK,
         "OBJECT_DETECTION_MODEL_NAME": OBJECT_DETECTION_MODEL_NAME,
         "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
         "RESULTS_BUCKET": RESULTS_BUCKET,

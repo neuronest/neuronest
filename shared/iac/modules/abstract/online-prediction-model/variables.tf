@@ -7,6 +7,12 @@ variable "service_account_name" {
 variable "models_bucket" {
   type = string
 }
+variable "samples_bucket" {
+  type = string
+}
+variable "results_bucket" {
+  type = string
+}
 variable "model_name" {
   type = string
 }

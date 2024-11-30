@@ -17,6 +17,7 @@ from people_counting.jobs.environment_variables import (
     REGION,
     RESULTS_BUCKET,
     VIDEOS_STORAGE_PATHS,
+    VPC_NETWORK,
 )
 from people_counting.jobs.services import create_people_counter, create_storage_client
 from people_counting.people_counter import count_people_with_upload
@@ -27,6 +28,7 @@ def run_asset_counting(
     counted_video_storage_path: Optional[GSPath],
     project_id: str,
     region: str,
+    vpc_network: str,
     job_id: str,
     object_detection_model_name: str,
     model_instantiator_host: str,
@@ -36,6 +38,7 @@ def run_asset_counting(
     people_counter = create_people_counter(
         project_id=project_id,
         region=region,
+        vpc_network=vpc_network,
         model_instantiator_host=model_instantiator_host,
         object_detection_model_name=object_detection_model_name,
         config=cfg,
@@ -64,13 +67,14 @@ def run_asset_counting(
     storage_client.upload_blob_from_dict(
         bucket_name=results_bucket,
         blob_name=make_results_blob_name(job_id=job_id, sample_id=asset_id),
-        content=people_counter_document.dict(),
+        content=people_counter_document.model_dump(),
     )
 
 
 def main(
     project_id: str,
     region: str,
+    vpc_network: str,
     object_detection_model_name: str,
     model_instantiator_host: str,
     results_bucket: str,
@@ -97,6 +101,7 @@ def main(
             ),
             project_id=project_id,
             region=region,
+            vpc_network=vpc_network,
             job_id=job_id,
             object_detection_model_name=object_detection_model_name,
             model_instantiator_host=model_instantiator_host,
@@ -112,6 +117,7 @@ if __name__ == "__main__":
     main(
         project_id=PROJECT_ID,
         region=REGION,
+        vpc_network=VPC_NETWORK,
         object_detection_model_name=OBJECT_DETECTION_MODEL_NAME,
         model_instantiator_host=MODEL_INSTANTIATOR_HOST,
         results_bucket=RESULTS_BUCKET,

@@ -25,16 +25,18 @@ module "base" {
   source                               = "../../shared/iac/modules/services/base"
   project_id                           = var.project_id
   region                               = var.region
+  vpc_network                          = var.vpc_network
   firestore_region                     = var.firestore_region
   project_builder_service_account_name = var.project_builder_service_account_name
   mono_repository_name                 = var.mono_repository_name
 }
 
 module "functional_people_counting" {
-  source     = "../../shared/iac/modules/services/functional-people-counting"
-  project_id = var.project_id
-  region     = var.region
-  timezone   = var.timezone
+  source      = "../../shared/iac/modules/services/functional-people-counting"
+  project_id  = var.project_id
+  region      = var.region
+  vpc_network = var.vpc_network
+  timezone    = var.timezone
 
   people_counting_image_name                  = var.people_counting_image_name
   people_counting_service_account_name        = var.people_counting_service_account_name
@@ -50,9 +52,18 @@ module "functional_people_counting" {
   people_counting_cloud_run_min_scale         = var.people_counting_cloud_run_min_scale
   people_counting_cloud_run_max_scale         = var.people_counting_cloud_run_max_scale
 
-  object_detection_service_account_name = var.object_detection_service_account_name
-  object_detection_models_bucket        = var.object_detection_models_bucket
-  object_detection_model_name           = var.object_detection_model_name
+  object_detection_image_name                = var.object_detection_image_name
+  object_detection_service_account_name      = var.object_detection_service_account_name
+  object_detection_models_bucket             = var.object_detection_models_bucket
+  object_detection_samples_bucket            = var.object_detection_samples_bucket
+  object_detection_results_bucket            = var.object_detection_results_bucket
+  object_detection_model_name                = var.object_detection_model_name
+  object_detection_cloud_run_name            = var.object_detection_cloud_run_name
+  object_detection_cloud_run_memory          = var.object_detection_cloud_run_memory
+  object_detection_cloud_run_cpu             = var.object_detection_cloud_run_cpu
+  object_detection_cloud_run_min_scale       = var.object_detection_cloud_run_min_scale
+  object_detection_cloud_run_max_scale       = var.object_detection_cloud_run_max_scale
+  object_detection_firestore_jobs_collection = var.object_detection_firestore_jobs_collection
 
   model_instantiator_image_name                           = var.model_instantiator_image_name
   model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name

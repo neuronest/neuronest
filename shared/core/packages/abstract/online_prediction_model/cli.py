@@ -19,6 +19,7 @@ from core.packages.abstract.online_prediction_model.environment_variables import
     MODEL_INSTANTIATOR_HOST,
     PROJECT_ID,
     TRAINING_IMAGE_NAME,
+    VPC_NETWORK,
 )
 from core.path import GSPath
 from core.schemas.vertex_ai import (
@@ -236,7 +237,10 @@ def main(config: Config):
     actions = [Action(action) for action in parsed_args.actions]
 
     vertex_ai_manager = VertexAIManager(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, location=config.region
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
+        location=config.region,
+        project_id=PROJECT_ID,
+        vpc_network=VPC_NETWORK,
     )
     if MODEL_INSTANTIATOR_HOST is not None:
         model_instantiator_client = ModelInstantiatorClient(

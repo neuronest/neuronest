@@ -26,6 +26,10 @@ resource "google_cloud_run_service" "people_counting_api" {
           value = var.region
         }
         env {
+          name  = "VPC_NETWORK"
+          value = var.vpc_network
+        }
+        env {
           name  = "IMAGE_NAME"
           value = var.image_name
         }

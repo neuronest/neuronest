@@ -7,3 +7,6 @@ variable "region" {
 variable "timezone" {
   type = string
 }
+variable "vpc_network" {
+  type = string
+}
