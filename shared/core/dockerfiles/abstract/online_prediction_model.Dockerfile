@@ -85,7 +85,7 @@ FROM training as serving
 ARG MODEL_PATH
 ARG LOCAL_MODEL_PATH="/model/model.pt"
 ARG MODEL_STORE_NAME="model_store"
-ARG MODEL_PACKAGE_NAME="model"
+ARG MODEL_PACKAGE_NAME="model/"
 ARG MODEL_PACKAGE_PATH=$ROOT_DIRECTORY/$REPOSITORY_NAME/$MODEL_PACKAGE_NAME
 
 ENV LOCAL_MODEL_PATH=$LOCAL_MODEL_PATH
@@ -94,7 +94,7 @@ ENV MODEL_PACKAGE_NAME=$MODEL_PACKAGE_NAME
 ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
 RUN mkdir $MODEL_PACKAGE_NAME
-RUN cp -r $PACKAGE_NAME $MODEL_PACKAGE_NAME
+RUN cp -r $PACKAGE_NAME conf $MODEL_PACKAGE_NAME
 WORKDIR $MODEL_PACKAGE_PATH
 
 # create torchserve configuration file
@@ -110,7 +110,7 @@ EXPOSE 7081
 
 RUN mkdir -p $MODEL_STORE_NAME
 
-COPY $MODEL_PATH $e
+COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
 ENV TMP_PACKAGE_DIR=/tmp/$PACKAGE_NAME/
 RUN mkdir $TMP_PACKAGE_DIR
@@ -118,7 +118,7 @@ RUN cp -r $PACKAGE_NAME conf $TMP_PACKAGE_DIR
 
 # create model archive file packaging model artifacts and dependencies
 RUN torch-model-archiver -f \
-  --model-name=e \
+  --model-name=$MODEL_NAME \
   --version=1.0 \
   --serialized-file=$LOCAL_MODEL_PATH \
   --handler=$MODEL_PACKAGE_PATH/$PACKAGE_NAME/model_handler.py \
