@@ -11,6 +11,7 @@ module "functional_object_detection" {
   online_prediction_model_samples_bucket       = var.object_detection_samples_bucket
   online_prediction_model_results_bucket       = var.object_detection_results_bucket
   online_prediction_model_model_name           = var.object_detection_model_name
+  online_prediction_model_vpc_access_connector = var.object_detection_vpc_access_connector
   online_prediction_model_cloud_run_name       = var.object_detection_cloud_run_name
   online_prediction_model_cloud_run_memory     = var.object_detection_cloud_run_memory
   online_prediction_model_cloud_run_cpu        = var.object_detection_cloud_run_cpu

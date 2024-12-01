@@ -23,7 +23,9 @@ outputs:
   base_project_builder_sa_key:
     description: 'The base64 encoded key of the IAC service account of the shared repository'
     value: ${{ steps.get_base_project_builder_sa_key.outputs.value }}
-
+  base_vpc_access_connector:
+    description: 'The VPC connector full path to use in Vertex private endpoints'
+    value: ${{ steps.get_base_vpc_access_connector.outputs.value }}
 runs:
   using: "composite"
   steps:
@@ -86,6 +88,13 @@ runs:
       with:
         workspace: ${{ inputs.workspace }}
         terraform_output_name: base_project_builder_sa_key
+
+    - id: get_base_vpc_access_connector
+      uses: ./.github/actions/get_terraform_output
+      with:
+        workspace: ${{ inputs.workspace }}
+        terraform_output_name: base_vpc_access_connector
+
     # the "not success" condition is better because it also involves jobs that have
     # failed because they were interrupted because they took too long or because a
     # terraform variable was missing and it was waiting indefinitely for example

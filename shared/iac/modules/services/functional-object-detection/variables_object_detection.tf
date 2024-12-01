@@ -1,3 +1,6 @@
+variable "object_detection_vpc_access_connector" {
+  type = string
+}
 variable "object_detection_image_name" {
   type = string
 }

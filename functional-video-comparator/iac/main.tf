@@ -25,10 +25,18 @@ module "base" {
   source                               = "../../shared/iac/modules/services/base"
   project_id                           = var.project_id
   region                               = var.region
-  vpc_network                          = var.vpc_network
   firestore_region                     = var.firestore_region
   project_builder_service_account_name = var.project_builder_service_account_name
   mono_repository_name                 = var.mono_repository_name
+  vpc_network                          = var.vpc_network
+  psa_range_name                       = var.psa_range_name
+  serverless_connector_name            = var.serverless_connector_name
+  subnet_name                          = var.subnet_name
+  subnet_cidr_range                    = var.subnet_cidr_range
+  serverless_connector_cidr            = var.serverless_connector_cidr
+  psa_prefix_length                    = var.psa_prefix_length
+  min_throughput                       = var.min_throughput
+  max_throughput                       = var.max_throughput
 }
 
 module "functional_video_comparator" {
@@ -42,6 +50,7 @@ module "functional_video_comparator" {
   video_comparator_service_account_name      = var.video_comparator_service_account_name
   video_comparator_models_bucket             = var.video_comparator_models_bucket
   video_comparator_model_name                = var.video_comparator_model_name
+  video_comparator_vpc_access_connector      = var.video_comparator_vpc_access_connector
   video_comparator_cloud_run_name            = var.video_comparator_cloud_run_name
   video_comparator_cloud_run_memory          = var.video_comparator_cloud_run_memory
   video_comparator_cloud_run_cpu             = var.video_comparator_cloud_run_cpu

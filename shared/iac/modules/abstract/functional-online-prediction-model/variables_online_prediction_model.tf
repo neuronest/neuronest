@@ -16,6 +16,9 @@ variable "online_prediction_model_samples_bucket" {
 variable "online_prediction_model_model_name" {
   type = string
 }
+variable "online_prediction_model_vpc_access_connector" {
+  type = string
+}
 variable "online_prediction_model_cloud_run_name" {
   type = string
 }

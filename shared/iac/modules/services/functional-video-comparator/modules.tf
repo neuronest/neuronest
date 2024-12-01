@@ -11,6 +11,7 @@ module "functional_video_comparator" {
   online_prediction_model_samples_bucket       = var.video_comparator_samples_bucket
   online_prediction_model_results_bucket       = var.video_comparator_results_bucket
   online_prediction_model_model_name           = var.video_comparator_model_name
+  online_prediction_model_vpc_access_connector = var.video_comparator_vpc_access_connector
   online_prediction_model_cloud_run_name       = var.video_comparator_cloud_run_name
   online_prediction_model_cloud_run_memory     = var.video_comparator_cloud_run_memory
   online_prediction_model_cloud_run_cpu        = var.video_comparator_cloud_run_cpu

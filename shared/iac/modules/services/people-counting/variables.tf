@@ -17,8 +17,7 @@ variable "counted_videos_bucket" {
   type = string
 }
 variable "model_instantiator_host" {
-  type    = string
-  default = null
+  type = string
 }
 variable "object_detection_model_name" {
   type = string

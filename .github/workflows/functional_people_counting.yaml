@@ -59,6 +59,7 @@ jobs:
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+      base_vpc_access_connector: ${{ steps.run_base_terraform.outputs.base_vpc_access_connector }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
@@ -112,12 +113,13 @@ jobs:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/object_detection.yaml
+    uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: true
       deploy: false
       do_post_deployment: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
+      online_prediction_model_repository: ${{ needs.set_up_non_functional_repository_name.outputs.value }}
     secrets: inherit
 
   build_test_push_model_instantiator:
@@ -163,6 +165,7 @@ jobs:
         env:
           TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
           TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
+          TF_VAR_object_detection_vpc_access_connector: ${{ needs.run_base_terraform.outputs.base_vpc_access_connector }}
       - id: get_model_instantiator_url
         uses: ./.github/actions/get_terraform_output
         with:
@@ -173,7 +176,6 @@ jobs:
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: people_counting_url
-
 
   post_deploy_people_counting:
     needs: [deploy_functional_people_counting, upload_variables_of_called_workflows]
@@ -196,7 +198,7 @@ jobs:
       - upload_variables_of_called_workflows
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/object_detection.yaml
+    uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: false
       deploy: false

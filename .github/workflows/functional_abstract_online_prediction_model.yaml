@@ -50,6 +50,7 @@ jobs:
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+      base_vpc_access_connector: ${{ steps.run_base_terraform.outputs.base_vpc_access_connector }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
@@ -123,6 +124,12 @@ jobs:
           # Construct the dynamic environment variable name with "TF_VAR_" prefix
           DYNAMIC_VAR_NAME="TF_VAR_${{ inputs.online_prediction_model_package_name }}_image_name"
           DYNAMIC_VAR_VALUE="${{ needs.build_test_push_online_prediction_model.outputs.gcp_web_serving_image_name }}"
+          echo "${DYNAMIC_VAR_NAME}=${DYNAMIC_VAR_VALUE}" >> $GITHUB_ENV
+      - id: set_online_prediction_model_vpc_variable
+        run: |
+          # Construct the dynamic environment variable name with "TF_VAR_" prefix
+          DYNAMIC_VAR_NAME="TF_VAR_${{ inputs.online_prediction_model_package_name }}_vpc_access_connector"
+          DYNAMIC_VAR_VALUE="${{ needs.run_base_terraform.outputs.base_vpc_access_connector }}"
           echo "${DYNAMIC_VAR_NAME}=${DYNAMIC_VAR_VALUE}" >> $GITHUB_ENV
       - id: run_functional_online_prediction_model_terraform
         uses: ./.github/actions/run_terraform

@@ -1,3 +1,6 @@
+variable "video_comparator_vpc_access_connector" {
+  type = string
+}
 variable "video_comparator_image_name" {
   type = string
 }

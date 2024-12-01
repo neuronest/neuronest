@@ -35,3 +35,6 @@ variable "cloud_run_env_vars" {
   type    = map(string)
   default = {}
 }
+variable "vpc_access_connector" {
+  type = string
+}
