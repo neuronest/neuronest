@@ -35,16 +35,21 @@ module "functional_database_api" {
   project_id = var.project_id
   region     = var.region
 
-  database_api_image_name                     = var.database_api_image_name
-  database_api_cloud_sql_instance_name        = var.database_api_cloud_sql_instance_name
-  database_api_cloud_sql_db_name              = var.database_api_cloud_sql_db_name
-  database_api_cloud_run_cloud_sql_username   = var.database_api_cloud_run_cloud_sql_username
-  database_api_cloud_run_service_account_name = var.database_api_cloud_run_service_account_name
-  database_api_cloud_run_name                 = var.database_api_cloud_run_name
-  database_api_cloud_run_memory               = var.database_api_cloud_run_memory
-  database_api_cloud_run_cpu                  = var.database_api_cloud_run_cpu
-  database_api_cloud_run_min_scale            = var.database_api_cloud_run_min_scale
-  database_api_cloud_run_max_scale            = var.database_api_cloud_run_max_scale
+  database_api_image_name                                   = var.database_api_image_name
+  database_api_cloud_sql_instance_name                      = var.database_api_cloud_sql_instance_name
+  database_api_cloud_sql_db_name                            = var.database_api_cloud_sql_db_name
+  database_api_cloud_sql_enable_automatic_storage_increases = var.database_api_cloud_sql_enable_automatic_storage_increases
+  database_api_cloud_sql_enable_public_ip                   = var.database_api_cloud_sql_enable_public_ip
+  database_api_cloud_sql_disk_type                          = var.database_api_cloud_sql_disk_type
+  database_api_cloud_sql_database_version                   = var.database_api_cloud_sql_database_version
+  database_api_cloud_sql_tier                               = var.database_api_cloud_sql_tier
+  database_api_cloud_run_cloud_sql_username                 = var.database_api_cloud_run_cloud_sql_username
+  database_api_cloud_run_service_account_name               = var.database_api_cloud_run_service_account_name
+  database_api_cloud_run_name                               = var.database_api_cloud_run_name
+  database_api_cloud_run_memory                             = var.database_api_cloud_run_memory
+  database_api_cloud_run_cpu                                = var.database_api_cloud_run_cpu
+  database_api_cloud_run_min_scale                          = var.database_api_cloud_run_min_scale
+  database_api_cloud_run_max_scale                          = var.database_api_cloud_run_max_scale
 
 
   #  model_instantiator_image_name                           = var.model_instantiator_image_name
