@@ -43,14 +43,33 @@ def get_credentials(
 
 
 def generate_identity_token(
-    target_audience: str,
+    target_audience: Optional[str] = None,
     key_path: Optional[str] = None,
+    credentials: Optional[Credentials] = None,
 ) -> str:
-    return _generate_token_from_credentials(
-        credentials=_get_id_token_credentials(
+    """
+    Generates an identity token for the specified target audience.
+
+    Args:
+        target_audience (str): The audience for which the ID token is generated.
+        key_path (Optional[str]): Path to a service account key file.
+            Ignored if `credentials` is provided.
+        credentials (Optional[Credentials]): Directly provided credentials.
+            If `None`, falls back to `key_path`.
+
+    Returns:
+        str: A generated identity token.
+    """
+    if not credentials and not key_path:
+        raise ValueError("Either `credentials` or `key_path` must be provided.")
+
+    if not credentials:
+        # Load credentials from the service account key file
+        credentials = _get_id_token_credentials(
             target_audience=target_audience, key_path=key_path
         )
-    )
+
+    return _generate_token_from_credentials(credentials=credentials)
 
 
 def generate_access_token(key_path: str) -> str:

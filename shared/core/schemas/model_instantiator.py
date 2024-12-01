@@ -22,6 +22,10 @@ class UninstantiateModelLogsConditionedInput(UninstantiateModelInput):
     time_delta_override: Optional[int] = None  # in seconds
 
 
+class UninstantiateCloudSqlInput(BaseModel):
+    cloud_sql_name: str
+
+
 class PubSubUninstantiateModelLogsConditioned(BaseModel):
     data: UninstantiateModelLogsConditionedInput
 
@@ -38,6 +42,10 @@ class PubSubUninstantiateModelLogsConditioned(BaseModel):
 
 
 class UninstantiateModelOutput(BaseModel):
+    message: str
+
+
+class UninstantiateCloudSqlOutput(BaseModel):
     message: str
 
 

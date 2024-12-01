@@ -56,7 +56,7 @@ def get_database():
         database.close()
 
 
-@app.post("/projects/")
+@app.post("/database_api/api/v1/project/create")
 def create_project(
     project: RoutesSchemas.ProjectCreate, database: Session = Depends(get_database)
 ):
@@ -76,8 +76,39 @@ def create_project(
     return {"id": new_project.id, "gcp_project_id": new_project.gcp_project_id}
 
 
+@app.get("/database_api/api/v1/project/gcp_project_id/{gcp_project_id}")
+def get_project(gcp_project_id: str, database: Session = Depends(get_database)):
+    """
+    Retrieve a project by its GCP project ID.
+    """
+    db_project = (
+        database.query(Project).filter(Project.gcp_project_id == gcp_project_id).first()
+    )
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return {"id": db_project.id, "gcp_project_id": db_project.gcp_project_id}
+
+
+@app.delete("/database_api/api/v1/project/gcp_project_id/{gcp_project_id}")
+def delete_project(gcp_project_id: str, database: Session = Depends(get_database)):
+    """
+    Delete a project by its GCP project ID.
+    """
+    db_project = (
+        database.query(Project).filter(Project.gcp_project_id == gcp_project_id).first()
+    )
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    database.delete(db_project)
+    database.commit()
+
+    return {"message": f"Project with gcp_project_id {gcp_project_id} has been deleted"}
+
+
 if __name__ == "__main__":
     # used for debugging purposes only
     import uvicorn  # isort:skip
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)

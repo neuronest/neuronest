@@ -14,7 +14,27 @@ class DatabaseApiClient(APIClient):
     # first  action description then model name
     def create_project(self, gcp_project_id: str) -> requests.Response:
         return self.call(
-            resource=f"/{routes.Project.prefix}" f"{routes.Project.create}",
+            resource=f"/{routes.Project.prefix}{routes.Project.create}",
             verb="post",
             payload=RoutesSchemas.ProjectCreate(gcp_project_id=gcp_project_id).dict(),
+        )
+
+    def get_project(self, gcp_project_id: str) -> requests.Response:
+        """
+        Fetch details of a project by its GCP project ID.
+        """
+        return self.call(
+            resource=f"/{routes.Project.prefix}"
+            f"{routes.Project.get.format(gcp_project_id=gcp_project_id)}",
+            verb="get",
+        )
+
+    def delete_project(self, gcp_project_id: str) -> requests.Response:
+        """
+        Delete a project by its GCP project ID.
+        """
+        return self.call(
+            resource=f"/{routes.Project.prefix}"
+            f"{routes.Project.delete.format(gcp_project_id=gcp_project_id)}",
+            verb="delete",
         )

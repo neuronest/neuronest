@@ -76,9 +76,7 @@ class APIClient(BaseClient, ABC):
         return host
 
     def auth_headers(self) -> Dict[str, str]:
-        identity_token = generate_identity_token(
-            target_audience=self.protocol_with_host, key_path=self.key_path
-        )
+        identity_token = generate_identity_token(credentials=self.credentials)
         return {"Authorization": f"Bearer {identity_token}"}
 
     # noinspection PyMethodMayBeStatic

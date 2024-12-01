@@ -6,18 +6,21 @@
 resource "google_sql_database_instance" "neuronest_instance" {
   provider         = google-beta
   name             = var.cloud_sql_instance_name
-  database_version = "POSTGRES_12"
+  database_version = var.cloud_sql_database_version
   region           = var.region
   settings {
-    tier = "db-f1-micro" # Default minimal settings
+    tier = var.cloud_sql_tier # Default minimal settings
     backup_configuration {
-      enabled = true
+      enabled = false # Backups disabled
     }
     ip_configuration {
-      ipv4_enabled = true
+      ipv4_enabled = var.cloud_sql_enable_public_ip
     }
+    data_disk_type      = var.cloud_sql_disk_type                          # Use HDD instead of SSD
+    storage_auto_resize = var.cloud_sql_enable_automatic_storage_increases # Disable automatic storage increases
   }
 }
+
 
 # Create the PostgreSQL Database
 resource "google_sql_database" "neuronest_database" {

@@ -7,6 +7,24 @@ variable "cloud_sql_instance_name" {
 variable "cloud_sql_db_name" {
   type = string
 }
+
+variable "cloud_sql_enable_automatic_storage_increases" {
+  type = bool
+}
+variable "cloud_sql_enable_public_ip" {
+  type = bool
+}
+variable "cloud_sql_disk_type" {
+  type = string
+}
+variable "cloud_sql_database_version" {
+  type = string
+}
+variable "cloud_sql_tier" {
+  type = string
+}
+
+
 variable "cloud_run_cloud_sql_username" {
   type = string
 }

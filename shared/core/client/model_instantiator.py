@@ -6,6 +6,7 @@ from core.client.api_client import APIClient
 from core.routes.model_instantiator import routes
 from core.schemas.model_instantiator import (
     InstantiateModelInput,
+    UninstantiateCloudSqlInput,
     UninstantiateModelInput,
 )
 
@@ -28,4 +29,14 @@ class ModelInstantiatorClient(APIClient):
             f"{routes.Uninstantiator.uninstantiate}",
             verb="post",
             payload=UninstantiateModelInput(model_name=model_name).dict(),
+        )
+
+    def uninstantiate_cloud_sql(self, cloud_sql_instance_name: str):
+        return self.call(
+            resource=f"/{routes.Uninstantiator.prefix}"
+            f"{routes.Uninstantiator.cloud_sql_uninstantiate}",
+            verb="post",
+            payload=UninstantiateCloudSqlInput(
+                cloud_sql_name=cloud_sql_instance_name
+            ).dict(),
         )

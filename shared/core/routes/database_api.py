@@ -7,6 +7,8 @@ class _DatabaseApiRoutes(_BaseRoutes):
     class Project:
         prefix = "project"
         create: str = "/create"
+        get: str = "/gcp_project_id/{gcp_project_id}"
+        delete: str = "/gcp_project_id/{gcp_project_id}"
 
     class Uninstantiator:
         prefix = "uninstantiator"

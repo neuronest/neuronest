@@ -1,10 +1,13 @@
 import datetime
 import logging
 
+from core.google.cloud_sql_manager import CloudSQLManager
 from core.google.logging_client import LoggerName, LoggingClient
 from core.google.vertex_ai_manager import VertexAIManager
 from core.routes.model_instantiator import routes
 from core.schemas.model_instantiator import (
+    UninstantiateCloudSqlInput,
+    UninstantiateCloudSqlOutput,
     UninstantiateModelInput,
     UninstantiateModelLogsConditionedInput,
     UninstantiateModelOutput,
@@ -18,6 +21,7 @@ from omegaconf import DictConfig
 from starlette import status
 
 from model_instantiator.api.dependencies import (
+    use_cloud_sql_manager,
     use_config,
     use_deployment_status_manager,
     use_logging_client,
@@ -173,4 +177,65 @@ def uninstantiate_model_logs_conditioned(
         response=response,
         endpoint_id=endpoint.resource_name,
         model_name=model_name,
+    )
+
+
+def _no_instance_response(response: Response, instance_name: str):
+    response.status_code = status.HTTP_404_NOT_FOUND
+    return {"error": f"Cloud SQL instance '{instance_name}' not found"}
+
+
+def _already_stopped_instance_response(response: Response, instance_name: str):
+    response.status_code = status.HTTP_200_OK
+    return {"message": f"Cloud SQL instance '{instance_name}' is already stopped"}
+
+
+def _correctly_stopped_instance_response(
+    response: Response, instance_id: str, instance_name: str
+):
+    response.status_code = status.HTTP_202_ACCEPTED
+    return {
+        "message": f"Cloud SQL instance '{instance_name}' has been successfully stopped",
+        "instance_id": instance_id,
+    }
+
+
+@router.post(
+    routes.Uninstantiator.cloud_sql_uninstantiate,
+    response_model=UninstantiateCloudSqlOutput,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def uninstantiate_cloud_sql_instance(
+    uninstantiate_cloud_sql_input: UninstantiateCloudSqlInput,
+    response: Response,
+    cloud_sql_manager: CloudSQLManager = Depends(use_cloud_sql_manager),
+    # instance_status_manager: InstanceStatusManager = Depends(
+    #     use_instance_status_manager
+    # ),
+):
+    cloud_sql_name = uninstantiate_cloud_sql_input.cloud_sql_name
+
+    # Check if the instance exists
+    cloud_sql_instance = cloud_sql_manager.get_instance_by_name(cloud_sql_name)
+    if cloud_sql_instance is None:
+        return _no_instance_response(response=response, instance_name=cloud_sql_name)
+
+    # Check if the instance is already stopped
+    if cloud_sql_manager.is_instance_stopped(instance_name=cloud_sql_name):
+        return _already_stopped_instance_response(
+            response=response, instance_name=cloud_sql_name
+        )
+
+    # Stop the Cloud SQL instance
+    cloud_sql_manager.stop_instance(instance_name=cloud_sql_name)
+
+    # Update the status to STOPPED
+    # instance_status_manager.maybe_set_status(
+    #     instance_status=InstanceStatus.STOPPED, instance_name=cloud_sql_name
+    # )
+
+    return _correctly_stopped_instance_response(
+        response=response,
+        instance_id=cloud_sql_instance.resource_name,
+        instance_name=cloud_sql_name,
     )
