@@ -12,6 +12,7 @@ from google.cloud.aiplatform_v1.types import training_pipeline
 
 from core.client.abstract.base_client import BaseClient
 from core.exceptions import AlreadyExistingError
+from core.google.project_manager import ProjectManager
 from core.google.utils import get_service_account_email
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
@@ -35,6 +36,8 @@ class VertexAIManager(BaseClient):
         self.location = location
         self.vpc_network = vpc_network
 
+        self.project_manager = ProjectManager(project_id=project_id, key_path=key_path)
+
         client_options = {"api_endpoint": f"{self.location}-aiplatform.googleapis.com"}
         # noinspection PyTypeChecker
         self.pipeline_service_client = aiplatform.gapic.PipelineServiceClient(
@@ -42,8 +45,12 @@ class VertexAIManager(BaseClient):
         )
 
     @property
+    def project_number(self):
+        return self.project_manager.get_project_number()
+
+    @property
     def full_network(self) -> str:
-        return f"projects/{self.project_id}/global/networks/{self.vpc_network}"
+        return f"projects/{self.project_number}/global/networks/{self.vpc_network}"
 
     @staticmethod
     def _model_to_endpoint_name(model_name: str) -> str:
@@ -283,7 +290,6 @@ class VertexAIManager(BaseClient):
         endpoint = model.deploy(
             endpoint=endpoint,
             deployed_model_display_name=name,
-            traffic_split={"0": 100},  # the new deployment receives 100% of the traffic
             machine_type=serving_deployment_config.machine_type,
             min_replica_count=serving_deployment_config.min_replica_count,
             max_replica_count=serving_deployment_config.max_replica_count,
