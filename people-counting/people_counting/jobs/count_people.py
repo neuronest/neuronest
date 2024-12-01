@@ -7,7 +7,7 @@ from core.schemas.modules.people_counting import PeopleCounterSampleResultsDocum
 from core.services.asset_reader import make_asset
 from joblib import Parallel, delayed
 
-from people_counting.config import config as cfg
+from people_counting.config import cfg
 from people_counting.jobs.environment_variables import (
     COUNTED_VIDEOS_STORAGE_PATHS,
     JOB_ID,

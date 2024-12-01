@@ -8,7 +8,7 @@ from core.services.deployment_status_manager import (
 )
 from google.cloud import aiplatform
 
-from model_instantiator.config import config as cfg
+from model_instantiator.config import cfg
 from model_instantiator.jobs.environment_variables import (
     IS_LAST_MODEL_ALREADY_DEPLOYED_OK,
     MODEL_NAME,

@@ -9,7 +9,7 @@ from core.google.vertex_ai_manager import VertexAIManager
 from fastapi import Depends
 from omegaconf import DictConfig
 
-from people_counting.config import config as cfg
+from people_counting.config import cfg
 from people_counting.environment_variables import (
     FIRESTORE_JOBS_COLLECTION,
     GOOGLE_APPLICATION_CREDENTIALS,

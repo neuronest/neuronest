@@ -15,7 +15,6 @@ from omegaconf import DictConfig
 
 from people_counting.centroid_tracker import CentroidTracker
 from people_counting.common import BoundingBox, Statistics, Status
-from people_counting.config import config
 from people_counting.model import Model
 from people_counting.trackable_object import TrackableObject
 from people_counting.video_renderer import VideoRenderer
@@ -124,7 +123,7 @@ class PeopleCounter(metaclass=TimingMeta):
                         )
 
             line_vertical_position = int(
-                config.algorithm.line_placement_ratio * frame.shape[0]
+                self.algorithm_config.line_placement_ratio * frame.shape[0]
             )
 
             objects = centroid_tracker.update(bounding_boxes)
