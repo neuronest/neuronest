@@ -20,6 +20,9 @@ python = ">3.11,<3.12"
 optional = true
 
 [tool.poetry.group.app.dependencies]
+fastapi = "0.115.2"
+gunicorn = "23.0.0"
+uvicorn = "0.32.0"
 
 [tool.poetry.group.dev]
 optional = true
