@@ -8,7 +8,7 @@ app:
   maximum_elements_number: 100
 
 job:
-  container_uri: '${oc.env:SERVING_IMAGE_NAME,null}'
+  container_uri: '${oc.env:IMAGE_NAME,null}'
   cpu: '1.0'
   memory: '4Gi'
 

@@ -34,24 +34,27 @@ def test_compare_videos_async(
     best_to_worst_matching_videos_pairs: List[Tuple[str, str]],
     uninstantiate_teardown,
 ):
-    assets_pairs_local_paths = [
+    assets_pairs = [
         (
             make_asset(
                 asset_path=first_video_path,
                 asset_type=AssetType.VIDEO,
                 storage_client=storage_client,
-            ).asset_path,
+            ),
             make_asset(
                 asset_path=second_video_path,
                 asset_type=AssetType.VIDEO,
                 storage_client=storage_client,
-            ).asset_path,
+            ),
         )
         for (first_video_path, second_video_path) in best_to_worst_matching_videos_pairs
     ]
 
     outputs: List[VideoComparatorOutput] = video_comparator_client.compare_videos_async(
-        video_path_pairs=assets_pairs_local_paths
+        video_path_pairs=[
+            (assets_pair[0].asset_path, assets_pair[1].asset_path)
+            for assets_pair in assets_pairs
+        ]
     )
 
     job_results_documents: List[VideoComparatorJobResultsDocument] = [
