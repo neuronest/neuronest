@@ -11,7 +11,8 @@ resource "google_project_service" "enable_apis" {
     "firestore.googleapis.com",
     "appengine.googleapis.com",
     "servicenetworking.googleapis.com",
-    "vpcaccess.googleapis.com"
+    "vpcaccess.googleapis.com",
+    "dns.googleapis.com"
   ])
   project            = var.project_id
   service            = each.key

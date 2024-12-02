@@ -300,6 +300,7 @@ class VertexAIManager(BaseClient):
             # to do anything about it
             # (deploy_request_timeout parameter seems to be ineffective)
             sync=False,
+            network=self.full_network,
         )
 
         if not self.wait_for_model_deployed(
