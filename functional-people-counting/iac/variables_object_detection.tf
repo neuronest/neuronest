@@ -4,6 +4,7 @@ variable "object_detection_vpc_access_connector" {
 }
 variable "object_detection_image_name" {
   type = string
+  default = null
 }
 variable "object_detection_service_account_name" {
   type = string
