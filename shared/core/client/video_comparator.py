@@ -57,7 +57,7 @@ class VideoComparatorClient(PredictionAPIClient):
         wait_if_not_existing: bool = False,
         job_timeout: int = 2700,
     ) -> VideoComparatorJobResultsDocument:
-        return self.get_predictions_from_job_id(
+        return self._get_predictions_from_job_id(
             job_id=job_id,
             wait_if_not_existing=wait_if_not_existing,
             job_timeout=job_timeout,

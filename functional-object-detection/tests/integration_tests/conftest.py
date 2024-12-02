@@ -1,13 +1,9 @@
 import os
-from typing import Optional
 
-import cv2 as cv
-import numpy as np
 import pytest
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.object_detection import ObjectDetectionClient
 from core.google.storage_client import StorageClient
-from core.google.vertex_ai_manager import VertexAIManager
 
 from tests.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,

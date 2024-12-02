@@ -23,3 +23,18 @@ resource "google_project_iam_member" "online_prediction_model_storage_object_adm
   role    = "roles/storage.objectAdmin"
   member  = "serviceAccount:${google_service_account.online_prediction_model_sa.email}"
 }
+resource "google_project_iam_member" "people_counting_api_sa_is_service_account_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${google_service_account.online_prediction_model_sa.email}"
+}
+resource "google_project_iam_member" "people_counting_api_sa_is_cloud_run_admin" {
+  project = var.project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.online_prediction_model_sa.email}"
+}
+resource "google_project_iam_member" "people_counting_api_sa_is_cloud_run_invoker" {
+  project = var.project_id
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${google_service_account.online_prediction_model_sa.email}"
+}

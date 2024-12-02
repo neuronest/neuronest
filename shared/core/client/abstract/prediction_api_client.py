@@ -226,7 +226,7 @@ class PredictionAPIClient(APIClient, ABC):
             )
         ]
 
-    def get_predictions_from_job_id(
+    def _get_predictions_from_job_id(
         self,
         job_id: str,
         wait_if_not_existing: bool = False,
