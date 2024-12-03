@@ -16,8 +16,8 @@ resource "google_sql_database_instance" "neuronest_instance" {
     ip_configuration {
       ipv4_enabled = var.cloud_sql_enable_public_ip
     }
-    disk_type      = var.cloud_sql_disk_type                          # Use HDD instead of SSD
-    disk_autoresie = var.cloud_sql_enable_automatic_storage_increases # Disable automatic storage increases
+    disk_type       = var.cloud_sql_disk_type                          # Use HDD instead of SSD
+    disk_autoresize = var.cloud_sql_enable_automatic_storage_increases # Disable automatic storage increases
   }
 }
 
