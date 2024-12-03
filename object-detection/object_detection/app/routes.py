@@ -1,4 +1,4 @@
-from core.routes.video_comparator import routes
+from core.routes.object_detection import routes
 from fastapi import APIRouter
 
 from object_detection.app.object_detection import router as object_detection_router
