@@ -91,7 +91,7 @@ jobs:
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
       cloud_sql_instance_name: ${{ steps.get_cloud_sql_instance_name.outputs.value }}
-      model_database_api_url: ${{ steps.get_model_database_api_url.outputs.value }}
+      database_api_url: ${{ steps.get_database_api_url.outputs.value }}
     runs-on: neuronest-runner-set
     container:
       image: google/cloud-sdk
@@ -122,7 +122,7 @@ jobs:
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: cloud_sql_instance_name
-      - id: get_model_database_api_url
+      - id: get_database_api_url
         uses: ./.github/actions/get_terraform_output
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
