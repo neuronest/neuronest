@@ -1,5 +1,6 @@
 variable "model_instantiator_image_name" {
-  type = string
+  type    = string
+  default = "model_instantiator_image_name_dummy"
 }
 variable "model_instantiator_webapp_service_account_name" {
   type = string
