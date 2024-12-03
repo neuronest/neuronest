@@ -43,9 +43,15 @@ module "model_instantiator" {
   cloud_run_cpu                        = var.cloud_run_cpu
   cloud_run_min_scale                  = var.cloud_run_min_scale
   cloud_run_max_scale                  = var.cloud_run_max_scale
-  cloud_scheduler_job_name             = var.cloud_scheduler_job_name
-  cloud_scheduler_schedule             = var.cloud_scheduler_schedule
-  cloud_uninstantiate_route            = var.cloud_uninstantiate_route
-  cloud_scheduler_model_name           = var.cloud_scheduler_model_name
-  online_prediction_model_sa_name      = var.online_prediction_model_sa_name
+
+  online_prediction_model_sa_name = var.online_prediction_model_sa_name
+  cloud_scheduler_job_name        = var.cloud_scheduler_job_name
+  cloud_scheduler_schedule        = var.cloud_scheduler_schedule
+  cloud_uninstantiate_route       = var.cloud_uninstantiate_route
+  cloud_scheduler_model_name      = var.cloud_scheduler_model_name
+
+  cloud_scheduler_cloud_sql_instance_name = var.cloud_scheduler_cloud_sql_instance_name
+  cloud_scheduler_cloud_sql_job_name      = var.cloud_scheduler_cloud_sql_job_name
+  cloud_scheduler_cloud_sql_schedule      = var.cloud_scheduler_cloud_sql_schedule
+  cloud_sql_uninstantiate_route           = var.cloud_sql_uninstantiate_route
 }

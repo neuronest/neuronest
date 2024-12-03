@@ -1,6 +1,3 @@
-variable "state_bucket" {
-  type = string
-}
 variable "image_name" {
   type = string
 }
@@ -26,19 +23,47 @@ variable "cloud_run_max_scale" {
   type = string
 }
 variable "cloud_scheduler_job_name" {
-  type = string
+  type     = string
+  nullable = true
+  default  = null
 }
 variable "cloud_scheduler_schedule" {
-  type = string
-}
-variable "cloud_uninstantiate_route" {
-  type = string
+  type     = string
+  nullable = true
+  default  = null
 }
 variable "cloud_scheduler_model_name" {
-  type    = string
-  default = "cloud_scheduler_model_name_dummy"
+  type     = string
+  nullable = true
+  default  = null
+}
+variable "cloud_uninstantiate_route" {
+  type     = string
+  nullable = true
+  default  = null
+}
+variable "cloud_scheduler_cloud_sql_instance_name" {
+  type     = string
+  nullable = true
+  default  = null
+}
+variable "cloud_scheduler_cloud_sql_job_name" {
+  type     = string
+  nullable = true
+  default  = null
+}
+variable "cloud_scheduler_cloud_sql_schedule" {
+  type     = string
+  nullable = true
+  default  = null
+}
+variable "cloud_sql_uninstantiate_route" {
+  type     = string
+  nullable = true
+  default  = null
 }
 variable "online_prediction_model_sa_name" {
-  type    = string
-  default = "online_prediction_model_sa_name_dummy"
+  type     = string
+  nullable = true
+  default  = null
 }

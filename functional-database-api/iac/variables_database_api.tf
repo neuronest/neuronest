@@ -24,7 +24,6 @@ variable "database_api_cloud_sql_database_version" {
 variable "database_api_cloud_sql_tier" {
   type = string
 }
-
 variable "database_api_cloud_run_cloud_sql_username" {
   type = string
 }

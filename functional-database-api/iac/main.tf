@@ -34,6 +34,7 @@ module "functional_database_api" {
   source     = "../../shared/iac/modules/services/functional-database-api"
   project_id = var.project_id
   region     = var.region
+  timezone   = var.timezone
 
   database_api_image_name                                   = var.database_api_image_name
   database_api_cloud_sql_instance_name                      = var.database_api_cloud_sql_instance_name
@@ -52,15 +53,15 @@ module "functional_database_api" {
   database_api_cloud_run_max_scale                          = var.database_api_cloud_run_max_scale
 
 
-  #  model_instantiator_image_name                           = var.model_instantiator_image_name
-  #  model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name
-  #  model_instantiator_cloud_scheduler_service_account_name = var.model_instantiator_cloud_scheduler_service_account_name
-  #  model_instantiator_cloud_run_name                       = var.model_instantiator_cloud_run_name
-  #  model_instantiator_cloud_run_memory                     = var.model_instantiator_cloud_run_memory
-  #  model_instantiator_cloud_run_cpu                        = var.model_instantiator_cloud_run_cpu
-  #  model_instantiator_cloud_run_min_scale                  = var.model_instantiator_cloud_run_min_scale
-  #  model_instantiator_cloud_run_max_scale                  = var.model_instantiator_cloud_run_max_scale
-  #  model_instantiator_cloud_scheduler_job_name             = var.model_instantiator_cloud_scheduler_job_name
-  #  model_instantiator_cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
-  #  model_instantiator_cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
+  model_instantiator_image_name                           = var.model_instantiator_image_name
+  model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name
+  model_instantiator_cloud_scheduler_service_account_name = var.model_instantiator_cloud_scheduler_service_account_name
+  model_instantiator_cloud_run_name                       = var.model_instantiator_cloud_run_name
+  model_instantiator_cloud_run_memory                     = var.model_instantiator_cloud_run_memory
+  model_instantiator_cloud_run_cpu                        = var.model_instantiator_cloud_run_cpu
+  model_instantiator_cloud_run_min_scale                  = var.model_instantiator_cloud_run_min_scale
+  model_instantiator_cloud_run_max_scale                  = var.model_instantiator_cloud_run_max_scale
+  model_instantiator_cloud_scheduler_cloud_sql_job_name   = var.model_instantiator_cloud_scheduler_cloud_sql_job_name
+  model_instantiator_cloud_scheduler_cloud_sql_schedule   = var.model_instantiator_cloud_scheduler_cloud_sql_schedule
+  model_instantiator_cloud_sql_uninstantiate_route        = var.model_instantiator_cloud_sql_uninstantiate_route
 }

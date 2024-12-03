@@ -114,6 +114,18 @@ jobs:
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: model_instantiator_url
+      # database_api_url/cloud_sql_instance_name/model_instantiator_url
+      - id: get_cloud_sql_instance_name
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: cloud_sql_instance_name
+      - id: get_model_database_api_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: database_api_url
+
 
   post_deploy_database_api:
     # the job in the needs section is necessary to recover its output
@@ -165,4 +177,4 @@ jobs:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           run_integration_tests: true
           run_unit_tests: false
-          environment_variables: -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_database_api.outputs.model_instantiator_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}
+          environment_variables: -e DATABASE_API_HOST=${{ needs.deploy_functional_database_api.outputs.database_api_url }} -e CLOUD_SQL_INSTANCE_NAME=${{ needs.deploy_functional_database_api.outputs.cloud_sql_instance_name }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_database_api.outputs.model_instantiator_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}

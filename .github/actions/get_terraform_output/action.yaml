@@ -24,4 +24,3 @@ runs:
           echo "terraform_output_value=$(terraform output ${{ inputs.terraform_output_name }} | tr -d '"')" >> $GITHUB_OUTPUT
           echo "${{ inputs.terraform_output_name }}=$terraform_output_value"
       shell: bash
-

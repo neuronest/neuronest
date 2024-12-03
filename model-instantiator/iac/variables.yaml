@@ -10,10 +10,12 @@ multi_instance_resource_names:
   # service account names
   - WEBAPP_SERVICE_ACCOUNT_NAME=webapp
   - CLOUD_SCHEDULER_SERVICE_ACCOUNT_NAME=cloud-scheduler
-  # cloud scheduler
-  - CLOUD_SCHEDULER_JOB_NAME=uninstantiate-model-schedule
   # cloud run
   - CLOUD_RUN_NAME=webapp
+  # cloud scheduler
+  - CLOUD_SCHEDULER_JOB_NAME=uninstantiate-model-schedule
+  # cloud scheduler cloud SQL
+  - CLOUD_SCHEDULER_CLOUD_SQL_JOB_NAME=uninstantiate-cloud-sql-schedule
 other_variables:
   branch:
     default:
@@ -22,7 +24,9 @@ other_variables:
     - CLOUD_RUN_CPU=1000m
     - CLOUD_RUN_MIN_SCALE=0
     - CLOUD_RUN_MAX_SCALE=1
-    # cloud scheduler
+    # Vertex AI endpoint cloud scheduler
     - CLOUD_SCHEDULER_SCHEDULE='*/30 * * * *'
     - CLOUD_UNINSTANTIATE_ROUTE=/model_instantiator/api/v1/uninstantiator/uninstantiate_logs_conditioned
-
+    # Cloud SQL endpoint cloud scheduler
+    - CLOUD_SCHEDULER_CLOUD_SQL_SCHEDULE='*/30 * * * *'
+    - CLOUD_SQL_UNINSTANTIATE_ROUTE=/model_instantiator/api/v1/uninstantiator/cloud_sql_uninstantiate_logs_conditioned
