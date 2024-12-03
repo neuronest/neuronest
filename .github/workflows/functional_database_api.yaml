@@ -90,6 +90,8 @@ jobs:
      - run_base_terraform
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
+      cloud_sql_instance_name: ${{ steps.get_cloud_sql_instance_name.outputs.value }}
+      model_database_api_url: ${{ steps.get_model_database_api_url.outputs.value }}
     runs-on: neuronest-runner-set
     container:
       image: google/cloud-sdk
