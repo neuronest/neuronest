@@ -5,7 +5,7 @@
 #  value = module.cloud_sql.name
 #}
 output "model_instantiator_url" {
-  value = module.functional_database_api.model_instantiator_url
+  value = module.model_instantiator.url
 }
 output "database_api_url" {
   value = module.database_api.url
