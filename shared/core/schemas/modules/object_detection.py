@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from pydantic import BaseModel, field_validator
 
-from core.schemas.abstract import online_prediction_model
 from core.schemas.abstract.online_prediction_model import (
     BaseInputSampleSchema,
     BaseOutputSampleSchema,
@@ -115,44 +114,6 @@ class InputSampleSchema(BaseInputSampleSchema):
                 for key, value in serialized_attributes.items()
             }
         )
-
-
-class InputSchema(online_prediction_model.InputSchema):
-    samples: List[InputSampleSchema]
-
-    # fixme: the InputSampleSchema structures are parsed and  # pylint: disable=W0511
-    #  validated one by one, but the InputSchema structure  # pylint: disable=W0511
-    #  which wraps them is never validated anywhere it seems to  # pylint: disable=W0511
-    #  me and therefore the sample validator is never executed  # pylint: disable=W0511
-    @field_validator("samples")
-    @classmethod
-    def validate_metadata_batch_unicity(
-        cls, samples: List[InputSampleSchema]
-    ) -> List[InputSampleSchema]:
-        if len(samples) == 0:
-            return []
-
-        first_sample = samples[0]
-        first_sample_metadata_filtered = first_sample.metadata_filtered
-
-        error_message = (
-            "If some metadata is specified for one sample, it has to be equally "
-            "specified for every samples"
-        )
-
-        if len(first_sample_metadata_filtered) == 0:
-            if any(len(sample.metadata_filtered) > 0 for sample in samples):
-                raise ValueError(error_message)
-
-            return samples
-
-        if any(
-            sample.metadata_filtered != first_sample_metadata_filtered
-            for sample in samples
-        ):
-            raise ValueError(error_message)
-
-        return samples
 
 
 class OutputSampleSchema(BaseOutputSampleSchema):
