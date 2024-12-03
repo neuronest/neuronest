@@ -2,7 +2,7 @@ resource "google_cloud_scheduler_job" "uninstantiate_job" {
   provider = google-beta
 
   # Use count to conditionally create the resource
-  count = var.cloud_scheduler_model_name != null ? 1 : 0
+  count = var.cloud_scheduler_job_name != null ? 1 : 0
 
   name      = var.cloud_scheduler_job_name
   schedule  = var.cloud_scheduler_schedule
@@ -26,7 +26,7 @@ resource "google_cloud_scheduler_job" "uninstantiate_cloud_sql_job" {
   provider = google-beta
 
   # Use count to conditionally create the resource
-  count = var.cloud_scheduler_cloud_sql_instance_name != null ? 1 : 0
+  count = var.cloud_scheduler_cloud_sql_job_name != null ? 1 : 0
 
   name      = var.cloud_scheduler_cloud_sql_job_name
   schedule  = var.cloud_scheduler_cloud_sql_schedule
