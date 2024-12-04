@@ -1,6 +1,6 @@
 import ast
 import os
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from core.client.abstract.prediction_api_client import make_results_blob_name
 from core.path import GSPath
@@ -89,7 +89,7 @@ def main(
     job_id: str,
     results_bucket: str,
     images_storage_paths: List[Tuple[str, str]],
-    sample_metadata: Dict[str, str],
+    sample_metadata: SampleMetadata,
 ):
     if len(images_storage_paths) == 0:
         raise ValueError("The received list of images paths is empty")
@@ -104,7 +104,7 @@ def main(
             job_id=job_id,
             model_name=model_name,
             image_storage_path=GSPath(image_storage_path),
-            sample_metadata=SampleMetadata.model_validate(sample_metadata),
+            sample_metadata=sample_metadata,
         )
         for image_storage_path in images_storage_paths
     )
@@ -120,5 +120,5 @@ if __name__ == "__main__":
         job_id=JOB_ID,
         results_bucket=RESULTS_BUCKET,
         images_storage_paths=ast.literal_eval(IMAGES_STORAGE_PATHS),
-        sample_metadata=ast.literal_eval(SAMPLE_METADATA),
+        sample_metadata=SampleMetadata.model_validate_json(SAMPLE_METADATA),
     )

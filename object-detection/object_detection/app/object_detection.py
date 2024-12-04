@@ -188,7 +188,7 @@ def detect_objects(
         "JOB_ID": job_id,
         "RESULTS_BUCKET": RESULTS_BUCKET,
         "IMAGES_STORAGE_PATHS": str(images_storage_paths),
-        "SAMPLE_METADATA": str(object_detection_input.sample_metadata),
+        "SAMPLE_METADATA": object_detection_input.sample_metadata.model_dump_json(),
     }
 
     cloud_run_job_manager.create_job(
