@@ -192,7 +192,7 @@ class ImageAsset(VisualAsset):
 
     @model_validator(mode="before")
     @classmethod
-    def fill_image(cls, values: dict) -> dict:
+    def fill_image_and_metadata(cls, values: dict) -> dict:
         asset_path, resized_shape_or_minimal_value = (
             values["asset_path"],
             values["resized_shape_or_minimal_value"],
@@ -207,13 +207,6 @@ class ImageAsset(VisualAsset):
 
         if values["image"] is None:
             raise ValueError(f"Image could not be loaded from path: {asset_path}")
-
-        return values
-
-    @model_validator(mode="before")
-    @classmethod
-    def fill_metadata(cls, values: dict) -> dict:
-        values["extension"] = extract_file_extension(values["asset_path"])
 
         values["asset_meta"] = ImageAssetMeta(
             width=values["image"].shape[1],
