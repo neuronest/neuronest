@@ -9,7 +9,6 @@ from tests.environment_variables import (
     DATABASE_API_HOST,
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
-    PROJECT_ID,
 )
 
 
@@ -28,9 +27,9 @@ def fixture_cloud_sql_instance_name() -> str:
     return CLOUD_SQL_INSTANCE_NAME
 
 
-@pytest.fixture(name="project_id", scope="session")
-def fixture_project_id() -> str:
-    return PROJECT_ID
+# @pytest.fixture(name="project_id", scope="session")
+# def fixture_project_id() -> str:
+#     return PROJECT_ID
 
 
 @pytest.fixture(name="model_instantiator_host", scope="session")

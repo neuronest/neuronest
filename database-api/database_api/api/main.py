@@ -1,4 +1,5 @@
 import os
+from urllib.parse import quote
 
 from core.schemas.database_api import RoutesSchemas
 from fastapi import Depends, FastAPI, HTTPException
@@ -24,9 +25,12 @@ else:
     # Local PostgreSQL connection
     LOCAL_HOST = os.getenv("DB_HOST", "127.0.0.1")  # Default localhost
     LOCAL_PORT = os.getenv("DB_PORT", "5432")  # Default port for PostgreSQL
+    # URL-encode the password to handle special characters like '@', '$', and '#'
+    # URL encoding ensures that these characters are interpreted
+    # correctly in the connection string
     DATABASE_URL = (
         f"postgresql+psycopg2://"
-        f"{DB_USER}:{DB_PASSWORD}@{LOCAL_HOST}:{LOCAL_PORT}/{DB_NAME}"
+        f"{DB_USER}:{quote(DB_PASSWORD)}@{LOCAL_HOST}:{LOCAL_PORT}/{DB_NAME}"
     )
 
 

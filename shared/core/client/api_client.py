@@ -47,17 +47,6 @@ class APIClient(BaseClient, ABC):
         self.credentials = get_credentials(key_path=self.key_path)
         self._project_id = project_id
 
-    @property
-    def project_id(self) -> str:
-        # we give priority on the project_id which was passed explicitly to the
-        # instantiation rather than to the project id to which the service account
-        # of the credentials is attached
-        return (
-            self._project_id
-            if self._project_id is not None
-            else self.credentials.project_id
-        )
-
     @staticmethod
     def _build_host_with_protocol(host: str, ssl: Optional[bool]) -> str:
         parsed_host = urlparse(host)
@@ -75,8 +64,12 @@ class APIClient(BaseClient, ABC):
 
         return host
 
-    def auth_headers(self) -> Dict[str, str]:
-        identity_token = generate_identity_token(credentials=self.credentials)
+    def auth_headers(self, target_audience: str = None) -> Dict[str, str]:
+        identity_token = generate_identity_token(
+            target_audience=target_audience or self.host,
+            key_path=self.key_path,
+            credentials=self.credentials,
+        )
         return {"Authorization": f"Bearer {identity_token}"}
 
     # noinspection PyMethodMayBeStatic
@@ -90,13 +83,17 @@ class APIClient(BaseClient, ABC):
         payload: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
         content_type_value: str = "application/json; charset=utf-8",
+        target_audience: str = None,
     ) -> requests.Request:
         content_type = {"Content-Type": content_type_value}
 
         return requests.Request(
             method=method,
             url=f"{self.endpoint}{resource}",
-            headers={**content_type, **self.auth_headers()},
+            headers={
+                **content_type,
+                **self.auth_headers(target_audience=target_audience),
+            },
             params={**self.auth_params(), **(params or {})},
             data=json.dumps(payload or {}) if payload else None,
         )
@@ -111,8 +108,11 @@ class APIClient(BaseClient, ABC):
         payload: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
         timeout: Optional[int] = None,
+        target_audience: str = None,
     ) -> requests.Response:
-        request = self._request(resource, verb, payload, params).prepare()
+        request = self._request(
+            resource, verb, payload, params, target_audience=target_audience
+        ).prepare()
         session = requests.Session()
         response = session.send(request, timeout=timeout)
         response.raise_for_status()
