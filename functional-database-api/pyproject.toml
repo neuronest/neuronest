@@ -15,6 +15,7 @@ version = "0.1.0"
 [tool.poetry.dependencies]
 core = {path="../shared", develop = true}
 python = ">3.11,<3.12"
+requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
 core = { path="../shared", develop = true, extras = ["dev"] }
