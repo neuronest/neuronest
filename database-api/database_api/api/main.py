@@ -11,7 +11,10 @@ app = FastAPI()
 
 # Configure database URL dynamically based on environment
 DB_USER = os.getenv("DB_USER")  # Default for local dev
-DB_PASSWORD = os.getenv("DB_PASSWORD")  # Default for local dev
+# URL-encode the password to handle special characters like '@', '$', and '#'
+# URL encoding ensures that these characters are interpreted
+# correctly in the connection string
+DB_PASSWORD = quote(os.environ["DB_PASSWORD"])  # Default for local dev
 DB_NAME = os.getenv("DB_NAME", "local_db")  # Default for local dev
 CLOUD_SQL_CONNECTION_NAME = os.getenv("CLOUD_SQL_CONNECTION_NAME")
 
@@ -25,12 +28,9 @@ else:
     # Local PostgreSQL connection
     LOCAL_HOST = os.getenv("DB_HOST", "127.0.0.1")  # Default localhost
     LOCAL_PORT = os.getenv("DB_PORT", "5432")  # Default port for PostgreSQL
-    # URL-encode the password to handle special characters like '@', '$', and '#'
-    # URL encoding ensures that these characters are interpreted
-    # correctly in the connection string
     DATABASE_URL = (
         f"postgresql+psycopg2://"
-        f"{DB_USER}:{quote(DB_PASSWORD)}@{LOCAL_HOST}:{LOCAL_PORT}/{DB_NAME}"
+        f"{DB_USER}:{DB_PASSWORD}@{LOCAL_HOST}:{LOCAL_PORT}/{DB_NAME}"
     )
 
 
