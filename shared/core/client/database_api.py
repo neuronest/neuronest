@@ -4,7 +4,7 @@ import requests
 
 from core.client.api_client import APIClient
 from core.routes.database_api import routes
-from core.schemas.database_api import RoutesSchemas
+from core.schemas.database_api import ProjectCreate
 
 
 class DatabaseApiClient(APIClient):
@@ -16,7 +16,7 @@ class DatabaseApiClient(APIClient):
         return self.call(
             resource=f"/{routes.Project.prefix}{routes.Project.create}",
             verb="post",
-            payload=RoutesSchemas.ProjectCreate(gcp_project_id=gcp_project_id).dict(),
+            payload=ProjectCreate(gcp_project_id=gcp_project_id).dict(),
         )
 
     def get_project(self, gcp_project_id: str) -> requests.Response:

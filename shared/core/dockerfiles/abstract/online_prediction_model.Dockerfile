@@ -127,11 +127,11 @@ RUN torch-model-archiver -f \
 # ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
 
 # run Torchserve HTTP serve to respond to prediction requests
-# see https://github.com/pytorch/serve/blob/master/docs/token_authorization_api.md
 ENTRYPOINT torchserve \
     --start \
     --ts-config=config.properties \
     --models $MODEL_NAME=$MODEL_NAME.mar \
     --model-store $MODEL_STORE_NAME \
+    # see https://github.com/pytorch/serve/blob/master/docs/token_authorization_api.md
     --disable-token-auth \
     && tail -f /dev/null  # to prevent docker exit, as torchserve runs in background
