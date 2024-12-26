@@ -2,7 +2,6 @@ import logging
 from typing import Any, List, Optional
 
 import pandas as pd
-import torch
 from core.packages.abstract.online_prediction_model.model_handler import (
     OnlinePredictionModelHandler,
 )
