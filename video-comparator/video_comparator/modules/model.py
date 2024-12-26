@@ -20,7 +20,6 @@ class VideoComparatorModel(OnlinePredictionModel):
     # pylint: disable=arguments-differ
     def __call__(
         self,
-        *,
         model_input: ModelInput,
         device: Device,
         batch_size: int,

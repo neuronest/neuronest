@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -73,6 +73,8 @@ class InputSampleSchema(BaseInputSampleSchema):
     image: np.ndarray
     sample_metadata: SampleMetadata
 
+    IMAGE_FIELDS: ClassVar[Tuple[str, ...]] = ("image",)
+
     @property
     def metadata(
         self,
@@ -96,7 +98,7 @@ class InputSampleSchema(BaseInputSampleSchema):
                 image_to_string(
                     value, extension=INPUT_SAMPLE_SCHEMA_IMAGE_TYPE_SERIALIZATION
                 )
-                if key not in SampleMetadata.model_fields
+                if key in self.IMAGE_FIELDS
                 else value
             )
             for key, value in self.model_dump().items()
@@ -106,11 +108,7 @@ class InputSampleSchema(BaseInputSampleSchema):
     def deserialize(cls, serialized_attributes: Dict[str, Any]) -> InputSampleSchema:
         return cls(
             **{
-                key: (
-                    image_from_string(value)
-                    if key not in SampleMetadata.model_fields
-                    else value
-                )
+                key: (image_from_string(value) if key in cls.IMAGE_FIELDS else value)
                 for key, value in serialized_attributes.items()
             }
         )

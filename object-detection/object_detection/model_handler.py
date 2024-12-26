@@ -95,14 +95,10 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         )
 
         images = [
-            torch.from_numpy(resize(sample.image, width=self.overridden_image_width))
-            for sample in data
+            resize(sample.image, width=self.overridden_image_width) for sample in data
         ]
 
-        return super().inference(
-            data=images,
-            device=self.device,
-        )
+        return super().inference(data=images)
 
     def postprocess(self, data: List[Any]) -> List[ObjectDetectionOutputSampleSchema]:
         filtered_predictions = self._filter_predictions(data)

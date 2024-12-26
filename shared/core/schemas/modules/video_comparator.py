@@ -86,7 +86,7 @@ class InputSampleSchema(BaseInputSampleSchema):
         deserialized_attributes_dict = {}
 
         for key, value in serialized_attributes.items():
-            fields_with_types = cls.__fields__
+            fields_with_types = cls.model_fields
 
             if key not in fields_with_types:
                 raise ValueError(f"Unexpected field '{key}'")
@@ -120,7 +120,7 @@ class OutputSampleSchema(BaseOutputSampleSchema):
     def serialize(self) -> Dict[str, Optional[str]]:
         serialized_attributes_dict = {}
 
-        for key, value in self.dict().items():
+        for key, value in self.model_dump().items():
             if isinstance(value, float):
                 serialized_attributes_dict[key] = value
                 continue

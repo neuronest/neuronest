@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import List
 
+import numpy as np
 import pandas as pd
+import torch
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
@@ -20,9 +22,10 @@ class ObjectDetectionModel(OnlinePredictionModel):
         self.model_name = model_name
         super().__init__(*args, **kwargs)
 
-    def __call__(self, *args, **kwargs) -> List[pd.DataFrame]:
+    # pylint: disable=arguments-differ
+    def __call__(self, model_input: List[np.ndarray]) -> List[pd.DataFrame]:
         # noinspection PyCallingNonCallable
-        predictions = self._model(*args, **kwargs)
+        predictions = self._model(model_input)
 
         return list(predictions.pandas().xyxy)
 

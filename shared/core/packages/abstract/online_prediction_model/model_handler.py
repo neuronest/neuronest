@@ -88,7 +88,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     def inference(self, data: List[Any], *args, **kwargs) -> List[Any]:
         with torch.no_grad():
             self.model.eval()
-            model_inferences = self.model(data, *args, **kwargs)
+            model_inferences = self.model(model_input=data, **kwargs)
         return model_inferences
 
     def postprocess(self, data: List[Any]) -> List[OutputSampleSchema]:
