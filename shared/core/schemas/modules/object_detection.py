@@ -34,6 +34,11 @@ class OutputPrediction(BaseModel):
     class_id: int
     class_name: str
 
+    @field_validator("x_min", "y_min", "x_max", "y_max", mode="before")
+    @classmethod
+    def cast_coordinate_to_integer(cls, value: Union[int, float]) -> int:
+        return int(value)
+
 
 class SampleMetadata(BaseModel):
     labels_to_predict: Optional[List[str]] = None
