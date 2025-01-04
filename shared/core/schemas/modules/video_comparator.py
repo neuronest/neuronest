@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 import numpy as np
 import typing_inspect
 
+from core.path import GSPath
 from core.schemas.abstract.online_prediction_model import (
     BaseInputSampleSchema,
     BaseOutputSampleSchema,
@@ -18,10 +19,7 @@ from core.schemas.abstract.prediction_api_client import (
     BaseRealTimeOutput,
     BaseSampleResultsDocument,
 )
-from core.schemas.asset import VideoAsset
 from core.serialization.array import array_from_string, array_to_string
-from core.serialization.bytes import bytes_to_string, string_to_bytes
-from core.services.asset_reader import make_asset_from_bytes
 
 VIDEO_FORCED_EXTENSION: str = ".mp4"
 
@@ -55,8 +53,8 @@ class VideoComparatorJobResultsDocument(BaseJobResultsDocument):
 
 
 class InputSampleSchema(BaseInputSampleSchema):
-    video: Optional[VideoAsset] = None
-    other_video: Optional[VideoAsset] = None
+    video_path: Optional[GSPath] = None
+    other_video_path: Optional[GSPath] = None
     video_embedding: Optional[np.ndarray] = None
     other_video_embedding: Optional[np.ndarray] = None
 
@@ -70,10 +68,8 @@ class InputSampleSchema(BaseInputSampleSchema):
             if isinstance(value, np.ndarray):
                 serialized_attributes_dict[key] = array_to_string(value)
                 continue
-            if isinstance(value, VideoAsset):
-                serialized_attributes_dict[key] = bytes_to_string(
-                    value.to_bytes(forced_extension=VIDEO_FORCED_EXTENSION)
-                )
+            if isinstance(value, GSPath):
+                serialized_attributes_dict[key] = str(value)
 
             raise NotImplementedError(f"Type of value not supported: {type(value)}")
 
@@ -99,12 +95,10 @@ class InputSampleSchema(BaseInputSampleSchema):
             ):
                 deserialized_attributes_dict[key] = array_from_string(value)
                 continue
-            if VideoAsset in typing_inspect.get_args(
+            if GSPath in typing_inspect.get_args(
                 fields_with_types[key].type_, evaluate=True
             ):
-                deserialized_attributes_dict[key] = make_asset_from_bytes(
-                    string_to_bytes(value), extension=VIDEO_FORCED_EXTENSION
-                )
+                deserialized_attributes_dict[key] = GSPath(value)
                 continue
 
             raise NotImplementedError(f"Type of value not supported: {type(value)}")

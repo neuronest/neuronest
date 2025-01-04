@@ -1,8 +1,7 @@
 module "online_prediction_model" {
-  source      = "../online-prediction-model"
-  project_id  = var.project_id
-  region      = var.region
-  vpc_network = var.vpc_network
+  source     = "../online-prediction-model"
+  project_id = var.project_id
+  region     = var.region
 
   image_name           = var.online_prediction_model_image_name
   service_account_name = var.online_prediction_model_service_account_name
@@ -11,12 +10,11 @@ module "online_prediction_model" {
   samples_bucket       = var.online_prediction_model_samples_bucket
   model_name           = var.online_prediction_model_model_name
 
-  vpc_access_connector = var.online_prediction_model_vpc_access_connector
-  cloud_run_name       = var.online_prediction_model_cloud_run_name
-  cloud_run_memory     = var.online_prediction_model_cloud_run_memory
-  cloud_run_cpu        = var.online_prediction_model_cloud_run_cpu
-  cloud_run_min_scale  = var.online_prediction_model_cloud_run_min_scale
-  cloud_run_max_scale  = var.online_prediction_model_cloud_run_max_scale
+  cloud_run_name      = var.online_prediction_model_cloud_run_name
+  cloud_run_memory    = var.online_prediction_model_cloud_run_memory
+  cloud_run_cpu       = var.online_prediction_model_cloud_run_cpu
+  cloud_run_min_scale = var.online_prediction_model_cloud_run_min_scale
+  cloud_run_max_scale = var.online_prediction_model_cloud_run_max_scale
 
   cloud_run_env_vars = merge(
     var.online_prediction_model_cloud_run_env_vars,
@@ -26,11 +24,10 @@ module "online_prediction_model" {
   )
 }
 module "model_instantiator" {
-  source      = "../../services/model-instantiator"
-  project_id  = var.project_id
-  region      = var.region
-  timezone    = var.timezone
-  vpc_network = var.vpc_network
+  source     = "../../services/model-instantiator"
+  project_id = var.project_id
+  region     = var.region
+  timezone   = var.timezone
 
   image_name                           = var.model_instantiator_image_name
   webapp_service_account_name          = var.model_instantiator_webapp_service_account_name

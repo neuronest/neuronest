@@ -5,19 +5,17 @@ from core.schemas.modules.object_detection import ObjectDetectionSampleResultsDo
 
 
 # pylint: disable=unused-argument
-def test_detect_objects_sync(
+def test_detect_objects_async(
     object_detection_client: ObjectDetectionClient,
     sample_path: str,
     uninstantiate_teardown,
 ):
     labels_to_predict = ["truck", "bicycle"]
     batch_size = 10
-    batch_predictions = object_detection_client.detect_objects_async(
+    outputs = object_detection_client.detect_objects_async(
         images_paths=[sample_path] * batch_size, labels_to_predict=labels_to_predict
     )
-    assert len(batch_predictions) == batch_size
 
-    outputs = object_detection_client.detect_objects_async(images_paths=[sample_path])
     job_results_documents = [
         object_detection_client.get_predictions_from_job_id(
             job_id=output.job_id, wait_if_not_existing=True

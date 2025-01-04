@@ -39,13 +39,3 @@ other_variables:
       - STATE_BUCKET=${PROJECT_CODE}-tfstate
       # artifact registry
       - GCP_REGISTRY_NAME=${REGION}-docker.pkg.dev/${PROJECT_ID}
-      # VPC
-      - VPC_NETWORK=private-endpoint-vpc
-      - PSA_RANGE_NAME=psa-range
-      - SERVERLESS_CONNECTOR_NAME=serverless-connector
-      - SUBNET_NAME=private-endpoint-subnet
-      - SUBNET_CIDR_RANGE=10.130.0.0/20
-      - SERVERLESS_CONNECTOR_CIDR=10.8.0.0/28
-      - PSA_PREFIX_LENGTH=20
-      - MIN_THROUGHPUT=200
-      - MAX_THROUGHPUT=300

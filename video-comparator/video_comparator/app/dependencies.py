@@ -16,7 +16,6 @@ from video_comparator.environment_variables import (
     PROJECT_ID,
     REGION,
     SAMPLES_BUCKET,
-    VPC_NETWORK,
 )
 
 
@@ -63,7 +62,6 @@ def use_video_comparator_model_client() -> VideoComparatorModelClient:
             key_path=GOOGLE_APPLICATION_CREDENTIALS,
             location=REGION,
             project_id=PROJECT_ID,
-            vpc_network=VPC_NETWORK,
         ),
         model_instantiator_client=ModelInstantiatorClient(
             key_path=GOOGLE_APPLICATION_CREDENTIALS,

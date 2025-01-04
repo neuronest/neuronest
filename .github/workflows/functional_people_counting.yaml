@@ -59,7 +59,6 @@ jobs:
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
-      base_vpc_access_connector: ${{ steps.run_base_terraform.outputs.base_vpc_access_connector }}
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/set_variables_gcloud_auth
@@ -165,7 +164,6 @@ jobs:
         env:
           TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
           TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
-          TF_VAR_object_detection_vpc_access_connector: ${{ needs.run_base_terraform.outputs.base_vpc_access_connector }}
       - id: get_model_instantiator_url
         uses: ./.github/actions/get_terraform_output
         with:

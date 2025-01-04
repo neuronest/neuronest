@@ -28,23 +28,13 @@ module "base" {
   firestore_region                     = var.firestore_region
   project_builder_service_account_name = var.project_builder_service_account_name
   mono_repository_name                 = var.mono_repository_name
-  vpc_network                          = var.vpc_network
-  psa_range_name                       = var.psa_range_name
-  serverless_connector_name            = var.serverless_connector_name
-  subnet_name                          = var.subnet_name
-  subnet_cidr_range                    = var.subnet_cidr_range
-  serverless_connector_cidr            = var.serverless_connector_cidr
-  psa_prefix_length                    = var.psa_prefix_length
-  min_throughput                       = var.min_throughput
-  max_throughput                       = var.max_throughput
 }
 
 module "functional_object_detection" {
-  source      = "../../shared/iac/modules/services/functional-object-detection"
-  project_id  = var.project_id
-  region      = var.region
-  vpc_network = var.vpc_network
-  timezone    = var.timezone
+  source     = "../../shared/iac/modules/services/functional-object-detection"
+  project_id = var.project_id
+  region     = var.region
+  timezone   = var.timezone
 
   object_detection_image_name                = var.object_detection_image_name
   object_detection_service_account_name      = var.object_detection_service_account_name
@@ -52,7 +42,6 @@ module "functional_object_detection" {
   object_detection_samples_bucket            = var.object_detection_samples_bucket
   object_detection_results_bucket            = var.object_detection_results_bucket
   object_detection_model_name                = var.object_detection_model_name
-  object_detection_vpc_access_connector      = var.object_detection_vpc_access_connector
   object_detection_cloud_run_name            = var.object_detection_cloud_run_name
   object_detection_cloud_run_memory          = var.object_detection_cloud_run_memory
   object_detection_cloud_run_cpu             = var.object_detection_cloud_run_cpu

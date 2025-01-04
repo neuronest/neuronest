@@ -2,16 +2,19 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
+from core.google.storage_client import StorageClient
 from core.packages.abstract.online_prediction_model.model_handler import (
     OnlinePredictionModelHandler,
 )
 from core.schemas.abstract.online_prediction_model import Device
+from core.schemas.asset import AssetType
 from core.schemas.modules.video_comparator import (
     InputSampleSchema as VideoComparatorInputSampleSchema,
 )
 from core.schemas.modules.video_comparator import (
     OutputSampleSchema as VideoComparatorOutputSampleSchema,
 )
+from core.services.asset_reader import make_assets
 
 from video_comparator.config import cfg
 from video_comparator.modules.model import VideoComparatorModel
@@ -28,12 +31,14 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
     def __init__(
         self,
         *args,
+        storage_client: Optional[StorageClient] = None,
         batch_size: Optional[int] = None,
         center_crop_size: Optional[int] = None,
         device: Device = Device.CUDA,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        self.storage_client = storage_client or StorageClient()
         self.batch_size = batch_size or cfg.model.batch_size
         self.center_crop_size = center_crop_size or cfg.preprocessing.center_crop_size
         self.device = device
@@ -49,11 +54,19 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
 
         sample = data[0]  # expected to be only one sample
 
+        video_asset, other_video_asset = make_assets(
+            assets_paths=[sample.video_path, sample.other_video_path],
+            asset_type=AssetType.VIDEO,
+            storage_client=self.storage_client,
+            time_step=1 / cfg.preprocessing.fps,
+            resized_shape_or_minimal_value=cfg.preprocessing.image_size,
+        )
+
         return super().inference(
             data=[
                 ModelInput(
-                    video=torch.from_numpy(sample.video.as_array_content),
-                    other_video=torch.from_numpy(sample.other_video.as_array_content),
+                    video=torch.from_numpy(video_asset.as_array_content),
+                    other_video=torch.from_numpy(other_video_asset.as_array_content),
                     video_embedding=torch.from_numpy(sample.video_embedding),
                     other_video_embedding=torch.from_numpy(
                         sample.other_video_embedding

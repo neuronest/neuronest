@@ -29,10 +29,6 @@ resource "google_cloud_run_service" "model_instantiator_api" {
           name  = "IMAGE_NAME"
           value = var.image_name
         }
-        env {
-          name  = "VPC_NETWORK"
-          value = var.vpc_network
-        }
       }
       service_account_name = google_service_account.model_instantiator_api_sa.email
     }

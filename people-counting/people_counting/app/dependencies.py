@@ -17,7 +17,6 @@ from people_counting.environment_variables import (
     OBJECT_DETECTION_MODEL_NAME,
     PROJECT_ID,
     REGION,
-    VPC_NETWORK,
 )
 from people_counting.people_counter import PeopleCounter
 
@@ -60,7 +59,6 @@ def use_object_detection_model_client() -> ObjectDetectionModelClient:
             key_path=GOOGLE_APPLICATION_CREDENTIALS,
             location=REGION,
             project_id=PROJECT_ID,
-            vpc_network=VPC_NETWORK,
         ),
         model_instantiator_client=ModelInstantiatorClient(
             key_path=GOOGLE_APPLICATION_CREDENTIALS,

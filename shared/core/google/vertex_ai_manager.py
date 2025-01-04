@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import proto
 from google.cloud import aiplatform, aiplatform_v1
-from google.cloud.aiplatform import PrivateEndpoint
+from google.cloud.aiplatform import Endpoint
 from google.cloud.aiplatform_v1.types import training_pipeline
 
 from core.client.abstract.base_client import BaseClient
@@ -29,12 +29,10 @@ class VertexAIManager(BaseClient):
         self,
         location: str,
         project_id: str,
-        vpc_network: str,
         key_path: Optional[str] = None,
     ):
         super().__init__(key_path=key_path, project_id=project_id)
         self.location = location
-        self.vpc_network = vpc_network
 
         self.project_manager = ProjectManager(project_id=project_id, key_path=key_path)
 
@@ -47,10 +45,6 @@ class VertexAIManager(BaseClient):
     @property
     def project_number(self):
         return self.project_manager.get_project_number()
-
-    @property
-    def full_network(self) -> str:
-        return f"projects/{self.project_number}/global/networks/{self.vpc_network}"
 
     @staticmethod
     def _model_to_endpoint_name(model_name: str) -> str:
@@ -83,8 +77,8 @@ class VertexAIManager(BaseClient):
 
         return matching_models
 
-    def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.PrivateEndpoint]:
-        return aiplatform.PrivateEndpoint.list(
+    def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
+        return aiplatform.Endpoint.list(
             location=self.location,
             credentials=self.credentials,
             project=self.project_id,
@@ -129,7 +123,7 @@ class VertexAIManager(BaseClient):
     def get_endpoint_by_name(
         self,
         name: str,
-    ) -> Optional[aiplatform.PrivateEndpoint]:
+    ) -> Optional[aiplatform.Endpoint]:
         endpoints = self._get_all_endpoints_by_name(name)
 
         if len(endpoints) == 0:
@@ -202,7 +196,7 @@ class VertexAIManager(BaseClient):
         self,
         model: aiplatform.Model,
         name: Optional[str] = None,
-        endpoint: Optional[aiplatform.PrivateEndpoint] = None,
+        endpoint: Optional[aiplatform.Endpoint] = None,
     ) -> bool:
         if endpoint is None:
             if name is None:
@@ -232,7 +226,7 @@ class VertexAIManager(BaseClient):
 
     def wait_for_model_deployed(
         self,
-        endpoint: aiplatform.PrivateEndpoint,
+        endpoint: aiplatform.Endpoint,
         model: aiplatform.Model,
         timeout: float = 1800,
         check_frequency: float = 30,
@@ -261,16 +255,15 @@ class VertexAIManager(BaseClient):
         undeploy_previous_model: bool = True,
         is_last_model_already_deployed_ok: bool = True,
         timeout: float = 3600,
-    ) -> aiplatform.PrivateEndpoint:
+    ) -> aiplatform.Endpoint:
         endpoint = self.get_endpoint_by_name(name)
 
         if endpoint is None:
-            endpoint = PrivateEndpoint.create(
+            endpoint = Endpoint.create(
                 display_name=name,
                 project=self.project_id,
                 location=self.location,
                 credentials=self.credentials,
-                network=self.full_network,
             )
 
         if self.is_model_deployed(name=name, model=model):
@@ -290,6 +283,7 @@ class VertexAIManager(BaseClient):
         endpoint = model.deploy(
             endpoint=endpoint,
             deployed_model_display_name=name,
+            traffic_split={"0": 100},  # the new deployment receives 100% of the traffic
             machine_type=serving_deployment_config.machine_type,
             min_replica_count=serving_deployment_config.min_replica_count,
             max_replica_count=serving_deployment_config.max_replica_count,
@@ -300,7 +294,6 @@ class VertexAIManager(BaseClient):
             # to do anything about it
             # (deploy_request_timeout parameter seems to be ineffective)
             sync=False,
-            network=self.full_network,
         )
 
         if not self.wait_for_model_deployed(

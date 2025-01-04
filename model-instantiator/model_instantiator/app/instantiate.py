@@ -16,7 +16,7 @@ from model_instantiator.app.dependencies import (
     use_config,
     use_vertex_ai_manager,
 )
-from model_instantiator.environment_variables import PROJECT_ID, REGION, VPC_NETWORK
+from model_instantiator.environment_variables import PROJECT_ID, REGION
 
 router = APIRouter(
     prefix=f"/{routes.Instantiator.prefix}", tags=[routes.Instantiator.prefix]
@@ -103,7 +103,6 @@ def instantiate_model(
                 "PROJECT_ID": PROJECT_ID,
                 "REGION": REGION,
                 "MODEL_NAME": model_name,
-                "VPC_NETWORK": VPC_NETWORK,
             },
         ),
         override_if_existing=True,

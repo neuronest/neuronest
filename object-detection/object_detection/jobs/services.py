@@ -9,13 +9,13 @@ from core.google.vertex_ai_manager import VertexAIManager
 def create_object_detection_model_client(
     region: str,
     project_id: str,
-    vpc_network: str,
     model_instantiator_host: str,
     model_name: str,
 ) -> ObjectDetectionModelClient:
     return ObjectDetectionModelClient(
         vertex_ai_manager=VertexAIManager(
-            location=region, project_id=project_id, vpc_network=vpc_network
+            location=region,
+            project_id=project_id,
         ),
         model_instantiator_client=ModelInstantiatorClient(
             host=model_instantiator_host,

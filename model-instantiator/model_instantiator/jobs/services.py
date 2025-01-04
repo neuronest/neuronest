@@ -3,13 +3,11 @@ from core.google.vertex_ai_manager import VertexAIManager
 from core.services.deployment_status_manager import DeploymentStatusManager
 from omegaconf import DictConfig
 
-from model_instantiator.jobs.environment_variables import PROJECT_ID, VPC_NETWORK
+from model_instantiator.jobs.environment_variables import PROJECT_ID
 
 
 def create_vertex_ai_manager(config: DictConfig) -> VertexAIManager:
-    return VertexAIManager(
-        location=config.region, project_id=PROJECT_ID, vpc_network=VPC_NETWORK
-    )
+    return VertexAIManager(location=config.region, project_id=PROJECT_ID)
 
 
 def create_firestore_client() -> FirestoreClient:

@@ -2,7 +2,6 @@ import os
 
 PROJECT_ID = os.environ["PROJECT_ID"]
 REGION = os.environ["REGION"]
-VPC_NETWORK = os.environ["VPC_NETWORK"]
 MODEL_NAME = os.environ["MODEL_NAME"]
 MODEL_INSTANTIATOR_HOST = os.environ["MODEL_INSTANTIATOR_HOST"]
 JOB_ID = os.environ["JOB_ID"]

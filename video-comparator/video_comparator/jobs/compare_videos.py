@@ -24,7 +24,6 @@ from video_comparator.jobs.environment_variables import (
     REGION,
     RESULTS_BUCKET,
     VIDEO_PATH_PAIRS,
-    VPC_NETWORK,
 )
 from video_comparator.jobs.services import (
     create_embedding_manager,
@@ -38,7 +37,6 @@ def run_videos_comparison(
     other_video_storage_path: GSPath,
     project_id: str,
     region: str,
-    vpc_network: str,
     embeddings_bucket: str,
     results_bucket: str,
     model_instantiator_host: str,
@@ -52,7 +50,6 @@ def run_videos_comparison(
     video_comparator_model_client = create_video_comparator_model_client(
         project_id=project_id,
         region=region,
-        vpc_network=vpc_network,
         model_instantiator_host=model_instantiator_host,
         model_name=model_name,
     )
@@ -82,9 +79,11 @@ def run_videos_comparison(
 
     prediction: OutputSampleSchema = video_comparator_model_client.predict_single(
         sample=InputSampleSchema(
-            video=video_asset if video_asset_existing_embedding is None else None,
-            other_video=(
-                other_video_asset
+            video_path=(
+                video_storage_path if video_asset_existing_embedding is None else None
+            ),
+            other_video_path=(
+                other_video_storage_path
                 if other_video_asset_existing_embedding is None
                 else None
             ),
@@ -113,7 +112,6 @@ def run_videos_comparison(
 def main(
     project_id: str,
     region: str,
-    vpc_network: str,
     model_name: str,
     model_instantiator_host: str,
     job_id: str,
@@ -130,7 +128,6 @@ def main(
             other_video_storage_path=GSPath(other_video_storage_path),
             project_id=project_id,
             region=region,
-            vpc_network=vpc_network,
             embeddings_bucket=embeddings_bucket,
             results_bucket=results_bucket,
             model_instantiator_host=model_instantiator_host,
@@ -145,7 +142,6 @@ if __name__ == "__main__":
     main(
         project_id=PROJECT_ID,
         region=REGION,
-        vpc_network=VPC_NETWORK,
         model_name=MODEL_NAME,
         model_instantiator_host=MODEL_INSTANTIATOR_HOST,
         job_id=JOB_ID,

@@ -12,13 +12,13 @@ from people_counting.people_counter import PeopleCounter
 def create_object_detection_model_client(
     project_id: str,
     region: str,
-    vpc_network: str,
     model_instantiator_host: str,
     object_detection_model_name: str,
 ) -> ObjectDetectionModelClient:
     return ObjectDetectionModelClient(
         vertex_ai_manager=VertexAIManager(
-            location=region, project_id=project_id, vpc_network=vpc_network
+            location=region,
+            project_id=project_id,
         ),
         model_instantiator_client=ModelInstantiatorClient(
             host=model_instantiator_host,
@@ -30,7 +30,6 @@ def create_object_detection_model_client(
 def create_people_counter(
     project_id: str,
     region: str,
-    vpc_network: str,
     model_instantiator_host: str,
     object_detection_model_name: str,
     config: DictConfig,
@@ -38,7 +37,6 @@ def create_people_counter(
     object_detection_model_client = create_object_detection_model_client(
         project_id=project_id,
         region=region,
-        vpc_network=vpc_network,
         model_instantiator_host=model_instantiator_host,
         object_detection_model_name=object_detection_model_name,
     )

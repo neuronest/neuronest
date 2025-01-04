@@ -1,9 +1,8 @@
 module "functional_object_detection" {
-  source      = "../../abstract/functional-online-prediction-model"
-  project_id  = var.project_id
-  region      = var.region
-  timezone    = var.timezone
-  vpc_network = var.vpc_network
+  source     = "../../abstract/functional-online-prediction-model"
+  project_id = var.project_id
+  region     = var.region
+  timezone   = var.timezone
 
   online_prediction_model_image_name           = var.object_detection_image_name
   online_prediction_model_service_account_name = var.object_detection_service_account_name
@@ -11,7 +10,6 @@ module "functional_object_detection" {
   online_prediction_model_samples_bucket       = var.object_detection_samples_bucket
   online_prediction_model_results_bucket       = var.object_detection_results_bucket
   online_prediction_model_model_name           = var.object_detection_model_name
-  online_prediction_model_vpc_access_connector = var.object_detection_vpc_access_connector
   online_prediction_model_cloud_run_name       = var.object_detection_cloud_run_name
   online_prediction_model_cloud_run_memory     = var.object_detection_cloud_run_memory
   online_prediction_model_cloud_run_cpu        = var.object_detection_cloud_run_cpu
@@ -21,7 +19,6 @@ module "functional_object_detection" {
   online_prediction_model_cloud_run_env_vars = {
     PROJECT_ID                = var.project_id
     REGION                    = var.region
-    VPC_NETWORK               = var.vpc_network
     IMAGE_NAME                = var.object_detection_image_name
     MODEL_NAME                = var.object_detection_model_name
     FIRESTORE_JOBS_COLLECTION = var.object_detection_firestore_jobs_collection
@@ -45,7 +42,6 @@ module "people_counting" {
   source                    = "../people-counting"
   project_id                = var.project_id
   region                    = var.region
-  vpc_network               = var.vpc_network
   image_name                = var.people_counting_image_name
   service_account_name      = var.people_counting_service_account_name
   results_bucket            = var.people_counting_results_bucket

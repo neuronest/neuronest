@@ -29,10 +29,8 @@ resource "google_cloud_run_service" "web_serving" {
     }
     metadata {
       annotations = {
-        "autoscaling.knative.dev/minScale"        = var.cloud_run_min_scale
-        "autoscaling.knative.dev/maxScale"        = var.cloud_run_max_scale
-        "run.googleapis.com/vpc-access-connector" = var.vpc_access_connector
-        "run.googleapis.com/vpc-access-egress"    = "private-ranges-only"
+        "autoscaling.knative.dev/minScale" = var.cloud_run_min_scale
+        "autoscaling.knative.dev/maxScale" = var.cloud_run_max_scale
       }
     }
   }

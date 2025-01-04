@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 import pytest
 from core.client.model_instantiator import ModelInstantiatorClient
@@ -13,6 +14,11 @@ from tests.environment_variables import (
     PROJECT_ID,
     REGION,
 )
+
+
+@pytest.fixture(name="google_application_credentials", scope="session")
+def fixture_google_application_credentials() -> str:
+    return GOOGLE_APPLICATION_CREDENTIALS
 
 
 @pytest.fixture(name="model_instantiator_host", scope="session")
@@ -43,9 +49,10 @@ def fixture_storage_client() -> StorageClient:
 @pytest.fixture(name="model_instantiator_client", scope="session")
 def fixture_model_instantiator_client(
     model_instantiator_host: str,
+    google_application_credentials: Optional[str],
 ) -> ModelInstantiatorClient:
     return ModelInstantiatorClient(
-        host=model_instantiator_host,
+        host=model_instantiator_host, key_path=google_application_credentials
     )
 
 
@@ -63,9 +70,15 @@ def fixture_sample_path(image_directory: str) -> str:
 
 @pytest.fixture(name="object_detection_client", scope="session")
 def fixture_object_detection_client(
-    object_detection_url: str, project_id: str
+    object_detection_url: str,
+    project_id: str,
+    google_application_credentials: Optional[str],
 ) -> ObjectDetectionClient:
-    return ObjectDetectionClient(host=object_detection_url, project_id=project_id)
+    return ObjectDetectionClient(
+        host=object_detection_url,
+        key_path=google_application_credentials,
+        project_id=project_id,
+    )
 
 
 @pytest.fixture(name="uninstantiate_teardown", scope="session")

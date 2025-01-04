@@ -9,9 +9,6 @@ outputs:
   base_project_builder_sa_key:
     description: 'The base64 encoded key of the IAC service account of the shared repository'
     value: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
-  base_vpc_access_connector:
-    description: 'The VPC connector full path to use in Vertex private endpoints'
-    value: ${{ steps.run_base_terraform.outputs.base_vpc_access_connector }}
 runs:
   using: "composite"
   steps:

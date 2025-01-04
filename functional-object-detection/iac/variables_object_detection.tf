@@ -1,7 +1,3 @@
-variable "object_detection_vpc_access_connector" {
-  type    = string
-  default = null
-}
 variable "object_detection_image_name" {
   type    = string
   default = null
