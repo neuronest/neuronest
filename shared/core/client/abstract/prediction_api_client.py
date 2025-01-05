@@ -6,7 +6,7 @@ from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
 from core.client.abstract.api_client import APIClient
-from core.exceptions import PredictionsNotFoundError
+from core.exceptions import DependencyError, PredictionsNotFoundError
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
 from core.hashing import combine_hashes
@@ -145,11 +145,14 @@ class PredictionAPIClient(APIClient, ABC):
         retry_wait_time: int = 60,
         total_waited_time: int = 0,
     ) -> SampleResultsDocument:
-        raw_results = self.storage_client.download_blob(
-            bucket_name=results_bucket_name,
-            blob_name=make_results_blob_name(job_id=job_id, sample_id=sample_id),
-            as_json=True,
-        )
+        try:
+            raw_results = self.storage_client.download_blob(
+                bucket_name=results_bucket_name,
+                blob_name=make_results_blob_name(job_id=job_id, sample_id=sample_id),
+                as_json=True,
+            )
+        except DependencyError:
+            raw_results = None
 
         if raw_results is not None:
             return self.SampleResultsDocumentSchema.model_validate(raw_results)
@@ -299,7 +302,7 @@ class PredictionAPIClient(APIClient, ABC):
         )
 
         job_results = [
-            self.get_predictions_from_job_id(
+            self._get_predictions_from_job_id(
                 job_id=prediction_output.job_id,
                 wait_if_not_existing=True,
                 job_timeout=job_timeout,
