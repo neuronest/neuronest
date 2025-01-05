@@ -74,7 +74,7 @@ class ObjectDetectionClient(PredictionAPIClient):
         labels_to_predict: Optional[List[str]] = None,
         confidence_threshold: Optional[float] = None,
         overridden_image_width: Optional[int] = None,
-        timeout: int = 60,
+        timeout: int = 120,
     ) -> List[ObjectDetectionOutput]:
         return self.predict_async(
             samples=[
@@ -101,7 +101,7 @@ class ObjectDetectionClient(PredictionAPIClient):
         labels_to_predict: Optional[List[str]] = None,
         confidence_threshold: Optional[float] = None,
         overridden_image_width: Optional[int] = None,
-        timeout: int = 60,
+        timeout: int = 120,
         job_timeout: int = 2700,
     ) -> List[ObjectDetectionSampleResultsDocument]:
         return self.predict_sync(

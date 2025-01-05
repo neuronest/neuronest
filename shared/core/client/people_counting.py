@@ -65,7 +65,7 @@ class PeopleCountingClient(PredictionAPIClient):
         self,
         videos_paths: List[str],
         save_counted_videos_in_storage: bool = False,
-        timeout: int = 60,
+        timeout: int = 120,
     ) -> List[PeopleCounterOutput]:
         return self.predict_async(
             samples=[
@@ -83,7 +83,7 @@ class PeopleCountingClient(PredictionAPIClient):
         self,
         videos_paths: List[str],
         save_counted_videos_in_storage: bool = False,
-        timeout: int = 60,
+        timeout: int = 120,
         job_timeout: int = 2700,
     ) -> List[PeopleCounterSampleResultsDocument]:
         return self.predict_sync(

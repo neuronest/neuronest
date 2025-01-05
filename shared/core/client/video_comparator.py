@@ -66,7 +66,7 @@ class VideoComparatorClient(PredictionAPIClient):
     def compare_videos_async(
         self,
         video_path_pairs: List[Tuple[str, str]],
-        timeout: int = 60,
+        timeout: int = 120,
     ) -> List[VideoComparatorOutput]:
         return self.predict_async(
             samples=[
@@ -83,7 +83,7 @@ class VideoComparatorClient(PredictionAPIClient):
     def compare_videos_sync(
         self,
         video_path_pairs: List[Tuple[str, str]],
-        timeout: int = 60,
+        timeout: int = 120,
         job_timeout: int = 2700,
     ) -> List[VideoComparatorSampleResultsDocument]:
         return self.predict_sync(

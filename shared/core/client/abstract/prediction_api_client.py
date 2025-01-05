@@ -300,7 +300,7 @@ class PredictionAPIClient(APIClient, ABC):
         samples: List[LocalSample],
         resource: str,
         input_kwargs: Optional[Dict[str, Any]] = None,
-        timeout: int = 60,
+        timeout: int = 120,
         job_timeout: int = 2700,
     ) -> List[SampleResultsDocument]:
         prediction_outputs = self._predict(
