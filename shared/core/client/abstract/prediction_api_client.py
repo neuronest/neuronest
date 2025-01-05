@@ -5,6 +5,9 @@ from abc import ABC
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
+from google.api_core.exceptions import TooManyRequests
+from tenacity import retry, retry_if_exception_type, wait_exponential
+
 from core.client.abstract.api_client import APIClient
 from core.exceptions import DependencyError, PredictionsNotFoundError
 from core.google.firestore_client import FirestoreClient
@@ -26,6 +29,8 @@ from core.schemas.abstract.prediction_api_client import (
     SampleResultsDocument,
 )
 from core.tools import generate_file_id, get_chunks_from_iterable
+
+QUERY_EXPONENTIAL_BACKOFF = dict(multiplier=1, min=4, max=60)
 
 
 def make_results_blob_name(
@@ -104,6 +109,10 @@ class PredictionAPIClient(APIClient, ABC):
             )
         )
 
+    @retry(
+        retry=retry_if_exception_type(TooManyRequests),
+        wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF),
+    )
     def _upload_sample_to_storage(
         self, sample: LocalSample, destination_bucket: str
     ) -> GSSample:
