@@ -11,6 +11,7 @@ import pandas as pd
 from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import storage
 from google.cloud.storage import Bucket
+from tenacity import retry, retry_if_exception_type, wait_exponential
 from tqdm import tqdm
 
 from core.client.abstract.base_client import BaseClient
@@ -18,6 +19,8 @@ from core.exceptions import DependencyError
 from core.path import GSPath
 from core.serialization.encoding import NumpyEncoder
 from core.serialization.image import image_from_binary
+
+QUERY_EXPONENTIAL_BACKOFF = dict(multiplier=1, min=4, max=60)
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +58,7 @@ class StorageClient(BaseClient):
             if not exist_ok:
                 raise exception
 
+    @retry(wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF))
     def upload_blob(self, source_file_name: str, bucket_name: str, blob_name: str):
         """
         Upload a file to a bucket.
@@ -72,6 +76,7 @@ class StorageClient(BaseClient):
             f"as {blob_name}."
         )
 
+    @retry(wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF))
     def upload_blob_from_bytes(self, bucket_name: str, blob_name: str, content: bytes):
         """
         Upload a string to a bucket as a plain text file.
@@ -86,6 +91,7 @@ class StorageClient(BaseClient):
 
         logger.info(f"Bytes uploaded to the bucket '{bucket_name}' as {blob_name}.")
 
+    @retry(wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF))
     def upload_blob_from_string(self, bucket_name: str, blob_name: str, content: str):
         """
         Upload a string to a bucket as a plain text file.
@@ -100,6 +106,7 @@ class StorageClient(BaseClient):
 
         logger.info(f"String uploaded to the bucket '{bucket_name}' as {blob_name}.")
 
+    @retry(wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF))
     def upload_blob_from_dict(self, bucket_name: str, blob_name: str, content: dict):
         """
         Upload a dictionary to a bucket as a JSON file.
