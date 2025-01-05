@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 
 import pytest
@@ -69,4 +70,8 @@ def fixture_uninstantiate_teardown(
         yield
 
     finally:
-        model_instantiator_client.uninstantiate(model_name)
+        # if using pytest-xdist parallel workers, we want the teardown to be executed
+        # only with the main worker to prevent undesired cases
+        # see https://pytest-xdist.readthedocs.io/en/latest/how-to.html#making-session-scoped-fixtures-execute-only-once
+        if os.getenv("PYTEST_XDIST_WORKER") == "gw0":
+            model_instantiator_client.uninstantiate(model_name)

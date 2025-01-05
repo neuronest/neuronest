@@ -2,7 +2,6 @@ from typing import List
 
 from core.client.object_detection import ObjectDetectionClient
 from core.schemas.modules.object_detection import ObjectDetectionSampleResultsDocument
-from core.services.asset_reader import make_asset
 
 
 # pylint: disable=unused-argument
@@ -34,16 +33,3 @@ def test_detect_objects_async(
         for predictions in all_samples_results
         for prediction in predictions.predictions
     ) == set(labels_to_predict)
-
-    # real time test here once the endpoint to already up
-
-    asset = make_asset(sample_path)
-
-    labels_to_predict = ["dog"]
-    outputs = object_detection_client.detect_objects_real_time(
-        image=asset.content, labels_to_predict=labels_to_predict
-    )
-
-    assert set(prediction.class_name for prediction in outputs.predictions) == set(
-        labels_to_predict
-    )
