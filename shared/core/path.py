@@ -21,7 +21,7 @@ class Path(str, ABC):
         def validate_path(name: str) -> str:
             if not cls.is_valid(name):
                 raise ValueError(f"Invalid {cls.__name__}: '{name}'")
-            return name
+            return cls(name)
 
         return core_schema.no_info_after_validator_function(
             validate_path, core_schema.str_schema()

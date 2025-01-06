@@ -9,6 +9,7 @@ from core.schemas.modules.model_instantiator import (
     UninstantiateModelLogsConditionedInput,
     UninstantiateModelOutput,
 )
+from core.schemas.vertex_ai import ServingDeploymentConfig
 from core.services.deployment_status_manager import (
     DeploymentStatus,
     DeploymentStatusManager,
@@ -101,13 +102,20 @@ def uninstantiate_model(
     ),
 ):
     model_name = uninstantiate_model_input.trained_model_name
+    deployment_location_override = (
+        uninstantiate_model_input.deployment_location_override
+    )
 
-    endpoint = vertex_ai_manager.get_endpoint_by_name(model_name)
+    endpoint = vertex_ai_manager.get_endpoint_by_name(
+        model_name, location_override=deployment_location_override
+    )
     if endpoint is None:
         return _no_endpoint_response(response=response, model_name=model_name)
 
     model = vertex_ai_manager.get_last_model_by_name(model_name)
-    if not vertex_ai_manager.is_model_deployed(endpoint=endpoint, model=model):
+    if not vertex_ai_manager.is_model_deployed(
+        endpoint=endpoint, model=model, location_override=deployment_location_override
+    ):
         return _no_traffic_response(response=response, model_name=model_name)
 
     endpoint.delete(force=True)
@@ -138,7 +146,12 @@ def uninstantiate_model_logs_conditioned(
     model_name = uninstantiate_model_input.trained_model_name
     default_messages = uninstantiate_model_input.default_messages
 
-    endpoint = vertex_ai_manager.get_endpoint_by_name(model_name)
+    model = vertex_ai_manager.get_last_model_by_name(name=model_name)
+    serving_deployment_config = ServingDeploymentConfig.from_labels(model.labels)
+
+    endpoint = vertex_ai_manager.get_endpoint_by_name(
+        name=model_name, location_override=serving_deployment_config.deployment_location
+    )
     if endpoint is None:
         return _no_endpoint_response(response=response, model_name=model_name)
 

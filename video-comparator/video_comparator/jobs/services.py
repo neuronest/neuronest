@@ -2,7 +2,6 @@ from typing import Optional
 
 from core.client.model_client.video_comparator import VideoComparatorModelClient
 from core.client.model_instantiator import ModelInstantiatorClient
-from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import VertexAIManager
 

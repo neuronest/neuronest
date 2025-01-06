@@ -13,7 +13,7 @@ from google.cloud.aiplatform_v1.types import training_pipeline
 from core.client.abstract.base_client import BaseClient
 from core.exceptions import AlreadyExistingError
 from core.google.project_manager import ProjectManager
-from core.google.utils import get_service_account_email
+from core.google.service_account import get_service_account_email
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
@@ -77,9 +77,11 @@ class VertexAIManager(BaseClient):
 
         return matching_models
 
-    def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
+    def _get_all_endpoints_by_name(
+        self, name: str, location_override: Optional[str] = None
+    ) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
-            location=self.location,
+            location=location_override or self.location,
             credentials=self.credentials,
             project=self.project_id,
             filter=f"display_name={name}",
@@ -123,8 +125,11 @@ class VertexAIManager(BaseClient):
     def get_endpoint_by_name(
         self,
         name: str,
+        location_override: Optional[str] = None,
     ) -> Optional[aiplatform.Endpoint]:
-        endpoints = self._get_all_endpoints_by_name(name)
+        endpoints = self._get_all_endpoints_by_name(
+            name=name, location_override=location_override
+        )
 
         if len(endpoints) == 0:
             return None
@@ -134,8 +139,12 @@ class VertexAIManager(BaseClient):
 
         raise ValueError(f"Multiple endpoints found with the same name: {name}")
 
-    def undeploy_models_without_traffic_by_endpoint_name(self, name: str):
-        endpoint = self.get_endpoint_by_name(name)
+    def undeploy_models_without_traffic_by_endpoint_name(
+        self, name: str, location_override: Optional[str] = None
+    ):
+        endpoint = self.get_endpoint_by_name(
+            name=name, location_override=location_override
+        )
 
         if endpoint is None:
             logger.warning(f"No endpoint named '{name}' has been found")
@@ -196,6 +205,7 @@ class VertexAIManager(BaseClient):
         self,
         model: aiplatform.Model,
         name: Optional[str] = None,
+        location_override: Optional[str] = None,
         endpoint: Optional[aiplatform.Endpoint] = None,
     ) -> bool:
         if endpoint is None:
@@ -203,7 +213,9 @@ class VertexAIManager(BaseClient):
                 raise ValueError(
                     "The endpoint name should be specified if no endpoint is given"
                 )
-            endpoint = self.get_endpoint_by_name(name)
+            endpoint = self.get_endpoint_by_name(
+                name=name, location_override=location_override
+            )
 
         if endpoint is None:
             return False
@@ -228,6 +240,7 @@ class VertexAIManager(BaseClient):
         self,
         endpoint: aiplatform.Endpoint,
         model: aiplatform.Model,
+        location_override: Optional[str] = None,
         timeout: float = 1800,
         check_frequency: float = 30,
         current_time: float = 0,
@@ -235,7 +248,9 @@ class VertexAIManager(BaseClient):
         if current_time >= timeout:
             return False
 
-        if self.is_model_deployed(endpoint=endpoint, model=model):
+        if self.is_model_deployed(
+            endpoint=endpoint, model=model, location_override=location_override
+        ):
             return True
 
         time.sleep(check_frequency)
@@ -243,6 +258,7 @@ class VertexAIManager(BaseClient):
         return self.wait_for_model_deployed(
             endpoint=endpoint,
             model=model,
+            location_override=location_override,
             timeout=timeout,
             current_time=current_time + check_frequency,
         )
@@ -256,17 +272,23 @@ class VertexAIManager(BaseClient):
         is_last_model_already_deployed_ok: bool = True,
         timeout: float = 3600,
     ) -> aiplatform.Endpoint:
-        endpoint = self.get_endpoint_by_name(name)
+        deployment_location = serving_deployment_config.deployment_location
+
+        endpoint = self.get_endpoint_by_name(
+            name=name, location_override=deployment_location
+        )
 
         if endpoint is None:
             endpoint = Endpoint.create(
                 display_name=name,
                 project=self.project_id,
-                location=self.location,
+                location=deployment_location,
                 credentials=self.credentials,
             )
 
-        if self.is_model_deployed(name=name, model=model):
+        if self.is_model_deployed(
+            model=model, name=name, location_override=deployment_location
+        ):
             if is_last_model_already_deployed_ok:
                 return endpoint
 
@@ -280,6 +302,7 @@ class VertexAIManager(BaseClient):
             )
         else:
             service_account_email = None
+
         endpoint = model.deploy(
             endpoint=endpoint,
             deployed_model_display_name=name,
@@ -297,13 +320,18 @@ class VertexAIManager(BaseClient):
         )
 
         if not self.wait_for_model_deployed(
-            endpoint=endpoint, model=model, timeout=timeout
+            endpoint=endpoint,
+            model=model,
+            location_override=deployment_location,
+            timeout=timeout,
         ):
             raise TimeoutError(
                 f"Model '{name}' could not been deployed after {timeout} seconds"
             )
 
         if undeploy_previous_model:
-            self.undeploy_models_without_traffic_by_endpoint_name(name)
+            self.undeploy_models_without_traffic_by_endpoint_name(
+                name=name, location_override=deployment_location
+            )
 
         return endpoint

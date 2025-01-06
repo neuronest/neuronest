@@ -34,9 +34,6 @@ logger = logging.getLogger(__name__)
 class Action(str, Enum):
     TRAIN = "train"
     MODEL_UPLOAD = "model_upload"
-    REMOVE_LAST_MODEL_VERSION = "remove_last_model_version"
-    DEPLOY = "deploy"
-    UNDEPLOY = "undeploy"
 
 
 class RunnableAction(abc.ABC):
@@ -45,17 +42,17 @@ class RunnableAction(abc.ABC):
 
     @staticmethod
     def build_training_config(config: Config) -> TrainingConfig:
-        return TrainingConfig(**config.training.dict())
+        return TrainingConfig(**config.training.model_dump())
 
     @staticmethod
     def build_serving_model_upload_config(
         config: Config,
     ) -> ServingModelUploadConfig:
-        return ServingModelUploadConfig(**config.serving_model_upload.dict())
+        return ServingModelUploadConfig(**config.serving_model_upload.model_dump())
 
     @staticmethod
     def build_serving_deployment_config(config: Config) -> ServingDeploymentConfig:
-        return ServingDeploymentConfig(**config.serving_deployment.dict())
+        return ServingDeploymentConfig(**config.serving_deployment.model_dump())
 
     @classmethod
     @abc.abstractmethod
@@ -157,46 +154,6 @@ class UploadModelAction(RunnableAction):
             serving_model_upload_config=serving_model_upload_config,
             serving_deployment_config=serving_deployment_config,
         )
-
-
-class DeployAction(RunnableAction):
-    action = Action.DEPLOY
-    kwargs = ("model_instantiator_client", "model_name")
-
-    @classmethod
-    # pylint: disable=arguments-differ
-    def run(
-        cls,
-        model_instantiator_client: ModelInstantiatorClient,
-        model_name: str,
-        **kwargs,
-    ):
-        model_instantiator_client.instantiate(model_name)
-
-
-class RemoveLastModelVersionAction(RunnableAction):
-    action = Action.REMOVE_LAST_MODEL_VERSION
-    kwargs = ("vertex_ai_manager", "model_name")
-
-    @classmethod
-    # pylint: disable=arguments-differ
-    def run(cls, vertex_ai_manager: VertexAIManager, model_name: str, **kwargs):
-        vertex_ai_manager.delete_last_model_by_name(name=model_name)
-
-
-class UndeployAction(RunnableAction):
-    action = Action.UNDEPLOY
-    kwargs = ("model_instantiator_client", "model_name")
-
-    @classmethod
-    # pylint: disable=arguments-differ
-    def run(
-        cls,
-        model_instantiator_client: ModelInstantiatorClient,
-        model_name: str,
-        **kwargs,
-    ):
-        model_instantiator_client.uninstantiate(model_name)
 
 
 class ActionFactory:

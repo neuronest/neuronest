@@ -21,7 +21,7 @@ class Model:
         self,
         images: List[np.ndarray],
     ) -> List[List[BoundingBox]]:
-        results_batch = self.object_detection_client.predict_batch(
+        results_batch = self.object_detection_model_client.predict_batch(
             images,
             labels=[self.class_name],
             confidence_threshold=self.confidence_threshold,

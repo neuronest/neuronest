@@ -1,8 +1,6 @@
-import base64
-import json
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 
 class InstantiateModelInput(BaseModel):
@@ -14,28 +12,9 @@ class UninstantiateModelInput(BaseModel):
     trained_model_name: str
 
 
-class UpdateStatusInput(BaseModel):
-    trained_model_name: str
-
-
 class UninstantiateModelLogsConditionedInput(UninstantiateModelInput):
     default_messages: Tuple[str, ...] = ("received inference",)
     time_delta_override: Optional[int] = None  # in seconds
-
-
-class PubSubUninstantiateModelLogsConditioned(BaseModel):
-    data: UninstantiateModelLogsConditionedInput
-
-    @field_validator("data", mode="before")
-    @classmethod
-    def deserialize_and_check_data(
-        cls, data: Union[str, UninstantiateModelLogsConditionedInput]
-    ) -> UninstantiateModelLogsConditionedInput:
-        if isinstance(data, str):
-            data = UninstantiateModelLogsConditionedInput.model_validate(
-                json.loads(base64.b64decode(data))
-            )
-        return data
 
 
 class UninstantiateModelOutput(BaseModel):
