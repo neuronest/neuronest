@@ -31,6 +31,7 @@ class ServingModelUpload(BaseModel):
 
 class ServingDeployment(BaseModel):
     machine_type: str
+    deployment_location: str
     accelerator_type: Optional[str]
     accelerator_count: Optional[int]
     min_replica_count: int
