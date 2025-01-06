@@ -23,7 +23,6 @@ from model_instantiator.jobs.services import (
 
 def deploy_model(
     model_name: str,
-    deployment_location_override: Optional[str],
     deployment_status_manager: DeploymentStatusManager,
     vertex_ai_manager: VertexAIManager,
     undeploy_previous_model: bool,
@@ -31,6 +30,8 @@ def deploy_model(
 ) -> Optional[aiplatform.Endpoint]:
     model = vertex_ai_manager.get_last_model_by_name(name=model_name)
     serving_deployment_config = ServingDeploymentConfig.from_labels(model.labels)
+
+    deployment_location = serving_deployment_config.deployment_location
 
     deployment_status_document = deployment_status_manager.maybe_set_status(
         deployment_status=DeploymentStatus.DEPLOYING, deployment_name=model_name
@@ -50,7 +51,7 @@ def deploy_model(
     )
 
     if vertex_ai_manager.is_model_deployed(
-        endpoint=endpoint, model=model, location_override=deployment_location_override
+        endpoint=endpoint, model=model, location_override=deployment_location
     ):
         deployment_status_manager.set_status(
             deployment_status=DeploymentStatus.DEPLOYED, deployment_name=model_name
