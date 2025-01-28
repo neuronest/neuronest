@@ -16,8 +16,14 @@ resource "null_resource" "ensure_instance_is_running" {
   }
 
   provisioner "local-exec" {
-    command = "${path.module}/scripts/ensure_cloud_sql_is_started.sh ${self.triggers.instance_name} ${self.triggers.project_id}"
+    command = <<EOT
+      set -e
+      chmod +x ${path.module}/scripts/ensure_cloud_sql_is_started.sh && \
+      ${path.module}/scripts/ensure_cloud_sql_is_started.sh ${self.triggers.instance_name} ${self.triggers.project_id}
+    EOT
+
   }
+
 }
 
 # Cloud SQL Instance for PostgreSQL 12
