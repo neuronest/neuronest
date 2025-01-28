@@ -2,7 +2,7 @@ terraform {
   required_providers {
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "4.25.0"
+      version = "6.18.0"
     }
   }
   backend "gcs" {

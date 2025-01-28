@@ -10,7 +10,6 @@ data "google_secret_manager_secret_version" "database_api_neuronest_instance_use
   version = "latest"
 }
 
-
 resource "google_cloud_run_service" "database_api" {
   provider                   = google-beta
   name                       = var.cloud_run_name
