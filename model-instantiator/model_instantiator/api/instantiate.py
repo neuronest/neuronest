@@ -1,8 +1,11 @@
 from core.google.cloud_run_job_manager import CloudRunJobManager
+from core.google.cloud_sql_manager import CloudSQLManager
+from core.google.utils import fetch_active_service_account_email
 from core.google.vertex_ai_manager import VertexAIManager
 from core.routes.model_instantiator import routes
 from core.schemas.google.cloud_run import JobConfig
 from core.schemas.model_instantiator import (
+    InstantiateCloudSQLInput,
     InstantiateModelInput,
     InstantiateModelOutput,
 )
@@ -13,6 +16,7 @@ from starlette import status
 
 from model_instantiator.api.dependencies import (
     use_cloud_run_job_manager,
+    use_cloud_sql_manager,
     use_config,
     use_vertex_ai_manager,
 )
@@ -34,12 +38,12 @@ def _already_deployed_endpoint_response(
 
 
 def _already_running_job_response(
-    response: Response, model_name: str
+    response: Response, job_name: str
 ) -> InstantiateModelOutput:
     response.status_code = status.HTTP_200_OK
 
     return InstantiateModelOutput(
-        message=f"A deployment job is already running for model_name: '{model_name}'"
+        message=f"A deployment job is already running for job: '{job_name}'"
     )
 
 
@@ -82,11 +86,11 @@ def instantiate_model(
             response=response, model_name=model_name
         )
 
-    job_name = underscore_to_hyphen(instantiate_model_input.model_name)
+    job_name = f"model-{underscore_to_hyphen(instantiate_model_input.model_name)}"
     execution = cloud_run_job_manager.list_executions(job_name, exclude_terminated=True)
 
     if len(execution) > 0:
-        return _already_running_job_response(response=response, model_name=model_name)
+        return _already_running_job_response(response=response, job_name=job_name)
 
     cloud_run_job_manager.create_job(
         job_name=job_name,
@@ -110,3 +114,91 @@ def instantiate_model(
     cloud_run_job_manager.run_job(job_name=job_name)
 
     return _deploying_endpoint_response(response=response, model_name=model_name)
+
+
+def _no_instance_response(response: Response, instance_name: str):
+    response.status_code = status.HTTP_404_NOT_FOUND
+    return {"error": f"Cloud SQL instance '{instance_name}' not found."}
+
+
+def _already_running_instance_response(response: Response, instance_name: str):
+    response.status_code = status.HTTP_200_OK
+    return {"message": f"Cloud SQL instance '{instance_name}' is already running."}
+
+
+def _already_starting_instance_response(response: Response, instance_name: str):
+    response.status_code = status.HTTP_200_OK
+    return {"message": f"Cloud SQL instance '{instance_name}' is already starting."}
+
+
+def _starting_instance_response(response: Response, instance_name: str):
+    response.status_code = status.HTTP_202_ACCEPTED
+    return {"message": f"Cloud SQL instance '{instance_name}' is starting."}
+
+
+def _unhandled_instance_state_response(response: Response, instance_name: str):
+    response.status_code = status.HTTP_400_BAD_REQUEST
+    return {"error": f"Unhandled state for Cloud SQL instance '{instance_name}'."}
+
+
+@router.post(
+    routes.Instantiator.instantiate_cloud_sql, status_code=status.HTTP_201_CREATED
+)
+def instantiate_cloud_sql_instance(
+    instantiate_cloud_sql_input: InstantiateCloudSQLInput,
+    response: Response,
+    cloud_run_job_config: DictConfig = Depends(use_config),
+    cloud_sql_manager: CloudSQLManager = Depends(use_cloud_sql_manager),
+    cloud_run_job_manager: CloudRunJobManager = Depends(use_cloud_run_job_manager),
+):
+    instance_name = instantiate_cloud_sql_input.instance_name
+
+    # Fetch the instance details
+    instance = cloud_sql_manager.get_instance_by_name(instance_name)
+
+    if instance is None:
+        return _no_instance_response(response=response, instance_name=instance_name)
+
+    # Check if the instance is already running
+    if cloud_sql_manager.is_instance_started(instance_name):
+        return _already_running_instance_response(
+            response=response, instance_name=instance_name
+        )
+
+    # Check if the instance is already starting
+    if cloud_sql_manager.is_instance_starting(instance_name):
+        return _already_starting_instance_response(
+            response=response, instance_name=instance_name
+        )
+
+    job_name = f"cloudsql-{underscore_to_hyphen(instance_name)}"
+
+    # Check if a job execution is already running
+    execution = cloud_run_job_manager.list_executions(job_name, exclude_terminated=True)
+    if len(execution) > 0:
+        return _already_running_job_response(response=response, job_name=job_name)
+
+    # Create and start the Cloud Run job
+    cloud_run_job_manager.create_job(
+        job_name=job_name,
+        job_config=JobConfig(
+            container_uri=cloud_run_job_config.job.container_uri,
+            cpu=cloud_run_job_config.job.cpu,
+            memory=cloud_run_job_config.job.memory,
+            command=["python"],
+            command_args=[
+                "-m",
+                "model_instantiator.jobs.start_cloud_sql_instance",
+            ],
+            environment_variables={
+                # "PROJECT_ID": PROJECT_ID,
+                # "REGION": REGION,
+                "CLOUD_SQL_INSTANCE_NAME": instance_name,
+            },
+        ),
+        override_if_existing=True,
+        service_account=fetch_active_service_account_email(),
+    )
+    cloud_run_job_manager.run_job(job_name=job_name)
+
+    return _starting_instance_response(response=response, instance_name=instance_name)

@@ -43,3 +43,8 @@ variable "cloud_run_min_scale" {
 variable "cloud_run_max_scale" {
   type = string
 }
+variable "model_instantiator_host" {
+  type     = string
+  nullable = true
+  default  = null
+}

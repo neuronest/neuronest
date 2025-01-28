@@ -9,6 +9,10 @@ class InstantiateModelInput(BaseModel):
     model_name: str
 
 
+class InstantiateCloudSQLInput(BaseModel):
+    instance_name: str
+
+
 class UninstantiateModelInput(BaseModel):
     model_name: str
 
@@ -45,7 +49,7 @@ class UninstantiateModelOutput(BaseModel):
     message: str
 
 
-class UninstantiateCloudSqlOutput(BaseModel):
+class UninstantiateCloudSQLOutput(BaseModel):
     message: str
 
 

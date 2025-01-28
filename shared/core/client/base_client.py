@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 from typing import Optional
 
-from core.auth import get_credentials
+from core.auth import get_credentials_and_project_id
 from core.google.utils import get_service_account_name_project_id_from_email
 
 
@@ -12,7 +12,9 @@ class BaseClient(abc.ABC):
         self, key_path: Optional[str] = None, project_id: Optional[str] = None
     ):
         self.key_path = key_path
-        self.credentials = get_credentials(key_path=self.key_path)
+        self.credentials, self.credentials_project_id = get_credentials_and_project_id(
+            key_path=self.key_path
+        )
         self._project_id = project_id
 
     @property
@@ -35,6 +37,8 @@ class BaseClient(abc.ABC):
         """
         if self._project_id is not None:
             return self._project_id
+        if self.credentials_project_id is not None:
+            return self.credentials_project_id
         if hasattr(self.credentials, "project_id"):
             return self.credentials.project_id
 

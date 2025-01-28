@@ -13,6 +13,7 @@ name = "database-api"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
+alembic = "^1.14.0"
 core = {path="../shared", develop = true}
 fastapi = "^0.88.0"
 gunicorn = "23.0.0"

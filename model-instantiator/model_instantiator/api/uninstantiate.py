@@ -1,5 +1,6 @@
 import datetime
 import logging
+from datetime import timedelta
 
 from core.google.cloud_sql_manager import CloudSQLManager
 from core.google.logging_client import LoggerName, LoggingClient
@@ -7,7 +8,7 @@ from core.google.vertex_ai_manager import VertexAIManager
 from core.routes.model_instantiator import routes
 from core.schemas.model_instantiator import (
     UninstantiateCloudSqlInput,
-    UninstantiateCloudSqlOutput,
+    UninstantiateCloudSQLOutput,
     UninstantiateModelInput,
     UninstantiateModelLogsConditionedInput,
     UninstantiateModelOutput,
@@ -17,6 +18,7 @@ from core.services.deployment_status_manager import (
     DeploymentStatusManager,
 )
 from fastapi import APIRouter, Depends, Response
+from google.cloud import logging_v2
 from omegaconf import DictConfig
 from starlette import status
 
@@ -182,39 +184,37 @@ def uninstantiate_model_logs_conditioned(
 
 def _no_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_404_NOT_FOUND
+
     return {"error": f"Cloud SQL instance '{instance_name}' not found"}
 
 
 def _already_stopped_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_200_OK
+
     return {"message": f"Cloud SQL instance '{instance_name}' is already stopped"}
 
 
-def _correctly_stopped_instance_response(
-    response: Response, instance_id: str, instance_name: str
-):
+def _correctly_stopped_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_202_ACCEPTED
+
     return {
-        "message": f"Cloud SQL instance '{instance_name}' has been successfully stopped",
-        "instance_id": instance_id,
+        "message": f"Cloud SQL instance '{instance_name}' has been successfully stopped"
     }
 
 
-@router.post(
-    routes.Uninstantiator.cloud_sql_uninstantiate,
-    response_model=UninstantiateCloudSqlOutput,
-    status_code=status.HTTP_202_ACCEPTED,
-)
-def uninstantiate_cloud_sql_instance(
-    uninstantiate_cloud_sql_input: UninstantiateCloudSqlInput,
-    response: Response,
-    cloud_sql_manager: CloudSQLManager = Depends(use_cloud_sql_manager),
-    # instance_status_manager: InstanceStatusManager = Depends(
-    #     use_instance_status_manager
-    # ),
+def _too_recently_used_cloud_sql_instance_response(
+    response: Response, instance_name: str
 ):
-    cloud_sql_name = uninstantiate_cloud_sql_input.cloud_sql_name
+    response.status_code = status.HTTP_200_OK
 
+    return {"message": f"CloudSQL instance '{instance_name}' too recently used"}
+
+
+def _uninstantiate_cloud_sql_instance(
+    cloud_sql_name: str,
+    response: Response,
+    cloud_sql_manager: CloudSQLManager,
+):
     # Check if the instance exists
     cloud_sql_instance = cloud_sql_manager.get_instance_by_name(cloud_sql_name)
     if cloud_sql_instance is None:
@@ -227,15 +227,77 @@ def uninstantiate_cloud_sql_instance(
         )
 
     # Stop the Cloud SQL instance
-    cloud_sql_manager.stop_instance(instance_name=cloud_sql_name)
-
-    # Update the status to STOPPED
-    # instance_status_manager.maybe_set_status(
-    #     instance_status=InstanceStatus.STOPPED, instance_name=cloud_sql_name
-    # )
+    cloud_sql_manager.stop_instance(instance_name=cloud_sql_name, sync=True)
 
     return _correctly_stopped_instance_response(
         response=response,
-        instance_id=cloud_sql_instance.resource_name,
         instance_name=cloud_sql_name,
+    )
+
+
+@router.post(
+    routes.Uninstantiator.cloud_sql_uninstantiate,
+    response_model=UninstantiateCloudSQLOutput,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def uninstantiate_cloud_sql_instance(
+    uninstantiate_cloud_sql_input: UninstantiateCloudSqlInput,
+    response: Response,
+    cloud_sql_manager: CloudSQLManager = Depends(use_cloud_sql_manager),
+):
+
+    return _uninstantiate_cloud_sql_instance(
+        cloud_sql_name=uninstantiate_cloud_sql_input.cloud_sql_name,
+        response=response,
+        cloud_sql_manager=cloud_sql_manager,
+    )
+
+
+@router.post(
+    routes.Uninstantiator.cloud_sql_uninstantiate_logs_conditioned,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def uninstantiate_cloud_sql_logs_conditioned(
+    uninstantiate_cloud_sql_input: UninstantiateCloudSqlInput,
+    response: Response,
+    config: DictConfig = Depends(use_config),
+    cloud_sql_manager: CloudSQLManager = Depends(use_cloud_sql_manager),
+    logging_client: LoggingClient = Depends(use_logging_client),
+) -> dict:
+    instance_name = uninstantiate_cloud_sql_input.cloud_sql_name
+
+    # Time window for checking logs
+    start_time = datetime.datetime.utcnow() - timedelta(
+        seconds=config.uninstantiate_cloud_sql_time_delta
+    )
+
+    # Check logs for non-cloudsqladmin activity
+    non_cloudsqladmin_queries_logs = [
+        log
+        for log in list(
+            logging_client.client.list_entries(
+                filter_=f"""
+                        resource.type="cloudsql_database"
+                        resource.labels.database_id="{logging_client.project_id}:{instance_name}"
+                        textPayload:"statement:"
+                        timestamp >= "{start_time.isoformat()}Z"
+                        """,
+                order_by=logging_v2.DESCENDING,
+                page_size=1_000_000,
+            )
+        )
+        if "user=cloudsqladmin" not in log.payload
+    ]
+
+    # Activity detected; do not stop
+    if non_cloudsqladmin_queries_logs:
+        return _too_recently_used_cloud_sql_instance_response(
+            response=response, instance_name=instance_name
+        )
+
+    # Stop the Cloud SQL instance if no activity from other users
+    return _uninstantiate_cloud_sql_instance(
+        cloud_sql_name=instance_name,
+        response=response,
+        cloud_sql_manager=cloud_sql_manager,
     )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from abc import ABC
 from enum import Enum
 from typing import Any, Dict, Optional
@@ -12,9 +13,6 @@ from requests import HTTPError
 
 from core.auth import generate_identity_token, get_credentials
 from core.client.base_client import BaseClient
-
-# todo: make it configurable from inherited classes
-HTTP_CALL_MAX_RETRY_ATTEMPT = 3
 
 
 class Protocol(str, Enum):
@@ -98,9 +96,6 @@ class APIClient(BaseClient, ABC):
             data=json.dumps(payload or {}) if payload else None,
         )
 
-    @backoff.on_exception(
-        backoff.expo, HTTPError, max_tries=HTTP_CALL_MAX_RETRY_ATTEMPT
-    )
     def call(
         self,
         resource: str,
@@ -109,12 +104,36 @@ class APIClient(BaseClient, ABC):
         params: Optional[Dict[str, Any]] = None,
         timeout: Optional[int] = None,
         target_audience: str = None,
+        retry_attempts: Optional[int] = 0,
+        verbose_on_exception: bool = True,
     ) -> requests.Response:
-        request = self._request(
-            resource, verb, payload, params, target_audience=target_audience
-        ).prepare()
-        session = requests.Session()
-        response = session.send(request, timeout=timeout)
-        response.raise_for_status()
+        def _call():
+            request = self._request(
+                resource, verb, payload, params, target_audience=target_audience
+            ).prepare()
+            session = requests.Session()
+            response = session.send(request, timeout=timeout)
+            try:
+                response.raise_for_status()
+            except HTTPError as http_error:
+                if verbose_on_exception:
+                    raise HTTPError(
+                        os.linesep.join(
+                            [
+                                str(http_error),
+                                f"response text: {http_error.response.text}",
+                                f"response text: {http_error.response.text}",
+                                f"request payload: {http_error.response.request.body}",
+                            ]
+                        ),
+                        response=http_error.response,
+                    ) from http_error
+                raise http_error
+            return response
 
-        return response
+        if retry_attempts != 0:
+            _call = backoff.on_exception(
+                backoff.expo, HTTPError, max_tries=retry_attempts
+            )(_call)
+
+        return _call()

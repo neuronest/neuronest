@@ -1,6 +1,7 @@
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 from google.auth import default
+from google.auth.exceptions import DefaultCredentialsError
 from google.auth.impersonated_credentials import Credentials as ImpersonatedCredentials
 from google.auth.impersonated_credentials import (
     IDTokenCredentials as ImpersonatedIDTokenCredentials,
@@ -71,15 +72,58 @@ def _generate_token_from_credentials(
     return credentials.token
 
 
+def get_credentials_and_project_id(
+    key_path: Optional[str] = None,
+    auth_scope: str = "https://www.googleapis.com/auth/cloud-platform",
+) -> Tuple[Credentials, Optional[str]]:
+    """
+    Retrieves both the credentials and project ID.
+
+    Args:
+        key_path (Optional[str]): Path to the service account key file. If None,
+                                  Application Default Credentials (ADC) are used.
+        auth_scope (str): The authentication scope to use.
+
+    Returns:
+        Tuple[Credentials, Optional[str]]: A tuple containing the credentials object
+                                           and the project ID, if available.
+    """
+    try:
+        if key_path is not None:
+            # Load credentials from a service account key file
+            credentials = Credentials.from_service_account_file(
+                key_path, scopes=[auth_scope]
+            )
+            project_id = credentials.project_id
+        else:
+            # Use Application Default Credentials (ADC)
+            credentials, project_id = default(scopes=[auth_scope])
+
+        return credentials, project_id
+    except DefaultCredentialsError as exception:
+        raise RuntimeError(
+            f"Failed to obtain credentials: {str(exception)}"
+        ) from exception
+
+
 def get_credentials(
     key_path: Optional[str] = None,
     auth_scope: str = "https://www.googleapis.com/auth/cloud-platform",
 ) -> Credentials:
-    if key_path is not None:
-        return Credentials.from_service_account_file(key_path, scopes=[auth_scope])
+    """
+    Retrieves credentials using the key path or Application Default Credentials (ADC).
 
-    credentials, _ = default(scopes=[auth_scope])
+    Args:
+        key_path (Optional[str]): Path to the service account key file. If None,
+                                  Application Default Credentials (ADC) are used.
+        auth_scope (str): The authentication scope to use.
 
+    Returns:
+        Credentials: The credentials object.
+    """
+    credentials, _ = get_credentials_and_project_id(
+        key_path=key_path, auth_scope=auth_scope
+    )
     return credentials
 
 

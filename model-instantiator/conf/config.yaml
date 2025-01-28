@@ -13,3 +13,4 @@ job:
 
 max_deploying_age: 2700  # in seconds
 uninstantiate_time_delta: 1800  # in seconds
+uninstantiate_cloud_sql_time_delta: 120  # in seconds

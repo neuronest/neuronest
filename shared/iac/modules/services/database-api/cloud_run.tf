@@ -20,6 +20,16 @@ resource "google_cloud_run_service" "database_api" {
     spec {
       containers {
         image = var.image_name
+        # Allows up to failure_threshold * period_seconds for the app to start
+        # Ensures sufficient time for database migrations to complete
+        startup_probe {
+          initial_delay_seconds = 10 # Delay before the first check
+          timeout_seconds       = 1  # Max time to wait for each check
+          period_seconds        = 10 # Interval between checks
+          failure_threshold     = 12 # Number of failed attempts before restart
+        }
+
+
         resources {
           limits = {
             "memory" = var.cloud_run_memory
@@ -41,7 +51,15 @@ resource "google_cloud_run_service" "database_api" {
         }
         env {
           name  = "CLOUD_SQL_CONNECTION_NAME"
-          value = "${var.project_id}:${var.region}:${google_sql_database_instance.neuronest_instance.name}"
+          value = google_sql_database_instance.neuronest_instance.connection_name
+        }
+        env {
+          name  = "INSTANCE_NAME"
+          value = google_sql_database_instance.neuronest_instance.name
+        }
+        env {
+          name  = "MODEL_INSTANTIATOR_HOST"
+          value = var.model_instantiator_host
         }
       }
       service_account_name = google_service_account.database_api_sa.email

@@ -70,5 +70,4 @@ def use_logging_client() -> LoggingClient:
 def use_cloud_sql_manager() -> CloudSQLManager:
     return CloudSQLManager(
         key_path=GOOGLE_APPLICATION_CREDENTIALS,
-        project_id=PROJECT_ID,
     )

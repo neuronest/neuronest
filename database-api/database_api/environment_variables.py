@@ -10,3 +10,5 @@ DB_NAME = os.getenv("DB_NAME", "local_db")  # Default for local dev
 CLOUD_SQL_CONNECTION_NAME = os.getenv("CLOUD_SQL_CONNECTION_NAME")
 LOCAL_HOST = os.getenv("DB_HOST", "127.0.0.1")  # Default localhost
 LOCAL_PORT = os.getenv("DB_PORT", "5432")  # Default port for PostgreSQL
+INSTANCE_NAME = os.getenv("INSTANCE_NAME")
+MODEL_INSTANTIATOR_HOST = os.getenv("MODEL_INSTANTIATOR_HOST")

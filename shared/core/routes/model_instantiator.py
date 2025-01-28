@@ -9,7 +9,7 @@ class _ModelInstantiatorRoutes(_BaseRoutes):
 
         instantiate: str = "/instantiate"
 
-        cloud_sql_instantiate: str = "/cloud_sql_instantiate"
+        instantiate_cloud_sql: str = "/cloud_sql_instantiate"
 
     class Uninstantiator:
         prefix = "uninstantiator"

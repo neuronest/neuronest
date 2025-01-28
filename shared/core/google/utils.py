@@ -1,3 +1,7 @@
+from google.auth import default
+from google.auth.exceptions import GoogleAuthError
+
+
 def get_service_account_email(service_account_name: str, project_id: str):
     return f"{service_account_name}@{project_id}.iam.gserviceaccount.com"
 
@@ -18,3 +22,32 @@ def get_service_account_name_project_id_from_email(service_account_email: str):
     project_id = project_part.split(".")[0]
 
     return service_account_name, project_id
+
+
+def fetch_active_service_account_email():
+    """
+    Fetches the currently active GCP Service Account email.
+
+    :return: The active Service Account email as a string.
+    :raises ValueError: If the credentials are retrieved but no service account email is found.
+    :raises GoogleAuthError: If there is an issue retrieving credentials.
+    :raises RuntimeError: For unexpected errors during the process.
+    """
+    try:
+        credentials, _ = default()
+
+        if (
+            hasattr(credentials, "service_account_email")
+            and credentials.service_account_email
+        ):
+            return credentials.service_account_email
+
+        raise ValueError("Credentials retrieved, but no service account email found.")
+    except GoogleAuthError as auth_error:
+        raise GoogleAuthError(
+            f"Failed to retrieve Service Account credentials: {auth_error}"
+        ) from auth_error
+    except Exception as error:
+        raise RuntimeError(
+            f"Unexpected error while retrieving Service Account: {error}"
+        ) from error

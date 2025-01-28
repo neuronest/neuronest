@@ -25,7 +25,7 @@ WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 RUN pip install --upgrade pip \
-  && pip install poetry \
+  && pip install poetry==1.8.4 \
   && poetry export --without-hashes -f requirements.txt --output requirements.txt \
   && pip install -r requirements.txt
 
