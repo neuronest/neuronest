@@ -16,7 +16,7 @@ resource "null_resource" "ensure_instance_is_running" {
   }
 
   provisioner "local-exec" {
-    command = "${path.module}/scripts/manage_cloud_sql.sh ${self.triggers.instance_name} ${self.triggers.project_id}"
+    command = "${path.module}/scripts/ensure_cloud_sql_is_started.sh ${self.triggers.instance_name} ${self.triggers.project_id}"
   }
 }
 
