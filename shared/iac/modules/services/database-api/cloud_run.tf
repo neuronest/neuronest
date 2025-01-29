@@ -22,6 +22,10 @@ resource "google_cloud_run_service" "database_api" {
         # Allows up to failure_threshold * period_seconds for the app to start
         # Ensures sufficient time for database migrations to complete
         startup_probe {
+          http_get {
+            path = "/database_api/api/v1/healthcheck"
+            port = 8080
+          }
           initial_delay_seconds = 10 # Delay before the first check
           timeout_seconds       = 1  # Max time to wait for each check
           period_seconds        = 10 # Interval between checks
