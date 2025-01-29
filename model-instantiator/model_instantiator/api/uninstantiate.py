@@ -265,6 +265,19 @@ def uninstantiate_cloud_sql_logs_conditioned(
     logging_client: LoggingClient = Depends(use_logging_client),
 ) -> dict:
     instance_name = uninstantiate_cloud_sql_input.cloud_sql_name
+    # if starting:
+    #     nothing
+    # if stopping:
+    #     nothing
+    # if started since enoigh time:
+    #     see logs
+    # # add time since cloud sql has been started
+    # if (
+    #     datetime.datetime.now(tz=endpoint.update_time.tzinfo) - endpoint.update_time
+    # ).total_seconds() < time_delta:
+    #     return _too_recently_updated_endpoint_response(
+    #         response=response, model_name=model_name
+    #     )
 
     # Time window for checking logs
     start_time = datetime.datetime.utcnow() - timedelta(

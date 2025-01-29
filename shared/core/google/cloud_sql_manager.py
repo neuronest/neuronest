@@ -50,6 +50,9 @@ class CloudSQLManager(BaseClient):
                 f"Failed to get Cloud SQL instance '{instance_name}': {http_error}"
             )
             raise
+        except Exception as error:
+            logging.error(f"Unexpected error: {error}")
+            raise
 
     def get_instance_current_activation_policy(self, instance_name: str) -> str:
         """
