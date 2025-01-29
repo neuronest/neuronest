@@ -31,7 +31,7 @@ RUN pip install --upgrade pip \
   && pip install -r requirements.txt
 
 # COPY $REPOSITORY_NAME/conf/ conf
-COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
+COPY $REPOSITORY_NAME $ROOT_DIRECTORY/$REPOSITORY_NAME
 
 EXPOSE $PORT
 
