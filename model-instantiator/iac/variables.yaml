@@ -28,5 +28,5 @@ other_variables:
     - CLOUD_SCHEDULER_SCHEDULE='*/30 * * * *'
     - CLOUD_UNINSTANTIATE_ROUTE=/model_instantiator/api/v1/uninstantiator/uninstantiate_logs_conditioned
     # Cloud SQL endpoint cloud scheduler
-    - CLOUD_SCHEDULER_CLOUD_SQL_SCHEDULE='*/2 * * * *'
+    - CLOUD_SCHEDULER_CLOUD_SQL_SCHEDULE='*/10 * * * *'
     - CLOUD_SQL_UNINSTANTIATE_ROUTE=/model_instantiator/api/v1/uninstantiator/cloud_sql_uninstantiate_logs_conditioned

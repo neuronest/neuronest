@@ -11,6 +11,15 @@ resource "google_service_account_iam_binding" "model_instantiator_api_sa_act_as_
   ]
 }
 
+# Grant the service account permission to act as itself
+resource "google_service_account_iam_binding" "model_instantiator_api_sa_act_as_itself" {
+  service_account_id = google_service_account.model_instantiator_api_sa.name
+  role               = "roles/iam.serviceAccountActor"
+
+  members = [
+    "serviceAccount:${google_service_account.model_instantiator_api_sa.email}"
+  ]
+}
 resource "google_project_iam_member" "model_instantiator_api_sa_aiplatform_admin" {
   project = var.project_id
   role    = "roles/aiplatform.admin"
