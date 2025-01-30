@@ -40,7 +40,9 @@ class OnlinePredictionModelClient(BaseClient, ABC):
         self.endpoint_retry_timeout = endpoint_retry_timeout
 
     def _create_endpoint(self) -> Optional[requests.Response]:
-        return self.model_instantiator_client.instantiate(self.model_name)
+        return self.model_instantiator_client.instantiate(
+            self.model_name, retry_attempts=3
+        )
 
     @ttl_cache(ttl=600)
     def _try_get_endpoint(self) -> aiplatform.Endpoint:

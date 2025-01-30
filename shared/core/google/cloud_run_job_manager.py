@@ -1,6 +1,7 @@
 from threading import Thread
 from typing import List, Optional, Union
 
+from google.api_core.exceptions import AlreadyExists
 from google.cloud.exceptions import NotFound
 from google.cloud.run_v2 import (
     CreateJobRequest,
@@ -124,8 +125,6 @@ class CloudRunJobManager(BaseClient):
         override_if_existing: bool = False,
         service_account: Optional[str] = None,
     ) -> JobSchema:
-        if override_if_existing is True:
-            self.delete_job(job_name=job_name, is_missing_ok=True)
 
         # noinspection PyTypeChecker
         request = CreateJobRequest(
@@ -168,7 +167,15 @@ class CloudRunJobManager(BaseClient):
             job_id=job_name,
         )
 
-        operation = self.jobs_client.create_job(request=request)
-        response = operation.result()
+        try:
+            operation = self.jobs_client.create_job(request=request)
+            response = operation.result()
+        except AlreadyExists:
+            if override_if_existing:
+                self.delete_job(job_name=job_name, is_missing_ok=True)
+                operation = self.jobs_client.create_job(request=request)
+                response = operation.result()
+            else:
+                raise
 
         return JobSchema.parse_obj(protobuf_to_dict(response))
