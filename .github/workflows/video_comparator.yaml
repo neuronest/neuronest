@@ -47,26 +47,12 @@ env:
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-  upload_variables_of_called_workflows:
-    runs-on: neuronest-runner-set
-    container: google/cloud-sdk
-    outputs:
-      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: upload_variables
-        id: upload_variables
-        uses: ./.github/actions/upload_variables
-        with:
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-
   video_comparator:
-    needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: true
       deploy: true
       do_post_deployment: true
       online_prediction_model_repository: video-comparator
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
     secrets: inherit

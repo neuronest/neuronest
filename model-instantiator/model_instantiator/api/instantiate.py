@@ -1,3 +1,5 @@
+import logging
+
 from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.cloud_sql_manager import CloudSQLManager
 from core.google.utils import fetch_active_service_account_email
@@ -152,21 +154,25 @@ def instantiate_cloud_sql_instance(
     cloud_run_job_manager: CloudRunJobManager = Depends(use_cloud_run_job_manager),
 ):
     instance_name = instantiate_cloud_sql_input.instance_name
+    logging.info(f"Received request to start Cloud SQL instance: {instance_name}")
 
     # Fetch the instance details
     instance = cloud_sql_manager.get_instance_by_name(instance_name)
 
     if instance is None:
+        logging.warning(f"Instance {instance_name} not found.")
         return _no_instance_response(response=response, instance_name=instance_name)
 
     # Check if the instance is already running
     if cloud_sql_manager.is_instance_started(instance_name):
+        logging.info(f"Instance {instance_name} is already running.")
         return _already_running_instance_response(
             response=response, instance_name=instance_name
         )
 
     # Check if the instance is already starting
     if cloud_sql_manager.is_instance_starting(instance_name):
+        logging.info(f"Instance {instance_name} is already starting.")
         return _already_starting_instance_response(
             response=response, instance_name=instance_name
         )
@@ -176,9 +182,19 @@ def instantiate_cloud_sql_instance(
     # Check if a job execution is already running
     execution = cloud_run_job_manager.list_executions(job_name, exclude_terminated=True)
     if len(execution) > 0:
+        logging.info(
+            f"Job execution already running for {job_name}. Skipping new job creation."
+        )
         return _already_running_job_response(response=response, job_name=job_name)
 
+    active_service_account_email = fetch_active_service_account_email()
+    logging.info(
+        f"Using service account: {active_service_account_email} "
+        f"for Cloud Run job: {job_name}"
+    )
+
     # Create and start the Cloud Run job
+    logging.info(f"Creating Cloud Run job: {job_name} with instance: {instance_name}")
     cloud_run_job_manager.create_job(
         job_name=job_name,
         job_config=JobConfig(
@@ -191,14 +207,14 @@ def instantiate_cloud_sql_instance(
                 "model_instantiator.jobs.start_cloud_sql_instance",
             ],
             environment_variables={
-                # "PROJECT_ID": PROJECT_ID,
-                # "REGION": REGION,
                 "CLOUD_SQL_INSTANCE_NAME": instance_name,
             },
         ),
         override_if_existing=True,
-        service_account=fetch_active_service_account_email(),
+        service_account=active_service_account_email,
     )
+
+    logging.info(f"Starting Cloud Run job: {job_name}")
     cloud_run_job_manager.run_job(job_name=job_name)
 
     return _starting_instance_response(response=response, instance_name=instance_name)

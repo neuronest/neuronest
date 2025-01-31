@@ -1,3 +1,4 @@
+import requests
 from google.auth import default
 from google.auth.exceptions import GoogleAuthError
 
@@ -33,6 +34,18 @@ def fetch_active_service_account_email():
     :raises GoogleAuthError: If there is an issue retrieving credentials.
     :raises RuntimeError: For unexpected errors during the process.
     """
+    metadata_url = (
+        "http://metadata.google.internal/computeMetadata/v1"
+        "/instance/service-accounts/default/email"
+    )
+    headers = {"Metadata-Flavor": "Google"}
+
+    try:
+        response = requests.get(metadata_url, headers=headers, timeout=2)
+        if response.status_code == 200:
+            return response.text
+    except requests.RequestException:
+        pass  # Ignore errors and fallback to default()
     try:
         credentials, _ = default()
 
