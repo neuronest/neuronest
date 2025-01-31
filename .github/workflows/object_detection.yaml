@@ -69,18 +69,18 @@ env:
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-  upload_variables_of_called_workflows:
-    runs-on: neuronest-runner-set
-    container: google/cloud-sdk
-    outputs:
-      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: upload_variables
-        id: upload_variables
-        uses: ./.github/actions/upload_variables
-        with:
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+#  upload_variables_of_called_workflows:
+#    runs-on: neuronest-runner-set
+#    container: google/cloud-sdk
+#    outputs:
+#      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
+#    steps:
+#      - uses: actions/checkout@v3
+#      - name: upload_variables
+#        id: upload_variables
+#        uses: ./.github/actions/upload_variables
+#        with:
+#          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
   object_detection:
     needs: upload_variables_of_called_workflows
