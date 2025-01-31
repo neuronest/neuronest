@@ -93,5 +93,6 @@ jobs:
       dockerhub_training_image_name: ${{ inputs.dockerhub_training_image_name }}
       gcp_training_image_name: ${{ inputs.gcp_training_image_name }}
       online_prediction_model_repository: object-detection
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      # env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
     secrets: inherit
