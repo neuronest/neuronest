@@ -27,13 +27,7 @@ class StorageClient(BaseClient):
         self, key_path: Optional[str] = None, project_id: Optional[str] = None
     ):
         super().__init__(key_path=key_path, project_id=project_id)
-        self.client = (
-            storage.Client(project=project_id)
-            if key_path is None
-            else storage.Client.from_service_account_json(
-                json_credentials_path=key_path, project=project_id
-            )
-        )
+        self.client = storage.Client(project=project_id, credentials=self.credentials)
 
     @staticmethod
     def generate_gs_link(bucket_name: str, blob_name: str) -> GSPath:

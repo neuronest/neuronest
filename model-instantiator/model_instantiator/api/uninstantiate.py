@@ -17,10 +17,9 @@ from core.services.deployment_status_manager import (
     DeploymentStatus,
     DeploymentStatusManager,
 )
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Response, status
 from google.cloud import logging_v2
 from omegaconf import DictConfig
-from starlette import status
 
 from model_instantiator.api.dependencies import (
     use_cloud_sql_manager,
@@ -190,6 +189,7 @@ def _no_instance_response(response: Response, instance_name: str):
 
 def _already_stopped_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_200_OK
+    # response.status_code = status.HTTP_409_CONFLICT
 
     return {"message": f"Cloud SQL instance '{instance_name}' is already stopped"}
 
@@ -253,11 +253,50 @@ def uninstantiate_cloud_sql_instance(
     )
 
 
+def _instance_still_starting_response(
+    response: Response, instance_name: str, status_code: int = status.HTTP_200_OK
+):
+    """
+    Response when the Cloud SQL instance is still starting.
+    """
+    response.status_code = status_code  # 409 indicates the instance is not ready yet
+    return {
+        "message": f"Cloud SQL instance '{instance_name}' "
+        f"is still starting and cannot be uninstantiated yet."
+    }
+
+
+def _already_stopping_instance_response(response: Response, instance_name: str):
+    """
+    Response when the Cloud SQL instance is already in the process of stopping.
+    """
+    response.status_code = status.HTTP_200_OK
+    return {"message": f"Cloud SQL instance '{instance_name}' is already stopping."}
+
+
+def _too_recently_started_cloud_sql_instance_response(
+    response: Response,
+    instance_name: str,
+    response_status_code: int = status.HTTP_200_OK,
+):
+    """
+    Response when the Cloud SQL instance has not been running long enough
+    to be uninstantiated.
+    """
+    response.status_code = (
+        response_status_code  # 403 to indicate action is not allowed yet
+    )
+    return {
+        "message": f"Cloud SQL instance '{instance_name}' "
+        f"has started too recently and cannot be uninstantiated yet."
+    }
+
+
 @router.post(
     routes.Uninstantiator.cloud_sql_uninstantiate_logs_conditioned,
     status_code=status.HTTP_202_ACCEPTED,
 )
-def uninstantiate_cloud_sql_logs_conditioned(
+def uninstantiate_cloud_sql_usage_conditioned(
     uninstantiate_cloud_sql_input: UninstantiateCloudSqlInput,
     response: Response,
     config: DictConfig = Depends(use_config),
@@ -265,26 +304,66 @@ def uninstantiate_cloud_sql_logs_conditioned(
     logging_client: LoggingClient = Depends(use_logging_client),
 ) -> dict:
     instance_name = uninstantiate_cloud_sql_input.cloud_sql_name
-    # if starting:
-    #     nothing
-    # if stopping:
-    #     nothing
-    # if started since enoigh time:
-    #     see logs
-    # # add time since cloud sql has been started
-    # if (
-    #     datetime.datetime.now(tz=endpoint.update_time.tzinfo) - endpoint.update_time
-    # ).total_seconds() < time_delta:
-    #     return _too_recently_updated_endpoint_response(
-    #         response=response, model_name=model_name
-    #     )
-
-    # Time window for checking logs
-    start_time = datetime.datetime.utcnow() - timedelta(
-        seconds=config.uninstantiate_cloud_sql_time_delta
+    logging.info(
+        f"Received request to uninstantiate Cloud SQL instance: {instance_name}"
     )
 
-    # Check logs for non-cloudsqladmin activity
+    # Check if the instance is still starting
+    if cloud_sql_manager.is_instance_starting(instance_name):
+        logging.info(
+            f"Instance {instance_name} is still starting. Skipping uninstantiation."
+        )
+        return _instance_still_starting_response(
+            response=response, instance_name=instance_name
+        )
+
+    # Check if the instance is already stopping
+    if cloud_sql_manager.is_instance_stopping(instance_name):
+        logging.info(
+            f"Instance {instance_name} is already stopping. No further action required."
+        )
+        return _already_stopping_instance_response(
+            response=response, instance_name=instance_name
+        )
+
+    # Check if the instance is already stopped
+    if cloud_sql_manager.is_instance_stopped(instance_name):
+        logging.info(
+            f"Instance {instance_name} is already stopped. No further action required."
+        )
+        return _already_stopped_instance_response(
+            response=response, instance_name=instance_name
+        )
+
+    # Check how long the instance has been running
+    instance_last_started_time = cloud_sql_manager.get_instance_last_update_end_time(
+        instance_name
+    )
+    required_time_to_uninstantiate = timedelta(
+        seconds=config.uninstantiate_cloud_sql_time_delta
+    )
+    time_running = datetime.datetime.utcnow() - instance_last_started_time
+
+    if time_running < required_time_to_uninstantiate:
+        logging.info(
+            f"Instance {instance_name} has been running for {time_running}, "
+            f"which is less than required {required_time_to_uninstantiate}."
+            f" Skipping uninstantiation."
+        )
+        return _too_recently_started_cloud_sql_instance_response(
+            response=response, instance_name=instance_name
+        )
+
+    # Define the time window for checking logs
+    instance_active_check_start_time = (
+        datetime.datetime.utcnow() - required_time_to_uninstantiate
+    )
+    logging.info(
+        f"Checking logs for non-cloudsqladmin queries "
+        f"since {instance_active_check_start_time.isoformat()}Z"
+    )
+
+    # Query logs for non-cloudsqladmin activity
     non_cloudsqladmin_queries_logs = [
         log
         for log in list(
@@ -293,22 +372,31 @@ def uninstantiate_cloud_sql_logs_conditioned(
                         resource.type="cloudsql_database"
                         resource.labels.database_id="{logging_client.project_id}:{instance_name}"
                         textPayload:"statement:"
-                        timestamp >= "{start_time.isoformat()}Z"
+                        timestamp >= "{instance_active_check_start_time.isoformat()}Z"
                         """,
                 order_by=logging_v2.DESCENDING,
-                page_size=1_000_000,
+                # absurdly big number so that single requests yields all the logs
+                page_size=1_000_000_000,
             )
         )
         if "user=cloudsqladmin" not in log.payload
     ]
 
-    # Activity detected; do not stop
+    # If non-cloudsqladmin activity is detected, do not stop the instance
     if non_cloudsqladmin_queries_logs:
+        logging.info(
+            f"Recent queries found by non-cloudsqladmin users on {instance_name}."
+            f" Keeping instance running."
+        )
         return _too_recently_used_cloud_sql_instance_response(
             response=response, instance_name=instance_name
         )
 
-    # Stop the Cloud SQL instance if no activity from other users
+    # If no recent activity is detected, proceed to stop the instance
+    logging.info(
+        f"No recent non-cloudsqladmin activity detected. "
+        f"Stopping instance {instance_name}."
+    )
     return _uninstantiate_cloud_sql_instance(
         cloud_sql_name=instance_name,
         response=response,

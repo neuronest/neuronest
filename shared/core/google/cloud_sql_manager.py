@@ -1,3 +1,4 @@
+import datetime
 import logging
 import time
 from enum import Enum
@@ -95,6 +96,23 @@ class CloudSQLManager(BaseClient):
 
         # Return the status of the most recent update operation
         return update_operations[0]["status"]
+
+    def get_instance_last_update_end_time(
+        self, instance_name: str
+    ) -> Optional[datetime.datetime]:
+        """
+        Fetch the status of the most recent 'UPDATE' operation for the specified instance.
+        """
+        # pylint: disable=no-member
+        update_operations = self.get_instance_update_operations_history(instance_name)
+
+        if not update_operations:
+            return None
+
+        # Return the status of the most recent update operation
+        return datetime.datetime.strptime(
+            update_operations[0]["endTime"], "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
 
     def get_instance_status(self, instance_name: str) -> InstanceStatus:
         """
