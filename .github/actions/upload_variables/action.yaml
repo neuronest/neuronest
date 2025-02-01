@@ -41,7 +41,9 @@ runs:
       run: |
         env_file_hash=$(sha256sum "${{ steps.set_variables.outputs.created_env_file_path }}" | awk '{print $1}')
         echo $env_file_hash
-        env_file_artifact_name=${{ env.REPOSITORY_NAME }}_${env_file_hash}.env
+        uuid=$(uuidgen)
+        env_file_artifact_name=${{ env.REPOSITORY_NAME }}_${env_file_hash}_${uuid}.env
+
         echo "name=$env_file_artifact_name" >> $GITHUB_OUTPUT
         env_file_artifact_path=/tmp/$env_file_artifact_name
         cp ${{ steps.set_variables.outputs.created_env_file_path }} $env_file_artifact_path
