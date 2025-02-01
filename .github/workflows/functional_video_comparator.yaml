@@ -55,7 +55,7 @@ jobs:
     outputs:
       env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: upload_variables
         id: upload_variables
         uses: ./.github/actions/upload_variables

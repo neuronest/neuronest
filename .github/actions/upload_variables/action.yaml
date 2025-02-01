@@ -28,7 +28,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - id: set_variables
       uses: ./.github/actions/set_variables
       with:
@@ -40,7 +40,6 @@ runs:
     - id: set_env_file_artifact
       run: |
         env_file_hash=$(sha256sum "${{ steps.set_variables.outputs.created_env_file_path }}" | awk '{print $1}')
-        echo $env_file_hash
         uuid=$(python3 -c 'import uuid; print(uuid.uuid4())')
         env_file_artifact_name=${{ env.REPOSITORY_NAME }}_${env_file_hash}_${uuid}.env
 

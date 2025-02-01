@@ -31,7 +31,7 @@ jobs:
     runs-on: neuronest-runner-set
     container: python:3.8-buster
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables
       - run: apt -qqy update > /dev/null && apt install -qqy cmake ffmpeg git libsm6 libxext6 > /dev/null
       - run: pip install --upgrade pip

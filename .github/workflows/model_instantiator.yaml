@@ -38,7 +38,7 @@ jobs:
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
@@ -56,12 +56,12 @@ jobs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
       dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
           as_root: true
-      - uses: google-github-actions/setup-gcloud@v0.2.0
+      - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
@@ -86,7 +86,7 @@ jobs:
     container:
       image: google/cloud-sdk
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}

@@ -51,7 +51,7 @@ jobs:
       functional_video_comparator_env_file_artifact_name: ${{ steps.upload_functional_video_comparator_variables.outputs.env_file_artifact_name }}
       # functional_people_counting_env_file_artifact_name: ${{ steps.upload_functional_people_counting_variables.outputs.env_file_artifact_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: upload_functional_object_detection_variables
         id: upload_functional_object_detection_variables
         uses: ./.github/actions/upload_variables
