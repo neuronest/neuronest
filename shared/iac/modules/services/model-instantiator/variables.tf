@@ -4,6 +4,9 @@ variable "image_name" {
 variable "webapp_service_account_name" {
   type = string
 }
+variable "vertex_location" {
+  type = string
+}
 variable "cloud_scheduler_service_account_name" {
   type = string
 }

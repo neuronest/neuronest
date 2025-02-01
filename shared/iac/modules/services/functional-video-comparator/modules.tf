@@ -4,6 +4,8 @@ module "functional_video_comparator" {
   region     = var.region
   timezone   = var.timezone
 
+  vertex_location = var.vertex_location
+
   online_prediction_model_image_name           = var.video_comparator_image_name
   online_prediction_model_service_account_name = var.video_comparator_service_account_name
   online_prediction_model_models_bucket        = var.video_comparator_models_bucket

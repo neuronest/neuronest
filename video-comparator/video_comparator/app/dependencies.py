@@ -16,6 +16,7 @@ from video_comparator.environment_variables import (
     PROJECT_ID,
     REGION,
     SAMPLES_BUCKET,
+    VERTEX_LOCATION,
 )
 
 
@@ -60,7 +61,7 @@ def use_video_comparator_model_client() -> VideoComparatorModelClient:
     return VideoComparatorModelClient(
         vertex_ai_manager=VertexAIManager(
             key_path=GOOGLE_APPLICATION_CREDENTIALS,
-            location=REGION,
+            location=VERTEX_LOCATION,
             project_id=PROJECT_ID,
         ),
         model_instantiator_client=ModelInstantiatorClient(

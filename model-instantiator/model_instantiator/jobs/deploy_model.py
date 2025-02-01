@@ -73,7 +73,7 @@ if __name__ == "__main__":
         deployment_status_manager=create_deployment_status_manager(
             config=cfg, firestore_client=firestore_client
         ),
-        vertex_ai_manager=create_vertex_ai_manager(config=cfg),
+        vertex_ai_manager=create_vertex_ai_manager(),
         undeploy_previous_model=UNDEPLOY_PREVIOUS_MODEL,
         is_last_model_already_deployed_ok=IS_LAST_MODEL_ALREADY_DEPLOYED_OK,
     )

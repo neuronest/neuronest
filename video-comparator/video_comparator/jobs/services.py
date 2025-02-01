@@ -9,14 +9,14 @@ from video_comparator.services.embedding_manager import EmbeddingManager
 
 
 def create_video_comparator_model_client(
-    region: str,
+    vertex_location: str,
     project_id: str,
     model_instantiator_host: str,
     model_name: str,
 ) -> VideoComparatorModelClient:
     return VideoComparatorModelClient(
         vertex_ai_manager=VertexAIManager(
-            location=region,
+            location=vertex_location,
             project_id=project_id,
         ),
         model_instantiator_client=ModelInstantiatorClient(

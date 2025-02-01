@@ -20,6 +20,7 @@ module "online_prediction_model" {
     var.online_prediction_model_cloud_run_env_vars,
     {
       MODEL_INSTANTIATOR_HOST = module.model_instantiator.url
+      VERTEX_LOCATION         = var.vertex_location
     }
   )
 }
@@ -28,6 +29,8 @@ module "model_instantiator" {
   project_id = var.project_id
   region     = var.region
   timezone   = var.timezone
+
+  vertex_location = var.vertex_location
 
   image_name                           = var.model_instantiator_image_name
   webapp_service_account_name          = var.model_instantiator_webapp_service_account_name

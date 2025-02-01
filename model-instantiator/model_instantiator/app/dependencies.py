@@ -12,6 +12,7 @@ from model_instantiator.config import cfg
 from model_instantiator.environment_variables import (
     GOOGLE_APPLICATION_CREDENTIALS,
     PROJECT_ID,
+    VERTEX_LOCATION,
 )
 
 
@@ -21,9 +22,9 @@ def use_config() -> DictConfig:
 
 
 @lru_cache
-def use_vertex_ai_manager(config: DictConfig = Depends(use_config)) -> VertexAIManager:
+def use_vertex_ai_manager() -> VertexAIManager:
     return VertexAIManager(
-        location=config.region,
+        location=VERTEX_LOCATION,
         key_path=GOOGLE_APPLICATION_CREDENTIALS,
         project_id=PROJECT_ID,
     )

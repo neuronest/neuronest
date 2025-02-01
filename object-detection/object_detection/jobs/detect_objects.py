@@ -21,9 +21,9 @@ from object_detection.jobs.environment_variables import (
     MODEL_INSTANTIATOR_HOST,
     MODEL_NAME,
     PROJECT_ID,
-    REGION,
     RESULTS_BUCKET,
     SAMPLE_METADATA,
+    VERTEX_LOCATION,
 )
 from object_detection.jobs.services import (
     create_object_detection_model_client,
@@ -33,7 +33,7 @@ from object_detection.jobs.services import (
 
 def run_objects_detection(
     project_id: str,
-    region: str,
+    vertex_location: str,
     results_bucket: str,
     model_instantiator_host: str,
     job_id: str,
@@ -44,7 +44,7 @@ def run_objects_detection(
     storage_client = create_storage_client(project_id=project_id)
     object_detection_model_client = create_object_detection_model_client(
         project_id=project_id,
-        region=region,
+        vertex_location=vertex_location,
         model_instantiator_host=model_instantiator_host,
         model_name=model_name,
     )
@@ -79,7 +79,7 @@ def run_objects_detection(
 
 def main(
     project_id: str,
-    region: str,
+    vertex_location: str,
     model_name: str,
     model_instantiator_host: str,
     job_id: str,
@@ -93,7 +93,7 @@ def main(
     return Parallel(n_jobs=os.cpu_count())(
         delayed(run_objects_detection)(
             project_id=project_id,
-            region=region,
+            vertex_location=vertex_location,
             results_bucket=results_bucket,
             model_instantiator_host=model_instantiator_host,
             job_id=job_id,
@@ -108,7 +108,7 @@ def main(
 if __name__ == "__main__":
     main(
         project_id=PROJECT_ID,
-        region=REGION,
+        vertex_location=VERTEX_LOCATION,
         model_name=MODEL_NAME,
         model_instantiator_host=MODEL_INSTANTIATOR_HOST,
         job_id=JOB_ID,

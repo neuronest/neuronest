@@ -36,6 +36,8 @@ module "functional_people_counting" {
   region     = var.region
   timezone   = var.timezone
 
+  vertex_location = var.vertex_location
+
   people_counting_image_name                  = var.people_counting_image_name
   people_counting_service_account_name        = var.people_counting_service_account_name
   people_counting_results_bucket              = var.people_counting_results_bucket

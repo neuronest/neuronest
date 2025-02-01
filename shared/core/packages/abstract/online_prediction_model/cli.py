@@ -120,7 +120,6 @@ class LaunchTrainingJobAction(RunnableAction):
             base_output_dir=model_gspath,
             environment_variables={
                 "IMAGE_NAME": TRAINING_IMAGE_NAME,
-                "VERTEX_LOCATION": VERTEX_LOCATION,
                 "PROJECT_ID": vertex_ai_manager.project_id,
                 "REGION": vertex_ai_manager.location,
             },
@@ -196,7 +195,7 @@ def main(config: Config):
 
     vertex_ai_manager = VertexAIManager(
         key_path=GOOGLE_APPLICATION_CREDENTIALS,
-        location=config.region,
+        location=VERTEX_LOCATION,
         project_id=PROJECT_ID,
     )
     if MODEL_INSTANTIATOR_HOST is not None:

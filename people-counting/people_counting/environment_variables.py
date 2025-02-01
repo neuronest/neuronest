@@ -4,6 +4,7 @@ import os
 # may be different from a Google product
 GOOGLE_APPLICATION_CREDENTIALS = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 PROJECT_ID = os.environ["PROJECT_ID"]
+REGION = os.environ["REGION"]
 IMAGE_NAME = os.environ["IMAGE_NAME"]
 VERTEX_LOCATION = os.environ["VERTEX_LOCATION"]
 

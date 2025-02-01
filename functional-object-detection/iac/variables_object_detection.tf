@@ -17,6 +17,9 @@ variable "object_detection_results_bucket" {
 variable "object_detection_model_name" {
   type = string
 }
+variable "object_detection_vertex_location" {
+  type = string
+}
 variable "object_detection_cloud_run_name" {
   type = string
 }

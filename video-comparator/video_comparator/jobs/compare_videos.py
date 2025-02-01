@@ -21,8 +21,8 @@ from video_comparator.jobs.environment_variables import (
     MODEL_INSTANTIATOR_HOST,
     MODEL_NAME,
     PROJECT_ID,
-    REGION,
     RESULTS_BUCKET,
+    VERTEX_LOCATION,
     VIDEO_PATH_PAIRS,
 )
 from video_comparator.jobs.services import (
@@ -36,7 +36,7 @@ def run_videos_comparison(
     video_storage_path: GSPath,
     other_video_storage_path: GSPath,
     project_id: str,
-    region: str,
+    vertex_location: str,
     embeddings_bucket: str,
     results_bucket: str,
     model_instantiator_host: str,
@@ -49,7 +49,7 @@ def run_videos_comparison(
     )
     video_comparator_model_client = create_video_comparator_model_client(
         project_id=project_id,
-        region=region,
+        vertex_location=vertex_location,
         model_instantiator_host=model_instantiator_host,
         model_name=model_name,
     )
@@ -111,7 +111,7 @@ def run_videos_comparison(
 
 def main(
     project_id: str,
-    region: str,
+    vertex_location: str,
     model_name: str,
     model_instantiator_host: str,
     job_id: str,
@@ -127,7 +127,7 @@ def main(
             video_storage_path=GSPath(video_storage_path),
             other_video_storage_path=GSPath(other_video_storage_path),
             project_id=project_id,
-            region=region,
+            vertex_location=vertex_location,
             embeddings_bucket=embeddings_bucket,
             results_bucket=results_bucket,
             model_instantiator_host=model_instantiator_host,
@@ -141,7 +141,7 @@ def main(
 if __name__ == "__main__":
     main(
         project_id=PROJECT_ID,
-        region=REGION,
+        vertex_location=VERTEX_LOCATION,
         model_name=MODEL_NAME,
         model_instantiator_host=MODEL_INSTANTIATOR_HOST,
         job_id=JOB_ID,

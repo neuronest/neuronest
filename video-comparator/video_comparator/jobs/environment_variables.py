@@ -2,6 +2,7 @@ import os
 
 PROJECT_ID = os.environ["PROJECT_ID"]
 REGION = os.environ["REGION"]
+VERTEX_LOCATION = os.environ["VERTEX_LOCATION"]
 MODEL_NAME = os.environ["MODEL_NAME"]
 MODEL_INSTANTIATOR_HOST = os.environ["MODEL_INSTANTIATOR_HOST"]
 JOB_ID = os.environ["JOB_ID"]

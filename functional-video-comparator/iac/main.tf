@@ -36,6 +36,8 @@ module "functional_video_comparator" {
   region     = var.region
   timezone   = var.timezone
 
+  vertex_location = var.vertex_location
+
   video_comparator_image_name                = var.video_comparator_image_name
   video_comparator_service_account_name      = var.video_comparator_service_account_name
   video_comparator_models_bucket             = var.video_comparator_models_bucket

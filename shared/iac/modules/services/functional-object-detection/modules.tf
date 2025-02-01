@@ -4,6 +4,8 @@ module "functional_object_detection" {
   region     = var.region
   timezone   = var.timezone
 
+  vertex_location = var.vertex_location
+
   online_prediction_model_image_name           = var.object_detection_image_name
   online_prediction_model_service_account_name = var.object_detection_service_account_name
   online_prediction_model_models_bucket        = var.object_detection_models_bucket

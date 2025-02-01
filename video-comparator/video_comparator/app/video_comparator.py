@@ -43,6 +43,7 @@ from video_comparator.environment_variables import (
     PROJECT_ID,
     REGION,
     RESULTS_BUCKET,
+    VERTEX_LOCATION,
 )
 
 router = APIRouter(
@@ -193,6 +194,7 @@ def compare_videos(
     job_environment_variables = {
         "PROJECT_ID": PROJECT_ID,
         "REGION": REGION,
+        "VERTEX_LOCATION": VERTEX_LOCATION,
         "MODEL_NAME": MODEL_NAME,
         "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
         "JOB_ID": job_id,
@@ -228,11 +230,9 @@ def compare_videos(
 def compare_videos_real_time(
     video_comparator_input: VideoComparatorRealTimeInput,
     response: Response,
-    config: Config = Depends(use_config),
     video_comparator: VideoComparatorModelClient = Depends(
         use_video_comparator_model_client
     ),
-    storage_client: StorageClient = Depends(use_storage_client),
     samples_bucket: str = Depends(use_samples_bucket),
 ) -> VideoComparatorRealTimeOutput:
     paths = video_comparator_input.sample.paths
@@ -251,16 +251,10 @@ def compare_videos_real_time(
         expected_bucket_name=samples_bucket,
     )
 
-    video, other_video = make_assets(
-        assets_paths=[video_storage_path, other_video_storage_path],
-        asset_type=AssetType.VIDEO,
-        storage_client=storage_client,
-        time_step=1 / config.preprocessing.fps,
-        resized_shape_or_minimal_value=config.preprocessing.image_size,
-    )
-
     output: OutputSampleSchema = video_comparator.predict_single(
-        InputSampleSchema(video=video, other_video=other_video)
+        InputSampleSchema(
+            video_path=video_storage_path, other_video_path=other_video_storage_path
+        )
     )
 
     return _real_time_response(response=response, output=output)
