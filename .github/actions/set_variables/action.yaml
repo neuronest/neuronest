@@ -75,7 +75,7 @@ runs:
           --discard_shared_variables ${{ inputs.discard_shared_variables }} \
           --keep_repository_variables ${{ inputs.keep_repository_variables }}
       shell: bash
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.env_file_artifact_name }}
         path: /tmp
