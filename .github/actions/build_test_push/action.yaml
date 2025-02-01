@@ -36,11 +36,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - run: |
-        ACCESS_TOKEN=$(gcloud auth print-access-token)
-        echo "::add-mask::$ACCESS_TOKEN"
-        echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV
-      shell: bash
     - run: | 
         echo "IMAGE_NAME_SUFFIX"="$([[ ! -z '${{ inputs.target }}' ]] && echo '-${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
       shell: bash
@@ -124,6 +119,12 @@ runs:
         docker push $GCP_IMAGE_NAME:latest
         docker push $GCP_IMAGE_NAME:${{ steps.build_image.outputs.sha256_digest }}
       shell: bash
+    - run: |
+        # Generate a new access token just before use, as it is only valid for 1 hour
+        ACCESS_TOKEN=$(gcloud auth print-access-token)
+        echo "::add-mask::$ACCESS_TOKEN"
+        echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV
+      shell: bash
 
     - name: Clean old docker images
       run: |
@@ -133,6 +134,7 @@ runs:
           -tag-filter-all="\d+" \
           -keep=${{ inputs.maximum_number_images_to_keep }}
       shell: bash
+
 
     - id: dockerhub_output_step
       # we prefer the sha256 to identify the image. The workflow id as identifier is
