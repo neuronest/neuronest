@@ -39,3 +39,5 @@ other_variables:
       - STATE_BUCKET=${PROJECT_CODE}-tfstate
       # artifact registry
       - GCP_REGISTRY_NAME=${REGION}-docker.pkg.dev/${PROJECT_ID}
+      # vertex
+      - VERTEX_LOCATION=europe-west1

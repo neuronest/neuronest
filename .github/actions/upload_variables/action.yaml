@@ -46,7 +46,7 @@ runs:
         cp ${{ steps.set_variables.outputs.created_env_file_path }} $env_file_artifact_path
         echo "path=$env_file_artifact_path" >> $GITHUB_OUTPUT
       shell: bash
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.set_env_file_artifact.outputs.name }}
         path: ${{ steps.set_env_file_artifact.outputs.path }}

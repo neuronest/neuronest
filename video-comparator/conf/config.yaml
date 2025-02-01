@@ -36,7 +36,6 @@ serving_model_upload:
 
 serving_deployment:
   machine_type: "n1-standard-2"
-  deployment_location: "${oc.env:DEPLOYMENT_LOCATION,null}"
   accelerator_type: "${oc.env:SERVING_ACCELERATOR_TYPE,null}"
   accelerator_count: "${oc.env:SERVING_ACCELERATOR_COUNT,null}"
   min_replica_count: 1

@@ -39,9 +39,9 @@ from people_counting.environment_variables import (
     MODEL_INSTANTIATOR_HOST,
     OBJECT_DETECTION_MODEL_NAME,
     PROJECT_ID,
-    REGION,
     RESULTS_BUCKET,
     SAMPLES_BUCKET,
+    VERTEX_LOCATION,
 )
 from people_counting.people_counter import PeopleCounter, count_people_with_upload
 
@@ -209,7 +209,7 @@ def count_people(
     ]
     job_environment_variables = {
         "PROJECT_ID": PROJECT_ID,
-        "REGION": REGION,
+        "VERTEX_LOCATION": VERTEX_LOCATION,
         "OBJECT_DETECTION_MODEL_NAME": OBJECT_DETECTION_MODEL_NAME,
         "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
         "RESULTS_BUCKET": RESULTS_BUCKET,

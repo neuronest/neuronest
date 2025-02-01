@@ -6,7 +6,6 @@ from core.schemas.modules.model_instantiator import (
     InstantiateModelInput,
     InstantiateModelOutput,
 )
-from core.schemas.vertex_ai import ServingDeploymentConfig
 from core.utils import underscore_to_hyphen
 from fastapi import APIRouter, Depends, Response
 from omegaconf import DictConfig
@@ -74,9 +73,6 @@ def instantiate_model(
     model_name = instantiate_model_input.trained_model_name
 
     model = vertex_ai_manager.get_last_model_by_name(name=model_name)
-    serving_deployment_config = ServingDeploymentConfig.from_labels(model.labels)
-
-    deployment_location = serving_deployment_config.deployment_location
 
     if model is None:
         return _no_model_response(response=response, model_name=model_name)
@@ -84,7 +80,6 @@ def instantiate_model(
     if vertex_ai_manager.is_model_deployed(
         name=model_name,
         model=model,
-        location_override=deployment_location,
     ):
         return _already_deployed_endpoint_response(
             response=response, model_name=model_name

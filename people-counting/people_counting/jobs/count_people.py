@@ -14,8 +14,8 @@ from people_counting.jobs.environment_variables import (
     MODEL_INSTANTIATOR_HOST,
     OBJECT_DETECTION_MODEL_NAME,
     PROJECT_ID,
-    REGION,
     RESULTS_BUCKET,
+    VERTEX_LOCATION,
     VIDEOS_STORAGE_PATHS,
 )
 from people_counting.jobs.services import create_people_counter, create_storage_client
@@ -26,7 +26,7 @@ def run_asset_counting(
     video_storage_path: GSPath,
     counted_video_storage_path: Optional[GSPath],
     project_id: str,
-    region: str,
+    vertex_location: str,
     job_id: str,
     object_detection_model_name: str,
     model_instantiator_host: str,
@@ -35,7 +35,7 @@ def run_asset_counting(
     storage_client = create_storage_client(project_id=project_id)
     people_counter = create_people_counter(
         project_id=project_id,
-        region=region,
+        vertex_location=vertex_location,
         model_instantiator_host=model_instantiator_host,
         object_detection_model_name=object_detection_model_name,
         config=cfg,
@@ -70,7 +70,7 @@ def run_asset_counting(
 
 def main(
     project_id: str,
-    region: str,
+    vertex_location: str,
     object_detection_model_name: str,
     model_instantiator_host: str,
     results_bucket: str,
@@ -96,7 +96,7 @@ def main(
                 else None
             ),
             project_id=project_id,
-            region=region,
+            vertex_location=vertex_location,
             job_id=job_id,
             object_detection_model_name=object_detection_model_name,
             model_instantiator_host=model_instantiator_host,
@@ -111,7 +111,7 @@ def main(
 if __name__ == "__main__":
     main(
         project_id=PROJECT_ID,
-        region=REGION,
+        vertex_location=VERTEX_LOCATION,
         object_detection_model_name=OBJECT_DETECTION_MODEL_NAME,
         model_instantiator_host=MODEL_INSTANTIATOR_HOST,
         results_bucket=RESULTS_BUCKET,

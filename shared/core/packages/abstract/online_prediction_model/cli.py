@@ -15,11 +15,11 @@ from core.google.storage_client import StorageClient
 from core.google.vertex_ai_manager import VertexAIManager
 from core.packages.abstract.online_prediction_model.config import Config
 from core.packages.abstract.online_prediction_model.environment_variables import (
-    DEPLOYMENT_LOCATION,
     GOOGLE_APPLICATION_CREDENTIALS,
     MODEL_INSTANTIATOR_HOST,
     PROJECT_ID,
     TRAINING_IMAGE_NAME,
+    VERTEX_LOCATION,
 )
 from core.path import GSPath
 from core.schemas.vertex_ai import (
@@ -120,7 +120,7 @@ class LaunchTrainingJobAction(RunnableAction):
             base_output_dir=model_gspath,
             environment_variables={
                 "IMAGE_NAME": TRAINING_IMAGE_NAME,
-                "DEPLOYMENT_LOCATION": DEPLOYMENT_LOCATION,
+                "VERTEX_LOCATION": VERTEX_LOCATION,
                 "PROJECT_ID": vertex_ai_manager.project_id,
                 "REGION": vertex_ai_manager.location,
             },
