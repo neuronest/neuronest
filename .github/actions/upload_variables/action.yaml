@@ -41,7 +41,7 @@ runs:
       run: |
         env_file_hash=$(sha256sum "${{ steps.set_variables.outputs.created_env_file_path }}" | awk '{print $1}')
         echo $env_file_hash
-        uuid=$(uuidgen)
+        uuid=$(python3 -c 'import uuid; print(uuid.uuid4())')
         env_file_artifact_name=${{ env.REPOSITORY_NAME }}_${env_file_hash}_${uuid}.env
 
         echo "name=$env_file_artifact_name" >> $GITHUB_OUTPUT
