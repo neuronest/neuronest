@@ -87,14 +87,24 @@ runs:
         docker pull $DOCKERHUB_IMAGE_NAME:latest || true
         docker build \
           --iidfile=$IMAGE_ID_FILE \
+          --cache-from $DOCKERHUB_IMAGE_NAME:latest \
+          -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
+          -t $DOCKERHUB_IMAGE_NAME:latest \
           -t $GCP_IMAGE_NAME:$GITHUB_RUN_ID \
           -t $GCP_IMAGE_NAME:latest \
           $TARGET_ARGUMENTS \
           ${{ inputs.build_arguments }} \
           .
         sha256_digest=$(cat $IMAGE_ID_FILE | cut -d ":" -f 2 | head -c 8)
-        docker tag $GCP_IMAGE_NAME $GCP_IMAGE_NAME:$sha256_digest
+        docker tag $DOCKERHUB_IMAGE_NAME:latest $DOCKERHUB_IMAGE_NAME:$sha256_digest
+        docker tag $GCP_IMAGE_NAME:latest $GCP_IMAGE_NAME:$sha256_digest
         echo "sha256_digest=$sha256_digest" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Push dockerhub image and tags
+      run: |
+        docker push $DOCKERHUB_IMAGE_NAME:latest
+        docker push $DOCKERHUB_IMAGE_NAME:${{ steps.build_image.outputs.sha256_digest }}
       shell: bash
 
     - name: Run linters and tests
