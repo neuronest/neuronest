@@ -1,3 +1,5 @@
+import uuid
+
 from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.vertex_ai_manager import VertexAIManager
 from core.routes.model_instantiator import routes
@@ -70,6 +72,8 @@ def instantiate_model(
     vertex_ai_manager: VertexAIManager = Depends(use_vertex_ai_manager),
     cloud_run_job_manager: CloudRunJobManager = Depends(use_cloud_run_job_manager),
 ):
+    job_id = uuid.uuid4().hex
+
     model_name = instantiate_model_input.trained_model_name
 
     model = vertex_ai_manager.get_last_model_by_name(name=model_name)
@@ -85,7 +89,7 @@ def instantiate_model(
             response=response, model_name=model_name
         )
 
-    job_name = underscore_to_hyphen(model_name)
+    job_name = f"instantiate-{underscore_to_hyphen(model_name)}-{job_id}"
     execution = cloud_run_job_manager.list_executions(job_name, exclude_terminated=True)
 
     if len(execution) > 0:

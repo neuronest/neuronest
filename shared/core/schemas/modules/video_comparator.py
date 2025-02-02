@@ -91,14 +91,10 @@ class InputSampleSchema(BaseInputSampleSchema):
             if value is None:
                 deserialized_attributes_dict[key] = None
                 continue
-            if np.ndarray in typing_inspect.get_args(
-                fields_with_types[key].type_, evaluate=True
-            ):
+            if fields_with_types[key].annotation in (Optional[np.ndarray], np.ndarray):
                 deserialized_attributes_dict[key] = array_from_string(value)
                 continue
-            if GSPath in typing_inspect.get_args(
-                fields_with_types[key].type_, evaluate=True
-            ):
+            if fields_with_types[key].annotation in (Optional[GSPath], GSPath):
                 deserialized_attributes_dict[key] = GSPath(value)
                 continue
 

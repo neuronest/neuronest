@@ -7,31 +7,45 @@ from core.path import GSPath
 from core.schemas.asset import AssetType
 from core.schemas.modules.people_counting import PeopleCounterSampleResultsDocument
 from core.services.asset_reader import make_assets
+from joblib import Parallel, delayed
 
 from tests.integration_tests.common import are_detections_correct
 
 
-@pytest.mark.parametrize(
-    "videos_storage_paths, up_amounts, down_amounts",
-    [
-        (
-            [
-                GSPath("gs://datasets-neuronest/on_off_bus_videos/example_up.mp4"),
-                GSPath("gs://datasets-neuronest/on_off_bus_videos/example_down.avi"),
-            ],
-            [4, 0],
-            [0, 4],
-        )
-    ],
-)
-# pylint: disable=unused-argument
-def test_count_people_async(
+def _test_count_people_sync(
     people_counting_client: PeopleCountingClient,
     storage_client: StorageClient,
     videos_storage_paths: List[GSPath],
     up_amounts: List[int],
     down_amounts: List[int],
-    uninstantiate_teardown,
+):
+    assets = make_assets(
+        assets_paths=videos_storage_paths,
+        asset_type=AssetType.VIDEO,
+        storage_client=storage_client,
+    )
+
+    multiple_real_time_predictions = people_counting_client.count_people_sync(
+        videos_paths=[asset.asset_path for asset in assets]
+    )
+    assert all(
+        are_detections_correct(
+            detections=real_time_predictions.detections,
+            up_amount=up_amount,
+            down_amount=down_amount,
+        )
+        for real_time_predictions, up_amount, down_amount in zip(
+            multiple_real_time_predictions, up_amounts, down_amounts
+        )
+    )
+
+
+def _test_count_people_async(
+    people_counting_client: PeopleCountingClient,
+    storage_client: StorageClient,
+    videos_storage_paths: List[GSPath],
+    up_amounts: List[int],
+    down_amounts: List[int],
 ):
     assets = make_assets(
         assets_paths=videos_storage_paths,
@@ -72,4 +86,43 @@ def test_count_people_async(
         for sample_results, up_amount, down_amount in zip(
             all_samples_results, up_amounts, down_amounts
         )
+    )
+
+
+@pytest.mark.parametrize(
+    "videos_storage_paths, up_amounts, down_amounts",
+    [
+        (
+            [
+                GSPath("gs://datasets-neuronest/on_off_bus_videos/example_up.mp4"),
+                GSPath("gs://datasets-neuronest/on_off_bus_videos/example_down.avi"),
+            ],
+            [4, 0],
+            [0, 4],
+        )
+    ],
+)
+# pylint: disable=unused-argument
+def test_count_people_sync(
+    people_counting_client: PeopleCountingClient,
+    storage_client: StorageClient,
+    videos_storage_paths: List[GSPath],
+    up_amounts: List[int],
+    down_amounts: List[int],
+    uninstantiate_teardown,
+):
+    test_functions = (
+        _test_count_people_sync,
+        _test_count_people_async,
+    )
+
+    Parallel(n_jobs=-1, prefer="threads")(
+        delayed(test_function)(
+            people_counting_client=people_counting_client,
+            storage_client=storage_client,
+            videos_storage_paths=videos_storage_paths,
+            up_amounts=up_amounts,
+            down_amounts=down_amounts,
+        )
+        for test_function in test_functions
     )
