@@ -70,6 +70,7 @@ class InputSampleSchema(BaseInputSampleSchema):
                 continue
             if isinstance(value, GSPath):
                 serialized_attributes_dict[key] = str(value)
+                continue
 
             raise NotImplementedError(f"Type of value not supported: {type(value)}")
 
