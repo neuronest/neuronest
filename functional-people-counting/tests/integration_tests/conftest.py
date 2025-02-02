@@ -62,11 +62,14 @@ def fixture_storage_client() -> StorageClient:
 
 @pytest.fixture(name="uninstantiate_teardown", scope="session")
 def fixture_uninstantiate_teardown(
+    # pylint: disable=unused-argument
     model_instantiator_client: ModelInstantiatorClient,
+    # pylint: disable=unused-argument
     model_name: str,
 ):
     try:
         yield
 
     finally:
-        model_instantiator_client.uninstantiate(model_name)
+        pass
+        # model_instantiator_client.uninstantiate(model_name)

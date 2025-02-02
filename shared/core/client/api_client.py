@@ -122,7 +122,6 @@ class APIClient(BaseClient, ABC):
                             [
                                 str(http_error),
                                 f"response text: {http_error.response.text}",
-                                f"response text: {http_error.response.text}",
                                 f"request payload: {http_error.response.request.body}",
                             ]
                         ),
