@@ -52,53 +52,65 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         if len(data) == 0:
             return []
 
-        sample = data[0]  # expected to be only one sample
+        predictions = []
 
-        video_asset, other_video_asset = make_assets(
-            assets_paths=[sample.video_path, sample.other_video_path],
-            asset_type=AssetType.VIDEO,
-            storage_client=self.storage_client,
-            time_step=1 / cfg.preprocessing.fps,
-            resized_shape_or_minimal_value=cfg.preprocessing.image_size,
-        )
+        for sample in data:
+            video_asset, other_video_asset = make_assets(
+                assets_paths=[sample.video_path, sample.other_video_path],
+                asset_type=AssetType.VIDEO,
+                storage_client=self.storage_client,
+                time_step=1 / cfg.preprocessing.fps,
+                resized_shape_or_minimal_value=cfg.preprocessing.image_size,
+            )
 
-        return super().inference(
-            data=[
-                ModelInput(
-                    video=torch.from_numpy(video_asset.as_array_content),
-                    other_video=torch.from_numpy(other_video_asset.as_array_content),
-                    video_embedding=torch.from_numpy(sample.video_embedding),
-                    other_video_embedding=torch.from_numpy(
-                        sample.other_video_embedding
-                    ),
+            predictions.append(
+                super().inference(
+                    data=[
+                        ModelInput(
+                            video=torch.from_numpy(video_asset.as_array_content),
+                            other_video=torch.from_numpy(
+                                other_video_asset.as_array_content
+                            ),
+                            video_embedding=torch.from_numpy(sample.video_embedding),
+                            other_video_embedding=torch.from_numpy(
+                                sample.other_video_embedding
+                            ),
+                        )
+                    ],
+                    device=self.device,
+                    batch_size=self.batch_size,
+                    center_crop_size=self.center_crop_size,
                 )
-            ],
-            device=self.device,
-            batch_size=self.batch_size,
-            center_crop_size=self.center_crop_size,
-        )
+            )
+
+        return predictions
 
     def postprocess(
         self, data: List[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]
     ) -> List[VideoComparatorOutputSampleSchema]:
-        sample = data[0]  # expected to be only one sample
+        postprocessed_predictions = []
 
-        video_embedding, other_video_embedding, similarity_score = sample
+        for sample in data:
+            video_embedding, other_video_embedding, similarity_score = sample
 
-        return [
-            VideoComparatorOutputSampleSchema(
-                video_embedding=video_embedding.numpy(),
-                other_video_embedding=other_video_embedding.numpy(),
-                similarity_score=similarity_score.item(),
+            postprocessed_predictions.append(
+                VideoComparatorOutputSampleSchema(
+                    video_embedding=video_embedding.numpy(),
+                    other_video_embedding=other_video_embedding.numpy(),
+                    similarity_score=similarity_score.item(),
+                )
             )
-        ]
+
+        return postprocessed_predictions
 
     def handle(self, data: List[Dict], context) -> List[Dict[str, str]]:
         if len(data) > 1:
-            raise ValueError(
+            logger.info(
                 "The model does not currently manage batched predictions, i.e. "
                 "more than one pair of videos, partly because a single pair "
-                "monopolizes the GPU and takes a long time to process"
+                "monopolizes the GPU and takes a long time to process. Instead, only "
+                "one sample will be processed at a time; there will be no batched "
+                "inference."
             )
 
         return super().handle(data=data, context=context)
