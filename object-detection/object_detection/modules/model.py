@@ -22,9 +22,9 @@ class ObjectDetectionModel(OnlinePredictionModel):
         super().__init__(*args, **kwargs)
 
     # pylint: disable=arguments-differ
-    def __call__(self, model_input: List[np.ndarray]) -> List[pd.DataFrame]:
+    def __call__(self, data: List[np.ndarray]) -> List[pd.DataFrame]:
         # noinspection PyCallingNonCallable
-        predictions = self._model(model_input)
+        predictions = self._model(data)
 
         return list(predictions.pandas().xyxy)
 
