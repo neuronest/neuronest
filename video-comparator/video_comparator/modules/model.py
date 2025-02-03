@@ -20,11 +20,15 @@ class VideoComparatorModel(OnlinePredictionModel):
     # pylint: disable=arguments-differ
     def __call__(
         self,
-        model_input: ModelInput,
+        data: List[ModelInput],
         device: Device,
         batch_size: int,
         center_crop_size: int,
     ) -> List[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+        assert len(data) == 1
+
+        model_input = data[0]
+
         video_embedding = (
             model_input.video_embedding.to(device)
             if model_input.video_embedding is not None

@@ -4,7 +4,6 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-import torch
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
