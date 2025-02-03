@@ -14,7 +14,7 @@ from core.schemas.modules.video_comparator import (
 from core.schemas.modules.video_comparator import (
     OutputSampleSchema as VideoComparatorOutputSampleSchema,
 )
-from core.services.asset_reader import make_assets
+from core.services.asset_reader import make_asset
 
 from video_comparator.config import cfg
 from video_comparator.modules.model import VideoComparatorModel
@@ -55,25 +55,49 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         predictions = []
 
         for sample in data:
-            video_asset, other_video_asset = make_assets(
-                assets_paths=[sample.video_path, sample.other_video_path],
-                asset_type=AssetType.VIDEO,
-                storage_client=self.storage_client,
-                time_step=1 / cfg.preprocessing.fps,
-                resized_shape_or_minimal_value=cfg.preprocessing.image_size,
-            )
+            video_asset, other_video_asset = None, None
+
+            if sample.video_path is not None:
+                video_asset = make_asset(
+                    asset_path=sample.video_path,
+                    asset_type=AssetType.VIDEO,
+                    storage_client=self.storage_client,
+                    time_step=1 / cfg.preprocessing.fps,
+                    resized_shape_or_minimal_value=cfg.preprocessing.image_size,
+                )
+
+            if sample.other_video_path is not None:
+                other_video_asset = make_asset(
+                    asset_path=sample.other_video_path,
+                    asset_type=AssetType.VIDEO,
+                    storage_client=self.storage_client,
+                    time_step=1 / cfg.preprocessing.fps,
+                    resized_shape_or_minimal_value=cfg.preprocessing.image_size,
+                )
 
             predictions.append(
                 super().inference(
                     data=[
                         ModelInput(
-                            video=torch.from_numpy(video_asset.as_array_content),
-                            other_video=torch.from_numpy(
-                                other_video_asset.as_array_content
+                            video=(
+                                torch.from_numpy(video_asset.as_array_content)
+                                if video_asset is not None
+                                else None
                             ),
-                            video_embedding=torch.from_numpy(sample.video_embedding),
-                            other_video_embedding=torch.from_numpy(
-                                sample.other_video_embedding
+                            other_video=(
+                                torch.from_numpy(other_video_asset.as_array_content)
+                                if other_video_asset is not None
+                                else None
+                            ),
+                            video_embedding=(
+                                torch.from_numpy(sample.video_embedding)
+                                if sample.video_embedding is not None
+                                else None
+                            ),
+                            other_video_embedding=(
+                                torch.from_numpy(sample.other_video_embedding)
+                                if sample.other_video_embedding is not None
+                                else None
                             ),
                         )
                     ],
