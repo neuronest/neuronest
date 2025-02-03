@@ -150,7 +150,6 @@ def test_compare_videos_sync(
     test_functions = (
         _test_compare_videos_sync,
         _test_compare_videos_async,
-        _test_compare_videos_real_time,
     )
 
     Parallel(n_jobs=-1, prefer="threads")(
@@ -160,4 +159,12 @@ def test_compare_videos_sync(
             best_to_worst_matching_videos_pairs=best_to_worst_matching_videos_pairs,
         )
         for test_function in test_functions
+    )
+
+    # executed once the endpoint is ready for the real-time part, thus avoiding a
+    # timeout
+    _test_compare_videos_real_time(
+        video_comparator_client=video_comparator_client,
+        storage_client=storage_client,
+        best_to_worst_matching_videos_pairs=best_to_worst_matching_videos_pairs,
     )
