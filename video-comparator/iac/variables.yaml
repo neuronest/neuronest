@@ -33,3 +33,4 @@ other_variables:
       # vertex
       - SERVING_ACCELERATOR_TYPE=NVIDIA_TESLA_T4
       - SERVING_ACCELERATOR_COUNT=1
+      - BATCH_SIZE=1
