@@ -104,7 +104,7 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
                     device=self.device,
                     batch_size=self.batch_size,
                     center_crop_size=self.center_crop_size,
-                )
+                )[0]
             )
 
         return predictions
