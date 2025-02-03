@@ -60,17 +60,31 @@ def fixture_storage_client() -> StorageClient:
     return StorageClient()
 
 
-@pytest.fixture(name="uninstantiate_teardown", scope="session")
-def fixture_uninstantiate_teardown(
-    # pylint: disable=unused-argument
-    model_instantiator_client: ModelInstantiatorClient,
-    # pylint: disable=unused-argument
-    model_name: str,
-):
-    try:
-        yield
+# @pytest.fixture(name="uninstantiate_teardown", scope="session")
+# def fixture_uninstantiate_teardown(
+#     # pylint: disable=unused-argument
+#     model_instantiator_client: ModelInstantiatorClient,
+#     # pylint: disable=unused-argument
+#     model_name: str,
+# ):
+#     try:
+#         yield
+#
+#     finally:
+#         # pass
+#         print("hello there")
+#         # model_instantiator_client.uninstantiate(model_name)
 
-    finally:
-        # pass
-        print("hello there")
-        # model_instantiator_client.uninstantiate(model_name)
+
+@pytest.fixture(name="uninstantiate_teardown", scope="session")
+def fixture_uninstantiate_teardown(request, model_instantiator_client, model_name):
+    # If running in a worker (i.e. under xdist),
+    # just yield without extra setup/teardown.
+    if hasattr(request.config, "workerinput"):
+        yield
+    else:
+        # In the master process, yield and then perform teardown after all tests.
+        try:
+            yield
+        finally:
+            model_instantiator_client.uninstantiate(model_name)
