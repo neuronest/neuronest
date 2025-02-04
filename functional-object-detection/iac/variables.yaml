@@ -8,4 +8,3 @@ multi_instance_resource_names: []
 other_variables:
   branch:
     default:
-
