@@ -12,7 +12,7 @@ inputs:
   discard_shared_variables:
     description: 'Whether discard shared variables or not'
     required: false
-    default: 'false'
+    default: 'true'
   env_file_artifact_name:
     description: 'An environment variable file to load'
     required: false
