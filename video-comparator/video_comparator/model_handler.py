@@ -81,43 +81,26 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
         predictions = []
 
         for sample in data:
-            if sample.video_path is not None:
-                video_asset, video_asset_id, video_asset_existing_embedding = (
-                    self._init_asset(sample.video_path, sample.embedding_bucket_name)
-                )
-            else:
-                video_asset, video_asset_id, video_asset_existing_embedding = (
-                    None,
-                    None,
-                    None,
-                )
-
-            if sample.other_video_path is not None:
-                (
-                    other_video_asset,
-                    other_video_asset_id,
-                    other_video_asset_existing_embedding,
-                ) = self._init_asset(
-                    sample.other_video_path, sample.embedding_bucket_name
-                )
-            else:
-                (
-                    other_video_asset,
-                    other_video_asset_id,
-                    other_video_asset_existing_embedding,
-                ) = (None, None, None)
+            video_asset, video_asset_id, video_asset_existing_embedding = (
+                self._init_asset(sample.video_path, sample.embedding_bucket_name)
+            )
+            (
+                other_video_asset,
+                other_video_asset_id,
+                other_video_asset_existing_embedding,
+            ) = self._init_asset(sample.other_video_path, sample.embedding_bucket_name)
 
             prediction = super().inference(
                 data=[
                     ModelInput(
                         video=(
                             torch.from_numpy(video_asset.as_array_content)
-                            if video_asset is not None
+                            if video_asset_existing_embedding is None
                             else None
                         ),
                         other_video=(
                             torch.from_numpy(other_video_asset.as_array_content)
-                            if other_video_asset is not None
+                            if other_video_asset_existing_embedding is None
                             else None
                         ),
                         video_embedding=(
@@ -135,9 +118,9 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
                 device=self.device,
                 batch_size=self.batch_size,
                 center_crop_size=self.center_crop_size,
-            )[0]
+            )
 
-            video_embedding, other_video_embedding, similarity_score = prediction
+            video_embedding, other_video_embedding, similarity_score = prediction[0]
 
             self.embedding_manager.store_multiple_embeddings(
                 bucket_name=sample.embedding_bucket_name,
