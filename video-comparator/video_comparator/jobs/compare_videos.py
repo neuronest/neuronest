@@ -26,7 +26,6 @@ from video_comparator.jobs.environment_variables import (
     VIDEO_PATH_PAIRS,
 )
 from video_comparator.jobs.services import (
-    create_embedding_manager,
     create_storage_client,
     create_video_comparator_model_client,
 )
@@ -44,9 +43,6 @@ def run_videos_comparison(
     model_name: str,
 ):
     storage_client = create_storage_client(project_id=project_id)
-    embedding_manager = create_embedding_manager(
-        storage_client=storage_client, bucket_name=embeddings_bucket
-    )
     video_comparator_model_client = create_video_comparator_model_client(
         project_id=project_id,
         vertex_location=vertex_location,
@@ -70,31 +66,12 @@ def run_videos_comparison(
         hashes=[video_asset_id, other_video_asset_id], reorder=False
     )
 
-    (
-        video_asset_existing_embedding,
-        other_video_asset_existing_embedding,
-    ) = embedding_manager.retrieve_multiple_embeddings(
-        asset_ids=[video_asset_id, other_video_asset_id], is_missing_ok=True
-    )
-
     prediction: OutputSampleSchema = video_comparator_model_client.predict_single(
         sample=InputSampleSchema(
-            video_path=(
-                video_storage_path if video_asset_existing_embedding is None else None
-            ),
-            other_video_path=(
-                other_video_storage_path
-                if other_video_asset_existing_embedding is None
-                else None
-            ),
-            video_embedding=video_asset_existing_embedding,
-            other_video_embedding=other_video_asset_existing_embedding,
+            embedding_bucket_name=embeddings_bucket,
+            video_path=video_storage_path,
+            other_video_path=other_video_storage_path,
         )
-    )
-
-    embedding_manager.store_multiple_embeddings(
-        asset_ids=[video_asset_id, other_video_asset_id],
-        embeddings=[prediction.video_embedding, prediction.other_video_embedding],
     )
 
     video_comparator_document = VideoComparatorSampleResultsDocument(
@@ -105,7 +82,7 @@ def run_videos_comparison(
     storage_client.upload_blob_from_dict(
         bucket_name=results_bucket,
         blob_name=make_results_blob_name(job_id=job_id, sample_id=sample_id),
-        content=video_comparator_document.dict(),
+        content=video_comparator_document.model_dump(),
     )
 
 

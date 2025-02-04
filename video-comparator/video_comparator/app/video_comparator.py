@@ -253,7 +253,9 @@ def compare_videos_real_time(
 
     output: OutputSampleSchema = video_comparator.predict_single(
         InputSampleSchema(
-            video_path=video_storage_path, other_video_path=other_video_storage_path
+            embedding_bucket_name=EMBEDDINGS_BUCKET,
+            video_path=video_storage_path,
+            other_video_path=other_video_storage_path,
         )
     )
 
