@@ -15,6 +15,7 @@ from pydantic import BaseModel
 # so we modify sys.path at runtime to be able to import code from core
 # this also results in conflicts between black and flake8/pylint
 sys.path.append("shared")
+# pylint: disable=import-error
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
 FUNCTIONAL_REPOSITORIES_PREFIX = "func-"
@@ -284,6 +285,7 @@ class VariableLine:
 
         return var_line
 
+    # pylint: disable=too-many-positional-arguments
     def add_namespace(
         self,
         namespace: str,
@@ -605,7 +607,12 @@ if __name__ == "__main__":
     shared_variables_lines_names = set(
         shared_var_line.name for shared_var_line in shared_variables_lines
     )
-    all_variables_lines = shared_variables_lines + repository_variables_lines
+
+    all_variables_lines = repository_variables_lines
+
+    if not args.discard_shared_variables:
+        all_variables_lines = shared_variables_lines + all_variables_lines
+
     if not args.keep_repository_variables:
         all_variables_lines = [
             var_line
@@ -613,12 +620,6 @@ if __name__ == "__main__":
             if not var_line.is_a_repository_variable()
         ]
 
-    if args.discard_shared_variables:
-        all_variables_lines = [
-            var_line
-            for var_line in all_variables_lines
-            if var_line.name not in shared_variables_lines_names
-        ]
     if args.variable_prefix_to_filter_on:
         variable_prefix = (
             main_repository.variables_prefix
