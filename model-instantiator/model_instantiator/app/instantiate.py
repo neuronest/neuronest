@@ -8,6 +8,7 @@ from core.schemas.modules.model_instantiator import (
 )
 from core.utils import underscore_to_hyphen
 from fastapi import APIRouter, Depends, Response
+from google.api_core.exceptions import AlreadyExists
 from omegaconf import DictConfig
 from starlette import status
 
@@ -91,26 +92,29 @@ def instantiate_model(
     if len(execution) > 0:
         return _already_running_job_response(response=response, model_name=model_name)
 
-    cloud_run_job_manager.create_job(
-        job_name=job_name,
-        job_config=JobConfig(
-            container_uri=config.job.container_uri,
-            cpu=config.job.cpu,
-            memory=config.job.memory,
-            command=["python"],
-            command_args=[
-                "-m",
-                "model_instantiator.jobs.deploy_model",
-            ],
-            environment_variables={
-                "PROJECT_ID": PROJECT_ID,
-                "REGION": REGION,
-                "MODEL_NAME": model_name,
-                "VERTEX_LOCATION": VERTEX_LOCATION,
-            },
-        ),
-        override_if_existing=True,
-    )
-    cloud_run_job_manager.run_job(job_name=job_name)
+    try:
+        cloud_run_job_manager.create_job(
+            job_name=job_name,
+            job_config=JobConfig(
+                container_uri=config.job.container_uri,
+                cpu=config.job.cpu,
+                memory=config.job.memory,
+                command=["python"],
+                command_args=[
+                    "-m",
+                    "model_instantiator.jobs.deploy_model",
+                ],
+                environment_variables={
+                    "PROJECT_ID": PROJECT_ID,
+                    "REGION": REGION,
+                    "MODEL_NAME": model_name,
+                    "VERTEX_LOCATION": VERTEX_LOCATION,
+                },
+            ),
+            override_if_existing=True,
+        )
+        cloud_run_job_manager.run_job(job_name=job_name)
+    except AlreadyExists:
+        return _already_running_job_response(response=response, model_name=model_name)
 
     return _deploying_endpoint_response(response=response, model_name=model_name)
