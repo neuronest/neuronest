@@ -72,6 +72,7 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
     def create_new_model(self):
         return VideoComparatorModel()
 
+    # pylint: disable=too-many-locals
     def inference(
         self, data: List[VideoComparatorInputSampleSchema], *args, **kwargs
     ) -> List[Any]:
