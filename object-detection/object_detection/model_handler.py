@@ -40,28 +40,34 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
     @staticmethod
     def _filter_predictions(
         raw_predictions: List[pd.DataFrame],
-        batch_labels_to_predict: Optional[List[List[str]]] = None,
-        batch_confidence_thresholds: Optional[List[float]] = None,
+        batch_labels_to_predict: List[Optional[List[str]]],
+        batch_confidence_thresholds: List[Optional[float]],
     ) -> List[pd.DataFrame]:
         filtered_predictions = raw_predictions
 
-        if batch_labels_to_predict is not None:
-            filtered_predictions = [
+        filtered_predictions = [
+            (
                 filtered_prediction[filtered_prediction.name.isin(labels_to_predict)]
-                for filtered_prediction, labels_to_predict in zip(
-                    filtered_predictions, batch_labels_to_predict
-                )
-            ]
+                if labels_to_predict is not None
+                else filtered_prediction
+            )
+            for filtered_prediction, labels_to_predict in zip(
+                filtered_predictions, batch_labels_to_predict
+            )
+        ]
 
-        if batch_confidence_thresholds is not None:
-            filtered_predictions = [
+        filtered_predictions = [
+            (
                 filtered_prediction[
                     filtered_prediction.confidence >= confidence_threshold
                 ]
-                for filtered_prediction, confidence_threshold in zip(
-                    filtered_predictions, batch_confidence_thresholds
-                )
-            ]
+                if confidence_threshold is not None
+                else filtered_prediction
+            )
+            for filtered_prediction, confidence_threshold in zip(
+                filtered_predictions, batch_confidence_thresholds
+            )
+        ]
 
         return filtered_predictions
 
@@ -92,13 +98,11 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         )
 
     def postprocess(self, data: List[Any]) -> List[ObjectDetectionOutputSampleSchema]:
-        filtered_predictions = self._filter_predictions(data)
-
         return [
             ObjectDetectionOutputSampleSchema(
                 results=pd.DataFrame(
                     prediction.values, columns=list(OutputPrediction.model_fields)
                 )
             )
-            for prediction in filtered_predictions
+            for prediction in data
         ]
