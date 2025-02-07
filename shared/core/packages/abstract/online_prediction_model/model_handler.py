@@ -1,5 +1,3 @@
-import hashlib
-import json
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -109,11 +107,6 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         if len(data) == 0:
             return []
 
-        request_hash = hashlib.sha256(
-            json.dumps(data, sort_keys=True).encode()
-        ).hexdigest()
-        logger.info(f"Input request: {data}, hash: {request_hash}")
-
         preprocessed_data = self.preprocess(data)
 
         self._validate_all_instance_of(preprocessed_data, self.INPUT_SAMPLE_SCHEMA)
@@ -125,8 +118,4 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
             postprocessed_predictions, self.OUTPUT_SAMPLE_SCHEMA
         )
 
-        output = [sample.serialize() for sample in postprocessed_predictions]
-
-        logger.info(f"Prediction output: {output}, input request hash: {request_hash}")
-
-        return output
+        return [sample.serialize() for sample in postprocessed_predictions]

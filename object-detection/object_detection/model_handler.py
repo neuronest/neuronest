@@ -36,38 +36,31 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         super().__init__(*args, **kwargs)
         self.inner_model_type = inner_model_type or cfg.model.inner_model_type
         self.inner_model_name = inner_model_name or cfg.model.inner_model_name
-        self.labels_to_predict: Optional[List[str]] = None
-        self.confidence_threshold: Optional[float] = None
-        self.overridden_image_width: Optional[int] = None
 
-    def _fill_labels_to_predict(self, labels_to_predict: Optional[List[str]]):
-        self.labels_to_predict = labels_to_predict
-
-    def _fill_confidence_threshold(self, confidence_threshold: Optional[float]):
-        self.confidence_threshold = confidence_threshold
-
-    def _fill_overridden_image_width(self, overridden_image_width: Optional[int]):
-        self.overridden_image_width = overridden_image_width
-
+    @staticmethod
     def _filter_predictions(
-        self, raw_predictions: List[pd.DataFrame]
+        raw_predictions: List[pd.DataFrame],
+        batch_labels_to_predict: Optional[List[List[str]]] = None,
+        batch_confidence_thresholds: Optional[List[float]] = None,
     ) -> List[pd.DataFrame]:
         filtered_predictions = raw_predictions
 
-        if self.labels_to_predict is not None:
+        if batch_labels_to_predict is not None:
             filtered_predictions = [
-                filtered_prediction[
-                    filtered_prediction.name.isin(self.labels_to_predict)
-                ]
-                for filtered_prediction in filtered_predictions
+                filtered_prediction[filtered_prediction.name.isin(labels_to_predict)]
+                for filtered_prediction, labels_to_predict in zip(
+                    filtered_predictions, batch_labels_to_predict
+                )
             ]
 
-        if self.confidence_threshold is not None:
+        if batch_confidence_thresholds is not None:
             filtered_predictions = [
                 filtered_prediction[
-                    filtered_prediction.confidence >= self.confidence_threshold
+                    filtered_prediction.confidence >= confidence_threshold
                 ]
-                for filtered_prediction in filtered_predictions
+                for filtered_prediction, confidence_threshold in zip(
+                    filtered_predictions, batch_confidence_thresholds
+                )
             ]
 
         return filtered_predictions
@@ -81,23 +74,22 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
     def inference(
         self, data: List[ObjectDetectionInputSampleSchema], *args, **kwargs
     ) -> List[Any]:
-        first_sample_schema = data[0]
-
-        self._fill_labels_to_predict(
-            first_sample_schema.sample_metadata.labels_to_predict
-        )
-        self._fill_confidence_threshold(
-            first_sample_schema.sample_metadata.confidence_threshold
-        )
-        self._fill_overridden_image_width(
-            first_sample_schema.sample_metadata.overridden_image_width
-        )
-
         images = [
-            resize(sample.image, width=self.overridden_image_width) for sample in data
+            resize(sample.image, width=sample.sample_metadata.overridden_image_width)
+            for sample in data
         ]
 
-        return super().inference(data=images)
+        raw_predictions = super().inference(data=images)
+
+        return self._filter_predictions(
+            raw_predictions=raw_predictions,
+            batch_labels_to_predict=[
+                sample.sample_metadata.labels_to_predict for sample in data
+            ],
+            batch_confidence_thresholds=[
+                sample.sample_metadata.confidence_threshold for sample in data
+            ],
+        )
 
     def postprocess(self, data: List[Any]) -> List[ObjectDetectionOutputSampleSchema]:
         filtered_predictions = self._filter_predictions(data)

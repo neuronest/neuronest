@@ -71,14 +71,34 @@ def _test_detect_objects_real_time(
 ):
     asset = make_asset(sample_path)
 
-    labels_to_predict = ["dog"]
-    outputs = object_detection_client.detect_objects_real_time(
-        image=asset.content, labels_to_predict=labels_to_predict
+    batch_labels_to_predict = [
+        ["bicycle"],
+        ["dog"],
+        ["truck"],
+        ["bicycle", "dog"],
+        ["bicycle", "truck"],
+        ["dog", "truck"],
+        ["bicycle", "dog", "truck"],
+        ["truck", "bicycle"],
+        ["dog", "bicycle"],
+        ["truck", "dog"],
+    ]
+    outputs = Parallel(n_jobs=-1, prefer="threads")(
+        delayed(object_detection_client.detect_objects_real_time)(
+            image=asset.content, labels_to_predict=labels_to_predict
+        )
+        for labels_to_predict in batch_labels_to_predict
     )
 
-    assert set(prediction.class_name for prediction in outputs.predictions) == set(
-        labels_to_predict
-    )
+    batch_predictions = [
+        set(prediction.class_name for prediction in output.predictions)
+        for output in outputs
+    ]
+
+    for predictions, labels_to_predict in zip(
+        batch_predictions, batch_labels_to_predict
+    ):
+        assert predictions == set(labels_to_predict)
 
 
 # pylint: disable=unused-argument
