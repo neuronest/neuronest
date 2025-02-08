@@ -11,5 +11,5 @@ other_variables:
     - PROJECT_CODE=cdp-come-06
     main:
     # GCP project
-    - PROJECT_ID=customer-dummy-project
-    - PROJECT_CODE=cdp
+    - PROJECT_ID=customer-dummy-project-staging
+    - PROJECT_CODE=cdp-staging
