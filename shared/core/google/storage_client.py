@@ -11,13 +11,16 @@ import pandas as pd
 from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import storage
 from google.cloud.storage import Bucket
+from tenacity import retry, retry_if_exception_type, wait_exponential
 from tqdm import tqdm
 
-from core.client.base_client import BaseClient
+from core.client.abstract.base_client import BaseClient
 from core.exceptions import DependencyError
 from core.path import GSPath
 from core.serialization.encoding import NumpyEncoder
 from core.serialization.image import image_from_binary
+
+QUERY_EXPONENTIAL_BACKOFF = dict(multiplier=1, min=4, max=60)
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +58,7 @@ class StorageClient(BaseClient):
             if not exist_ok:
                 raise exception
 
+    @retry(wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF))
     def upload_blob(self, source_file_name: str, bucket_name: str, blob_name: str):
         """
         Upload a file to a bucket.
@@ -72,6 +76,7 @@ class StorageClient(BaseClient):
             f"as {blob_name}."
         )
 
+    @retry(wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF))
     def upload_blob_from_bytes(self, bucket_name: str, blob_name: str, content: bytes):
         """
         Upload a string to a bucket as a plain text file.
@@ -86,6 +91,7 @@ class StorageClient(BaseClient):
 
         logger.info(f"Bytes uploaded to the bucket '{bucket_name}' as {blob_name}.")
 
+    @retry(wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF))
     def upload_blob_from_string(self, bucket_name: str, blob_name: str, content: str):
         """
         Upload a string to a bucket as a plain text file.
@@ -100,6 +106,7 @@ class StorageClient(BaseClient):
 
         logger.info(f"String uploaded to the bucket '{bucket_name}' as {blob_name}.")
 
+    @retry(wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF))
     def upload_blob_from_dict(self, bucket_name: str, blob_name: str, content: dict):
         """
         Upload a dictionary to a bucket as a JSON file.
@@ -122,6 +129,40 @@ class StorageClient(BaseClient):
 
         logger.info(
             f"Dictionary uploaded to the bucket '{bucket_name}' as {blob_name}."
+        )
+
+    def upload_blob_from_array(
+        self, bucket_name: str, blob_name: str, content: np.ndarray
+    ):
+        """
+        Upload a numpy array to a bucket as a binary file and its metadata as a JSON
+        file.
+
+        :param bucket_name: The bucket name.
+        :param blob_name: The blob name.
+        :param content: A numpy array.
+        """
+        extension = ".npy"
+
+        if not blob_name.endswith(extension):
+            blob_name += extension
+
+        metadata_blob_name = f"{blob_name}.meta"
+        metadata = {"dtype": str(content.dtype), "shape": content.shape}
+
+        self.upload_blob_from_dict(bucket_name, metadata_blob_name, metadata)
+
+        with tempfile.NamedTemporaryFile(suffix=extension) as named_temporary_file:
+            np.save(named_temporary_file.name, content)
+            self.upload_blob(
+                bucket_name=bucket_name,
+                source_file_name=named_temporary_file.name,
+                blob_name=blob_name,
+            )
+
+        logger.info(
+            f"Numpy array and its metadata uploaded to the bucket '{bucket_name}' as "
+            f"{blob_name} and {metadata_blob_name} respectively."
         )
 
     def upload_blob_from_dataframe(
@@ -227,11 +268,16 @@ class StorageClient(BaseClient):
         :param bucket_name: The bucket name.
         :param blob_name: The source blob name.
         :param as_json: Whether to consider to retrieved blob as JSON. If applicable,
-        it will be casted as dictionary.
+        it will be cast as dictionary.
 
         :return: The blob found content as binary or dictionary.
         """
+        json_extension = ".json"
         bucket: Bucket = self.client.bucket(bucket_name)
+
+        if as_json and not blob_name.endswith(json_extension):
+            blob_name += json_extension
+
         blob = bucket.blob(blob_name)
 
         try:
@@ -248,6 +294,45 @@ class StorageClient(BaseClient):
             return self.safe_load_json(content)
 
         return content
+
+    def download_blob_as_array(self, bucket_name: str, blob_name: str) -> np.ndarray:
+        """
+        Download a blob from a bucket and convert it to a numpy array.
+        The corresponding metadata file must exist.
+
+        :param bucket_name: The bucket name.
+        :param blob_name: The source blob name.
+
+        :return: The blob found content as a numpy array.
+        """
+        extension = ".npy"
+
+        if not blob_name.endswith(extension):
+            blob_name += extension
+
+        metadata_blob_name = f"{blob_name}.meta"
+        try:
+            metadata = self.download_blob(bucket_name, metadata_blob_name, as_json=True)
+        except DependencyError as dependency_error:
+            message = (
+                f"Metadata blob {metadata_blob_name} not found: {dependency_error}"
+            )
+            logger.error(message)
+            raise DependencyError(message) from dependency_error
+
+        dtype = metadata["dtype"]
+        shape = tuple(metadata["shape"])
+
+        raw_data = self.download_blob(bucket_name, blob_name)
+
+        try:
+            array = np.frombuffer(raw_data, dtype=dtype).reshape(shape)
+        except (ValueError, TypeError) as error:
+            message = f"Failed to convert blob {blob_name} to numpy array: {error}"
+            logger.error(message)
+            raise DependencyError(message) from error
+
+        return array
 
     def download_blob_as_image(self, bucket_name: str, blob_name: str) -> np.ndarray:
         """

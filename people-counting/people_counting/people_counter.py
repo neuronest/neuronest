@@ -4,7 +4,7 @@ import tempfile
 from typing import Dict, List, Optional
 
 import dlib
-from core.client.object_detection import ObjectDetectionClient
+from core.client.model_client.object_detection import ObjectDetectionModelClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.schemas.asset import VideoAsset
@@ -15,7 +15,6 @@ from omegaconf import DictConfig
 
 from people_counting.centroid_tracker import CentroidTracker
 from people_counting.common import BoundingBox, Statistics, Status
-from people_counting.config import config
 from people_counting.model import Model
 from people_counting.trackable_object import TrackableObject
 from people_counting.video_renderer import VideoRenderer
@@ -26,14 +25,14 @@ logger = logging.getLogger(__name__)
 class PeopleCounter(metaclass=TimingMeta):
     def __init__(
         self,
-        object_detection_client: ObjectDetectionClient,
+        object_detection_model_client: ObjectDetectionModelClient,
         algorithm_config: DictConfig,
         image_width: int,
         confidence_threshold: float,
         video_outputs_directory: Optional[str] = None,
     ):
         self.model = Model(
-            object_detection_client=object_detection_client,
+            object_detection_model_client=object_detection_model_client,
             confidence_threshold=confidence_threshold,
         )
         self.algorithm_config = algorithm_config
@@ -124,7 +123,7 @@ class PeopleCounter(metaclass=TimingMeta):
                         )
 
             line_vertical_position = int(
-                config.algorithm.line_placement_ratio * frame.shape[0]
+                self.algorithm_config.line_placement_ratio * frame.shape[0]
             )
 
             objects = centroid_tracker.update(bounding_boxes)

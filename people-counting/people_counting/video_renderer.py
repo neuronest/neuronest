@@ -158,7 +158,7 @@ class VideoRenderer:
 
         frame_copy = self._draw_border_line(frame_copy)
 
-        for (i, (stat_name, stat_value)) in enumerate(stats):
+        for i, (stat_name, stat_value) in enumerate(stats):
             frame_copy = self._draw_text(
                 frame_copy,
                 f"{stat_name}: {stat_value}",

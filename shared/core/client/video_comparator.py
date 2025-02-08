@@ -1,84 +1,115 @@
-from typing import Iterable, Type, Union
+from typing import List, Optional, Tuple, Type
 
-import numpy as np
-
-from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
-from core.google.storage_client import StorageClient
-from core.path import GSPath
-from core.schemas.video_comparator import (
-    InputSampleSchema as VideoComparatorInputSampleSchema,
+from core.client.abstract.prediction_api_client import PredictionAPIClient
+from core.path import LocalPath
+from core.routes.base import BaseRoutes
+from core.routes.video_comparator import routes
+from core.schemas.abstract.prediction_api_client import (
+    Input,
+    JobDocument,
+    JobResultsDocument,
+    LocalSample,
+    Output,
+    RealTimeInput,
+    RealTimeOutput,
+    SampleResultsDocument,
 )
-from core.schemas.video_comparator import (
-    OutputSampleSchema as VideoComparatorOutputSampleSchema,
+from core.schemas.modules.video_comparator import (
+    VideoComparatorInput,
+    VideoComparatorJobDocument,
+    VideoComparatorJobResultsDocument,
+    VideoComparatorOutput,
+    VideoComparatorRealTimeInput,
+    VideoComparatorRealTimeOutput,
+    VideoComparatorSampleResultsDocument,
 )
-from core.schemas.video_comparator import PredictionType
-from core.tools import generate_file_id
-
-Video = Union[str, np.ndarray]
-Sample = Union[Video, Iterable[Video]]
 
 
-class VideoComparatorClient(OnlinePredictionModelClient):
-    VIDEOS_TO_COMPARE_BASE_BUCKET_NAME = "vc-videos-to-compare"
-    MAX_BATCH_SIZE = 1
+class VideoComparatorClient(PredictionAPIClient):
+    InputSchema: Type[Input] = VideoComparatorInput
+    OutputSchema: Type[Output] = VideoComparatorOutput
+    RealTimeInputSchema: Type[RealTimeInput] = VideoComparatorRealTimeInput
+    RealTimeOutputSchema: Type[RealTimeOutput] = VideoComparatorRealTimeOutput
+    JobDocumentSchema: Type[JobDocument] = VideoComparatorJobDocument
+    SampleResultsDocumentSchema: Type[SampleResultsDocument] = (
+        VideoComparatorSampleResultsDocument
+    )
+    JobResultsDocumentSchema: Type[JobResultsDocument] = (
+        VideoComparatorJobResultsDocument
+    )
+    routes: BaseRoutes = routes
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.storage_client = StorageClient(
-            key_path=self.key_path, project_id=self.project_id
+    def __init__(
+        self,
+        host: str,
+        key_path: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ):
+        super().__init__(
+            host=host,
+            key_path=key_path,
+            project_id=project_id,
         )
 
-    @property
-    def videos_to_compare_bucket(self) -> str:
-        return f"{self.VIDEOS_TO_COMPARE_BASE_BUCKET_NAME}-{self.project_id}"
-
-    def _upload_video_to_storage(self, video_path: str) -> GSPath:
-        bucket = self.storage_client.client.bucket(self.videos_to_compare_bucket)
-
-        if not bucket.exists():
-            bucket.create()
-
-        video_blob_name = generate_file_id(file_path=video_path)
-
-        self.storage_client.upload_blob(
-            source_file_name=video_path,
-            bucket_name=bucket.name,
-            blob_name=video_blob_name,
+    def get_predictions_from_job_id(
+        self,
+        job_id: str,
+        wait_if_not_existing: bool = False,
+        job_timeout: int = 2700,
+    ) -> VideoComparatorJobResultsDocument:
+        return self._get_predictions_from_job_id(
+            job_id=job_id,
+            wait_if_not_existing=wait_if_not_existing,
+            job_timeout=job_timeout,
         )
 
-        return GSPath.from_bucket_and_blob_names(
-            bucket_name=bucket.name, blob_name=video_blob_name
+    def compare_videos_async(
+        self,
+        video_path_pairs: List[Tuple[str, str]],
+        timeout: int = 120,
+    ) -> List[VideoComparatorOutput]:
+        return self.predict_async(
+            samples=[
+                LocalSample(paths=(LocalPath(video_path), LocalPath(other_video_path)))
+                for (video_path, other_video_path) in video_path_pairs
+            ],
+            resource=(
+                f"/{routes.VideoComparator.prefix}"
+                f"{routes.VideoComparator.compare_videos}"
+            ),
+            timeout=timeout,
         )
 
-    def _preprocess_batch_sample_video(self, batch_sample_video: Video):
-        if isinstance(batch_sample_video, str):
-            return self._upload_video_to_storage(GSPath(batch_sample_video))
-        if isinstance(batch_sample_video, np.ndarray):
-            return batch_sample_video
+    def compare_videos_sync(
+        self,
+        video_path_pairs: List[Tuple[str, str]],
+        timeout: int = 120,
+        job_timeout: int = 2700,
+    ) -> List[VideoComparatorSampleResultsDocument]:
+        return self.predict_sync(
+            samples=[
+                LocalSample(paths=(LocalPath(video_path), LocalPath(other_video_path)))
+                for (video_path, other_video_path) in video_path_pairs
+            ],
+            resource=(
+                f"/{routes.VideoComparator.prefix}"
+                f"{routes.VideoComparator.compare_videos}"
+            ),
+            timeout=timeout,
+            job_timeout=job_timeout,
+        )
 
-        raise ValueError
-
-    def get_output_sample_schema_class(self) -> Type[VideoComparatorOutputSampleSchema]:
-        return VideoComparatorOutputSampleSchema
-
-    # pylint: disable=arguments-differ
-    def _batch_sample_to_input_sample_schema(
-        self, batch_sample: Sample
-    ) -> VideoComparatorInputSampleSchema:
-        if isinstance(batch_sample, (np.ndarray, str)):
-            return VideoComparatorInputSampleSchema(
-                video=self._preprocess_batch_sample_video(batch_sample),
-                other_video=None,
-                prediction_type=PredictionType.VIDEO_FEATURES,
-            )
-        if not isinstance(batch_sample, Iterable):
-            raise ValueError
-        if not len(batch_sample) == 2:
-            raise ValueError
-        video, other_video = tuple(batch_sample)
-
-        return VideoComparatorInputSampleSchema(
-            video=self._preprocess_batch_sample_video(video),
-            other_video=self._preprocess_batch_sample_video(other_video),
-            prediction_type=PredictionType.SIMILARITY,
+    def compare_videos_real_time(
+        self,
+        video_path: str,
+        other_video_path: str,
+        timeout: int = 2700,
+    ) -> VideoComparatorRealTimeOutput:
+        return self.predict_real_time(
+            sample=LocalSample(
+                paths=(LocalPath(video_path), LocalPath(other_video_path))
+            ),
+            resource=f"/{routes.VideoComparator.prefix}"
+            f"{routes.VideoComparator.compare_videos_real_time}",
+            timeout=timeout,
         )

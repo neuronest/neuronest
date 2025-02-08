@@ -34,8 +34,8 @@ resource "google_cloud_run_service" "people_counting_api" {
           value = var.counted_videos_bucket
         }
         env {
-          name  = "FIRESTORE_RESULTS_COLLECTION"
-          value = var.firestore_results_collection
+          name  = "RESULTS_BUCKET"
+          value = var.results_bucket
         }
         env {
           name  = "FIRESTORE_JOBS_COLLECTION"
@@ -45,13 +45,16 @@ resource "google_cloud_run_service" "people_counting_api" {
           name  = "OBJECT_DETECTION_MODEL_NAME"
           value = var.object_detection_model_name
         }
-        env {
-          name  = "MODEL_INSTANTIATOR_HOST"
-          value = var.model_instantiator_host
+        dynamic "env" {
+          for_each = var.model_instantiator_host != null ? [var.model_instantiator_host] : []
+          content {
+            name  = "MODEL_INSTANTIATOR_HOST"
+            value = env.value
+          }
         }
         env {
-          name  = "VIDEOS_TO_COUNT_BUCKET"
-          value = var.videos_to_count_bucket
+          name  = "SAMPLES_BUCKET"
+          value = var.samples_bucket
         }
       }
       service_account_name = google_service_account.people_counting_api_sa.email

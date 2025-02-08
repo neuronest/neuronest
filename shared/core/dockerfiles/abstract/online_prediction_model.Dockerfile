@@ -1,7 +1,9 @@
-FROM nvidia/cuda:12.0.0-runtime-ubuntu20.04 as training
+FROM nvidia/cuda:12.5.0-runtime-ubuntu22.04 as training
 
-RUN apt -qqy update  \
-    && DEBIAN_FRONTEND=noninteractive apt install -qqy \
+RUN apt -qqy update > /dev/null \
+&& apt install -qqy software-properties-common > /dev/null \
+&& add-apt-repository ppa:deadsnakes/ppa \
+&& DEBIAN_FRONTEND=noninteractive apt install -qqy \
         build-essential \
         curl \
         ffmpeg \
@@ -15,23 +17,24 @@ RUN apt -qqy update  \
         libxext6 \
         libxrender-dev \
         openjdk-11-jdk \
-        python3-crcmod \
-        python3-pip \
-        python3.8 \
-        python3.8-dev \
-        software-properties-common \
         uuid-runtime \
         wget \
         x264 \
-        zip
+        zip > /dev/null
+
+# Install Python 3.11
+RUN apt -qqy update > /dev/null && DEBIAN_FRONTEND=noninteractive apt install -qqy python3.11 python3.11-dev python3.11-distutils > /dev/null
+
+# Install pip for Python 3.11
+RUN wget https://bootstrap.pypa.io/get-pip.py && python3.11 get-pip.py
 
 ARG REPOSITORY_NAME
 ARG PACKAGE_NAME
 ARG MODEL_NAME
+ARG BATCH_SIZE
 ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
-ARG POETRY_VERSION="1.3.2"
-ARG BATCH_SIZE="32"
+ARG POETRY_VERSION="1.8.4"
 ARG MAX_BATCH_DELAY="50"
 
 ENV PIP_ROOT_USER_ACTION=ignore
@@ -51,19 +54,28 @@ ENV CLOUDSDK_INSTALL_DIR=/usr/local/gcloud
 RUN curl -sSL https://sdk.cloud.google.com | bash > /dev/null 2>&1  # silent logs
 ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 
-COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
+RUN mkdir -p $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
+COPY $SHARED_REPOSITORY_NAME/pyproject.toml $SHARED_REPOSITORY_NAME/poetry.lock $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME/
+COPY $SHARED_REPOSITORY_NAME/core $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME/core
+
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
+# make python3.11 the default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 2
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 2
+
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
-# using 'poetry config virtualenvs.in-project true' makes the virtualenv in '.venv' at
-# the root of the project
-RUN curl -sSL https://install.python-poetry.org | python3
-RUN poetry config virtualenvs.in-project true \
+RUN curl -sSL https://install.python-poetry.org | python
+
+RUN poetry env use python \
+    && poetry config virtualenvs.in-project true \
+    && poetry config virtualenvs.path $ROOT_DIRECTORY/$REPOSITORY_NAME/.venv \
     && poetry config virtualenvs.create true \
     && poetry check  \
-    && poetry install
+    && poetry install --with model \
+    && rm -rf /root/.cache/pypoetry
 
-# COPY $REPOSITORY_NAME/config.yaml .
+COPY $REPOSITORY_NAME/conf/ conf
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 
@@ -73,7 +85,7 @@ FROM training as serving
 ARG MODEL_PATH
 ARG LOCAL_MODEL_PATH="/model/model.pt"
 ARG MODEL_STORE_NAME="model_store"
-ARG MODEL_PACKAGE_NAME="model"
+ARG MODEL_PACKAGE_NAME="model/"
 ARG MODEL_PACKAGE_PATH=$ROOT_DIRECTORY/$REPOSITORY_NAME/$MODEL_PACKAGE_NAME
 
 ENV LOCAL_MODEL_PATH=$LOCAL_MODEL_PATH
@@ -82,7 +94,7 @@ ENV MODEL_PACKAGE_NAME=$MODEL_PACKAGE_NAME
 ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
 RUN mkdir $MODEL_PACKAGE_NAME
-RUN cp -r $PACKAGE_NAME $MODEL_PACKAGE_NAME
+RUN cp -r $PACKAGE_NAME conf $MODEL_PACKAGE_NAME
 WORKDIR $MODEL_PACKAGE_PATH
 
 # create torchserve configuration file
@@ -100,9 +112,9 @@ RUN mkdir -p $MODEL_STORE_NAME
 
 COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
-ENV TMP_PACKAGE_DIR=/tmp/$PACKAGE_NAME
+ENV TMP_PACKAGE_DIR=/tmp/$PACKAGE_NAME/
 RUN mkdir $TMP_PACKAGE_DIR
-RUN cp -r $PACKAGE_NAME $TMP_PACKAGE_DIR
+RUN cp -r $PACKAGE_NAME conf $TMP_PACKAGE_DIR
 
 # create model archive file packaging model artifacts and dependencies
 RUN torch-model-archiver -f \
@@ -113,11 +125,10 @@ RUN torch-model-archiver -f \
   --extra-files=$TMP_PACKAGE_DIR \
   --export-path=$MODEL_STORE_NAME
 
-# ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
-
 # run Torchserve HTTP serve to respond to prediction requests
 ENTRYPOINT torchserve \
     --start \
+    --disable-token-auth \
     --ts-config=config.properties \
     --models $MODEL_NAME=$MODEL_NAME.mar \
     --model-store $MODEL_STORE_NAME \

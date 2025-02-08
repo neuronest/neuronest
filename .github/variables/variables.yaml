@@ -31,7 +31,7 @@ other_variables:
       # (see https://cloud.google.com/appengine/docs/standard/locations#cloud-firestore-location)
       - FIRESTORE_REGION=europe-west3
       # poetry
-      - POETRY_VERSION=1.3.1
+      - POETRY_VERSION=1.8.4
       # docker hub
       - DOCKER_REPOSITORY_NAME=neuronest
       # terraform
@@ -39,3 +39,5 @@ other_variables:
       - STATE_BUCKET=${PROJECT_CODE}-tfstate
       # artifact registry
       - GCP_REGISTRY_NAME=${REGION}-docker.pkg.dev/${PROJECT_ID}
+      # vertex
+      - BATCH_SIZE=32

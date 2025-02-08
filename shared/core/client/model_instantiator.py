@@ -2,9 +2,9 @@ from typing import Optional
 
 import requests
 
-from core.client.api_client import APIClient
+from core.client.abstract.api_client import APIClient
 from core.routes.model_instantiator import routes
-from core.schemas.model_instantiator import (
+from core.schemas.modules.model_instantiator import (
     InstantiateModelInput,
     UninstantiateModelInput,
 )
@@ -19,13 +19,20 @@ class ModelInstantiatorClient(APIClient):
             resource=f"/{routes.Instantiator.prefix}"
             f"{routes.Instantiator.instantiate}",
             verb="post",
-            payload=InstantiateModelInput(model_name=model_name).dict(),
+            payload=InstantiateModelInput(
+                trained_model_name=model_name,
+            ).model_dump(),
         )
 
-    def uninstantiate(self, model_name: str) -> requests.Response:
+    def uninstantiate(
+        self,
+        model_name: str,
+    ) -> requests.Response:
         return self.call(
             resource=f"/{routes.Uninstantiator.prefix}"
             f"{routes.Uninstantiator.uninstantiate}",
             verb="post",
-            payload=UninstantiateModelInput(model_name=model_name).dict(),
+            payload=UninstantiateModelInput(
+                trained_model_name=model_name,
+            ).model_dump(),
         )

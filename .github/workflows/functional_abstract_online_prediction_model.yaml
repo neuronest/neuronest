@@ -22,10 +22,13 @@ on:
       online_prediction_model_repository:
         required: true
         type: string
+      online_prediction_model_package_name:
+        required: true
+        type: string
 
 env:
   REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
-  TESTING_BASE_IMAGE: python:3.9.17-slim-buster
+  TESTING_BASE_IMAGE: python:3.11.10-slim-bookworm
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
@@ -48,7 +51,7 @@ jobs:
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
@@ -63,7 +66,7 @@ jobs:
       online_prediction_model_env_file_artifact_name: ${{ steps.upload_online_prediction_model_variables.outputs.env_file_artifact_name }}
       model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: upload_online_prediction_model_variables
         id: upload_online_prediction_model_variables
         uses: ./.github/actions/upload_variables
@@ -76,7 +79,6 @@ jobs:
         with:
           variable_prefix_to_filter_on: MODEL_INSTANTIATOR
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-
 
   build_test_push_online_prediction_model:
     needs: [set_up_non_functional_repository_name, run_base_terraform, upload_variables_of_called_workflows]
@@ -106,15 +108,22 @@ jobs:
      - run_base_terraform
     outputs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
+      online_prediction_model_url: ${{ steps.get_online_prediction_model_url.outputs.value }}
     runs-on: neuronest-runner-set
     container:
       image: google/cloud-sdk
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - id: set_online_prediction_model_image_variable
+        run: |
+          # Construct the dynamic environment variable name with "TF_VAR_" prefix
+          DYNAMIC_VAR_NAME="TF_VAR_${{ inputs.online_prediction_model_package_name }}_image_name"
+          DYNAMIC_VAR_VALUE="${{ needs.build_test_push_online_prediction_model.outputs.gcp_web_serving_image_name }}"
+          echo "${DYNAMIC_VAR_NAME}=${DYNAMIC_VAR_VALUE}" >> $GITHUB_ENV
       - id: run_functional_online_prediction_model_terraform
         uses: ./.github/actions/run_terraform
         with:
@@ -129,6 +138,11 @@ jobs:
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: model_instantiator_url
+      - id: get_online_prediction_model_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: online_prediction_model_url
 
   post_deploy_online_prediction_model:
     # the job in the needs section is necessary to recover its output
@@ -170,12 +184,12 @@ jobs:
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
           as_root: true
-      - uses: google-github-actions/setup-gcloud@v0.2.0
+      - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
@@ -185,10 +199,15 @@ jobs:
         run: |
           echo value=$(env | grep -E '*MODEL_NAME=' | cut -d '=' -f2-) >> $GITHUB_OUTPUT
         shell: bash
+      - id: get_package_url_variable_name
+        run: |
+          package_name_uppercase=$(echo "${{ inputs.online_prediction_model_package_name }}" | tr '[:lower:]' '[:upper:]')
+          echo value="${package_name_uppercase}_URL" >> $GITHUB_OUTPUT
+        shell: bash
       - id: test_integration
         uses: ./.github/actions/run_linters_tests
         with:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           run_integration_tests: true
           run_unit_tests: false
-          environment_variables: -e MODEL_NAME=${{ steps.get_model_name.outputs.value }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_online_prediction_model.outputs.model_instantiator_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}
+          environment_variables: -e ${{ steps.get_package_url_variable_name.outputs.value }}=${{ needs.deploy_functional_online_prediction_model.outputs.online_prediction_model_url }} -e MODEL_NAME=${{ steps.get_model_name.outputs.value }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_online_prediction_model.outputs.model_instantiator_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}

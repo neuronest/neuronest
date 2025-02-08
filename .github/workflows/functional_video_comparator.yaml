@@ -55,7 +55,7 @@ jobs:
     outputs:
       env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: upload_variables
         id: upload_variables
         uses: ./.github/actions/upload_variables
@@ -69,6 +69,7 @@ jobs:
       build: true
       deploy: true
       do_post_deployment: true
-      online_prediction_model_repository: functional-video-comparator
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      online_prediction_model_repository: functional-video-comparator
+      online_prediction_model_package_name: video_comparator
     secrets: inherit

@@ -49,7 +49,7 @@ on:
 env:
   REPOSITORY_NAME: functional-people-counting
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
-  TESTING_BASE_IMAGE: python:3.9.17-slim-buster
+  TESTING_BASE_IMAGE: python:3.11.10-slim-bookworm
 
 jobs:
   run_base_terraform:
@@ -60,7 +60,7 @@ jobs:
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
@@ -76,7 +76,7 @@ jobs:
       object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
       model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: upload_people_counting_variables
         id: upload_people_counting_variables
         uses: ./.github/actions/upload_variables
@@ -112,12 +112,13 @@ jobs:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/object_detection.yaml
+    uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: true
       deploy: false
       do_post_deployment: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
+      online_prediction_model_repository: ${{ needs.set_up_non_functional_repository_name.outputs.value }}
     secrets: inherit
 
   build_test_push_model_instantiator:
@@ -148,7 +149,7 @@ jobs:
     container:
       image: google/cloud-sdk
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
@@ -174,7 +175,6 @@ jobs:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: people_counting_url
 
-
   post_deploy_people_counting:
     needs: [deploy_functional_people_counting, upload_variables_of_called_workflows]
     # If the workflow isn't called, inputs are blank and job should run
@@ -196,7 +196,7 @@ jobs:
       - upload_variables_of_called_workflows
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/object_detection.yaml
+    uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: false
       deploy: false
@@ -230,12 +230,12 @@ jobs:
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
           as_root: true
-      - uses: google-github-actions/setup-gcloud@v0.2.0
+      - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth

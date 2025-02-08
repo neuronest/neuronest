@@ -36,11 +36,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - run: |
-        ACCESS_TOKEN=$(gcloud auth print-access-token)
-        echo "::add-mask::$ACCESS_TOKEN"
-        echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV
-      shell: bash
     - run: | 
         echo "IMAGE_NAME_SUFFIX"="$([[ ! -z '${{ inputs.target }}' ]] && echo '-${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
       shell: bash
@@ -123,6 +118,12 @@ runs:
       run: |
         docker push $GCP_IMAGE_NAME:latest
         docker push $GCP_IMAGE_NAME:${{ steps.build_image.outputs.sha256_digest }}
+      shell: bash
+
+    - run: |
+        ACCESS_TOKEN=$(gcloud auth print-access-token)
+        echo "::add-mask::$ACCESS_TOKEN"
+        echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV
       shell: bash
 
     - name: Clean old docker images

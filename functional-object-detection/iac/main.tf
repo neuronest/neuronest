@@ -36,9 +36,20 @@ module "functional_object_detection" {
   region     = var.region
   timezone   = var.timezone
 
-  object_detection_service_account_name = var.object_detection_service_account_name
-  object_detection_models_bucket        = var.object_detection_models_bucket
-  object_detection_model_name           = var.object_detection_model_name
+  vertex_location = var.vertex_location
+
+  object_detection_image_name                = var.object_detection_image_name
+  object_detection_service_account_name      = var.object_detection_service_account_name
+  object_detection_models_bucket             = var.object_detection_models_bucket
+  object_detection_samples_bucket            = var.object_detection_samples_bucket
+  object_detection_results_bucket            = var.object_detection_results_bucket
+  object_detection_model_name                = var.object_detection_model_name
+  object_detection_cloud_run_name            = var.object_detection_cloud_run_name
+  object_detection_cloud_run_memory          = var.object_detection_cloud_run_memory
+  object_detection_cloud_run_cpu             = var.object_detection_cloud_run_cpu
+  object_detection_cloud_run_min_scale       = var.object_detection_cloud_run_min_scale
+  object_detection_cloud_run_max_scale       = var.object_detection_cloud_run_max_scale
+  object_detection_firestore_jobs_collection = var.object_detection_firestore_jobs_collection
 
   model_instantiator_image_name                           = var.model_instantiator_image_name
   model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name

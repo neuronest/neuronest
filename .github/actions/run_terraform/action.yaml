@@ -23,7 +23,6 @@ outputs:
   base_project_builder_sa_key:
     description: 'The base64 encoded key of the IAC service account of the shared repository'
     value: ${{ steps.get_base_project_builder_sa_key.outputs.value }}
-
 runs:
   using: "composite"
   steps:
@@ -86,6 +85,7 @@ runs:
       with:
         workspace: ${{ inputs.workspace }}
         terraform_output_name: base_project_builder_sa_key
+
     # the "not success" condition is better because it also involves jobs that have
     # failed because they were interrupted because they took too long or because a
     # terraform variable was missing and it was waiting indefinitely for example

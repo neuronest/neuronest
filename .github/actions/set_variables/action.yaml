@@ -74,8 +74,11 @@ runs:
           --variable_prefix_to_filter_on "${{ inputs.variable_prefix_to_filter_on }}" \
           --discard_shared_variables ${{ inputs.discard_shared_variables }} \
           --keep_repository_variables ${{ inputs.keep_repository_variables }}
+        
+        echo set_created_env_file_path: 
+        cat ${{ steps.set_created_env_file_path.outputs.value }}
       shell: bash
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.env_file_artifact_name }}
         path: /tmp
@@ -88,10 +91,12 @@ runs:
           --caller_workflow_env_file_path $caller_workflow_env_file_path \
           --refactored_caller_workflow_env_file_path $refactored_caller_workflow_env_file_path
         cat $refactored_caller_workflow_env_file_path >> ${{ steps.set_created_env_file_path.outputs.value }}
+        
+        echo $refactored_caller_workflow_env_file_path: 
+        cat $refactored_caller_workflow_env_file_path
       if: ${{ inputs.env_file_artifact_name != '' }}
       shell: bash
     - uses: cardinalby/export-env-action@v2
       with:
         envFile: ${{ steps.set_created_env_file_path.outputs.value }}
         expand: 'true'
-

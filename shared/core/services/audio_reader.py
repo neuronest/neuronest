@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 import ffmpeg
 from ffmpeg import Error as FfmpegError
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from core.google.storage_client import StorageClient
 from core.path import LocalPath, build_path
@@ -33,8 +33,8 @@ class AudioMetadata(BaseModel):
     # custom fields
     audio_codec_to_container: Dict[str, AudioExtension]
 
-    @validator("streams")
-    # pylint: disable=no-self-argument
+    @field_validator("streams")
+    @classmethod
     def keep_audio_stream_only(cls, streams: List[AudioStream]) -> List[AudioStream]:
         return [stream for stream in streams if stream.codec_type == "audio"]
 

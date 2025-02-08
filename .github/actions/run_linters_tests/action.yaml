@@ -37,8 +37,8 @@ runs:
       - run: |
           # handle detected dubious ownership git issue
           run_linters_tests_cmd="
-            apt update \
-            && apt install -y git \
+            apt -qqy update > /dev/null \
+            && apt install -qqy git > /dev/null \
             && ([ ! -d \".git\" ] && git init || echo \".git directory already exists. Skipping git init.\") \
             && git config \
             --global \
@@ -62,9 +62,10 @@ runs:
             run_linters_tests_cmd+="&& pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv"
           fi
           
-          # run integration tests
+          # run integration tests, parallel executing is disabled to allow model 
+          # uninstantiation teardown
           if [[ "${{ inputs.run_integration_tests }}" == "true" ]]; then
-            run_linters_tests_cmd+="&& pytest -x -n auto $REPOSITORY_NAME/tests/integration_tests -vv"
+            run_linters_tests_cmd+="&& pytest -x $REPOSITORY_NAME/tests/integration_tests -vv"
           fi
           
           docker exec \

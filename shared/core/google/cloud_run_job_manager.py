@@ -15,7 +15,7 @@ from google.cloud.run_v2 import (
     types,
 )
 
-from core.client.base_client import BaseClient
+from core.client.abstract.base_client import BaseClient
 from core.schemas.google.cloud_run import ExecutionSchema, JobConfig, JobSchema
 from core.serialization.protobuf import protobuf_to_dict
 from core.utils import hyphen_to_underscore
@@ -46,7 +46,7 @@ class CloudRunJobManager(BaseClient):
         request = ListExecutionsRequest(parent=f"{self._parent}/jobs/{job_name}")
 
         cloud_run_executions = [
-            ExecutionSchema.parse_obj(protobuf_to_dict(execution))
+            ExecutionSchema.model_validate(protobuf_to_dict(execution))
             for execution in self.executions_client.list_executions(request=request)
         ]
 
@@ -78,7 +78,7 @@ class CloudRunJobManager(BaseClient):
         request = ListJobsRequest(parent=self._parent)
 
         cloud_run_jobs = [
-            JobSchema.parse_obj(protobuf_to_dict(job))
+            JobSchema.model_validate(protobuf_to_dict(job))
             for job in self.jobs_client.list_jobs(request=request)
         ]
 
@@ -115,7 +115,7 @@ class CloudRunJobManager(BaseClient):
 
             raise not_found
 
-        return JobSchema.parse_obj(protobuf_to_dict(response))
+        return JobSchema.model_validate(protobuf_to_dict(response))
 
     def create_job(
         self,
@@ -169,4 +169,4 @@ class CloudRunJobManager(BaseClient):
         operation = self.jobs_client.create_job(request=request)
         response = operation.result()
 
-        return JobSchema.parse_obj(protobuf_to_dict(response))
+        return JobSchema.model_validate(protobuf_to_dict(response))

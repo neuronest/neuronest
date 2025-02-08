@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Union
 from google.cloud import firestore
 from google.cloud.firestore_v1 import DocumentReference, Transaction
 
-from core.client.base_client import BaseClient
+from core.client.abstract.base_client import BaseClient
 from core.serialization.encoding import json_encodable_dict
 
 logger = logging.getLogger(__name__)

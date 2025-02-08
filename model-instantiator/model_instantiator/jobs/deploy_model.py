@@ -8,16 +8,16 @@ from core.services.deployment_status_manager import (
 )
 from google.cloud import aiplatform
 
-from model_instantiator.api.dependencies import (
-    use_config,
-    use_deployment_status_manager,
-    use_firestore_client,
-    use_vertex_ai_manager,
-)
+from model_instantiator.config import cfg
 from model_instantiator.jobs.environment_variables import (
     IS_LAST_MODEL_ALREADY_DEPLOYED_OK,
     MODEL_NAME,
     UNDEPLOY_PREVIOUS_MODEL,
+)
+from model_instantiator.jobs.services import (
+    create_deployment_status_manager,
+    create_firestore_client,
+    create_vertex_ai_manager,
 )
 
 
@@ -48,7 +48,10 @@ def deploy_model(
         timeout=deployment_status_manager.max_deploying_age,
     )
 
-    if vertex_ai_manager.is_model_deployed(endpoint=endpoint, model=model):
+    if vertex_ai_manager.is_model_deployed(
+        endpoint=endpoint,
+        model=model,
+    ):
         deployment_status_manager.set_status(
             deployment_status=DeploymentStatus.DEPLOYED, deployment_name=model_name
         )
@@ -63,15 +66,14 @@ def deploy_model(
 
 
 if __name__ == "__main__":
-    config = use_config()
-    firestore_client = use_firestore_client()
+    firestore_client = create_firestore_client()
 
     deploy_model(
         model_name=MODEL_NAME,
-        deployment_status_manager=use_deployment_status_manager(
-            config=config, firestore_client=firestore_client
+        deployment_status_manager=create_deployment_status_manager(
+            config=cfg, firestore_client=firestore_client
         ),
-        vertex_ai_manager=use_vertex_ai_manager(config=config),
+        vertex_ai_manager=create_vertex_ai_manager(),
         undeploy_previous_model=UNDEPLOY_PREVIOUS_MODEL,
         is_last_model_already_deployed_ok=IS_LAST_MODEL_ALREADY_DEPLOYED_OK,
     )

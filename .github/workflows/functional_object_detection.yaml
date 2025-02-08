@@ -47,7 +47,7 @@ on:
 env:
   REPOSITORY_NAME: functional-object-detection
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
-  TESTING_BASE_IMAGE: python:3.9.17-slim-buster
+  TESTING_BASE_IMAGE: python:3.11.10-slim-bookworm
 
 jobs:
   upload_variables_of_called_workflows:
@@ -56,7 +56,7 @@ jobs:
     outputs:
       env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: upload_variables
         id: upload_variables
         uses: ./.github/actions/upload_variables
@@ -70,6 +70,7 @@ jobs:
       build: true
       deploy: true
       do_post_deployment: true
-      online_prediction_model_repository: functional-object-detection
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      online_prediction_model_repository: functional-object-detection
+      online_prediction_model_package_name: object_detection
     secrets: inherit

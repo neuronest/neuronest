@@ -1,6 +1,6 @@
 import functools
 import time
-from typing import Any, Callable, Tuple, Union
+from typing import Any, Callable, List, Optional, Set, Tuple, Union
 
 
 def timeit(func: Callable[[Any], Any]) -> Callable[[Any], Union[float, Any]]:
@@ -31,3 +31,19 @@ def string_to_boolean(string: str) -> bool:
         return lower_string == boolean_string_true
 
     raise ValueError(f"Invalid string to interpolate: {string}")
+
+
+def xor_not_none(value: Optional[Any], other_value: Optional[Any]) -> bool:
+    return (value is not None) != (other_value is not None)
+
+
+def contains_only_n_elements(
+    elements: Union[List[Any], Set[Any], Tuple[Any, ...]], n: int
+) -> bool:
+    return len(elements) == n
+
+
+def contains_only_one_element(
+    elements: Union[List[Any], Set[Any], Tuple[Any, ...]]
+) -> bool:
+    return contains_only_n_elements(elements=elements, n=1)
