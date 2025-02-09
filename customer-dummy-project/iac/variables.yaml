@@ -7,8 +7,8 @@ other_variables:
   branch:
     default:
     # GCP project
-    - PROJECT_ID=customer-dummy-project-come-06
-    - PROJECT_CODE=cdp-come-06
+    - PROJECT_ID=customer-dummy-project-come-07
+    - PROJECT_CODE=cdp-come-07
     main:
     # GCP project
     - PROJECT_ID=customer-dummy-project-staging

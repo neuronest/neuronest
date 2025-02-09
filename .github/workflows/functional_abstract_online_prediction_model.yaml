@@ -25,6 +25,10 @@ on:
       online_prediction_model_package_name:
         required: true
         type: string
+    outputs:
+      model_instantiator_image_name:
+        description: "Model instantiator image name"
+        value: ${{ jobs.build_test_push_model_instantiator.outputs.gcp_image_name }}
 
 env:
   REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
@@ -46,7 +50,7 @@ jobs:
 
   run_base_terraform:
     runs-on: neuronest-runner-set
-    if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
@@ -82,6 +86,7 @@ jobs:
 
   build_test_push_online_prediction_model:
     needs: [set_up_non_functional_repository_name, run_base_terraform, upload_variables_of_called_workflows]
+    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: true
@@ -93,6 +98,7 @@ jobs:
 
   build_test_push_model_instantiator:
     needs: [run_base_terraform, upload_variables_of_called_workflows]
+    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/model_instantiator.yaml
     with:
       build: true
@@ -110,6 +116,7 @@ jobs:
       model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
       online_prediction_model_url: ${{ steps.get_online_prediction_model_url.outputs.value }}
     runs-on: neuronest-runner-set
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
     container:
       image: google/cloud-sdk
     steps:
@@ -152,6 +159,7 @@ jobs:
       - build_test_push_online_prediction_model
       - upload_variables_of_called_workflows
       - set_up_non_functional_repository_name
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: false
@@ -166,6 +174,7 @@ jobs:
 
   post_deploy_model_instantiator:
     needs: [deploy_functional_online_prediction_model, upload_variables_of_called_workflows]
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/model_instantiator.yaml
     with:
       build: false

@@ -52,9 +52,22 @@ env:
   TESTING_BASE_IMAGE: python:3.11.10-slim-bookworm
 
 jobs:
+  upload_variables_of_called_workflows:
+    runs-on: neuronest-runner-set
+    container: google/cloud-sdk
+    outputs:
+      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: upload_variables
+        id: upload_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+
   run_base_terraform:
     runs-on: neuronest-runner-set
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
     outputs:
@@ -68,78 +81,51 @@ jobs:
       - id: run_base_terraform
         uses: ./.github/actions/run_base_terraform
 
-  upload_variables_of_called_workflows:
+  build_functional_object_detection:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      online_prediction_model_repository: functional-people-counting
+      online_prediction_model_package_name: object_detection
+    secrets: inherit
+
+  build_test_push:
+    name: build_test_push
     runs-on: neuronest-runner-set
-    container: google/cloud-sdk
+    needs: run_base_terraform
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     outputs:
-      people_counting_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
-      object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
-      model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
+      gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
+      dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
     steps:
       - uses: actions/checkout@v4
-      - name: upload_people_counting_variables
-        id: upload_people_counting_variables
-        uses: ./.github/actions/upload_variables
+      - uses: ./.github/actions/set_variables
         with:
-          variable_prefix_to_filter_on: PEOPLE_COUNTING
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - name: upload_object_detection_variables
-        id: upload_object_detection_variables
-        uses: ./.github/actions/upload_variables
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v2
         with:
-          variable_prefix_to_filter_on: OBJECT_DETECTION
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - name: upload_model_instantiator_variables
-        id: upload_model_instantiator_variables
-        uses: ./.github/actions/upload_variables
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
         with:
-          variable_prefix_to_filter_on: MODEL_INSTANTIATOR
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+      - id: build_test_push
+        uses: ./.github/actions/build_test_push
+        with:
+          dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+          dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
-  build_test_push_people_counting:
-    needs: [run_base_terraform, upload_variables_of_called_workflows]
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/people_counting.yaml
-    with:
-      build: true
-      deploy: false
-      do_post_deployment: false
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
-    secrets: inherit
-
-  build_test_push_object_detection:
-    needs: [run_base_terraform, upload_variables_of_called_workflows]
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/abstract_online_prediction_model.yaml
-    with:
-      build: true
-      deploy: false
-      do_post_deployment: false
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
-      online_prediction_model_repository: ${{ needs.set_up_non_functional_repository_name.outputs.value }}
-    secrets: inherit
-
-  build_test_push_model_instantiator:
-    needs: [run_base_terraform, upload_variables_of_called_workflows]
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/model_instantiator.yaml
-    with:
-      build: true
-      deploy: false
-      do_post_deployment: false
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
-    secrets: inherit
-
-  deploy_functional_people_counting:
+  deploy:
     needs:
      - run_base_terraform
-     - build_test_push_people_counting
-     - build_test_push_object_detection
-     - build_test_push_model_instantiator
-     - run_base_terraform
+     - build_functional_object_detection
+     - build_test_push
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
     outputs:
@@ -162,8 +148,8 @@ jobs:
         # favor environment variables that show up clearly in github logs over
         # var-like arguments to make it easier to reproduce errors locally
         env:
-          TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
-          TF_VAR_people_counting_image_name: ${{ needs.build_test_push_people_counting.outputs.gcp_image_name }}
+          TF_VAR_model_instantiator_image_name: ${{ needs.build_functional_object_detection.outputs.model_instantiator_image_name }}
+          TF_VAR_people_counting_image_name: ${{ needs.build_test_push.outputs.gcp_image_name }}
       - id: get_model_instantiator_url
         uses: ./.github/actions/get_terraform_output
         with:
@@ -175,58 +161,24 @@ jobs:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: people_counting_url
 
-  post_deploy_people_counting:
-    needs: [deploy_functional_people_counting, upload_variables_of_called_workflows]
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/people_counting.yaml
+  post_deploy_functional_object_detection:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
     with:
       build: false
       deploy: false
       do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
-    secrets: inherit
-
-  post_deploy_object_detection:
-    # the job in the needs section is necessary to recover its output
-    needs:
-      - run_base_terraform
-      - deploy_functional_people_counting
-      - build_test_push_object_detection
-      - upload_variables_of_called_workflows
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/abstract_online_prediction_model.yaml
-    with:
-      build: false
-      deploy: false
-      do_post_deployment: true
-      gcp_training_image_name: ${{ needs.build_test_push_object_detection.outputs.gcp_training_image_name }}
-      dockerhub_training_image_name: ${{ needs.build_test_push_object_detection.outputs.dockerhub_training_image_name }}
-      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
-    secrets: inherit
-
-  post_deploy_model_instantiator:
-    needs: [deploy_functional_people_counting, upload_variables_of_called_workflows]
-    # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/model_instantiator.yaml
-    with:
-      build: false
-      deploy: false
-      do_post_deployment: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      online_prediction_model_repository: functional-people-counting
+      online_prediction_model_package_name: object_detection
     secrets: inherit
 
   run_integration_tests:
     runs-on: neuronest-runner-set
     needs:
       - run_base_terraform
-      - post_deploy_people_counting
-      - post_deploy_object_detection
-      - post_deploy_model_instantiator
-      - deploy_functional_people_counting
+      - deploy
+      - post_deploy_functional_object_detection
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
     steps:
@@ -246,4 +198,4 @@ jobs:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           run_integration_tests: true
           run_unit_tests: false
-          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.deploy_functional_people_counting.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_people_counting.outputs.model_instantiator_url }}
+          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.deploy.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy.outputs.model_instantiator_url }}
