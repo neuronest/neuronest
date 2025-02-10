@@ -60,7 +60,6 @@ jobs:
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     outputs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
-      dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables
@@ -78,6 +77,7 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }}
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
   deploy:

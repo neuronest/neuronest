@@ -94,20 +94,58 @@ jobs:
       online_prediction_model_package_name: object_detection
     secrets: inherit
 
-  build_test_push_deploy:
+  build_test_push:
     needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/people_counting.yaml
     with:
       build: true
-      deploy: true
+      deploy: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
-      model_instantiator_image_name: model_instantiator_image_name
     secrets: inherit
+
+  deploy:
+    name: deploy
+    runs-on: neuronest-runner-set
+    needs:
+      - run_base_terraform
+      - build_test_push
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
+    outputs:
+      model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
+      people_counting_url: ${{ steps.get_people_counting_url.outputs.value }}
+    container:
+      image: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+          workspace: ${{ env.REPOSITORY_NAME }}
+        # favor environment variables that show up clearly in github logs over
+        # var-like arguments to make it easier to reproduce errors locally
+        env:
+          TF_VAR_model_instantiator_image_name: ${{ needs.build_functional_object_detection.outputs.model_instantiator_image_name }}
+          TF_VAR_people_counting_image_name: ${{ needs.build_test_push.outputs.gcp_image_name }}
+      - id: get_model_instantiator_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: model_instantiator_url
+      - id: get_people_counting_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: people_counting_url
 
   post_deploy_functional_object_detection:
     needs:
      - build_functional_object_detection
-     - build_test_push_deploy
+     - deploy
     uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
     with:
       build: false
@@ -122,7 +160,7 @@ jobs:
     runs-on: neuronest-runner-set
     needs:
       - run_base_terraform
-      - build_test_push_deploy
+      - deploy
       - post_deploy_functional_object_detection
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
@@ -143,4 +181,4 @@ jobs:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           run_integration_tests: true
           run_unit_tests: false
-          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.build_test_push_deploy.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.build_test_push_deploy.outputs.model_instantiator_url }}
+          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.deploy.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy.outputs.model_instantiator_url }}
