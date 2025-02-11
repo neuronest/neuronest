@@ -26,10 +26,10 @@ resource "google_cloud_run_service" "database_api" {
             path = "/database_api/api/v1/healthcheck"
             port = 8080
           }
-          initial_delay_seconds = 10 # Delay before the first check
-          timeout_seconds       = 1  # Max time to wait for each check
-          period_seconds        = 10 # Interval between checks
-          failure_threshold     = 12 # Number of failed attempts before restart
+          initial_delay_seconds = 0   # Delay before the first check
+          timeout_seconds       = 120 # Max time to wait for each check
+          period_seconds        = 121 # Interval between checks
+          failure_threshold     = 1   # Number of failed attempts before restart
         }
 
 
