@@ -29,6 +29,15 @@ class DatabaseApiClient(APIClient):
             verb="get",
         )
 
+    def list_projects(self) -> requests.Response:
+        """
+        Fetch details of a project by its GCP project ID.
+        """
+        return self.call(
+            resource=f"/{routes.Project.prefix}" f"{routes.Project.list}",
+            verb="get",
+        )
+
     def delete_project(self, gcp_project_id: str) -> requests.Response:
         """
         Delete a project by its GCP project ID.

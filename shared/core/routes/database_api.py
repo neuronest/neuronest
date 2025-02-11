@@ -8,6 +8,7 @@ class _DatabaseApiRoutes(_BaseRoutes):
         prefix = "project"
         create: str = "/create"
         get: str = "/gcp_project_id/{gcp_project_id}"
+        list: str = "/"
         delete: str = "/gcp_project_id/{gcp_project_id}"
 
     class Uninstantiator:

@@ -1,3 +1,5 @@
+from typing import List
+
 from core.routes.database_api import routes
 from core.schemas.database_api import Project, ProjectCreate
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -27,7 +29,7 @@ def _deleted_project_response(response: Response, gcp_project_id: str) -> Respon
 
 
 @router.post(routes.Project.create, response_model=Project)
-def create_project(project: ProjectCreate, database: Session = Depends(get_database)):
+def create(project: ProjectCreate, database: Session = Depends(get_database)):
     db_project = (
         database.query(DatabaseProject)
         .filter(DatabaseProject.gcp_project_id == project.gcp_project_id)
@@ -45,7 +47,7 @@ def create_project(project: ProjectCreate, database: Session = Depends(get_datab
 
 
 @router.get(routes.Project.get, response_model=Project)
-def get_project(gcp_project_id: str, database: Session = Depends(get_database)):
+def get(gcp_project_id: str, database: Session = Depends(get_database)):
     """
     Retrieve a project by its GCP project ID.
     """
@@ -60,8 +62,14 @@ def get_project(gcp_project_id: str, database: Session = Depends(get_database)):
     return db_project
 
 
+@router.get(routes.Project.list, response_model=List[Project])
+# pylint: disable=redefined-builtin
+def list(database: Session = Depends(get_database)):
+    return database.query(DatabaseProject).all()
+
+
 @router.delete(routes.Project.delete)
-def delete_project(
+def delete(
     gcp_project_id: str, response: Response, database: Session = Depends(get_database)
 ):
     """

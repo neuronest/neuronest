@@ -17,6 +17,7 @@ class InstanceStatus(str, Enum):
     STARTING = "STARTING"
     STOPPED = "STOPPED"
     STOPPING = "STOPPING"
+    UPDATING = "UPDATING"
 
 
 class CloudSQLManager(BaseClient):
@@ -138,6 +139,8 @@ class CloudSQLManager(BaseClient):
                 return InstanceStatus.STARTING
             if current_policy == "ALWAYS" and last_update_status == "DONE":
                 return InstanceStatus.STARTED
+            if current_policy == "ALWAYS" and last_update_status == "PENDING":
+                return InstanceStatus.UPDATING
             if current_policy == "NEVER" and last_update_status == "RUNNING":
                 return InstanceStatus.STOPPING
             if current_policy == "NEVER" and last_update_status == "DONE":

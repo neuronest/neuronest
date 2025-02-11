@@ -39,7 +39,8 @@ def handle_potential_cloud_sql_error(
         on_error_correct (bool): Whether to attempt correcting the detected error.
 
     Returns:
-        None or Exception: Returns the error if raise_error is False, otherwise raises the error.
+        None or Exception: Returns the error if raise_error is False,
+        otherwise raises the error.
     """
 
     cloud_sql_manager = get_cloud_sql_manager()
