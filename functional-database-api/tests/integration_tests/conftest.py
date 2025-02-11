@@ -58,11 +58,14 @@ def fixture_database_api_client(
 
 @pytest.fixture(name="uninstantiate_teardown", scope="session")
 def fixture_uninstantiate_teardown(
+    # pylint: disable=unused-argument
     model_instantiator_client: ModelInstantiatorClient,
+    # pylint: disable=unused-argument
     cloud_sql_instance_name: str,
 ):
     try:
         yield
 
     finally:
-        model_instantiator_client.uninstantiate_cloud_sql(cloud_sql_instance_name)
+        pass
+        # model_instantiator_client.uninstantiate_cloud_sql(cloud_sql_instance_name)
