@@ -1,16 +1,19 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from migrations.alembic_command import upgrade_head
-from sqlalchemy import text
 
-from database_api.api.dependencies import get_database, handle_potential_cloud_sql_error
+from database_api.api.dependencies import (  # get_database,
+    handle_potential_cloud_sql_error,
+)
 from database_api.api.exceptions import (
     DatabaseStartingError,
     DatabaseStoppedError,
     DatabaseStoppingError,
 )
 from database_api.api.routes import router
+
+# from migrations.alembic_command import upgrade_head
+# from sqlalchemy import text
 
 
 def create_app() -> FastAPI:
@@ -31,41 +34,41 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
-@app.on_event("startup")
-async def startup_event():
-    database = next(get_database())
-    lock_or_migration_exception = None
-    release_lock_exception = None
-
-    try:
-        database.execute(text("SELECT pg_advisory_lock(123456);"))
-        print("Lock acquired, running alembic upgrade head...")
-        upgrade_head()
-    except Exception as exception:  # pylint: disable=broad-exception-caught
-        potential_cloud_sql_error = handle_potential_cloud_sql_error(
-            raise_error=False, on_error_correct=True
-        )
-        lock_or_migration_exception = potential_cloud_sql_error or exception
-    finally:
-        try:
-            database.execute(text("SELECT pg_advisory_unlock(123456);"))
-        except Exception as exception:  # pylint: disable=broad-exception-caught
-            potential_cloud_sql_error = handle_potential_cloud_sql_error(
-                raise_error=False, on_error_correct=True
-            )
-            release_lock_exception = potential_cloud_sql_error or exception
-
-        # Raise exceptions in a proper order if they exist
-        if lock_or_migration_exception and release_lock_exception:
-            raise release_lock_exception from lock_or_migration_exception
-        if lock_or_migration_exception:
-            raise lock_or_migration_exception
-        if release_lock_exception:
-            raise release_lock_exception
-
-        print("Lock released.")
-
-    print("Alembic database migrations applied successfully.")
+# @app.on_event("startup")
+# async def startup_event():
+#     database = next(get_database())
+#     lock_or_migration_exception = None
+#     release_lock_exception = None
+#
+#     try:
+#         database.execute(text("SELECT pg_advisory_lock(123456);"))
+#         print("Lock acquired, running alembic upgrade head...")
+#         upgrade_head()
+#     except Exception as exception:  # pylint: disable=broad-exception-caught
+#         potential_cloud_sql_error = handle_potential_cloud_sql_error(
+#             raise_error=False, on_error_correct=True
+#         )
+#         lock_or_migration_exception = potential_cloud_sql_error or exception
+#     finally:
+#         try:
+#             database.execute(text("SELECT pg_advisory_unlock(123456);"))
+#         except Exception as exception:  # pylint: disable=broad-exception-caught
+#             potential_cloud_sql_error = handle_potential_cloud_sql_error(
+#                 raise_error=False, on_error_correct=True
+#             )
+#             release_lock_exception = potential_cloud_sql_error or exception
+#
+#         # Raise exceptions in a proper order if they exist
+#         if lock_or_migration_exception and release_lock_exception:
+#             raise release_lock_exception from lock_or_migration_exception
+#         if lock_or_migration_exception:
+#             raise lock_or_migration_exception
+#         if release_lock_exception:
+#             raise release_lock_exception
+#
+#         print("Lock released.")
+#
+#     print("Alembic database migrations applied successfully.")
 
 
 @app.middleware("http")
