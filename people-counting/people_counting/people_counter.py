@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class PeopleCounter(metaclass=TimingMeta):
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         object_detection_model_client: ObjectDetectionModelClient,
