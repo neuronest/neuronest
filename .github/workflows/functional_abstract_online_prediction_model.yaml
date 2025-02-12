@@ -238,7 +238,6 @@ jobs:
     needs:
       - run_base_terraform
       - post_deploy_online_prediction_model
-      - post_deploy_model_instantiator
       - deploy_functional_online_prediction_model
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.run_tests == 'true' || inputs.run_tests == '') && !failure() && !cancelled() }}
