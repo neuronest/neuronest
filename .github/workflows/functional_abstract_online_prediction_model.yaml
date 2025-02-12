@@ -31,6 +31,10 @@ on:
         required: false
         type: string
         default: ""
+      base_project_builder_sa_key:
+        required: false
+        type: string
+        default: ""
       online_prediction_model_repository:
         required: true
         type: string
@@ -192,12 +196,28 @@ jobs:
           gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
           echo "gcp_image=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
 
+  get_base_project_builder_sa_key:
+    runs-on: neuronest-runner-set
+    needs: run_base_terraform
+    if: ${{ !failure() && !cancelled() }}
+    outputs:
+      value: ${{ steps.get_base_project_builder_sa_key.outputs.base_project_builder_sa_key }}
+    steps:
+      - id: get_base_project_builder_sa_key
+        run: |
+          job_base_project_builder_sa_key=${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+          input_base_project_builder_sa_key=${{ inputs.base_project_builder_sa_key }}
+          # take the one that is not empty
+          base_project_builder_sa_key=${job_base_project_builder_sa_key:-$input_base_project_builder_sa_key}
+          echo "base_project_builder_sa_key=$base_project_builder_sa_key" | tee -a $GITHUB_OUTPUT
+
   post_deploy_online_prediction_model:
     # the job in the needs section is necessary to recover its output
     needs:
       - run_base_terraform
       - deploy_functional_online_prediction_model
       - get_training_images
+      - get_base_project_builder_sa_key
       - upload_variables_of_called_workflows
       - set_up_non_functional_repository_name
     if: ${{ (inputs.post_deploy == 'true' || inputs.post_deploy == '') && !failure() && !cancelled() }}
@@ -208,20 +228,9 @@ jobs:
       post_deploy: true
       gcp_training_image_name: ${{ needs.get_training_images.outputs.gcp_image }}
       dockerhub_training_image_name: ${{ needs.get_training_images.outputs.dockerhub_image }}
-      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+      base_project_builder_sa_key: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
       online_prediction_model_repository: ${{ needs.set_up_non_functional_repository_name.outputs.value }}
-    secrets: inherit
-
-  post_deploy_model_instantiator:
-    needs: [deploy_functional_online_prediction_model, upload_variables_of_called_workflows]
-    if: ${{ (inputs.post_deploy == 'true' || inputs.post_deploy == '') && !failure() && !cancelled() }}
-    uses: ./.github/workflows/model_instantiator.yaml
-    with:
-      build: false
-      deploy: false
-      post_deploy: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
 
   run_integration_tests:

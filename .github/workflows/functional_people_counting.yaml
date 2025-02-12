@@ -151,6 +151,7 @@ jobs:
 
   post_deploy_functional_object_detection:
     needs:
+     - run_base_terraform
      - upload_variables_of_called_workflows
      - build_functional_object_detection
      - deploy
@@ -163,6 +164,7 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
       dockerhub_training_image_name: ${{ needs.build_functional_object_detection.outputs.dockerhub_training_image_name }}
       gcp_training_image_name: ${{ needs.build_functional_object_detection.outputs.gcp_training_image_name }}
+      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       online_prediction_model_repository: functional-object-detection
       online_prediction_model_package_name: object_detection
     secrets: inherit
