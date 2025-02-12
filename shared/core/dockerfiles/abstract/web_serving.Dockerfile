@@ -1,7 +1,7 @@
 FROM python:3.11.10-slim-bookworm
 
 RUN apt -qqy update > /dev/null \
-    && apt install -qqy cmake curl ffmpeg python3-opencv > /dev/null
+    && apt install -qqy build-essential cmake curl ffmpeg g++ liblapack-dev libopenblas-dev libx11-dev python3-opencv > /dev/null
 
 ARG REPOSITORY_NAME
 ARG PACKAGE_NAME
