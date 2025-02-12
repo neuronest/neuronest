@@ -73,7 +73,7 @@ jobs:
 #    with:
 #      build: true
 #      deploy: true
-#      do_post_deployment: true
+#      post_deploy: true
 #      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
 #    secrets: inherit
 #
@@ -83,7 +83,7 @@ jobs:
 #    with:
 #      build: true
 #      deploy: true
-#      do_post_deployment: true
+#      post_deploy: true
 #      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_video_comparator_env_file_artifact_name }}
 #    secrets: inherit
 
@@ -93,6 +93,6 @@ jobs:
     with:
       build: true
       deploy: true
-      do_post_deployment: true
+      post_deploy: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_people_counting_env_file_artifact_name }}
     secrets: inherit

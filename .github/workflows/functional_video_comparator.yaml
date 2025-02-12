@@ -36,7 +36,7 @@ on:
         required: false
         type: string
         default: 'true'
-      do_post_deployment:
+      post_deploy:
         required: false
         type: string
         default: 'true'
@@ -68,7 +68,7 @@ jobs:
     with:
       build: true
       deploy: true
-      do_post_deployment: true
+      post_deploy: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
       online_prediction_model_repository: functional-video-comparator
       online_prediction_model_package_name: video_comparator

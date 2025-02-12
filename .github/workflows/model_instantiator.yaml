@@ -11,7 +11,7 @@ on:
         required: false
         type: string
         default: 'true'
-      do_post_deployment:
+      post_deploy:
         required: false
         type: string
         default: 'true'

@@ -11,7 +11,7 @@ on:
         required: false
         type: string
         default: 'true'
-      do_post_deployment:
+      post_deploy:
         required: false
         type: string
         default: 'true'
@@ -184,7 +184,7 @@ jobs:
       - get_training_images
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
+    if: ${{ (inputs.post_deploy == 'true' || inputs.post_deploy == '') && !failure() && !cancelled() }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}
@@ -235,7 +235,7 @@ jobs:
       - train
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
+    if: ${{ (inputs.post_deploy == 'true' || inputs.post_deploy == '') && !failure() && !cancelled() }}
     outputs:
       dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
@@ -273,7 +273,7 @@ jobs:
       - build_test_push_model_serving_image
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
+    if: ${{ (inputs.post_deploy == 'true' || inputs.post_deploy == '') && !failure() && !cancelled() }}
     defaults:
       run:
         working-directory: ${{ env.REPOSITORY_NAME }}

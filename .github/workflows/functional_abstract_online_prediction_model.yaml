@@ -11,7 +11,11 @@ on:
         required: false
         type: string
         default: 'true'
-      do_post_deployment:
+      post_deploy:
+        required: false
+        type: string
+        default: 'true'
+      run_tests:
         required: false
         type: string
         default: 'true'
@@ -19,6 +23,14 @@ on:
         required: false
         type: string
         default: ''
+      dockerhub_training_image_name:
+        required: false
+        type: string
+        default: ""
+      gcp_training_image_name:
+        required: false
+        type: string
+        default: ""
       online_prediction_model_repository:
         required: true
         type: string
@@ -29,9 +41,12 @@ on:
       web_serving_image_name:
         description: "The web serving image name"
         value: ${{ jobs.build_test_push_online_prediction_model.outputs.gcp_web_serving_image_name }}
-      training_image_name:
-        description: "The training image name"
-        value: ${{ jobs.build_test_push_online_prediction_model.outputs.gcp_training_image_name }}
+      gcp_training_image_name:
+        description: "The gcp training image name"
+        value: ${{ jobs.get_training_images.outputs.gcp_image }}
+      dockerhub_training_image_name:
+        description: "The dockerhub training image name"
+        value: ${{ jobs.get_training_images.outputs.dockerhub_image }}
       model_instantiator_image_name:
         description: "Model instantiator image name"
         value: ${{ jobs.build_test_push_model_instantiator.outputs.gcp_image_name }}
@@ -97,7 +112,7 @@ jobs:
     with:
       build: true
       deploy: false
-      do_post_deployment: false
+      post_deploy: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
       online_prediction_model_repository: ${{ needs.set_up_non_functional_repository_name.outputs.value }}
     secrets: inherit
@@ -109,7 +124,7 @@ jobs:
     with:
       build: true
       deploy: false
-      do_post_deployment: false
+      post_deploy: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
 
@@ -157,22 +172,42 @@ jobs:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: online_prediction_model_url
 
+  get_training_images:
+    runs-on: neuronest-runner-set
+    needs: build_test_push_online_prediction_model
+    if: ${{ !failure() && !cancelled() }}
+    outputs:
+      dockerhub_image: ${{ steps.get_dockerhub_and_gcp_training_images.outputs.dockerhub_image }}
+      gcp_image: ${{ steps.get_dockerhub_and_gcp_training_images.outputs.gcp_image }}
+    steps:
+      - id: get_dockerhub_and_gcp_training_images
+        run: |
+          job_dockerhub_training_image_name=${{ needs.build_test_push_online_prediction_model.outputs.dockerhub_training_image_name }}
+          input_dockerhub_training_image_name=${{ inputs.dockerhub_training_image_name }}
+          dockerhub_training_image_name=${job_dockerhub_training_image_name:-$input_dockerhub_training_image_name}
+          echo "dockerhub_image=$dockerhub_training_image_name" | tee -a $GITHUB_OUTPUT
+
+          job_gcp_training_image_name=${{ needs.build_test_push_online_prediction_model.outputs.gcp_training_image_name }}
+          input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
+          gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
+          echo "gcp_image=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
+
   post_deploy_online_prediction_model:
     # the job in the needs section is necessary to recover its output
     needs:
       - run_base_terraform
       - deploy_functional_online_prediction_model
-      - build_test_push_online_prediction_model
+      - get_training_images
       - upload_variables_of_called_workflows
       - set_up_non_functional_repository_name
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
+    if: ${{ (inputs.post_deploy == 'true' || inputs.post_deploy == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: false
       deploy: false
-      do_post_deployment: true
-      gcp_training_image_name: ${{ needs.build_test_push_online_prediction_model.outputs.gcp_training_image_name }}
-      dockerhub_training_image_name: ${{ needs.build_test_push_online_prediction_model.outputs.dockerhub_training_image_name }}
+      post_deploy: true
+      gcp_training_image_name: ${{ needs.get_training_images.outputs.gcp_image }}
+      dockerhub_training_image_name: ${{ needs.get_training_images.outputs.dockerhub_image }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.online_prediction_model_env_file_artifact_name }}
       online_prediction_model_repository: ${{ needs.set_up_non_functional_repository_name.outputs.value }}
@@ -180,12 +215,12 @@ jobs:
 
   post_deploy_model_instantiator:
     needs: [deploy_functional_online_prediction_model, upload_variables_of_called_workflows]
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
+    if: ${{ (inputs.post_deploy == 'true' || inputs.post_deploy == '') && !failure() && !cancelled() }}
     uses: ./.github/workflows/model_instantiator.yaml
     with:
       build: false
       deploy: false
-      do_post_deployment: true
+      post_deploy: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
     secrets: inherit
 
@@ -197,7 +232,7 @@ jobs:
       - post_deploy_model_instantiator
       - deploy_functional_online_prediction_model
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
+    if: ${{ (inputs.run_tests == 'true' || inputs.run_tests == '') && !failure() && !cancelled() }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables
