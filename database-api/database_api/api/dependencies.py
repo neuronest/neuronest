@@ -3,6 +3,7 @@ from functools import lru_cache
 
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.google.cloud_sql_manager import CloudSQLManager
+from sqlalchemy.exc import SQLAlchemyError
 
 from database_api.api.exceptions import (
     DatabaseStartingError,
@@ -85,9 +86,8 @@ def get_database():
     database = SessionLocal()
     try:
         yield database
-    except Exception as exception:
+    except SQLAlchemyError as sql_alchemy_error:
         handle_potential_cloud_sql_error(raise_error=True)
-        raise exception
-
+        raise sql_alchemy_error
     finally:
         database.close()
