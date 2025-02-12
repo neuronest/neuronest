@@ -21,16 +21,16 @@ resource "google_cloud_run_service" "database_api" {
         image = var.image_name
         # Allows up to failure_threshold * period_seconds for the app to start
         # Ensures sufficient time for database migrations to complete
-        startup_probe {
-          http_get {
-            path = "/database_api/api/v1/healthcheck"
-            port = 8080
-          }
-          initial_delay_seconds = 0   # Delay before the first check
-          timeout_seconds       = 120 # Max time to wait for each check
-          period_seconds        = 121 # Interval between checks
-          failure_threshold     = 1   # Number of failed attempts before restart
-        }
+        #        startup_probe {
+        #          http_get {
+        #            path = "/database_api/api/v1/healthcheck"
+        #            port = 8080
+        #          }
+        #          initial_delay_seconds = 0   # Delay before the first check
+        #          timeout_seconds       = 120 # Max time to wait for each check
+        #          period_seconds        = 121 # Interval between checks
+        #          failure_threshold     = 1   # Number of failed attempts before restart
+        #        }
 
 
         resources {
