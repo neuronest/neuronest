@@ -90,14 +90,14 @@ runs:
         export IMAGE_ID_FILE=image_id.txt
         if [ "${{ inputs.use_cache }}" == "true" ]; then
           docker pull $DOCKERHUB_IMAGE_NAME:latest || true
-          CACHE_FROM="$DOCKERHUB_IMAGE_NAME:latest"
+          CACHE_FROM="--cache-from $DOCKERHUB_IMAGE_NAME:latest"
         else
           CACHE_FROM=""
         fi
-        docker pull $DOCKERHUB_IMAGE_NAME:latest || true
+        
         docker build \
           --iidfile=$IMAGE_ID_FILE \
-          --cache-from $CACHE_FROM \
+          $CACHE_FROM \
           -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
           -t $DOCKERHUB_IMAGE_NAME:latest \
           -t $GCP_IMAGE_NAME:$GITHUB_RUN_ID \
