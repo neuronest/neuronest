@@ -39,10 +39,6 @@ on:
 
 env:
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
-#  MAIN_GCP_PROJECT_ID: neuronest
-#  DEV_GCP_PROJECT_ID: neuronest-dev
-#  # Must be manually set when working on a feature branch
-#  DEFAULT_GCP_PROJECT_ID: "database-api"
 
 jobs:
 #  upload_variables_of_called_workflows:
@@ -82,15 +78,15 @@ jobs:
 #          variable_prefix_to_filter_on: PEOPLE_COUNTING
 #          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-#  functional_object_detection:
-#    needs: upload_variables_of_called_workflows
-#    uses: ./.github/workflows/functional_object_detection.yaml
-#    with:
-#      build: true
-#      deploy: true
-#      do_post_deployment: true
-#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
-#    secrets: inherit
+  functional_object_detection:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/functional_object_detection.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
+    secrets: inherit
 
   functional_database_api:
     # needs: upload_variables_of_called_workflows
@@ -105,6 +101,16 @@ jobs:
   functional_people_counting:
     # needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/functional_people_counting.yaml
+    with:
+      build: true
+      deploy: true
+      do_post_deployment: true
+      # env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_video_comparator_env_file_artifact_name }}
+    secrets: inherit
+
+  functional_video_comparator:
+    # needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/functional_video_comparator.yaml
     with:
       build: true
       deploy: true
