@@ -38,18 +38,18 @@ module "functional_people_counting" {
 
   vertex_location = var.vertex_location
 
-  people_counting_image_name                  = var.people_counting_image_name
-  people_counting_service_account_name        = var.people_counting_service_account_name
-  people_counting_results_bucket              = var.people_counting_results_bucket
-  people_counting_firestore_jobs_collection   = var.people_counting_firestore_jobs_collection
-  people_counting_samples_bucket              = var.people_counting_samples_bucket
-  people_counting_counted_videos_bucket       = var.people_counting_counted_videos_bucket
-  people_counting_model_instantiator_host     = var.people_counting_model_instantiator_host
-  people_counting_cloud_run_name              = var.people_counting_cloud_run_name
-  people_counting_cloud_run_memory            = var.people_counting_cloud_run_memory
-  people_counting_cloud_run_cpu               = var.people_counting_cloud_run_cpu
-  people_counting_cloud_run_min_scale         = var.people_counting_cloud_run_min_scale
-  people_counting_cloud_run_max_scale         = var.people_counting_cloud_run_max_scale
+  people_counting_image_name                = var.people_counting_image_name
+  people_counting_service_account_name      = var.people_counting_service_account_name
+  people_counting_results_bucket            = var.people_counting_results_bucket
+  people_counting_firestore_jobs_collection = var.people_counting_firestore_jobs_collection
+  people_counting_samples_bucket            = var.people_counting_samples_bucket
+  people_counting_counted_videos_bucket     = var.people_counting_counted_videos_bucket
+  people_counting_model_instantiator_host   = var.people_counting_model_instantiator_host
+  people_counting_cloud_run_name            = var.people_counting_cloud_run_name
+  people_counting_cloud_run_memory          = var.people_counting_cloud_run_memory
+  people_counting_cloud_run_cpu             = var.people_counting_cloud_run_cpu
+  people_counting_cloud_run_min_scale       = var.people_counting_cloud_run_min_scale
+  people_counting_cloud_run_max_scale       = var.people_counting_cloud_run_max_scale
 
   object_detection_image_name                = var.object_detection_image_name
   object_detection_service_account_name      = var.object_detection_service_account_name
