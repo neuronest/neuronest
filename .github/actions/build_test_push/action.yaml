@@ -26,6 +26,10 @@ inputs:
   dockerfile_path:
     description: 'Dockerfile path'
     default: ''
+  use_cache:
+    description: 'Whether to use cache or not'
+    required: false
+    default: 'false'
 outputs:
   dockerhub_image_name:
     description: 'Built and pushed image name to DockerHub'
@@ -84,10 +88,16 @@ runs:
       run: |
         export DOCKER_BUILDKIT=0
         export IMAGE_ID_FILE=image_id.txt
+        if [ "${{ inputs.use_cache }}" == "true" ]; then
+          docker pull $DOCKERHUB_IMAGE_NAME:latest || true
+          CACHE_FROM="$DOCKERHUB_IMAGE_NAME:latest"
+        else
+          CACHE_FROM=""
+        fi
         docker pull $DOCKERHUB_IMAGE_NAME:latest || true
         docker build \
           --iidfile=$IMAGE_ID_FILE \
-          --cache-from $DOCKERHUB_IMAGE_NAME:latest \
+          --cache-from $CACHE_FROM \
           -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
           -t $DOCKERHUB_IMAGE_NAME:latest \
           -t $GCP_IMAGE_NAME:$GITHUB_RUN_ID \
