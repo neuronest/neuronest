@@ -87,6 +87,7 @@ jobs:
 
   build_functional_object_detection:
     needs:
+      - run_base_terraform
       - upload_variables_of_called_workflows
     uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
     with:
@@ -100,7 +101,9 @@ jobs:
     secrets: inherit
 
   build_test_push:
-    needs: upload_variables_of_called_workflows
+    needs:
+      - run_base_terraform
+      - upload_variables_of_called_workflows
     uses: ./.github/workflows/people_counting.yaml
     with:
       build: true
