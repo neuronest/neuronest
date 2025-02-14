@@ -49,6 +49,7 @@ module "functional_object_detection" {
   object_detection_cloud_run_cpu             = var.object_detection_cloud_run_cpu
   object_detection_cloud_run_min_scale       = var.object_detection_cloud_run_min_scale
   object_detection_cloud_run_max_scale       = var.object_detection_cloud_run_max_scale
+  object_detection_cloud_run_timeout         = var.object_detection_cloud_run_timeout
   object_detection_firestore_jobs_collection = var.object_detection_firestore_jobs_collection
 
   model_instantiator_image_name                           = var.model_instantiator_image_name
@@ -59,6 +60,7 @@ module "functional_object_detection" {
   model_instantiator_cloud_run_cpu                        = var.model_instantiator_cloud_run_cpu
   model_instantiator_cloud_run_min_scale                  = var.model_instantiator_cloud_run_min_scale
   model_instantiator_cloud_run_max_scale                  = var.model_instantiator_cloud_run_max_scale
+  model_instantiator_cloud_run_timeout                    = var.model_instantiator_cloud_run_timeout
   model_instantiator_cloud_scheduler_job_name             = var.model_instantiator_cloud_scheduler_job_name
   model_instantiator_cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
   model_instantiator_cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route

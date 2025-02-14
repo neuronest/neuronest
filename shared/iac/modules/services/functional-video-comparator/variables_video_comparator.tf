@@ -25,6 +25,9 @@ variable "video_comparator_cloud_run_min_scale" {
 variable "video_comparator_cloud_run_max_scale" {
   type = string
 }
+variable "video_comparator_cloud_run_timeout" {
+  type = string
+}
 variable "video_comparator_firestore_jobs_collection" {
   type = string
 }

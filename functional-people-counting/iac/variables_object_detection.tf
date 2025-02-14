@@ -32,6 +32,9 @@ variable "object_detection_cloud_run_min_scale" {
 variable "object_detection_cloud_run_max_scale" {
   type = string
 }
+variable "object_detection_cloud_run_timeout" {
+  type = string
+}
 variable "object_detection_firestore_jobs_collection" {
   type = string
 }

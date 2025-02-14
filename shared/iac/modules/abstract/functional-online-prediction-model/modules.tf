@@ -15,6 +15,7 @@ module "online_prediction_model" {
   cloud_run_cpu       = var.online_prediction_model_cloud_run_cpu
   cloud_run_min_scale = var.online_prediction_model_cloud_run_min_scale
   cloud_run_max_scale = var.online_prediction_model_cloud_run_max_scale
+  cloud_run_timeout   = var.online_prediction_model_cloud_run_timeout
 
   cloud_run_env_vars = merge(
     var.online_prediction_model_cloud_run_env_vars,
@@ -40,9 +41,11 @@ module "model_instantiator" {
   cloud_run_cpu                        = var.model_instantiator_cloud_run_cpu
   cloud_run_min_scale                  = var.model_instantiator_cloud_run_min_scale
   cloud_run_max_scale                  = var.model_instantiator_cloud_run_max_scale
-  cloud_scheduler_job_name             = var.model_instantiator_cloud_scheduler_job_name
-  cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
-  cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
+  cloud_run_timeout                    = var.model_instantiator_cloud_run_timeout
+
+  cloud_scheduler_job_name  = var.model_instantiator_cloud_scheduler_job_name
+  cloud_scheduler_schedule  = var.model_instantiator_cloud_scheduler_schedule
+  cloud_uninstantiate_route = var.model_instantiator_cloud_uninstantiate_route
 
   cloud_scheduler_model_name      = module.online_prediction_model.model_name
   online_prediction_model_sa_name = module.online_prediction_model.service_account.name

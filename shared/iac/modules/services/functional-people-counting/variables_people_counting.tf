@@ -34,3 +34,6 @@ variable "people_counting_cloud_run_min_scale" {
 variable "people_counting_cloud_run_max_scale" {
   type = string
 }
+variable "people_counting_cloud_run_timeout" {
+  type = string
+}

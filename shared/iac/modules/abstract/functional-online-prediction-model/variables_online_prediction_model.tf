@@ -31,6 +31,9 @@ variable "online_prediction_model_cloud_run_min_scale" {
 variable "online_prediction_model_cloud_run_max_scale" {
   type = string
 }
+variable "online_prediction_model_cloud_run_timeout" {
+  type = string
+}
 variable "online_prediction_model_cloud_run_env_vars" {
   type    = map(string)
   default = {}

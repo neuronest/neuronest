@@ -47,6 +47,7 @@ module "functional_video_comparator" {
   video_comparator_cloud_run_cpu             = var.video_comparator_cloud_run_cpu
   video_comparator_cloud_run_min_scale       = var.video_comparator_cloud_run_min_scale
   video_comparator_cloud_run_max_scale       = var.video_comparator_cloud_run_max_scale
+  video_comparator_cloud_run_timeout         = var.video_comparator_cloud_run_timeout
   video_comparator_firestore_jobs_collection = var.video_comparator_firestore_jobs_collection
   video_comparator_embeddings_bucket         = var.video_comparator_embeddings_bucket
   video_comparator_results_bucket            = var.video_comparator_results_bucket
@@ -60,6 +61,7 @@ module "functional_video_comparator" {
   model_instantiator_cloud_run_cpu                        = var.model_instantiator_cloud_run_cpu
   model_instantiator_cloud_run_min_scale                  = var.model_instantiator_cloud_run_min_scale
   model_instantiator_cloud_run_max_scale                  = var.model_instantiator_cloud_run_max_scale
+  model_instantiator_cloud_run_timeout                    = var.model_instantiator_cloud_run_timeout
   model_instantiator_cloud_scheduler_job_name             = var.model_instantiator_cloud_scheduler_job_name
   model_instantiator_cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
   model_instantiator_cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route

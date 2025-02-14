@@ -34,3 +34,6 @@ variable "cloud_run_min_scale" {
 variable "cloud_run_max_scale" {
   type = string
 }
+variable "cloud_run_timeout" {
+  type = string
+}

@@ -17,6 +17,7 @@ module "functional_object_detection" {
   online_prediction_model_cloud_run_cpu        = var.object_detection_cloud_run_cpu
   online_prediction_model_cloud_run_min_scale  = var.object_detection_cloud_run_min_scale
   online_prediction_model_cloud_run_max_scale  = var.object_detection_cloud_run_max_scale
+  online_prediction_model_cloud_run_timeout    = var.object_detection_cloud_run_timeout
 
   online_prediction_model_cloud_run_env_vars = {
     PROJECT_ID                = var.project_id
@@ -36,6 +37,7 @@ module "functional_object_detection" {
   model_instantiator_cloud_run_cpu                        = var.model_instantiator_cloud_run_cpu
   model_instantiator_cloud_run_min_scale                  = var.model_instantiator_cloud_run_min_scale
   model_instantiator_cloud_run_max_scale                  = var.model_instantiator_cloud_run_max_scale
+  model_instantiator_cloud_run_timeout                    = var.model_instantiator_cloud_run_timeout
   model_instantiator_cloud_scheduler_job_name             = var.model_instantiator_cloud_scheduler_job_name
   model_instantiator_cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
   model_instantiator_cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
