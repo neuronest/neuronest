@@ -56,6 +56,5 @@ module "people_counting" {
   cloud_run_min_scale       = var.people_counting_cloud_run_min_scale
   cloud_run_max_scale       = var.people_counting_cloud_run_max_scale
 
-  model_instantiator_host     = module.functional_object_detection.model_instantiator_url
-  object_detection_model_name = module.functional_object_detection.model_name
+  object_detection_host = module.functional_object_detection.online_prediction_model_url
 }

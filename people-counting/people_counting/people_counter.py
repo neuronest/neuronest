@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 
 import dlib
 from core.client.model_client.object_detection import ObjectDetectionModelClient
+from core.client.object_detection import ObjectDetectionClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.schemas.asset import VideoAsset
@@ -26,14 +27,14 @@ class PeopleCounter(metaclass=TimingMeta):
     # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
-        object_detection_model_client: ObjectDetectionModelClient,
+        object_detection_client: ObjectDetectionClient,
         algorithm_config: DictConfig,
         image_width: int,
         confidence_threshold: float,
         video_outputs_directory: Optional[str] = None,
     ):
         self.model = Model(
-            object_detection_model_client=object_detection_model_client,
+            object_detection_client=object_detection_client,
             confidence_threshold=confidence_threshold,
         )
         self.algorithm_config = algorithm_config

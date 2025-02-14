@@ -11,11 +11,9 @@ from people_counting.config import cfg
 from people_counting.jobs.environment_variables import (
     COUNTED_VIDEOS_STORAGE_PATHS,
     JOB_ID,
-    MODEL_INSTANTIATOR_HOST,
-    OBJECT_DETECTION_MODEL_NAME,
+    OBJECT_DETECTION_HOST,
     PROJECT_ID,
     RESULTS_BUCKET,
-    VERTEX_LOCATION,
     VIDEOS_STORAGE_PATHS,
 )
 from people_counting.jobs.services import create_people_counter, create_storage_client
@@ -26,18 +24,14 @@ def run_asset_counting(
     video_storage_path: GSPath,
     counted_video_storage_path: Optional[GSPath],
     project_id: str,
-    vertex_location: str,
     job_id: str,
-    object_detection_model_name: str,
-    model_instantiator_host: str,
+    object_detection_host: str,
     results_bucket: str,
 ):
     storage_client = create_storage_client(project_id=project_id)
     people_counter = create_people_counter(
         project_id=project_id,
-        vertex_location=vertex_location,
-        model_instantiator_host=model_instantiator_host,
-        object_detection_model_name=object_detection_model_name,
+        object_detection_host=object_detection_host,
         config=cfg,
     )
 
@@ -70,9 +64,7 @@ def run_asset_counting(
 
 def main(
     project_id: str,
-    vertex_location: str,
-    object_detection_model_name: str,
-    model_instantiator_host: str,
+    object_detection_host: str,
     results_bucket: str,
     job_id: str,
     videos_storage_paths: List[str],
@@ -96,10 +88,8 @@ def main(
                 else None
             ),
             project_id=project_id,
-            vertex_location=vertex_location,
             job_id=job_id,
-            object_detection_model_name=object_detection_model_name,
-            model_instantiator_host=model_instantiator_host,
+            object_detection_host=object_detection_host,
             results_bucket=results_bucket,
         )
         for video_storage_path, counted_video_storage_path in zip(
@@ -111,9 +101,7 @@ def main(
 if __name__ == "__main__":
     main(
         project_id=PROJECT_ID,
-        vertex_location=VERTEX_LOCATION,
-        object_detection_model_name=OBJECT_DETECTION_MODEL_NAME,
-        model_instantiator_host=MODEL_INSTANTIATOR_HOST,
+        object_detection_host=OBJECT_DETECTION_HOST,
         results_bucket=RESULTS_BUCKET,
         job_id=JOB_ID,
         videos_storage_paths=VIDEOS_STORAGE_PATHS,

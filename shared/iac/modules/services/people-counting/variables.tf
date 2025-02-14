@@ -16,10 +16,7 @@ variable "samples_bucket" {
 variable "counted_videos_bucket" {
   type = string
 }
-variable "model_instantiator_host" {
-  type = string
-}
-variable "object_detection_model_name" {
+variable "object_detection_host" {
   type = string
 }
 variable "cloud_run_name" {

@@ -28,21 +28,17 @@ from starlette import status
 from people_counting.app.dependencies import (
     use_cloud_run_job_manager,
     use_config,
+    use_counted_videos_bucket,
     use_firestore_client,
     use_firestore_jobs_collection,
+    use_object_detection_host,
     use_people_counter,
+    use_project_id,
+    use_results_bucket,
+    use_samples_bucket,
     use_storage_client,
 )
 from people_counting.common import Statistics
-from people_counting.environment_variables import (
-    COUNTED_VIDEOS_BUCKET,
-    MODEL_INSTANTIATOR_HOST,
-    OBJECT_DETECTION_MODEL_NAME,
-    PROJECT_ID,
-    RESULTS_BUCKET,
-    SAMPLES_BUCKET,
-    VERTEX_LOCATION,
-)
 from people_counting.people_counter import PeopleCounter, count_people_with_upload
 
 router = APIRouter(
@@ -56,9 +52,7 @@ def _launched_job_response(
 ) -> PeopleCounterOutput:
     response.status_code = status.HTTP_201_CREATED
 
-    return PeopleCounterOutput(
-        job_id=job_id,
-    )
+    return PeopleCounterOutput(job_id=job_id)
 
 
 def _real_time_response(
@@ -139,7 +133,12 @@ def count_people(
     cloud_run_job_manager: CloudRunJobManager = Depends(use_cloud_run_job_manager),
     storage_client: StorageClient = Depends(use_storage_client),
     firestore_client: FirestoreClient = Depends(use_firestore_client),
+    project_id: str = Depends(use_project_id),
     firestore_jobs_collection: str = Depends(use_firestore_jobs_collection),
+    samples_bucket: str = Depends(use_samples_bucket),
+    counted_videos_bucket: str = Depends(use_counted_videos_bucket),
+    results_bucket: str = Depends(use_results_bucket),
+    object_detection_host: str = Depends(use_object_detection_host),
 ) -> PeopleCounterOutput:
     job_id = uuid.uuid4().hex
 
@@ -171,7 +170,7 @@ def count_people(
     try:
         _validate_videos_storage_paths(
             videos_storage_paths=video_storage_paths,
-            expected_bucket_name=SAMPLES_BUCKET,
+            expected_bucket_name=samples_bucket,
         )
     except ValueError as value_error:
         abort(code=status.HTTP_400_BAD_REQUEST, detail=str(value_error))
@@ -196,7 +195,7 @@ def count_people(
             _create_counted_video_storage_path(
                 asset_id=asset_id,
                 asset_path=video_asset.asset_path,
-                counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
+                counted_videos_bucket=counted_videos_bucket,
                 job_id=job_id,
             )
             for asset_id, video_asset in zip(assets_ids, video_assets)
@@ -208,11 +207,9 @@ def count_people(
         "people_counting.jobs.count_people",
     ]
     job_environment_variables = {
-        "PROJECT_ID": PROJECT_ID,
-        "VERTEX_LOCATION": VERTEX_LOCATION,
-        "OBJECT_DETECTION_MODEL_NAME": OBJECT_DETECTION_MODEL_NAME,
-        "MODEL_INSTANTIATOR_HOST": MODEL_INSTANTIATOR_HOST,
-        "RESULTS_BUCKET": RESULTS_BUCKET,
+        "PROJECT_ID": project_id,
+        "OBJECT_DETECTION_HOST": object_detection_host,
+        "RESULTS_BUCKET": results_bucket,
         "JOB_ID": job_id,
         "VIDEOS_STORAGE_PATHS": " ".join(video_storage_paths),
     }
@@ -251,6 +248,8 @@ def count_people_real_time(
     response: Response,
     people_counter: PeopleCounter = Depends(use_people_counter),
     storage_client: StorageClient = Depends(use_storage_client),
+    samples_bucket: str = Depends(use_samples_bucket),
+    counted_videos_bucket: str = Depends(use_counted_videos_bucket),
 ) -> PeopleCounterRealTimeOutput:
     paths = people_counter_input.sample.paths
 
@@ -265,7 +264,7 @@ def count_people_real_time(
     try:
         _validate_video_storage_path(
             video_storage_path=video_storage_path,
-            expected_bucket_name=SAMPLES_BUCKET,
+            expected_bucket_name=samples_bucket,
         )
     except ValueError as value_error:
         abort(code=status.HTTP_400_BAD_REQUEST, detail=str(value_error))
@@ -280,7 +279,7 @@ def count_people_real_time(
         counted_video_storage_path = _create_counted_video_storage_path(
             asset_id=video_asset.get_hash(),
             asset_path=video_asset.asset_path,
-            counted_videos_bucket=COUNTED_VIDEOS_BUCKET,
+            counted_videos_bucket=counted_videos_bucket,
         )
 
     statistics = count_people_with_upload(
