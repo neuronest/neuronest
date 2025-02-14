@@ -1,5 +1,5 @@
 output "url" {
-  value = google_cloud_run_service.web_serving.status[0].url
+  value = google_cloud_run_v2_service.web_serving.uri
 }
 output "model_name" {
   value = var.model_name
