@@ -9,9 +9,9 @@ resource "google_cloud_run_v2_service" "web_serving" {
     containers {
       image = var.image_name
       resources {
-        limits {
-          memory = var.cloud_run_memory
-          cpu    = var.cloud_run_cpu
+        limits = {
+          "cpu"    = var.cloud_run_cpu
+          "memory" = var.cloud_run_memory
         }
       }
       dynamic "env" {
@@ -24,8 +24,8 @@ resource "google_cloud_run_v2_service" "web_serving" {
       }
     }
     scaling {
-      min_instances = var.cloud_run_min_scale
-      max_instances = var.cloud_run_max_scale
+      min_instance_count = var.cloud_run_min_scale
+      max_instance_count = var.cloud_run_max_scale
     }
 
     service_account = google_service_account.online_prediction_model_sa.email
@@ -33,8 +33,8 @@ resource "google_cloud_run_v2_service" "web_serving" {
   }
 
   traffic {
-    percent         = 100
-    latest_revision = true
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+    percent = 100
   }
 
   depends_on = [
