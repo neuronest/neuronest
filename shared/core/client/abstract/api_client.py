@@ -5,14 +5,10 @@ from urllib.parse import urlparse
 
 import backoff
 import requests
-from requests import HTTPError
 
 from core.auth import generate_identity_token, get_credentials
 from core.client.abstract.base_client import BaseClient
 from core.schemas.protocol import Protocol
-
-# todo: make it configurable from inherited classes
-HTTP_CALL_MAX_RETRY_ATTEMPT = 3
 
 
 class APIClient(BaseClient, ABC):
@@ -23,6 +19,7 @@ class APIClient(BaseClient, ABC):
         key_path: Optional[str],
         ssl: Optional[bool] = None,
         project_id: Optional[str] = None,
+        http_call_max_retry_attempts: int = 5,
     ):
         super().__init__(key_path=key_path, project_id=project_id)
         self.host = host
@@ -32,6 +29,7 @@ class APIClient(BaseClient, ABC):
         self.endpoint = f"{self.protocol_with_host}{root}"
         self.credentials = get_credentials(key_path=self.key_path)
         self._project_id = project_id
+        self._http_call_max_retry_attempts = http_call_max_retry_attempts
 
     @staticmethod
     def _build_host_with_protocol(host: str, ssl: Optional[bool]) -> str:
@@ -45,7 +43,6 @@ class APIClient(BaseClient, ABC):
                 )
 
             constructed_protocol = Protocol.from_ssl(ssl=ssl)
-
             return f"{constructed_protocol}://{host}"
 
         return host
@@ -78,9 +75,6 @@ class APIClient(BaseClient, ABC):
             data=json.dumps(payload or {}) if payload else None,
         )
 
-    @backoff.on_exception(
-        backoff.expo, HTTPError, max_tries=HTTP_CALL_MAX_RETRY_ATTEMPT
-    )
     def call(
         self,
         resource: str,
@@ -89,9 +83,17 @@ class APIClient(BaseClient, ABC):
         params: Optional[Dict[str, Any]] = None,
         timeout: Optional[int] = None,
     ) -> requests.Response:
-        request = self._request(resource, verb, payload, params).prepare()
-        session = requests.Session()
-        response = session.send(request, timeout=timeout)
-        response.raise_for_status()
+        @backoff.on_exception(
+            backoff.expo,
+            (requests.exceptions.HTTPError, requests.exceptions.ConnectionError),
+            max_tries=self._http_call_max_retry_attempts,
+        )
+        def _do_call() -> requests.Response:
+            request = self._request(resource, verb, payload, params).prepare()
+            session = requests.Session()
+            response = session.send(request, timeout=timeout)
+            response.raise_for_status()
 
-        return response
+            return response
+
+        return _do_call()
