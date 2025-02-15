@@ -77,12 +77,14 @@ class PeopleCounter(metaclass=TimingMeta):
         trackers: List[dlib.correlation_tracker] = []
 
         for frame_number, frame in enumerate(video_asset.content):
+            logger.info(f"Processing frame {frame_number}")
             time_offset = frame_number * video_asset.time_step
             frame = resize(frame, width=self.image_width)
             drawn_frame = frame.copy()
 
             if frame_number % self.algorithm_config.inference_periodicity == 0:
                 status = Status.DETECTING
+                logger.info(f"Current status: {status}")
                 bounding_boxes = self.model.predict(frame)
 
                 trackers: List[dlib.correlation_tracker] = []
@@ -105,6 +107,7 @@ class PeopleCounter(metaclass=TimingMeta):
 
             else:
                 status = Status.TRACKING
+                logger.info(f"Current status: {status}")
                 bounding_boxes: List[BoundingBox] = []
 
                 for tracker in trackers:
