@@ -1,6 +1,6 @@
 from typing import List
 
-from core.schemas.people_counting import Detection, Direction
+from core.schemas.modules.people_counting import Detection, Direction
 
 
 def are_detections_correct(

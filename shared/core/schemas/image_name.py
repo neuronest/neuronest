@@ -3,7 +3,10 @@ from __future__ import annotations
 import re
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Tuple, Union
+from typing import Any, Tuple, Union
+
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 
 class RegistryDomain(str, Enum):
@@ -70,6 +73,19 @@ class BaseImageNameWithTag(StringWithValidation):
 
 
 class GenericImageName(StringWithValidation):
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        def validate_generic_image_name(name: str) -> str:
+            if not cls.is_valid(name):
+                raise ValueError(f"Invalid {cls.__name__}: '{name}'")
+            return name
+
+        return core_schema.no_info_after_validator_function(
+            validate_generic_image_name, core_schema.str_schema()
+        )
+
     @classmethod
     def _split(
         cls, image_name: str

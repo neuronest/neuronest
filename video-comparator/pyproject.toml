@@ -1,0 +1,38 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0","pip>=20.0.0"]
+
+[tool.isort]
+known_first_party = ["video_comparator", "tests"]
+profile = "black"
+
+[tool.poetry]
+authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
+description = "Video comparator"
+name = "video-comparator"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+core = {path="../shared", develop = true}
+python = ">3.11,<3.12"
+
+[tool.poetry.group.app]
+optional = true
+
+[tool.poetry.group.app.dependencies]
+fastapi = "0.115.2"
+gunicorn = "23.0.0"
+uvicorn = "0.32.0"
+
+[tool.poetry.group.model]
+optional = true
+
+[tool.poetry.group.model.dependencies]
+torchvision = "0.20.0"
+core = { path="../shared", develop = true, extras = ["torch"] }
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+core = { path="../shared", develop = true, extras = ["dev", "torch"] }

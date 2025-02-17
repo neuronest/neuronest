@@ -1,6 +1,9 @@
-from abc import ABC
+from __future__ import annotations
 
-from pydantic import BaseModel, root_validator
+from abc import ABC
+from typing import TypeVar
+
+from pydantic import BaseModel, model_validator
 
 
 class _BaseRoutes(ABC, BaseModel):
@@ -11,12 +14,21 @@ class _BaseRoutes(ABC, BaseModel):
     prefix: str = None
     root: str = None
 
-    # pre=False allows values to contain the attributes with default values
-    @root_validator
-    # pylint: disable=no-self-argument,unused-argument
-    def populate_version_name_prefix_root(cls, values: dict) -> dict:
-        values["version_name"] = f"v{values['version_number']}"
-        values["prefix"] = f"/{values['api_tag']}/{values['version_name']}"
-        values["root"] = f"/{values['service_name']}{values['prefix']}"
+    @model_validator(mode="after")
+    def populate_version_name_prefix_root(self) -> _BaseRoutes:
+        self.version_name = f"v{self.version_number}"
+        self.prefix = f"/{self.api_tag}/{self.version_name}"
+        self.root = f"/{self.service_name}{self.prefix}"
 
-        return values
+        return self
+
+
+BaseRoutes = TypeVar("BaseRoutes", bound="_BaseRoutes")
+
+
+class BaseResources(ABC):
+    prefix = "resources"
+    firestore_jobs_collection: str = "/firestore_jobs_collection"
+    maximum_elements_number: str = "/maximum_elements_number"
+    samples_bucket: str = "/samples_bucket"
+    results_bucket: str = "/results_bucket"

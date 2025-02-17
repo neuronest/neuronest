@@ -1,8 +1,7 @@
-from core.client.model_instantiator import ModelInstantiatorClient
+from typing import Optional
+
 from core.client.object_detection import ObjectDetectionClient
-from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
-from core.google.vertex_ai_manager import VertexAIManager
 from omegaconf import DictConfig
 
 from people_counting.people_counter import PeopleCounter
@@ -10,34 +9,19 @@ from people_counting.people_counter import PeopleCounter
 
 def create_object_detection_client(
     project_id: str,
-    region: str,
-    model_instantiator_host: str,
-    object_detection_model_name: str,
+    object_detection_host: str,
 ) -> ObjectDetectionClient:
-    return ObjectDetectionClient(
-        vertex_ai_manager=VertexAIManager(
-            location=region,
-            project_id=project_id,
-        ),
-        model_instantiator_client=ModelInstantiatorClient(
-            host=model_instantiator_host,
-        ),
-        model_name=object_detection_model_name,
-    )
+    return ObjectDetectionClient(host=object_detection_host, project_id=project_id)
 
 
 def create_people_counter(
     project_id: str,
-    region: str,
-    model_instantiator_host: str,
-    object_detection_model_name: str,
+    object_detection_host: str,
     config: DictConfig,
 ) -> PeopleCounter:
     object_detection_client = create_object_detection_client(
         project_id=project_id,
-        region=region,
-        model_instantiator_host=model_instantiator_host,
-        object_detection_model_name=object_detection_model_name,
+        object_detection_host=object_detection_host,
     )
 
     return PeopleCounter(
@@ -49,9 +33,5 @@ def create_people_counter(
     )
 
 
-def create_storage_client() -> StorageClient:
-    return StorageClient()
-
-
-def create_firestore_client() -> FirestoreClient:
-    return FirestoreClient()
+def create_storage_client(project_id: Optional[str] = None) -> StorageClient:
+    return StorageClient(project_id=project_id)

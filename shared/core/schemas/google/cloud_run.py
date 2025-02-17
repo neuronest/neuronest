@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from core.schemas.image_name import ImageNameWithTag
 
@@ -24,15 +24,18 @@ class JobConfig(BaseModel):
     environment_variables: Dict[str, Optional[str]] = Field(default_factory=dict)
     # custom fields
     formatted_environment_variables: List[EnvironmentVariable] = Field(
-        default_factory=list
+        default_factory=list, validate_default=True
     )
 
-    @validator("formatted_environment_variables", always=True)
-    # pylint: disable=no-self-argument,unused-argument
+    # pylint: disable=unused-argument
+    @field_validator("formatted_environment_variables")
+    @classmethod
     def format_environment_variables(
-        cls, formatted_environment_variables: List[EnvironmentVariable], values: dict
+        cls,
+        formatted_environment_variables: List[EnvironmentVariable],
+        info: ValidationInfo,
     ) -> List[EnvironmentVariable]:
-        environment_variables = values["environment_variables"]
+        environment_variables = info.data["environment_variables"]
 
         return [
             EnvironmentVariable(

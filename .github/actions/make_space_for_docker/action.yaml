@@ -38,5 +38,5 @@ runs:
         remove-haskell: ${{ inputs.remove_haskell }}
         remove-codeql: ${{ inputs.remove_codeql }}
         root-reserve-mb: ${{ steps.set_docker_space_mb.outputs.value }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       if: ${{ inputs.checkout_after_making_space == 'true' }}

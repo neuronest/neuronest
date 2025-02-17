@@ -39,6 +39,28 @@ def get_chunks_from_iterable(
         yield chunk
 
 
+def flatten_iterables(chunks: Iterable[Iterable[Any]]) -> Iterator[Any]:
+    for chunk in chunks:
+        for element in chunk:
+            yield element
+
+
+def unflatten_iterable(
+    elements: Iterable[Any], sizes: List[int]
+) -> Iterator[List[Any]]:
+    iterator = iter(elements)
+    for size in sizes:
+        chunk = []
+        for _ in range(size):
+            try:
+                chunk.append(next(iterator))
+            except StopIteration as stop_iteration:
+                raise ValueError(
+                    "Received sizes don't match iterable length"
+                ) from stop_iteration
+        yield chunk
+
+
 def split_list_into_two_parts(elements: List[Any]) -> Tuple[List[Any], List[Any]]:
     if len(elements) <= 1:
         return elements, []

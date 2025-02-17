@@ -22,6 +22,9 @@ variable "model_instantiator_cloud_run_min_scale" {
 variable "model_instantiator_cloud_run_max_scale" {
   type = string
 }
+variable "model_instantiator_cloud_run_timeout" {
+  type = string
+}
 variable "model_instantiator_cloud_scheduler_job_name" {
   type = string
 }

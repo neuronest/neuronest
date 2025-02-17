@@ -12,7 +12,7 @@ inputs:
   discard_shared_variables:
     description: 'Whether discard shared variables or not'
     required: false
-    default: 'false'
+    default: 'true'
   env_file_artifact_name:
     description: 'An environment variable file to load'
     required: false
@@ -28,7 +28,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - id: set_variables
       uses: ./.github/actions/set_variables
       with:
@@ -40,13 +40,15 @@ runs:
     - id: set_env_file_artifact
       run: |
         env_file_hash=$(sha256sum "${{ steps.set_variables.outputs.created_env_file_path }}" | awk '{print $1}')
-        env_file_artifact_name=${{ env.REPOSITORY_NAME }}_${env_file_hash}.env
+        uuid=$(python3 -c 'import uuid; print(uuid.uuid4())')
+        env_file_artifact_name=${{ env.REPOSITORY_NAME }}_${env_file_hash}_${uuid}.env
+
         echo "name=$env_file_artifact_name" >> $GITHUB_OUTPUT
         env_file_artifact_path=/tmp/$env_file_artifact_name
         cp ${{ steps.set_variables.outputs.created_env_file_path }} $env_file_artifact_path
         echo "path=$env_file_artifact_path" >> $GITHUB_OUTPUT
       shell: bash
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: ${{ steps.set_env_file_artifact.outputs.name }}
         path: ${{ steps.set_env_file_artifact.outputs.path }}

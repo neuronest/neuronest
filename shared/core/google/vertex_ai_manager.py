@@ -1,8 +1,9 @@
+import json
 import logging
 import re
 import time
 import uuid
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import backoff
 import proto
@@ -11,9 +12,11 @@ from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform import Endpoint
 from google.cloud.aiplatform_v1 import PipelineState
 from google.cloud.aiplatform_v1.types import training_pipeline
-from google.oauth2 import service_account
 
+from core.client.abstract.base_client import BaseClient
 from core.exceptions import AlreadyExistingError
+from core.google.project_manager import ProjectManager
+from core.google.service_account import get_service_account_email
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
@@ -21,7 +24,7 @@ logger = logging.getLogger(__name__)
 VERTEX_API_MAX_TIME_IN_SECONDS = 120
 
 
-class VertexAIManager:
+class VertexAIManager(BaseClient):
     MODEL_DISPLAY_SUFFIX_LENGTH = 8
     MODEL_DISPLAY_NAME_REGEX = re.compile(
         r"^([0-9a-z-]*?)-[0-9a-z]{" + str(MODEL_DISPLAY_SUFFIX_LENGTH) + "}$"
@@ -30,20 +33,13 @@ class VertexAIManager:
     def __init__(
         self,
         location: str,
+        project_id: str,
         key_path: Optional[str] = None,
-        project_id: Optional[str] = None,
     ):
+        super().__init__(key_path=key_path, project_id=project_id)
         self.location = location
 
-        if key_path is None and project_id is None:
-            raise ValueError("Either key_path or project_id should be specified")
-
-        self.credentials = (
-            service_account.Credentials.from_service_account_file(key_path)
-            if key_path is not None
-            else None
-        )
-        self._project_id = project_id
+        self.project_manager = ProjectManager(project_id=project_id, key_path=key_path)
 
         client_options = {"api_endpoint": f"{self.location}-aiplatform.googleapis.com"}
         # noinspection PyTypeChecker
@@ -52,15 +48,8 @@ class VertexAIManager:
         )
 
     @property
-    def project_id(self) -> str:
-        # we give priority on the project_id which was passed explicitly to the
-        # instantiation rather than to the project id to which the service account
-        # of the credentials is attached
-        return (
-            self._project_id
-            if self._project_id is not None
-            else self.credentials.project_id
-        )
+    def project_number(self):
+        return self.project_manager.get_project_number()
 
     @staticmethod
     def _model_to_endpoint_name(model_name: str) -> str:
@@ -68,6 +57,12 @@ class VertexAIManager:
             raise ValueError("Incorrect model_name")
 
         return f"{model_name}_endpoint"
+
+    @staticmethod
+    def calculate_prediction_payload_size(
+        instances: List[Dict], parameters: Optional[Dict] = None
+    ) -> int:
+        return len(json.dumps({"instances": instances, "parameters": parameters or {}}))
 
     @backoff.on_exception(
         backoff.expo, ResourceExhausted, max_time=VERTEX_API_MAX_TIME_IN_SECONDS
@@ -165,7 +160,9 @@ class VertexAIManager:
         self,
         name: str,
     ) -> Optional[aiplatform.Endpoint]:
-        endpoints = self._get_all_endpoints_by_name(name)
+        endpoints = self._get_all_endpoints_by_name(
+            name=name,
+        )
 
         if len(endpoints) == 0:
             return None
@@ -176,7 +173,7 @@ class VertexAIManager:
         raise ValueError(f"Multiple endpoints found with the same name: {name}")
 
     def undeploy_models_without_traffic_by_endpoint_name(self, name: str):
-        endpoint = self.get_endpoint_by_name(name)
+        endpoint = self.get_endpoint_by_name(name=name)
 
         if endpoint is None:
             logger.warning(f"No endpoint named '{name}' has been found")
@@ -244,7 +241,7 @@ class VertexAIManager:
                 raise ValueError(
                     "The endpoint name should be specified if no endpoint is given"
                 )
-            endpoint = self.get_endpoint_by_name(name)
+            endpoint = self.get_endpoint_by_name(name=name)
 
         if endpoint is None:
             return False
@@ -297,7 +294,7 @@ class VertexAIManager:
         is_last_model_already_deployed_ok: bool = True,
         timeout: float = 3600,
     ) -> aiplatform.Endpoint:
-        endpoint = self.get_endpoint_by_name(name)
+        endpoint = self.get_endpoint_by_name(name=name)
 
         if endpoint is None:
             endpoint = Endpoint.create(
@@ -307,13 +304,20 @@ class VertexAIManager:
                 credentials=self.credentials,
             )
 
-        if self.is_model_deployed(name=name, model=model):
+        if self.is_model_deployed(model=model, name=name):
             if is_last_model_already_deployed_ok:
                 return endpoint
 
             raise AlreadyExistingError(
                 "The last model version has already been deployed"
             )
+        if serving_deployment_config.service_account_name is not None:
+            service_account_email = get_service_account_email(
+                service_account_name=serving_deployment_config.service_account_name,
+                project_id=self.project_id,
+            )
+        else:
+            service_account_email = None
 
         endpoint = model.deploy(
             endpoint=endpoint,
@@ -324,6 +328,7 @@ class VertexAIManager:
             max_replica_count=serving_deployment_config.max_replica_count,
             accelerator_type=serving_deployment_config.accelerator_type,
             accelerator_count=serving_deployment_config.accelerator_count,
+            service_account=service_account_email,
             # sync=True doesn't seem to be trusted as it can timeout without being able
             # to do anything about it
             # (deploy_request_timeout parameter seems to be ineffective)
@@ -331,13 +336,15 @@ class VertexAIManager:
         )
 
         if not self.wait_for_model_deployed(
-            endpoint=endpoint, model=model, timeout=timeout
+            endpoint=endpoint,
+            model=model,
+            timeout=timeout,
         ):
             raise TimeoutError(
                 f"Model '{name}' could not been deployed after {timeout} seconds"
             )
 
         if undeploy_previous_model:
-            self.undeploy_models_without_traffic_by_endpoint_name(name)
+            self.undeploy_models_without_traffic_by_endpoint_name(name=name)
 
         return endpoint

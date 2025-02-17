@@ -38,6 +38,7 @@ class BigQueryWriter:
         )
 
     def get_or_create_dataset(self) -> bigquery.Dataset:
+        # noinspection PyTypeChecker
         dataset = bigquery.Dataset(dataset_ref=self.project_id_dot_dataset_name)
         dataset.location = self.location
 
@@ -58,6 +59,7 @@ class BigQueryWriter:
 
         dataset = self.get_or_create_dataset()
 
+        # noinspection PyTypeChecker
         self.big_query_client.create_table(
             bigquery.Table(
                 dataset.table(bigquery_table_name),
@@ -68,7 +70,7 @@ class BigQueryWriter:
         )
 
         self.big_query_client.load_table_from_json(
-            json_rows=[row.dict() for row in rows],
+            json_rows=[row.model_dump() for row in rows],
             destination=f"{self.project_id_dot_dataset_name}.{bigquery_table_name}",
             job_config=self._load_job_config_from_schema(schema),
         )

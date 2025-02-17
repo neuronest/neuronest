@@ -15,21 +15,18 @@ from google.cloud.run_v2 import (
     types,
 )
 
-from core.auth import get_credentials
+from core.client.abstract.base_client import BaseClient
 from core.schemas.google.cloud_run import ExecutionSchema, JobConfig, JobSchema
 from core.serialization.protobuf import protobuf_to_dict
 from core.utils import hyphen_to_underscore
 
 
-class CloudRunJobManager:
+class CloudRunJobManager(BaseClient):
     def __init__(self, project_id: str, location: str, key_path: Optional[str] = None):
-        self._credentials = (
-            get_credentials(key_path=key_path) if key_path is not None else None
-        )
+        super().__init__(key_path=key_path, project_id=project_id)
         self._parent = f"projects/{project_id}/locations/{location}"
-        self.jobs_client = JobsClient(credentials=self._credentials)
-        self.executions_client = ExecutionsClient(credentials=self._credentials)
-        self.project_id = project_id
+        self.jobs_client = JobsClient(credentials=self.credentials)
+        self.executions_client = ExecutionsClient(credentials=self.credentials)
         self.location = location
 
     @staticmethod
@@ -49,7 +46,7 @@ class CloudRunJobManager:
         request = ListExecutionsRequest(parent=f"{self._parent}/jobs/{job_name}")
 
         cloud_run_executions = [
-            ExecutionSchema.parse_obj(protobuf_to_dict(execution))
+            ExecutionSchema.model_validate(protobuf_to_dict(execution))
             for execution in self.executions_client.list_executions(request=request)
         ]
 
@@ -81,7 +78,7 @@ class CloudRunJobManager:
         request = ListJobsRequest(parent=self._parent)
 
         cloud_run_jobs = [
-            JobSchema.parse_obj(protobuf_to_dict(job))
+            JobSchema.model_validate(protobuf_to_dict(job))
             for job in self.jobs_client.list_jobs(request=request)
         ]
 
@@ -118,7 +115,7 @@ class CloudRunJobManager:
 
             raise not_found
 
-        return JobSchema.parse_obj(protobuf_to_dict(response))
+        return JobSchema.model_validate(protobuf_to_dict(response))
 
     def create_job(
         self,
@@ -172,4 +169,4 @@ class CloudRunJobManager:
         operation = self.jobs_client.create_job(request=request)
         response = operation.result()
 
-        return JobSchema.parse_obj(protobuf_to_dict(response))
+        return JobSchema.model_validate(protobuf_to_dict(response))

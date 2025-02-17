@@ -1,7 +1,6 @@
-# default dummy value when running focusing on the base module
 variable "model_instantiator_image_name" {
   type    = string
-  default = "model_instantiator_image_name_default"
+  default = null
 }
 variable "model_instantiator_webapp_service_account_name" {
   type = string
@@ -22,6 +21,9 @@ variable "model_instantiator_cloud_run_min_scale" {
   type = string
 }
 variable "model_instantiator_cloud_run_max_scale" {
+  type = string
+}
+variable "model_instantiator_cloud_run_timeout" {
   type = string
 }
 variable "model_instantiator_cloud_scheduler_job_name" {

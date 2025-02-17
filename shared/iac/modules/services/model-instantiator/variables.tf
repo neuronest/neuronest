@@ -4,6 +4,9 @@ variable "image_name" {
 variable "webapp_service_account_name" {
   type = string
 }
+variable "vertex_location" {
+  type = string
+}
 variable "cloud_scheduler_service_account_name" {
   type = string
 }
@@ -22,6 +25,9 @@ variable "cloud_run_min_scale" {
 variable "cloud_run_max_scale" {
   type = string
 }
+variable "cloud_run_timeout" {
+  type = string
+}
 variable "cloud_scheduler_job_name" {
   type = string
 }
@@ -32,5 +38,8 @@ variable "cloud_uninstantiate_route" {
   type = string
 }
 variable "cloud_scheduler_model_name" {
+  type = string
+}
+variable "online_prediction_model_sa_name" {
   type = string
 }

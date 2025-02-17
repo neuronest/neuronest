@@ -1,29 +1,6 @@
 name: model_instantiator
 
 on:
-#  push:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/model_instantiator.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - model-instantiator/**
-#  pull_request:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/model_instantiator.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - model-instantiator/**
-  workflow_dispatch:
   workflow_call:
     inputs:
       build:
@@ -34,7 +11,7 @@ on:
         required: false
         type: string
         default: 'true'
-      do_post_deployment:
+      post_deploy:
         required: false
         type: string
         default: 'true'
@@ -49,18 +26,19 @@ on:
 
 env:
   REPOSITORY_NAME: model-instantiator
+  WEB_SERVING_DOCKERFILE_PATH: shared/core/dockerfiles/abstract/web_serving.Dockerfile
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   run_base_terraform:
     runs-on: neuronest-runner-set
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
@@ -72,18 +50,18 @@ jobs:
     name: build_test_push
     runs-on: neuronest-runner-set
     needs: run_base_terraform
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     outputs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
       dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
           as_root: true
-      - uses: google-github-actions/setup-gcloud@v0.2.0
+      - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
@@ -94,6 +72,8 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
+          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }}
 
   deploy:
     name: deploy
@@ -101,12 +81,12 @@ jobs:
     needs:
       - run_base_terraform
       - build_test_push
-    # If the workflow isn't called, inputs are blank and all jobs should run
+    # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
     container:
       image: google/cloud-sdk
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}

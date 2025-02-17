@@ -7,7 +7,8 @@ from typing import Optional
 
 from google.cloud import bigquery, bigquery_storage
 
-from core.client.base import CloudRunBasedClient, HTTPClient
+from core.client.abstract.api_client import APIClient
+from core.client.abstract.cloud_run_based_client import CloudRunBasedClient
 from core.exceptions import JobNotFoundError
 from core.google.firestore_client import FirestoreClient
 from core.routes.service_evaluator import routes
@@ -21,7 +22,7 @@ from core.schemas.service_evaluator import (
 )
 
 
-class ServiceEvaluatorClient(HTTPClient, CloudRunBasedClient):
+class ServiceEvaluatorClient(APIClient, CloudRunBasedClient):
     def __init__(
         self,
         host: str,

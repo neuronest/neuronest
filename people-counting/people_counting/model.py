@@ -21,22 +21,25 @@ class Model:
         self,
         images: List[np.ndarray],
     ) -> List[List[BoundingBox]]:
-        results_batch = self.object_detection_client.predict_batch(
-            images,
-            labels=[self.class_name],
-            confidence_threshold=self.confidence_threshold,
-        )
+        results_batch = [
+            self.object_detection_client.detect_objects_real_time(
+                image,
+                labels_to_predict=[self.class_name],
+                confidence_threshold=self.confidence_threshold,
+            )
+            for image in images
+        ]
 
         # noinspection PyUnresolvedReferences
         return [
             [
                 BoundingBox(
-                    x_min=int(row.x_min),
-                    y_min=int(row.y_min),
-                    x_max=int(row.x_max),
-                    y_max=int(row.y_max),
+                    x_min=prediction.x_min,
+                    y_min=prediction.y_min,
+                    x_max=prediction.x_max,
+                    y_max=prediction.y_max,
                 )
-                for row in results.itertuples()
+                for prediction in results.predictions
             ]
             for results in results_batch
         ]

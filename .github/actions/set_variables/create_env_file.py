@@ -15,6 +15,7 @@ from pydantic import BaseModel
 # so we modify sys.path at runtime to be able to import code from core
 # this also results in conflicts between black and flake8/pylint
 sys.path.append("shared")
+# pylint: disable=import-error
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
 FUNCTIONAL_REPOSITORIES_PREFIX = "func-"
@@ -42,7 +43,7 @@ def add_namespace_to_string(
             namespace_and_string_binding_character = binding_character
             namespace = namespace[:-1]
 
-    if not string.startswith(f"{namespace}{namespace_and_string_binding_character}"):
+    if not string.startswith(namespace):
         return f"{namespace}{namespace_and_string_binding_character}{string}"
 
     if not already_added_ok:
@@ -61,6 +62,9 @@ class VariableType(str, Enum):
 
 class VariableLine:
     NAME_AND_VALUE_SEPARATOR = "="
+    NAME_NAMESPACE_WORD_SEPARATOR = "_"
+    VALUE_NAMESPACE_WORD_SEPARATOR = "-"
+    VALUE_VARIABLES_NAMESPACE_WORD_SEPARATOR = "_"
     REGEX_OF_VALUE_PART_VARIABLES = r"\$\{([^\}]*)\}"
     REPOSITORY_CODE_VARIABLE_NAME = "REPOSITORY_CODE"
 
@@ -98,13 +102,6 @@ class VariableLine:
         self.name = name
         self.value = value
 
-    @property
-    def left_value_namespace_chunk(self) -> Optional[str]:
-        if "-" not in self.value:
-            return None
-
-        return self.value.split("-")[0]
-
     @classmethod
     def can_be_built_from_string(cls, string: str) -> bool:
         return (
@@ -136,6 +133,10 @@ class VariableLine:
         ${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
         in "object_detection" context.
         """
+        if current_context.endswith(self.NAME_NAMESPACE_WORD_SEPARATOR):
+            current_context = current_context[
+                : -len(self.NAME_NAMESPACE_WORD_SEPARATOR)
+            ]
         truncated_variable_line = VariableLine(line=self.line)
 
         for (
@@ -192,10 +193,10 @@ class VariableLine:
 
         Example:
             >>> var_line = VariableLine(
-            >>>                     "WEBAPP_SERVICE_ACCOUNT_EMAIL="
-            >>>                     "${WEBAPP_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam"
-            >>>                     ".gserviceaccount.com"
-            >>>                )
+            >>>     "WEBAPP_SERVICE_ACCOUNT_EMAIL="
+            >>>     "${WEBAPP_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam"
+            >>>      ".gserviceaccount.com"
+            >>> )
             >>> var_line.replace_variable_inside_value(
             ...     variable="WEBAPP_SERVICE_ACCOUNT_NAME",
             ...     other_variable="PEOPLE_COUNTING_WEBAPP_SERVICE_ACCOUNT_NAME",
@@ -214,17 +215,28 @@ class VariableLine:
 
         return None
 
+    @staticmethod
+    def build_namespace_of_name_from_string(string: str) -> str:
+        return f"{string.replace('-', '_').upper().rstrip('_')}{'_'}"
+
+    @staticmethod
+    def build_namespace_of_value_from_string(string: str) -> str:
+        return f"{string.replace('_', '-').lower().rstrip('-')}{'-'}"
+
+    @staticmethod
+    def build_namespace_of_value_variables_from_string(string: str) -> str:
+        return f"{string.replace('-', '_').upper().rstrip('_')}{'_'}"
+
     def add_namespace_to_name(
         self,
         namespace: str,
         already_added_ok: bool = False,
     ) -> VariableLine:
         var_line = VariableLine(self.line)
-        namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
         var_line.name = add_namespace_to_string(
             string=var_line.name,
-            namespace=namespace,
+            namespace=self.build_namespace_of_name_from_string(namespace),
             already_added_ok=already_added_ok,
         )
 
@@ -236,12 +248,10 @@ class VariableLine:
         already_added_ok: bool = False,
     ) -> VariableLine:
         var_line = VariableLine(self.line)
-        namespace = namespace.replace("_", "-").lower()
-        namespace = f"{namespace}" if namespace.endswith("-") else f"{namespace}-"
 
         var_line.value = add_namespace_to_string(
             string=var_line.value,
-            namespace=namespace,
+            namespace=self.build_namespace_of_value_from_string(namespace),
             already_added_ok=already_added_ok,
         )
 
@@ -254,7 +264,6 @@ class VariableLine:
         already_added_ok: bool = False,
     ) -> VariableLine:
         var_line = VariableLine(self.line)
-        namespace = f"{namespace.replace('-', '_').upper()}{'_'}"
 
         if variable_inside_value_to_add_to is not None:
             # only add the namespace to this variable only within the value part
@@ -267,13 +276,16 @@ class VariableLine:
                 variable=variable,
                 other_variable=add_namespace_to_string(
                     string=variable,
-                    namespace=namespace,
+                    namespace=self.build_namespace_of_value_variables_from_string(
+                        namespace
+                    ),
                     already_added_ok=already_added_ok,
                 ),
             )
 
         return var_line
 
+    # pylint: disable=too-many-positional-arguments
     def add_namespace(
         self,
         namespace: str,
@@ -343,7 +355,7 @@ class YamlEnvFile(BaseModel):
         with open(file_path, "r") as self_reader:
             yaml_data = yaml.safe_load(self_reader)
 
-        return cls.parse_obj(yaml_data)
+        return cls.model_validate(yaml_data)
 
     def to_variables_lines(
         self,
@@ -394,6 +406,7 @@ class EnvFile:
 
 class Repository:
     VARIABLES_FILE_PATH = "iac/variables.yaml"
+    FUNCTIONAL_REPOSITORIES_PREFIX = FUNCTIONAL_REPOSITORIES_PREFIX
 
     def __init__(self, name: str, branch_name: Optional[str] = None):
         self.name = name
@@ -402,6 +415,10 @@ class Repository:
     @property
     def yaml_env_file_path(self) -> str:
         return f"{self.name}/{self.VARIABLES_FILE_PATH}"
+
+    @property
+    def variables_prefix(self) -> str:
+        return VariableLine.build_namespace_of_name_from_string(self.name)
 
     def has_yaml_env_file(self) -> bool:
         return os.path.isfile(self.yaml_env_file_path)
@@ -431,10 +448,10 @@ class Repository:
 
         return []
 
-    def get_base_code(self, prefix_to_remove: Optional[str] = None) -> str:
+    def get_code(self) -> str:
         # there is one and only one repository code by repo
         # since it is configuration, we don't test it explicitly
-        base_code = [
+        return [
             var_line
             for var_line in self.get_yaml_env_file().to_variables_lines(
                 branch_name=self.branch_name
@@ -442,10 +459,19 @@ class Repository:
             if var_line.is_a_repository_code()
         ][0].value
 
-        if prefix_to_remove is None or not base_code.startswith(prefix_to_remove):
-            return base_code
+    def get_base_code(self) -> str:
+        code = self.get_code()
 
-        return base_code[len(prefix_to_remove) :]
+        # By development convention within the repo the code is always made up of the
+        # base code prefixed or not with "func-" contained in
+        # the variable FUNCTIONAL_REPOSITORIES_PREFIX.
+        # There is therefore no reason to parameterize the function
+        # with an argument which would allow passing something other than this variable,
+        # we use it directly
+        if not code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
+            return code
+
+        return code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
 
 
 def get_all_repository_var_lines(
@@ -495,12 +521,10 @@ def get_all_repository_var_lines(
             add_namespace_to_name_of_multi_instance_resource
             and var_line.is_a_multi_instance_resource()
         ):
-            if var_line.left_value_namespace_chunk == repository.get_base_code(
-                prefix_to_remove=FUNCTIONAL_REPOSITORIES_PREFIX
-            ):
+            if var_line.value.startswith(repository.get_base_code()):
                 namespace = FUNCTIONAL_REPOSITORIES_PREFIX
             else:
-                namespace = repository.get_base_code()
+                namespace = repository.get_code()
 
             var_line.add_namespace(
                 namespace,
@@ -580,7 +604,15 @@ if __name__ == "__main__":
             f"needed to load variables"
         )
 
-    all_variables_lines = shared_variables_lines + repository_variables_lines
+    shared_variables_lines_names = set(
+        shared_var_line.name for shared_var_line in shared_variables_lines
+    )
+
+    all_variables_lines = repository_variables_lines
+
+    if not args.discard_shared_variables:
+        all_variables_lines = shared_variables_lines + all_variables_lines
+
     if not args.keep_repository_variables:
         all_variables_lines = [
             var_line
@@ -588,13 +620,13 @@ if __name__ == "__main__":
             if not var_line.is_a_repository_variable()
         ]
 
-    if args.discard_shared_variables:
-        all_variables_lines = [
-            var_line
-            for var_line in all_variables_lines
-            if var_line.name not in shared_variables_lines_names
-        ]
     if args.variable_prefix_to_filter_on:
+        variable_prefix = (
+            main_repository.variables_prefix
+            if args.variable_prefix_to_filter_on
+            == "current_repository_variables_prefix"
+            else args.variable_prefix_to_filter_on
+        )
         all_variables_lines = [
             var_line
             for var_line in all_variables_lines

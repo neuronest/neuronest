@@ -4,22 +4,19 @@ variable "image_name" {
 variable "service_account_name" {
   type = string
 }
-variable "firestore_results_collection" {
+variable "results_bucket" {
   type = string
 }
 variable "firestore_jobs_collection" {
   type = string
 }
-variable "videos_to_count_bucket" {
+variable "samples_bucket" {
   type = string
 }
 variable "counted_videos_bucket" {
   type = string
 }
-variable "model_instantiator_host" {
-  type = string
-}
-variable "object_detection_model_name" {
+variable "object_detection_host" {
   type = string
 }
 variable "cloud_run_name" {
@@ -35,5 +32,8 @@ variable "cloud_run_min_scale" {
   type = string
 }
 variable "cloud_run_max_scale" {
+  type = string
+}
+variable "cloud_run_timeout" {
   type = string
 }

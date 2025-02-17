@@ -5,7 +5,7 @@ from typing import List
 from uuid import uuid4
 
 from google.cloud import bigquery
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 from core.path import GSPath
 from core.schemas.environment import Environment
@@ -27,9 +27,9 @@ class BigQueryModel(ABC, BaseModel):
     created_date: datetime
     updated_date: datetime
 
-    def dict(self, **kwargs):
-        """Override BaseModel dict method to serialize datetime and dict fields"""
-        output = super().dict(**kwargs)
+    def model_dump(self, **kwargs):
+        """Override BaseModel model_dump method to serialize datetime and dict fields"""
+        output = super().model_dump(**kwargs)
         for key, value in output.items():
             if isinstance(value, datetime):
                 output[key] = value.isoformat()
@@ -39,8 +39,8 @@ class BigQueryModel(ABC, BaseModel):
 
         return output
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def populate_datetimes(cls, values: dict) -> dict:
         date_now = datetime.now()
 
@@ -54,13 +54,15 @@ class BigQueryModel(ABC, BaseModel):
         return [
             bigquery.SchemaField(
                 name=model_field_name,
-                field_type=BIG_QUERY_TYPES_MAPPING.get(model_field.type_)
+                field_type=BIG_QUERY_TYPES_MAPPING.get(model_field.annotation)
                 or bigquery.enums.SqlTypeNames.STRING,
-                mode="REQUIRED"
-                if model_field.required is True
-                or model_field.default_factory is not None
-                or model_field.default is not None
-                else "NULLABLE",
+                mode=(
+                    "REQUIRED"
+                    if model_field.is_required() is True
+                    or model_field.default_factory is not None
+                    or model_field.default is not None
+                    else "NULLABLE"
+                ),
             )
-            for model_field_name, model_field in cls.__fields__.items()
+            for model_field_name, model_field in cls.model_fields.items()
         ]

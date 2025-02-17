@@ -10,11 +10,11 @@ from core.schemas.service_evaluator import MetricName
 
 class TrainingMetrics(BigQueryModel):
     __bigquery_tablename__ = "training_metrics"
-    model_name: str
+    trained_model_name: str
     training_duration: float
     metrics: dict
     parameters: dict
-    model_path: GSPath
+    trained_model_path: GSPath
     image_name: ImageNameWithTag
     global_metric_name: Optional[str] = None
     global_metric: Optional[float] = None
