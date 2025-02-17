@@ -1,0 +1,6 @@
+outs:
+- md5: 01028c7cecadb8a9a020375c5d3bd8f9.dir
+  size: 196925756
+  nfiles: 201
+  hash: md5
+  path: people_counting_dataset

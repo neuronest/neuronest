@@ -10,9 +10,9 @@ from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
 )
 from core.path import GSPath
+from core.schemas.bigquery.tables import TrainingMetrics
 from core.schemas.image_name import ImageNameWithTag
-from core.schemas.training_metrics.tables import TrainingMetrics
-from core.services.training_metrics_writer import MetricsWriter
+from core.services.bigquery_writer import BigQueryWriter
 from core.utils import timeit
 
 
@@ -33,11 +33,11 @@ def write_metrics(
     # noinspection PyTypeChecker
     bigquery_client = bigquery.Client(project=project_id)
 
-    MetricsWriter(
+    BigQueryWriter(
         dataset_name=bigquery_dataset_name,
         big_query_client=bigquery_client,
         location=location,
-    ).submit(training_metrics)
+    ).submit([training_metrics])
 
 
 def main(

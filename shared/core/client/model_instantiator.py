@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from typing import Optional
 
 import requests
 
 from core.client.abstract.api_client import APIClient
+from core.client.abstract.cloud_run_based_client import CloudRunBasedClient
 from core.routes.model_instantiator import routes
 from core.schemas.modules.model_instantiator import (
     InstantiateModelInput,
@@ -10,7 +13,10 @@ from core.schemas.modules.model_instantiator import (
 )
 
 
-class ModelInstantiatorClient(APIClient):
+class ModelInstantiatorClient(APIClient, CloudRunBasedClient):
+    MANDATORY_FIELDS = ("host",)
+    OPTIONAL_FIELDS = ("key_path",)
+
     def __init__(self, host: str, key_path: Optional[str] = None):
         super().__init__(host=host, key_path=key_path, root=routes.root)
 

@@ -5,10 +5,8 @@ from abc import ABC
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
-from google.api_core.exceptions import TooManyRequests
-from tenacity import retry, retry_if_exception_type, wait_exponential
-
 from core.client.abstract.api_client import APIClient
+from core.client.abstract.cloud_run_based_client import CloudRunBasedClient
 from core.exceptions import DependencyError, PredictionsNotFoundError
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
@@ -38,7 +36,7 @@ def make_results_blob_name(
     return combine_hashes([job_id, sample_id])
 
 
-class PredictionAPIClient(APIClient, ABC):
+class PredictionAPIClient(APIClient, CloudRunBasedClient, ABC):
     InputSchema: Type[Input]
     OutputSchema: Type[Output]
     RealTimeInputSchema: Union[Type[RealTimeInput], Type[RealTimeInlineInput]]

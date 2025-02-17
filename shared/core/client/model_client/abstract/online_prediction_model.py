@@ -1,7 +1,7 @@
 import random
 import time
 from abc import ABC
-from typing import List, Optional, Type
+from typing import List, Optional, Self, Type
 
 import requests
 from cachetools.func import ttl_cache
@@ -9,6 +9,7 @@ from google.api_core.exceptions import ServiceUnavailable
 from google.cloud import aiplatform
 
 from core.client.abstract.base_client import BaseClient
+from core.client.abstract.mixin import ClientMixin
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.exceptions import DependencyError
 from core.google.vertex_ai_manager import VertexAIManager
@@ -19,7 +20,7 @@ from core.schemas.abstract.online_prediction_model import (
 from core.tools import flatten_iterables, split_list_into_two_parts
 
 
-class OnlinePredictionModelClient(BaseClient, ABC):
+class OnlinePredictionModelClient(BaseClient, ClientMixin, ABC):
     INPUT_SAMPLE_SCHEMA: Type[InputSampleSchema]
     OUTPUT_SAMPLE_SCHEMA: Type[OutputSampleSchema]
     MAX_BYTES = 1e8
@@ -46,6 +47,52 @@ class OnlinePredictionModelClient(BaseClient, ABC):
 
         if self.OUTPUT_SAMPLE_SCHEMA is None:
             raise RuntimeError("Output schema must be specified")
+
+    @classmethod
+    def from_primitive_attributes(cls, **kwargs) -> Self:
+        mandatory_fields = (
+            "location",
+            "key_path",
+            "project_id",
+            "model_instantiator_host",
+            "model_name",
+        )
+        optional_fields = (
+            "endpoint_retry_wait_time",
+            "endpoint_retry_timeout",
+            "key_path",
+        )
+
+        try:
+            (
+                location,
+                key_path,
+                project_id,
+                model_instantiator_host,
+                model_name,
+            ) = [kwargs[mandatory_field] for mandatory_field in mandatory_fields]
+        except KeyError as key_error:
+            raise ValueError(
+                f"At least one mandatory field is missing, expected fields: "
+                f"{mandatory_fields}"
+            ) from key_error
+
+        optional_values = {
+            optional_field: kwargs[optional_field]
+            for optional_field in optional_fields
+            if optional_field in kwargs
+        }
+
+        return cls(
+            vertex_ai_manager=VertexAIManager(
+                location=location, key_path=key_path, project_id=project_id
+            ),
+            model_instantiator_client=ModelInstantiatorClient(
+                host=model_instantiator_host, key_path=key_path
+            ),
+            model_name=model_name,
+            **optional_values,
+        )
 
     def _create_endpoint(self) -> Optional[requests.Response]:
         return self.model_instantiator_client.instantiate(self.model_name)

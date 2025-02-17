@@ -1,0 +1,29 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["pip>=20.0.0", "poetry-core>=1.0.0"]
+
+[tool.isort]
+known_first_party = ["service_evaluator"]
+profile = "black"
+
+[tool.poetry]
+authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
+description = "Service evaluator"
+name = "service_evaluator"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+core = {develop = true, path = "../shared"}
+dvc = "^3.59.1"
+dvc-gs = "^3.0.1"
+fastapi = "0.115.2"
+gunicorn = "23.0.0"
+python = ">3.11,<3.12"
+python-json-logger = "^2.0.7"
+uvicorn = "0.32.0"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+core = {develop = true, extras = ["dev"], path = "../shared"}

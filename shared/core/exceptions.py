@@ -16,3 +16,7 @@ class AlreadyProcessingError(BaseError):
 
 class PredictionsNotFoundError(BaseError):
     pass
+
+
+class JobNotFoundError(BaseError):
+    pass
