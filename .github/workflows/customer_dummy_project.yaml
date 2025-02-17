@@ -5,7 +5,6 @@ on:
   push:
     paths:
       - .github/workflows/customer_dummy_project.yaml
-      - .github/workflows/functional_abstract_online_prediction_model.yaml
       - .github/workflows/abstract_online_prediction_model.yaml
       - .github/workflows/functional_people_counting.yaml
       - .github/workflows/functional_video_comparator.yaml
