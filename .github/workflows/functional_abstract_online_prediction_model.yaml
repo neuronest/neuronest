@@ -26,15 +26,15 @@ on:
       dockerhub_training_image_name:
         required: false
         type: string
-        default: ""
+        default: ''
       gcp_training_image_name:
         required: false
         type: string
-        default: ""
+        default: ''
       base_project_builder_sa_key:
         required: false
         type: string
-        default: ""
+        default: ''
       online_prediction_model_repository:
         required: true
         type: string

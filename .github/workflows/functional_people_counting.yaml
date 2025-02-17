@@ -89,15 +89,13 @@ jobs:
     needs:
       - run_base_terraform
       - upload_variables_of_called_workflows
-    uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
+    uses: ./.github/workflows/functional_object_detection.yaml
     with:
       build: true
       deploy: false
       post_deploy: false
       run_tests: false
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
-      online_prediction_model_repository: functional-object-detection
-      online_prediction_model_package_name: object_detection
     secrets: inherit
 
   build_test_push:
@@ -158,7 +156,7 @@ jobs:
      - upload_variables_of_called_workflows
      - build_functional_object_detection
      - deploy
-    uses: ./.github/workflows/functional_abstract_online_prediction_model.yaml
+    uses: ./.github/workflows/functional_object_detection.yaml
     with:
       build: false
       deploy: false
@@ -168,8 +166,6 @@ jobs:
       dockerhub_training_image_name: ${{ needs.build_functional_object_detection.outputs.dockerhub_training_image_name }}
       gcp_training_image_name: ${{ needs.build_functional_object_detection.outputs.gcp_training_image_name }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
-      online_prediction_model_repository: functional-object-detection
-      online_prediction_model_package_name: object_detection
     secrets: inherit
 
   run_integration_tests:
