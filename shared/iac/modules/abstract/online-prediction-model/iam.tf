@@ -1,3 +1,9 @@
+resource "google_cloud_run_service_iam_member" "allow_online_prediction_model" {
+  service  = module.model_instantiator.cloud_run_name
+  location = var.region
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.online_prediction_model_sa.email}"
+}
 resource "google_project_iam_member" "online_prediction_model_aiplatform_admin" {
   project = var.project_id
   role    = "roles/aiplatform.admin"

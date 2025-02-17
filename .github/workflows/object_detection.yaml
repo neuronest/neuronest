@@ -1,0 +1,76 @@
+name: object_detection
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      build:
+        required: false
+        type: string
+        default: 'true'
+      deploy:
+        required: false
+        type: string
+        default: 'true'
+      post_deploy:
+        required: false
+        type: string
+        default: 'true'
+      run_tests:
+        required: false
+        type: string
+        default: 'true'
+      env_file_artifact_name:
+        required: false
+        type: string
+        default: ''
+      dockerhub_training_image_name:
+        required: false
+        type: string
+        default: ''
+      gcp_training_image_name:
+        required: false
+        type: string
+        default: ''
+      base_project_builder_sa_key:
+        required: false
+        type: string
+        default: ''
+    outputs:
+      model_instantiator_image_name:
+        description: "Model instantiator image name"
+        value: ${{ jobs.object_detection.outputs.model_instantiator_image_name }}
+env:
+  REPOSITORY_NAME: object-detection
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+  TESTING_BASE_IMAGE: python:3.11.10-slim-bookworm
+
+jobs:
+  upload_variables_of_called_workflows:
+    runs-on: neuronest-runner-set
+    container: google/cloud-sdk
+    outputs:
+      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: upload_variables
+        id: upload_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+
+  object_detection:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/abstract_online_prediction_model.yaml
+    with:
+      build: ${{ inputs.build }}
+      deploy: ${{ inputs.deploy }}
+      post_deploy: ${{ inputs.post_deploy }}
+      run_tests: ${{ inputs.run_tests }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      dockerhub_training_image_name: ${{ inputs.dockerhub_training_image_name }}
+      gcp_training_image_name: ${{ inputs.gcp_training_image_name }}
+      base_project_builder_sa_key: ${{ inputs.base_project_builder_sa_key }}
+      online_prediction_model_repository: object-detection
+      online_prediction_model_package_name: object_detection
+    secrets: inherit

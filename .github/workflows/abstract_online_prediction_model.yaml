@@ -61,18 +61,6 @@ env:
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-  set_up_non_functional_repository_name:
-    runs-on: neuronest-runner-set
-    container: google/cloud-sdk
-    outputs:
-      value: ${{ steps.set_up_non_functional_repository_name.outputs.value }}
-    steps:
-      - id: set_up_non_functional_repository_name
-        run: |
-          value=${REPOSITORY_NAME#functional-}
-          echo value=$value >> $GITHUB_OUTPUT
-        shell: bash
-
   run_base_terraform:
     runs-on: neuronest-runner-set
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
@@ -157,7 +145,7 @@ jobs:
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
   build_test_push_model_instantiator:
-    name: build_test_push
+    name: build_test_push_model_instantiator
     runs-on: neuronest-runner-set
     needs: run_base_terraform
     # If the workflow isn't called, inputs are blank and job should run
@@ -185,7 +173,7 @@ jobs:
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
           build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }}
 
-  deploy_functional_online_prediction_model:
+  deploy_online_prediction_model:
     needs:
      - build_test_push_training_and_web_serving_images
      - build_test_push_model_instantiator
@@ -209,7 +197,7 @@ jobs:
           DYNAMIC_VAR_NAME="TF_VAR_${{ inputs.online_prediction_model_package_name }}_image_name"
           DYNAMIC_VAR_VALUE="${{ needs.build_test_push_online_prediction_model.outputs.gcp_web_serving_image_name }}"
           echo "${DYNAMIC_VAR_NAME}=${DYNAMIC_VAR_VALUE}" >> $GITHUB_ENV
-      - id: run_functional_online_prediction_model_terraform
+      - id: run_online_prediction_model_terraform
         uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
@@ -385,7 +373,7 @@ jobs:
     needs:
       - run_base_terraform
       - model_upload
-      - deploy_functional_online_prediction_model
+      - deploy_online_prediction_model
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.run_tests == 'true' || inputs.run_tests == '') && !failure() && !cancelled() }}
     steps:
@@ -415,4 +403,4 @@ jobs:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           run_integration_tests: true
           run_unit_tests: false
-          environment_variables: -e ${{ steps.get_package_url_variable_name.outputs.value }}=${{ needs.deploy_functional_online_prediction_model.outputs.online_prediction_model_url }} -e MODEL_NAME=${{ steps.get_model_name.outputs.value }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_online_prediction_model.outputs.model_instantiator_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}
+          environment_variables: -e ${{ steps.get_package_url_variable_name.outputs.value }}=${{ needs.deploy_online_prediction_model.outputs.online_prediction_model_url }} -e MODEL_NAME=${{ steps.get_model_name.outputs.value }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_online_prediction_model.outputs.model_instantiator_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}

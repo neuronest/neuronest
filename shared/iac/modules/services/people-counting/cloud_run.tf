@@ -42,7 +42,7 @@ resource "google_cloud_run_v2_service" "people_counting_api" {
       }
       env {
         name  = "OBJECT_DETECTION_HOST"
-        value = var.object_detection_host
+        value = module.object_detection.online_prediction_model_url
       }
     }
     scaling {

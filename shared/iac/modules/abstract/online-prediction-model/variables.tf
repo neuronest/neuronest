@@ -7,10 +7,10 @@ variable "service_account_name" {
 variable "models_bucket" {
   type = string
 }
-variable "samples_bucket" {
+variable "results_bucket" {
   type = string
 }
-variable "results_bucket" {
+variable "samples_bucket" {
   type = string
 }
 variable "model_name" {
@@ -37,4 +37,7 @@ variable "cloud_run_timeout" {
 variable "cloud_run_env_vars" {
   type    = map(string)
   default = {}
+}
+variable "vertex_location" {
+  type = string
 }

@@ -6,9 +6,9 @@ on:
     paths:
       - .github/workflows/customer_dummy_project.yaml
       - .github/workflows/abstract_online_prediction_model.yaml
-      - .github/workflows/functional_people_counting.yaml
-      - .github/workflows/functional_video_comparator.yaml
-      - .github/workflows/functional_object_detection.yaml
+      - .github/workflows/people_counting.yaml
+      - .github/workflows/video_comparator.yaml
+      - .github/workflows/object_detection.yaml
       - .github/actions/**
       - .github/variables/**
       - .pre-commit-config.yaml
@@ -41,56 +41,56 @@ jobs:
     runs-on: neuronest-runner-set
     container: google/cloud-sdk
     outputs:
-      functional_object_detection_env_file_artifact_name: ${{ steps.upload_functional_object_detection_variables.outputs.env_file_artifact_name }}
-      functional_video_comparator_env_file_artifact_name: ${{ steps.upload_functional_video_comparator_variables.outputs.env_file_artifact_name }}
-      functional_people_counting_env_file_artifact_name: ${{ steps.upload_functional_people_counting_variables.outputs.env_file_artifact_name }}
+      object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
+      video_comparator_env_file_artifact_name: ${{ steps.upload_video_comparator_variables.outputs.env_file_artifact_name }}
+      people_counting_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v4
-      - name: upload_functional_object_detection_variables
-        id: upload_functional_object_detection_variables
+      - name: upload_object_detection_variables
+        id: upload_object_detection_variables
         uses: ./.github/actions/upload_variables
         with:
           variable_prefix_to_filter_on: OBJECT_DETECTION
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - name: upload_functional_video_comparator_variables
-        id: upload_functional_video_comparator_variables
+      - name: upload_video_comparator_variables
+        id: upload_video_comparator_variables
         uses: ./.github/actions/upload_variables
         with:
           variable_prefix_to_filter_on: VIDEO_COMPARATOR
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - name: upload_functional_people_counting_variables
-        id: upload_functional_people_counting_variables
+      - name: upload_people_counting_variables
+        id: upload_people_counting_variables
         uses: ./.github/actions/upload_variables
         with:
           variable_prefix_to_filter_on: PEOPLE_COUNTING
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
 
-  functional_object_detection:
+  object_detection:
     needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/functional_object_detection.yaml
+    uses: ./.github/workflows/object_detection.yaml
     with:
       build: true
       deploy: true
       post_deploy: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_object_detection_env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
     secrets: inherit
 
-  functional_video_comparator:
+  video_comparator:
     needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/functional_video_comparator.yaml
+    uses: ./.github/workflows/video_comparator.yaml
     with:
       build: true
       deploy: true
       post_deploy: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_video_comparator_env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.video_comparator_env_file_artifact_name }}
     secrets: inherit
 
-  functional_people_counting:
+  people_counting:
     needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/functional_people_counting.yaml
+    uses: ./.github/workflows/people_counting.yaml
     with:
       build: true
       deploy: true
       post_deploy: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.functional_people_counting_env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
     secrets: inherit

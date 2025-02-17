@@ -18,7 +18,6 @@ sys.path.append("shared")
 # pylint: disable=import-error
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
-FUNCTIONAL_REPOSITORIES_PREFIX = "func-"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
@@ -406,7 +405,6 @@ class EnvFile:
 
 class Repository:
     VARIABLES_FILE_PATH = "iac/variables.yaml"
-    FUNCTIONAL_REPOSITORIES_PREFIX = FUNCTIONAL_REPOSITORIES_PREFIX
 
     def __init__(self, name: str, branch_name: Optional[str] = None):
         self.name = name
@@ -459,20 +457,6 @@ class Repository:
             if var_line.is_a_repository_code()
         ][0].value
 
-    def get_base_code(self) -> str:
-        code = self.get_code()
-
-        # By development convention within the repo the code is always made up of the
-        # base code prefixed or not with "func-" contained in
-        # the variable FUNCTIONAL_REPOSITORIES_PREFIX.
-        # There is therefore no reason to parameterize the function
-        # with an argument which would allow passing something other than this variable,
-        # we use it directly
-        if not code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
-            return code
-
-        return code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
-
 
 def get_all_repository_var_lines(
     repository: Repository,
@@ -521,10 +505,7 @@ def get_all_repository_var_lines(
             add_namespace_to_name_of_multi_instance_resource
             and var_line.is_a_multi_instance_resource()
         ):
-            if var_line.value.startswith(repository.get_base_code()):
-                namespace = FUNCTIONAL_REPOSITORIES_PREFIX
-            else:
-                namespace = repository.get_code()
+            namespace = repository.get_code()
 
             var_line.add_namespace(
                 namespace,
