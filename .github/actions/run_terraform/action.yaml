@@ -14,11 +14,11 @@ inputs:
   min_terraform_retry_wait_seconds:
     description: 'Terraform maximum wait time for retry after failure'
     required: false
-    default: "60"
+    default: "30"
   max_terraform_retry_wait_seconds:
     description: 'Terraform maximum wait time for retry after failure'
     required: false
-    default: "120"
+    default: "300"
 outputs:
   base_project_builder_sa_key:
     description: 'The base64 encoded key of the IAC service account of the shared repository'
@@ -48,7 +48,7 @@ runs:
       shell: bash
 
     - id: terraform_with_retry
-      uses: nick-fields/retry@v2.8.2
+      uses: nick-fields/retry@v3
       with:
         timeout_seconds: 1200
         max_attempts: 5

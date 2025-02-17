@@ -75,6 +75,9 @@ jobs:
   build_test_push:
     name: build_test_push
     runs-on: neuronest-runner-set
+    needs:
+      - run_base_terraform
+      - upload_variables_of_called_workflows
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     outputs:
