@@ -22,6 +22,9 @@ DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
 OTHER_VARIABLES_DEFAULT_SECTION = "default"
+MAIN_GCP_PROJECT_ID_VAR_LINE_NAME = "MAIN_GCP_PROJECT_ID"
+DEV_GCP_PROJECT_ID_VAR_LINE_NAME = "DEV_GCP_PROJECT_ID"
+DEFAULT_GCP_PROJECT_ID_VAR_LINE_NAME = "DEFAULT_GCP_PROJECT_ID"
 
 # create logger
 logger = logging.getLogger(__name__)
@@ -409,8 +412,8 @@ class YamlEnvFile(BaseModel):
         branch_name: Optional[str] = None,
     ) -> List[VariableLine]:
         """
-        Generate a list of VariableLine instances representing all variables
-        for the specified branch.
+        Generate a list of VariableLine instances representing all variables,
+        including variables specific to a branch if branch_name provided
 
         This method aggregates variables from three sources:
         - Repository-specific variables
@@ -447,13 +450,16 @@ class YamlEnvFile(BaseModel):
         Retrieve a specific variable line by its name.
 
         This method searches for a variable line with the specified `variable_name`
-        within the context of the given `branch_name`. If a matching variable is found,
-        it returns the corresponding `VariableLine` object; otherwise, it returns `None`.
+        within the context of the given `branch_name` for the branch conditioned
+        variables. If a matching variable is found, it returns the corresponding
+        `VariableLine` object; otherwise, it returns `None`.
 
         Args:
             variable_name (str): The name of the variable to retrieve.
-            branch_name (Optional[str]): The branch context for variable selection.
-                                         Defaults to None, which selects the default branch.
+            branch_name (Optional[str]): The branch context for branch conditioned
+                                         variables selection.
+                                         Defaults to None,
+                                         which selects the default branch.
 
         Returns:
             Optional[VariableLine]: The `VariableLine` object with the specified name
@@ -623,21 +629,19 @@ def determine_project_id(
     default_gcp_project_id: str,
 ) -> VariableLine:
     if branch_name == "main":
-        project_id = main_gcp_project_id
+        branch_conditioned_project_id = main_gcp_project_id
     elif branch_name == "dev":
-        project_id = dev_gcp_project_id
+        branch_conditioned_project_id = dev_gcp_project_id
     else:
-        project_id = default_gcp_project_id
-        if not default_gcp_project_id:
-            raise ValueError(
-                f"Error: DEFAULT_GCP_PROJECT_ID is not set "
-                f"for feature branch '{branch_name}'."
-            )
+        branch_conditioned_project_id = default_gcp_project_id
+
     return VariableLine(
-        line=f"PROJECT_ID={project_id}", variable_type=VariableType.OTHER
+        line=f"PROJECT_ID={branch_conditioned_project_id}",
+        variable_type=VariableType.OTHER,
     )
 
 
+# pylint: disable=redefined-outer-name
 def determine_project_code(project_id: str) -> VariableLine:
     """
     Generate a `VariableLine` containing the project code based on the `project_id`.
@@ -657,9 +661,11 @@ def determine_project_code(project_id: str) -> VariableLine:
     parts = project_id.split("-")
     if len(parts) > 1:
         # Take the first letter of each part and join them
+        # pylint: disable=redefined-outer-name
         project_code = "".join(part[0] for part in parts)
     else:
         # Return the first five characters if no hyphen is found
+        # pylint: disable=redefined-outer-name
         project_code = project_id[:5]
 
     return VariableLine(
@@ -711,24 +717,24 @@ if __name__ == "__main__":
         file_path=".github/variables/variables.yaml"
     )
 
-    shared_project_id = determine_project_id(
+    project_id = determine_project_id(
         branch_name=args.branch_name,
         main_gcp_project_id=shared_variables_lines.get_variable_line(
-            "MAIN_GCP_PROJECT_ID"
+            MAIN_GCP_PROJECT_ID_VAR_LINE_NAME
         ).value,
         dev_gcp_project_id=shared_variables_lines.get_variable_line(
-            "DEV_GCP_PROJECT_ID"
+            DEV_GCP_PROJECT_ID_VAR_LINE_NAME
         ).value,
         default_gcp_project_id=shared_variables_lines.get_variable_line(
-            "DEFAULT_GCP_PROJECT_ID"
+            DEFAULT_GCP_PROJECT_ID_VAR_LINE_NAME
         ).value,
     )
 
-    shared_project_code = determine_project_code(project_id=shared_project_id.value)
+    project_code = determine_project_code(project_id=project_id.value)
 
     shared_variables_lines = shared_variables_lines.to_variables_lines() + [
-        shared_project_id,
-        shared_project_code,
+        project_id,
+        project_code,
     ]
 
     shared_variables_lines_names = set(

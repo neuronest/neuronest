@@ -25,10 +25,6 @@ inputs:
     description: 'Whether to execute apt commands as root'
     required: false
     default: 'false'
-  other_variables_branch:
-    description: 'The branch we fetched variables for, in the other_variables section of the YAML files'
-    required: false
-    default: ''
 outputs:
   created_env_file_path:
     description: 'The environment variables file to load'
@@ -91,11 +87,7 @@ runs:
           --repository_where_variables_are_defined ${{ env.REPOSITORY_NAME }} \
           --caller_workflow_env_file_path $caller_workflow_env_file_path \
           --refactored_caller_workflow_env_file_path $refactored_caller_workflow_env_file_path
-        echo "hello there"
-        cat $refactored_caller_workflow_env_file_path
         cat $refactored_caller_workflow_env_file_path >> ${{ steps.set_created_env_file_path.outputs.value }}
-        echo "hello there again"
-        cat ${{ steps.set_created_env_file_path.outputs.value }}
       if: ${{ inputs.env_file_artifact_name != '' }}
       shell: bash
     - uses: cardinalby/export-env-action@v2

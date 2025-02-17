@@ -2,6 +2,7 @@ FROM python:3.11.10-slim-bookworm
 
 RUN apt -qqy update && apt install -qqy cmake
 
+ARG POETRY_VERSION
 ARG ROOT_DIRECTORY="/app"
 ARG REPOSITORY_NAME="database-api"
 ARG PACKAGE_NAME="database_api"
@@ -10,6 +11,7 @@ ARG PORT=80
 ARG WORKERS=4
 ARG TIMEOUT=300
 
+ENV POETRY_VERSION=$POETRY_VERSION
 ENV PIP_ROOT_USER_ACTION=ignore
 ENV ROOT_DIRECTORY=$ROOT_DIRECTORY
 ENV REPOSITORY_NAME=$REPOSITORY_NAME
@@ -26,7 +28,7 @@ WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 COPY $REPOSITORY_NAME/pyproject.toml $REPOSITORY_NAME/poetry.lock ./
 # --no-deps so Poetry is the sole manager of dependencies
 RUN pip install --upgrade pip \
-  && pip install poetry==1.8.4 \
+  && pip install poetry==$POETRY_VERSION \
   && poetry export --without-hashes -f requirements.txt --output requirements.txt \
   && pip install -r requirements.txt
 

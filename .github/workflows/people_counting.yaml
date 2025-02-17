@@ -94,6 +94,7 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          build_arguments: --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }}
 
   deploy:
     name: deploy
