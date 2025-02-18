@@ -19,6 +19,10 @@ inputs:
     description: 'Terraform maximum wait time for retry after failure'
     required: false
     default: "300"
+  retry_max_attempts:
+    description: 'Terraform maximum number of attempts before aborting'
+    required: false
+    default: "5"
 outputs:
   base_project_builder_sa_key:
     description: 'The base64 encoded key of the IAC service account of the shared repository'
@@ -51,7 +55,7 @@ runs:
       uses: nick-fields/retry@v3
       with:
         timeout_seconds: 1200
-        max_attempts: 5
+        max_attempts: ${{ inputs.retry_max_attempts }}
         retry_wait_seconds: ${{ steps.set_terraform_retry_wait_seconds.outputs.value }}
         command: |
           source ./.github/functions/initialize_terraform.sh

@@ -195,7 +195,7 @@ jobs:
         run: |
           # Construct the dynamic environment variable name with "TF_VAR_" prefix
           DYNAMIC_VAR_NAME="TF_VAR_${{ inputs.online_prediction_model_package_name }}_image_name"
-          DYNAMIC_VAR_VALUE="${{ needs.build_test_push_online_prediction_model.outputs.gcp_web_serving_image_name }}"
+          DYNAMIC_VAR_VALUE="${{ needs.build_test_push_training_and_web_serving_images.outputs.gcp_web_serving_image_name }}"
           echo "${DYNAMIC_VAR_NAME}=${DYNAMIC_VAR_VALUE}" >> $GITHUB_ENV
       - id: run_online_prediction_model_terraform
         uses: ./.github/actions/run_terraform
@@ -227,12 +227,12 @@ jobs:
     steps:
       - id: get_dockerhub_and_gcp_training_images
         run: |
-          job_dockerhub_training_image_name=${{ needs.build_test_push_online_prediction_model.outputs.dockerhub_training_image_name }}
+          job_dockerhub_training_image_name=${{ needs.build_test_push_training_and_web_serving_images.outputs.dockerhub_training_image_name }}
           input_dockerhub_training_image_name=${{ inputs.dockerhub_training_image_name }}
           dockerhub_training_image_name=${job_dockerhub_training_image_name:-$input_dockerhub_training_image_name}
           echo "dockerhub_image=$dockerhub_training_image_name" | tee -a $GITHUB_OUTPUT
 
-          job_gcp_training_image_name=${{ needs.build_test_push_online_prediction_model.outputs.gcp_training_image_name }}
+          job_gcp_training_image_name=${{ needs.build_test_push_training_and_web_serving_images.outputs.gcp_training_image_name }}
           input_gcp_training_image_name=${{ inputs.gcp_training_image_name }}
           gcp_training_image_name=${job_gcp_training_image_name:-$input_gcp_training_image_name}
           echo "gcp_image=$gcp_training_image_name" | tee -a $GITHUB_OUTPUT
