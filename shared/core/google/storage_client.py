@@ -58,6 +58,13 @@ class StorageClient(BaseClient):
             if not exist_ok:
                 raise exception
 
+    def bucket_exists(self, bucket_name: str) -> bool:
+        try:
+            self.client.get_bucket(bucket_name)
+            return True
+        except NotFound:
+            return False
+
     @retry(wait=wait_exponential(**QUERY_EXPONENTIAL_BACKOFF))
     def upload_blob(self, source_file_name: str, bucket_name: str, blob_name: str):
         """

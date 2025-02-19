@@ -258,6 +258,7 @@ jobs:
     needs:
       - get_base_project_builder_sa_key
       - get_training_images
+      - deploy_online_prediction_model
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.post_deploy == 'true' || inputs.post_deploy == '') && !failure() && !cancelled() }}
