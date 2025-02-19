@@ -37,6 +37,9 @@ on:
         type: string
         default: ''
     outputs:
+      web_serving_image_name:
+        description: "The web serving image name"
+        value: ${{ jobs.object_detection.outputs.gcp_web_serving_image_name }}
       model_instantiator_image_name:
         description: "Model instantiator image name"
         value: ${{ jobs.object_detection.outputs.model_instantiator_image_name }}

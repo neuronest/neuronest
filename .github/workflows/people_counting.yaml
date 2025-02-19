@@ -99,6 +99,8 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          base_image_name: ${{ env.BASE_IMAGE_NAME }}
           build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }}
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
@@ -131,7 +133,7 @@ jobs:
         env:
           TF_VAR_model_instantiator_image_name: ${{ needs.build_object_detection.outputs.model_instantiator_image_name }}
           TF_VAR_object_detection_image_name: ${{ needs.build_object_detection.outputs.web_serving_image_name }}
-          TF_VAR_people_counting_image_name: ${{ needs.build_test_push.outputs.gcp_image_name }}
+          TF_VAR_image_name: ${{ needs.build_test_push.outputs.gcp_image_name }}
       - id: get_model_instantiator_url
         uses: ./.github/actions/get_terraform_output
         with:
@@ -184,6 +186,7 @@ jobs:
       - uses: ./.github/actions/run_linters_tests
         with:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
           run_integration_tests: true
           run_unit_tests: false
           environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.deploy.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy.outputs.model_instantiator_url }}

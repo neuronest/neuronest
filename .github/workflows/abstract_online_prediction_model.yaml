@@ -129,6 +129,8 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          base_image_name: ${{ env.BASE_IMAGE_NAME }}
           target: training
           # todo: consider whether the default behavior should be to pass the arguments
           # REPOSITORY_NAME and PACKAGE_NAME during all docker builds. It would make
@@ -141,6 +143,8 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          base_image_name: ${{ env.BASE_IMAGE_NAME }}
           build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }}
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
@@ -170,8 +174,10 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository_name: model-instantiator
+          base_image_name: ${{ env.MODEL_INSTANTIATOR_BASE_IMAGE_NAME }}
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
-          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }}
+          build_arguments: --build-arg REPOSITORY_NAME=model-instantiator --build-arg PACKAGE_NAME=model_instantiator
 
   deploy_online_prediction_model:
     needs:
@@ -191,12 +197,6 @@ jobs:
         with:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - id: set_online_prediction_model_image_variable
-        run: |
-          # Construct the dynamic environment variable name with "TF_VAR_" prefix
-          DYNAMIC_VAR_NAME="TF_VAR_${{ inputs.online_prediction_model_package_name }}_image_name"
-          DYNAMIC_VAR_VALUE="${{ needs.build_test_push_training_and_web_serving_images.outputs.gcp_web_serving_image_name }}"
-          echo "${DYNAMIC_VAR_NAME}=${DYNAMIC_VAR_VALUE}" >> $GITHUB_ENV
       - id: run_online_prediction_model_terraform
         uses: ./.github/actions/run_terraform
         with:
@@ -206,6 +206,7 @@ jobs:
         # var-like arguments to make it easier to reproduce errors locally
         env:
           TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
+          TF_VAR_image_name: ${{ needs.build_test_push_training_and_web_serving_images.outputs.gcp_web_serving_image_name }}
       - id: get_model_instantiator_url
         uses: ./.github/actions/get_terraform_output
         with:
@@ -336,6 +337,8 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          base_image_name: ${{ env.BASE_IMAGE_NAME }}
           target: serving
           build_arguments: --build-arg MODEL_PATH=$MODEL_PATH --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }} --build-arg BATCH_SIZE=${{ env.BATCH_SIZE }}
           dockerfile_path: ${{ env.MODEL_DOCKERFILE_PATH }}
@@ -401,6 +404,7 @@ jobs:
         uses: ./.github/actions/run_linters_tests
         with:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
           run_integration_tests: true
           run_unit_tests: false
           environment_variables: -e ${{ steps.get_package_url_variable_name.outputs.value }}=${{ needs.deploy_online_prediction_model.outputs.online_prediction_model_url }} -e MODEL_NAME=${{ steps.get_model_name.outputs.value }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_online_prediction_model.outputs.model_instantiator_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}
