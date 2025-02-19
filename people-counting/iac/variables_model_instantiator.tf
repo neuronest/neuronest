@@ -1,37 +1,37 @@
-variable "model_instantiator_image_name" {
+variable "object_detection_model_instantiator_image_name" {
   type    = string
   default = null
 }
-variable "model_instantiator_webapp_service_account_name" {
+variable "object_detection_model_instantiator_webapp_service_account_name" {
   type = string
 }
-variable "model_instantiator_cloud_scheduler_service_account_name" {
+variable "object_detection_model_instantiator_cloud_scheduler_service_account_name" {
   type = string
 }
-variable "model_instantiator_cloud_run_name" {
+variable "object_detection_model_instantiator_cloud_run_name" {
   type = string
 }
-variable "model_instantiator_cloud_run_memory" {
+variable "object_detection_model_instantiator_cloud_run_memory" {
   type = string
 }
-variable "model_instantiator_cloud_run_cpu" {
+variable "object_detection_model_instantiator_cloud_run_cpu" {
   type = string
 }
-variable "model_instantiator_cloud_run_min_scale" {
+variable "object_detection_model_instantiator_cloud_run_min_scale" {
   type = string
 }
-variable "model_instantiator_cloud_run_max_scale" {
+variable "object_detection_model_instantiator_cloud_run_max_scale" {
   type = string
 }
-variable "model_instantiator_cloud_run_timeout" {
+variable "object_detection_model_instantiator_cloud_run_timeout" {
   type = string
 }
-variable "model_instantiator_cloud_scheduler_job_name" {
+variable "object_detection_model_instantiator_cloud_scheduler_job_name" {
   type = string
 }
-variable "model_instantiator_cloud_scheduler_schedule" {
+variable "object_detection_model_instantiator_cloud_scheduler_schedule" {
   type = string
 }
-variable "model_instantiator_cloud_uninstantiate_route" {
+variable "object_detection_model_instantiator_cloud_uninstantiate_route" {
   type = string
 }

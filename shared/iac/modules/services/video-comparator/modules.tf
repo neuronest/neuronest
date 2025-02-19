@@ -4,8 +4,6 @@ module "video_comparator" {
   region     = var.region
   timezone   = var.timezone
 
-  vertex_location = var.vertex_location
-
   image_name           = var.image_name
   service_account_name = var.service_account_name
   models_bucket        = var.models_bucket
@@ -18,6 +16,7 @@ module "video_comparator" {
   cloud_run_min_scale  = var.cloud_run_min_scale
   cloud_run_max_scale  = var.cloud_run_max_scale
   cloud_run_timeout    = var.cloud_run_timeout
+  vertex_location      = var.vertex_location
 
   cloud_run_env_vars = {
     PROJECT_ID                = var.project_id
@@ -28,6 +27,7 @@ module "video_comparator" {
     EMBEDDINGS_BUCKET         = var.embeddings_bucket
     RESULTS_BUCKET            = var.results_bucket
     SAMPLES_BUCKET            = var.samples_bucket
+    VERTEX_LOCATION           = var.vertex_location
   }
 
   model_instantiator_image_name                           = var.model_instantiator_image_name

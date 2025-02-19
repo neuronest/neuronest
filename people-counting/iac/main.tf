@@ -66,16 +66,16 @@ module "people_counting" {
   object_detection_cloud_run_timeout         = var.object_detection_cloud_run_timeout
   object_detection_firestore_jobs_collection = var.object_detection_firestore_jobs_collection
 
-  model_instantiator_image_name                           = var.model_instantiator_image_name
-  model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name
-  model_instantiator_cloud_scheduler_service_account_name = var.model_instantiator_cloud_scheduler_service_account_name
-  model_instantiator_cloud_run_name                       = var.model_instantiator_cloud_run_name
-  model_instantiator_cloud_run_memory                     = var.model_instantiator_cloud_run_memory
-  model_instantiator_cloud_run_cpu                        = var.model_instantiator_cloud_run_cpu
-  model_instantiator_cloud_run_min_scale                  = var.model_instantiator_cloud_run_min_scale
-  model_instantiator_cloud_run_max_scale                  = var.model_instantiator_cloud_run_max_scale
-  model_instantiator_cloud_run_timeout                    = var.model_instantiator_cloud_run_timeout
-  model_instantiator_cloud_scheduler_job_name             = var.model_instantiator_cloud_scheduler_job_name
-  model_instantiator_cloud_scheduler_schedule             = var.model_instantiator_cloud_scheduler_schedule
-  model_instantiator_cloud_uninstantiate_route            = var.model_instantiator_cloud_uninstantiate_route
+  object_detection_model_instantiator_image_name                           = var.object_detection_model_instantiator_image_name
+  object_detection_model_instantiator_webapp_service_account_name          = var.object_detection_model_instantiator_webapp_service_account_name
+  object_detection_model_instantiator_cloud_scheduler_service_account_name = var.object_detection_model_instantiator_cloud_scheduler_service_account_name
+  object_detection_model_instantiator_cloud_run_name                       = var.object_detection_model_instantiator_cloud_run_name
+  object_detection_model_instantiator_cloud_run_memory                     = var.object_detection_model_instantiator_cloud_run_memory
+  object_detection_model_instantiator_cloud_run_cpu                        = var.object_detection_model_instantiator_cloud_run_cpu
+  object_detection_model_instantiator_cloud_run_min_scale                  = var.object_detection_model_instantiator_cloud_run_min_scale
+  object_detection_model_instantiator_cloud_run_max_scale                  = var.object_detection_model_instantiator_cloud_run_max_scale
+  object_detection_model_instantiator_cloud_run_timeout                    = var.object_detection_model_instantiator_cloud_run_timeout
+  object_detection_model_instantiator_cloud_scheduler_job_name             = var.object_detection_model_instantiator_cloud_scheduler_job_name
+  object_detection_model_instantiator_cloud_scheduler_schedule             = var.object_detection_model_instantiator_cloud_scheduler_schedule
+  object_detection_model_instantiator_cloud_uninstantiate_route            = var.object_detection_model_instantiator_cloud_uninstantiate_route
 }

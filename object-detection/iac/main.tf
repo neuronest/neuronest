@@ -36,8 +36,6 @@ module "object_detection" {
   region     = var.region
   timezone   = var.timezone
 
-  vertex_location = var.vertex_location
-
   image_name                = var.image_name
   service_account_name      = var.service_account_name
   models_bucket             = var.models_bucket
@@ -51,6 +49,7 @@ module "object_detection" {
   cloud_run_max_scale       = var.cloud_run_max_scale
   cloud_run_timeout         = var.cloud_run_timeout
   firestore_jobs_collection = var.firestore_jobs_collection
+  vertex_location           = var.vertex_location
 
   model_instantiator_image_name                           = var.model_instantiator_image_name
   model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name
