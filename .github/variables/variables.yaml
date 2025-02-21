@@ -19,7 +19,7 @@ other_variables:
       - MAIN_GCP_PROJECT_ID=neuronest
       - DEV_GCP_PROJECT_ID=neuronest-dev
         # Must be manually set when working on a feature branch
-      - DEFAULT_GCP_PROJECT_ID=database-api-yolo-4
+      - DEFAULT_GCP_PROJECT_ID=database-api-yolo-5
       - REGION=europe-west1
       - ZONE=europe-west1-b
       - TIMEZONE=Europe/Paris
