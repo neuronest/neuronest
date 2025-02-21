@@ -11,7 +11,7 @@ import backoff
 import requests
 from requests import HTTPError
 
-from core.auth import generate_identity_token, get_credentials
+from core.auth import generate_identity_token
 from core.client.base_client import BaseClient
 
 
@@ -42,8 +42,6 @@ class APIClient(BaseClient, ABC):
         self.key_path = key_path
         self.protocol_with_host = self._build_host_with_protocol(host=host, ssl=ssl)
         self.endpoint = f"{self.protocol_with_host}{root}"
-        self.credentials = get_credentials(key_path=self.key_path)
-        self._project_id = project_id
 
     @staticmethod
     def _build_host_with_protocol(host: str, ssl: Optional[bool]) -> str:
@@ -96,6 +94,41 @@ class APIClient(BaseClient, ABC):
             data=json.dumps(payload or {}) if payload else None,
         )
 
+    @staticmethod
+    def _check_response(
+        response: requests.Response, verbose_on_exception: bool
+    ) -> None:
+        """
+        Raise HTTPError with additional information if the response is not successful.
+        """
+        try:
+            response.raise_for_status()
+        except HTTPError as http_error:
+            if verbose_on_exception:
+                error_message = os.linesep.join(
+                    [
+                        str(http_error),
+                        f"response text: {http_error.response.text}",
+                        f"request payload: {http_error.response.request.body}",
+                    ]
+                )
+                raise HTTPError(
+                    error_message, response=http_error.response
+                ) from http_error
+            raise http_error
+
+    def _send_request(
+        self,
+        prepared_request: requests.PreparedRequest,
+        timeout: Optional[int],
+        verbose_on_exception: bool,
+    ) -> requests.Response:
+        """Send the prepared request and return the response after error checking."""
+        session = requests.Session()
+        response = session.send(prepared_request, timeout=timeout)
+        self._check_response(response, verbose_on_exception)
+        return response
+
     def call(
         self,
         resource: str,
@@ -107,32 +140,17 @@ class APIClient(BaseClient, ABC):
         retry_attempts: Optional[int] = 0,
         verbose_on_exception: bool = True,
     ) -> requests.Response:
-        def _call():
-            request = self._request(
-                resource, verb, payload, params, target_audience=target_audience
-            ).prepare()
-            session = requests.Session()
-            response = session.send(request, timeout=timeout)
-            try:
-                response.raise_for_status()
-            except HTTPError as http_error:
-                if verbose_on_exception:
-                    raise HTTPError(
-                        os.linesep.join(
-                            [
-                                str(http_error),
-                                f"response text: {http_error.response.text}",
-                                f"request payload: {http_error.response.request.body}",
-                            ]
-                        ),
-                        response=http_error.response,
-                    ) from http_error
-                raise http_error
-            return response
+        request = self._request(
+            resource, verb, payload, params, target_audience=target_audience
+        ).prepare()
 
-        if retry_attempts != 0:
-            _call = backoff.on_exception(
-                backoff.expo, HTTPError, max_tries=retry_attempts
-            )(_call)
+        # Wrap the send action with backoff if needed.
+        _call = (
+            backoff.on_exception(backoff.expo, HTTPError, max_tries=retry_attempts)(
+                self._send_request
+            )
+            if retry_attempts != 0
+            else self._send_request
+        )
 
-        return _call()
+        return _call(request, timeout, verbose_on_exception)

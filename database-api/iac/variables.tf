@@ -24,7 +24,6 @@ variable "cloud_sql_tier" {
   type = string
 }
 
-
 variable "cloud_run_cloud_sql_username" {
   type = string
 }

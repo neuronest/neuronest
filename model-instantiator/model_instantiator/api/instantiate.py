@@ -7,7 +7,8 @@ from core.google.vertex_ai_manager import VertexAIManager
 from core.routes.model_instantiator import routes
 from core.schemas.google.cloud_run import JobConfig
 from core.schemas.model_instantiator import (
-    InstantiateCloudSQLInput,
+    CloudSQL,
+    CloudSQLOutput,
     InstantiateModelInput,
     InstantiateModelOutput,
 )
@@ -120,34 +121,35 @@ def instantiate_model(
 
 def _no_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_404_NOT_FOUND
-    return {"error": f"Cloud SQL instance '{instance_name}' not found."}
+    return CloudSQLOutput(message=f"Cloud SQL instance '{instance_name}' not found.")
 
 
 def _already_running_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_200_OK
-    return {"message": f"Cloud SQL instance '{instance_name}' is already running."}
+    return CloudSQLOutput(
+        message=f"Cloud SQL instance '{instance_name}' is already running."
+    )
 
 
 def _already_starting_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_200_OK
-    return {"message": f"Cloud SQL instance '{instance_name}' is already starting."}
+    return CloudSQLOutput(
+        message=f"Cloud SQL instance '{instance_name}' is already starting."
+    )
 
 
-def _starting_instance_response(response: Response, instance_name: str):
-    response.status_code = status.HTTP_202_ACCEPTED
-    return {"message": f"Cloud SQL instance '{instance_name}' is starting."}
-
-
-def _unhandled_instance_state_response(response: Response, instance_name: str):
-    response.status_code = status.HTTP_400_BAD_REQUEST
-    return {"error": f"Unhandled state for Cloud SQL instance '{instance_name}'."}
+def _starting_instance_response(
+    response: Response, instance_name: str, status_code: int = status.HTTP_200_OK
+):
+    response.status_code = status_code
+    return CloudSQLOutput(message=f"Cloud SQL instance '{instance_name}' is starting.")
 
 
 @router.post(
     routes.Instantiator.instantiate_cloud_sql, status_code=status.HTTP_201_CREATED
 )
 def instantiate_cloud_sql_instance(
-    instantiate_cloud_sql_input: InstantiateCloudSQLInput,
+    instantiate_cloud_sql_input: CloudSQL,
     response: Response,
     cloud_run_job_config: DictConfig = Depends(use_config),
     cloud_sql_manager: CloudSQLManager = Depends(use_cloud_sql_manager),
@@ -167,7 +169,8 @@ def instantiate_cloud_sql_instance(
     if cloud_sql_manager.is_instance_started(instance_name):
         logging.info(f"Instance {instance_name} is already running.")
         return _already_running_instance_response(
-            response=response, instance_name=instance_name
+            response=response,
+            instance_name=instance_name,
         )
 
     # Check if the instance is already starting
@@ -217,4 +220,8 @@ def instantiate_cloud_sql_instance(
     logging.info(f"Starting Cloud Run job: {job_name}")
     cloud_run_job_manager.run_job(job_name=job_name)
 
-    return _starting_instance_response(response=response, instance_name=instance_name)
+    return _starting_instance_response(
+        response=response,
+        instance_name=instance_name,
+        status_code=status.HTTP_202_ACCEPTED,
+    )

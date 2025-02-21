@@ -11,32 +11,41 @@ from database_api.models.project import Project as DatabaseProject
 router = APIRouter(prefix=f"/{routes.Project.prefix}", tags=[routes.Project.prefix])
 
 
-def _deleted_project_response(response: Response, gcp_project_id: str) -> Response:
-    """
-    Constructs a response message for a successfully deleted project
-    and sets the response status code and body.
+def _modify_response_status_return_message(
+    response: Response, message: str, status_code: int
+):
+    response.status_code = status_code
 
-    The body is encoded to UTF-8 because HTTP response bodies must be
-    bytes objects, not strings. Encoding the string ensures compatibility
-    with the HTTP protocol and avoids runtime errors in ASGI frameworks.
-    """
-    response.status_code = status.HTTP_200_OK
-    response.body = (
-        f"Project with gcp_project_id {gcp_project_id} has been deleted".encode("utf-8")
+    return {"message": message}
+
+
+def _project_already_exists_response(
+    response: Response,
+    project_id: str,
+    status_code: int = status.HTTP_409_CONFLICT,
+):
+    return _modify_response_status_return_message(
+        response=response,
+        message=f"Project {project_id} already exists",
+        status_code=status_code,
     )
-
-    return response
 
 
 @router.post(routes.Project.create, response_model=Project)
-def create(project: ProjectCreate, database: Session = Depends(get_database)):
+def create(
+    project: ProjectCreate,
+    response: Response,
+    database: Session = Depends(get_database),
+):
     db_project = (
         database.query(DatabaseProject)
         .filter(DatabaseProject.gcp_project_id == project.gcp_project_id)
         .first()
     )
     if db_project:
-        raise HTTPException(status_code=400, detail="Project already exists")
+        return _project_already_exists_response(
+            response=response, project_id=project.gcp_project_id
+        )
 
     new_db_project = DatabaseProject(gcp_project_id=project.gcp_project_id)
     database.add(new_db_project)
@@ -46,32 +55,8 @@ def create(project: ProjectCreate, database: Session = Depends(get_database)):
     return new_db_project
 
 
-@router.get(routes.Project.get, response_model=Project)
-def get(gcp_project_id: str, database: Session = Depends(get_database)):
-    """
-    Retrieve a project by its GCP project ID.
-    """
-    db_project = (
-        database.query(DatabaseProject)
-        .filter(DatabaseProject.gcp_project_id == gcp_project_id)
-        .first()
-    )
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    return db_project
-
-
-@router.get(routes.Project.list, response_model=List[Project])
-# pylint: disable=redefined-builtin
-def list(database: Session = Depends(get_database)):
-    return database.query(DatabaseProject).all()
-
-
 @router.delete(routes.Project.delete)
-def delete(
-    gcp_project_id: str, response: Response, database: Session = Depends(get_database)
-):
+def delete(gcp_project_id: str, database: Session = Depends(get_database)):
     """
     Delete a project by its GCP project ID.
     """
@@ -81,10 +66,13 @@ def delete(
         .first()
     )
     if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     database.delete(db_project)
     database.commit()
 
-    # Use the helper function to construct the response
-    return _deleted_project_response(response=response, gcp_project_id=gcp_project_id)
+
+@router.get(routes.Project.list, response_model=List[Project])
+# pylint: disable=redefined-builtin
+def list(database: Session = Depends(get_database)):
+    return database.query(DatabaseProject).all()

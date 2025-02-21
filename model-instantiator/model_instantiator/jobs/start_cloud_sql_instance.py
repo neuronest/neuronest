@@ -17,14 +17,13 @@ def start_cloud_sql_instance(
     if cloud_sql_manager.is_instance_started(instance_name):
         return None
     if cloud_sql_manager.is_instance_stopping(instance_name):
-        cloud_sql_manager.wait_for_update_completion(instance_name)
+        cloud_sql_manager.wait_for_instance_update(instance_name)
         if not cloud_sql_manager.is_instance_stopped(instance_name):
             raise RuntimeError(f"Failed to stop instance '{instance_name}'.")
 
     if not cloud_sql_manager.is_instance_starting(instance_name):
-        cloud_sql_manager.start_instance(instance_name=instance_name, sync=False)
+        cloud_sql_manager.start_instance(instance_name=instance_name, sync=True)
 
-    cloud_sql_manager.wait_for_update_completion(instance_name, timeout=60 * 15)
     if cloud_sql_manager.is_instance_started(instance_name):
         return None
 

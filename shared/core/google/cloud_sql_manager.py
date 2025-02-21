@@ -2,14 +2,32 @@ import datetime
 import logging
 import time
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from pydantic import BaseModel, validator
 
 from core.client.base_client import BaseClient
 
 logger = logging.getLogger(__name__)
+
+
+class ActivationPolicy(str, Enum):
+    ALWAYS = "ALWAYS"
+    NEVER = "NEVER"
+
+
+class Settings(BaseModel):
+    activationPolicy: ActivationPolicy
+
+
+class InstancePatchBody(BaseModel):
+    settings: Settings
+
+
+class Instance(BaseModel):
+    settings: Settings
 
 
 class InstanceStatus(str, Enum):
@@ -18,6 +36,92 @@ class InstanceStatus(str, Enum):
     STOPPED = "STOPPED"
     STOPPING = "STOPPING"
     UPDATING = "UPDATING"
+
+
+class OperationStatus(str, Enum):
+    DONE = "DONE"
+    RUNNING = "RUNNING"
+    PENDING = "PENDING"
+
+
+class OperationType(str, Enum):
+    UPDATE = "UPDATE"
+    # Add other operation types as needed
+
+
+DATETIME_FORMAT_WITH_MICROSECONDS = "%Y-%m-%dT%H:%M:%S.%fZ"
+DATETIME_FORMAT_WITHOUT_MICROSECONDS = "%Y-%m-%dT%H:%M:%SZ"
+
+
+class Operation(BaseModel):
+    name: str
+    status: Optional[str]  # Now optional, accepts None or any string
+    operationType: Optional[str]
+    targetLink: Optional[str]
+    endTime: Optional[str]
+    error: Optional[Dict] = None  # Now accepts None or str, and handles missing field
+
+    @validator("status", pre=True, always=True)
+    # pylint: disable=no-self-argument
+    def validate_status(cls, status):
+        if status == OperationStatus.DONE.value:
+            return status
+        return status  # Accept unknown statuses
+
+    @validator("operationType", pre=True, always=True)
+    # pylint: disable=no-self-argument
+    def validate_operation_type(cls, operation_type):
+        if operation_type not in OperationType.__members__.values():
+            return operation_type  # Accept unknown operation types
+        return operation_type
+
+    @validator("endTime", pre=True, always=True)
+    # pylint: disable=no-self-argument
+    def validate_end_time_format(cls, end_time):
+        if end_time is not None:
+            for date_format in [
+                DATETIME_FORMAT_WITH_MICROSECONDS,
+                DATETIME_FORMAT_WITHOUT_MICROSECONDS,
+            ]:
+                try:
+                    datetime.datetime.strptime(end_time, date_format)
+                    return end_time
+                except ValueError:
+                    continue
+            raise ValueError(
+                f"endTime must follow the format '{DATETIME_FORMAT_WITH_MICROSECONDS}' "
+                f"or '{DATETIME_FORMAT_WITHOUT_MICROSECONDS}'"
+            )
+        return end_time
+
+    @property
+    def end_time_datetime(self) -> Optional[datetime]:
+        if self.endTime:
+            for fmt in [
+                DATETIME_FORMAT_WITH_MICROSECONDS,
+                DATETIME_FORMAT_WITHOUT_MICROSECONDS,
+            ]:
+                try:
+                    return datetime.datetime.strptime(self.endTime, fmt)
+                except ValueError:
+                    continue
+        return None
+
+
+class InstanceOperations(BaseModel):
+    items: Optional[List[Operation]] = None
+
+    def get_update_operations(self, instance_name: str) -> List[Operation]:
+        if not self.items:
+            return []
+
+        return [
+            operation
+            for operation in self.items  # pylint: disable=not-an-iterable
+            if operation.operationType == OperationType.UPDATE
+            and operation.targetLink
+            and instance_name in operation.targetLink
+        ]
 
 
 class CloudSQLManager(BaseClient):
@@ -29,19 +133,21 @@ class CloudSQLManager(BaseClient):
         super().__init__(key_path=key_path, project_id=project_id)
         self.client = build("sqladmin", "v1", credentials=self.credentials)
 
-    def get_instance_by_name(self, instance_name: str) -> Optional[dict]:
+    def get_instance_by_name(self, instance_name: str) -> Optional[Instance]:
         """
         Get details of a Cloud SQL instance by its name.
         """
         try:
-            instance = (
-                # pylint: disable=no-member
-                self.client.instances()
-                .get(
-                    project=self.project_id,
-                    instance=instance_name,
+            instance = Instance(
+                **(
+                    # pylint: disable=no-member
+                    self.client.instances()
+                    .get(
+                        project=self.project_id,
+                        instance=instance_name,
+                    )
+                    .execute()
                 )
-                .execute()
             )
             return instance
         except HttpError as http_error:
@@ -61,27 +167,24 @@ class CloudSQLManager(BaseClient):
         Fetch the current activation policy of the Cloud SQL instance.
         """
         instance = self.get_instance_by_name(instance_name)
-        return instance["settings"]["activationPolicy"]
+        return instance.settings.activationPolicy
 
     def get_instance_update_operations_history(
         self, instance_name: str
-    ) -> Optional[List[dict]]:
+    ) -> List[Operation]:
         """
         Fetch the status of the most recent 'UPDATE' operation for the specified instance.
         """
         # pylint: disable=no-member
-        operations = (
-            self.client.operations()
-            .list(project=self.project_id, instance=instance_name)
-            .execute()
+        operations = InstanceOperations(
+            **(
+                self.client.operations()
+                .list(project=self.project_id, instance=instance_name)
+                .execute()
+            )
         )
 
-        return [
-            operation
-            for operation in operations.get("items", [])
-            if operation["operationType"] == "UPDATE"
-            and instance_name in operation.get("targetLink", "")
-        ]
+        return operations.get_update_operations(instance_name)
 
     def get_instance_last_update_operation_status(
         self, instance_name: str
@@ -96,7 +199,7 @@ class CloudSQLManager(BaseClient):
             return None
 
         # Return the status of the most recent update operation
-        return update_operations[0]["status"]
+        return update_operations[0].status
 
     def get_instance_last_update_end_time(
         self, instance_name: str
@@ -111,9 +214,7 @@ class CloudSQLManager(BaseClient):
             return None
 
         # Return the status of the most recent update operation
-        return datetime.datetime.strptime(
-            update_operations[0]["endTime"], "%Y-%m-%dT%H:%M:%S.%fZ"
-        )
+        return datetime.datetime.strptime(update_operations[0].end_time_datetime)
 
     def get_instance_status(self, instance_name: str) -> InstanceStatus:
         """
@@ -135,15 +236,30 @@ class CloudSQLManager(BaseClient):
                 instance_name
             )
 
-            if current_policy == "ALWAYS" and last_update_status == "RUNNING":
+            if (
+                current_policy == ActivationPolicy.ALWAYS
+                and last_update_status == OperationStatus.RUNNING
+            ):
                 return InstanceStatus.STARTING
-            if current_policy == "ALWAYS" and last_update_status == "DONE":
+            if (
+                current_policy == ActivationPolicy.ALWAYS
+                and last_update_status == OperationStatus.DONE
+            ):
                 return InstanceStatus.STARTED
-            if current_policy == "ALWAYS" and last_update_status == "PENDING":
+            if (
+                current_policy == ActivationPolicy.ALWAYS
+                and last_update_status == OperationStatus.PENDING
+            ):
                 return InstanceStatus.UPDATING
-            if current_policy == "NEVER" and last_update_status == "RUNNING":
+            if (
+                current_policy == ActivationPolicy.NEVER
+                and last_update_status == OperationStatus.RUNNING
+            ):
                 return InstanceStatus.STOPPING
-            if current_policy == "NEVER" and last_update_status == "DONE":
+            if (
+                current_policy == ActivationPolicy.NEVER
+                and last_update_status == OperationStatus.DONE
+            ):
                 return InstanceStatus.STOPPED
 
             raise ValueError(
@@ -205,24 +321,26 @@ class CloudSQLManager(BaseClient):
         """
         return self.get_instance_status(instance_name) == InstanceStatus.STOPPED
 
-    def _wait_for_operation(self, operation: dict, timeout: int = 600):
+    def _wait_for_operation(self, operation: Operation, timeout: int = 600):
         """
         Wait for a Cloud SQL operation to complete.
         """
-        operation_name = operation.get("name")
+        operation_name = operation.name
         start_time = time.time()
 
         while time.time() - start_time < timeout:
-            result = (
-                # pylint: disable=no-member
-                self.client.operations()
-                .get(project=self.project_id, operation=operation_name)
-                .execute()
+            operation = Operation(
+                **(
+                    # pylint: disable=no-member
+                    self.client.operations()
+                    .get(project=self.project_id, operation=operation_name)
+                    .execute()
+                )
             )
 
-            if result.get("status") == "DONE":
-                if "error" in result:
-                    raise RuntimeError(f"Operation failed: {result['error']}")
+            if operation.status == OperationStatus.DONE:
+                if operation.error:
+                    raise RuntimeError(f"Operation failed: {operation.error}")
                 logger.info(f"Operation '{operation_name}' completed successfully.")
                 return None
 
@@ -252,7 +370,7 @@ class CloudSQLManager(BaseClient):
         ongoing_operations = [
             operation
             for operation in self.get_instance_update_operations_history(instance_name)
-            if operation["status"] != "DONE"
+            if operation.status != OperationStatus.DONE
         ]
 
         if not ongoing_operations:
@@ -262,16 +380,16 @@ class CloudSQLManager(BaseClient):
         # Iterate through ongoing operations and wait for their completion
         for operation in ongoing_operations:
             logger.info(
-                f"Waiting for operation '{operation['name']}' on "
+                f"Waiting for operation '{operation.name}' on "
                 f"instance '{instance_name}' to complete. "
-                f"Initial status: {operation['status']}."
+                f"Initial status: {operation.status}."
             )
             try:
                 self._wait_for_operation(operation=operation, timeout=timeout)
-                logger.info(f"Operation '{operation['name']}' completed successfully.")
+                logger.info(f"Operation '{operation.name}' completed successfully.")
             except Exception as error:
                 raise RuntimeError(
-                    f"Failed to wait for operation '{operation['name']}' "
+                    f"Failed to wait for operation '{operation.name}' "
                     f"on instance '{instance_name}': {error}"
                 ) from error
 
@@ -281,32 +399,51 @@ class CloudSQLManager(BaseClient):
         )
         return True
 
-    def stop_instance(self, instance_name: str, sync: bool = True):
-        """
-        Stop a Cloud SQL instance.
-        """
+    def _modify_instance_activation_policy(
+        self,
+        instance_name: str,
+        new_activation_policy: ActivationPolicy,
+        sync: bool,
+        timeout: int = 600,
+    ):
         instance = self.get_instance_by_name(instance_name)
         if instance is None:
             raise ValueError(f"Instance '{instance_name}' does not exist.")
 
-        if self.is_instance_stopped(instance_name):
-            logger.info(f"Instance '{instance_name}' is already stopped.")
-            return
-
         try:
-            operation = (
-                # pylint: disable=no-member
-                self.client.instances()
-                .patch(
-                    project=self.project_id,
-                    instance=instance_name,
-                    body={"settings": {"activationPolicy": "NEVER"}},
+            operation = Operation(
+                **(
+                    # pylint: disable=no-member
+                    self.client.instances()
+                    .patch(
+                        project=self.project_id,
+                        instance=instance_name,
+                        body=InstancePatchBody(
+                            settings=Settings(activationPolicy=new_activation_policy)
+                        ).dict(),
+                    )
+                    .execute()
                 )
-                .execute()
             )
             if sync:
-                self._wait_for_operation(operation)
-                logger.info(f"Instance '{instance_name}' has been stopped.")
+                self._wait_for_operation(operation, timeout=timeout)
+                logger.info(f"Instance '{instance_name}' policy has been modified.")
+        except HttpError as http_error:
+            logger.error(
+                f"Failed to modify instance '{instance_name} policy': {http_error}"
+            )
+            raise
+
+    def stop_instance(self, instance_name: str, sync: bool = True):
+        """
+        Stop a Cloud SQL instance.
+        """
+        try:
+            self._modify_instance_activation_policy(
+                instance_name=instance_name,
+                new_activation_policy=ActivationPolicy.NEVER,
+                sync=sync,
+            )
         except HttpError as http_error:
             logger.error(f"Failed to stop instance '{instance_name}': {http_error}")
             raise
@@ -319,34 +456,12 @@ class CloudSQLManager(BaseClient):
             instance_name (str): The name of the Cloud SQL instance.
             sync (bool): Whether to wait for the operation to complete (default: True).
         """
-        instance = self.get_instance_by_name(instance_name)
-        if instance is None:
-            raise ValueError(f"Instance '{instance_name}' does not exist.")
-
-        if not self.is_instance_stopped(instance_name):
-            logger.info(
-                f"Instance '{instance_name}' is already running "
-                f"or in the process of starting."
-            )
-            return
-
         try:
-            # Start the instance by changing the activation policy to "ALWAYS"
-            operation = (
-                # pylint: disable=no-member
-                self.client.instances()
-                .patch(
-                    project=self.project_id,
-                    instance=instance_name,
-                    body={"settings": {"activationPolicy": "ALWAYS"}},
-                )
-                .execute()
+            self._modify_instance_activation_policy(
+                instance_name=instance_name,
+                new_activation_policy=ActivationPolicy.ALWAYS,
+                sync=sync,
             )
-            logger.info(f"Start operation initiated for instance '{instance_name}'.")
-
-            if sync:
-                self._wait_for_operation(operation)
-                logger.info(f"Instance '{instance_name}' has been started.")
         except HttpError as http_error:
             logger.error(f"Failed to start instance '{instance_name}': {http_error}")
             raise

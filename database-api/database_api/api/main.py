@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from migrations.alembic_command import upgrade_head
 from sqlalchemy import text
+from starlette.responses import JSONResponse
+from starlette.status import HTTP_503_SERVICE_UNAVAILABLE
 
 from database_api.api.dependencies import get_database, handle_potential_cloud_sql_error
 from database_api.api.exceptions import (
@@ -32,7 +33,7 @@ app = create_app()
 
 
 @app.on_event("startup")
-async def startup_event():
+async def run_migrations_on_startup():
     database = next(get_database())
     lock_or_migration_exception = None
     release_lock_exception = None
@@ -69,9 +70,9 @@ async def startup_event():
 
 
 @app.middleware("http")
-async def custom_error_handling_middleware(request: Request, call_next):
+async def database_error_middleware(request: Request, call_next):
     """
-    Middleware to catch and handle specific custom errors raised during request processing.
+    Middleware to catch and handle specific database-related errors during request processing.
     """
     try:
         # Process the request
@@ -81,15 +82,15 @@ async def custom_error_handling_middleware(request: Request, call_next):
         handle_potential_cloud_sql_error(raise_error=False, on_error_correct=True)
         # Handle the case when the database is stopped
         return JSONResponse(
-            status_code=503,
+            status_code=HTTP_503_SERVICE_UNAVAILABLE,
             content="The database is currently stopped or stopping. "
-            "It will restarted shortly, please try again shortly.",
+            "It will be restarted shortly, please try again shortly.",
         )
     except DatabaseStartingError:
         # Handle the case when the database is starting
         return JSONResponse(
-            status_code=503,
-            content="The database is currently starting. " "Please wait and try again.",
+            status_code=HTTP_503_SERVICE_UNAVAILABLE,
+            content="The database is currently starting. Please wait and try again.",
         )
 
 

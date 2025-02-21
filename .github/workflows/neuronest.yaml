@@ -3,39 +3,6 @@ name: neuronest
 on:
   workflow_dispatch:
   push:
-    paths:
-      - shared/**
-      - .github/workflows/neuronest.yaml
-      - .github/workflows/functional_abstract_online_prediction_model.yaml
-      - .github/workflows/abstract_online_prediction_model.yaml
-      - .github/workflows/functional_people_counting.yaml
-      - .github/workflows/functional_video_comparator.yaml
-      - .github/workflows/functional_object_detection.yaml
-      - .github/workflows/functional_database_api.yaml
-      - .pre-commit-config.yaml
-      - people-counting/**
-      - object-detection/**
-      - model-instantiator/**
-      - video-comparator/**
-      - database-api/**
-      - functional-database-api/**
-      - .github/workflows/database_api.yaml
-      - .github/actions/**
-      - .github/variables/**
-      - .pre-commit-config.yaml
-#  pull_request:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/video_comparator_dummy_project.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - model-instantiator/**
-#      - video-comparator/**
-#      - object-detection/**
 
 env:
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -44,10 +11,6 @@ jobs:
 
   functional_database_api:
     uses: ./.github/workflows/functional_database_api.yaml
-    with:
-      build: true
-      deploy: true
-      do_post_deployment: true
     secrets: inherit
 
   functional_people_counting:
@@ -57,8 +20,7 @@ jobs:
 #  functional_object_detection:
 #    uses: ./.github/workflows/functional_object_detection.yaml
 #    secrets: inherit
-#
-#
+
 #  functional_video_comparator:
 #    uses: ./.github/workflows/functional_video_comparator.yaml
 #    secrets: inherit

@@ -7,8 +7,8 @@ from core.google.logging_client import LoggerName, LoggingClient
 from core.google.vertex_ai_manager import VertexAIManager
 from core.routes.model_instantiator import routes
 from core.schemas.model_instantiator import (
-    UninstantiateCloudSqlInput,
-    UninstantiateCloudSQLOutput,
+    CloudSQL,
+    CloudSQLOutput,
     UninstantiateModelInput,
     UninstantiateModelLogsConditionedInput,
     UninstantiateModelOutput,
@@ -184,30 +184,33 @@ def uninstantiate_model_logs_conditioned(
 def _no_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_404_NOT_FOUND
 
-    return {"error": f"Cloud SQL instance '{instance_name}' not found"}
+    return CloudSQLOutput(message=f"Cloud SQL instance '{instance_name}' not found")
 
 
 def _already_stopped_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_200_OK
-    # response.status_code = status.HTTP_409_CONFLICT
 
-    return {"message": f"Cloud SQL instance '{instance_name}' is already stopped"}
+    return CloudSQLOutput(
+        message=f"Cloud SQL instance '{instance_name}' is already stopped"
+    )
 
 
 def _correctly_stopped_instance_response(response: Response, instance_name: str):
     response.status_code = status.HTTP_202_ACCEPTED
 
-    return {
-        "message": f"Cloud SQL instance '{instance_name}' has been successfully stopped"
-    }
+    return CloudSQLOutput(
+        message=f"Cloud SQL instance '{instance_name}' has been successfully stopped"
+    )
 
 
 def _too_recently_used_cloud_sql_instance_response(
-    response: Response, instance_name: str
+    response: Response, instance_name: str, status_code: int = status.HTTP_200_OK
 ):
-    response.status_code = status.HTTP_200_OK
+    response.status_code = status_code
 
-    return {"message": f"CloudSQL instance '{instance_name}' too recently used"}
+    return CloudSQLOutput(
+        message=f"CloudSQL instance '{instance_name}' too recently used"
+    )
 
 
 def _uninstantiate_cloud_sql_instance(
@@ -237,17 +240,17 @@ def _uninstantiate_cloud_sql_instance(
 
 @router.post(
     routes.Uninstantiator.cloud_sql_uninstantiate,
-    response_model=UninstantiateCloudSQLOutput,
+    response_model=CloudSQLOutput,
     status_code=status.HTTP_202_ACCEPTED,
 )
 def uninstantiate_cloud_sql_instance(
-    uninstantiate_cloud_sql_input: UninstantiateCloudSqlInput,
+    uninstantiate_cloud_sql_input: CloudSQL,
     response: Response,
     cloud_sql_manager: CloudSQLManager = Depends(use_cloud_sql_manager),
 ):
 
     return _uninstantiate_cloud_sql_instance(
-        cloud_sql_name=uninstantiate_cloud_sql_input.cloud_sql_name,
+        cloud_sql_name=uninstantiate_cloud_sql_input.instance_name,
         response=response,
         cloud_sql_manager=cloud_sql_manager,
     )
@@ -256,22 +259,20 @@ def uninstantiate_cloud_sql_instance(
 def _instance_still_starting_response(
     response: Response, instance_name: str, status_code: int = status.HTTP_200_OK
 ):
-    """
-    Response when the Cloud SQL instance is still starting.
-    """
-    response.status_code = status_code  # 409 indicates the instance is not ready yet
-    return {
-        "message": f"Cloud SQL instance '{instance_name}' "
+
+    response.status_code = status_code
+    return CloudSQLOutput(
+        message=f"Cloud SQL instance '{instance_name}' "
         f"is still starting and cannot be uninstantiated yet."
-    }
+    )
 
 
 def _already_stopping_instance_response(response: Response, instance_name: str):
-    """
-    Response when the Cloud SQL instance is already in the process of stopping.
-    """
+
     response.status_code = status.HTTP_200_OK
-    return {"message": f"Cloud SQL instance '{instance_name}' is already stopping."}
+    return CloudSQLOutput(
+        message=f"Cloud SQL instance '{instance_name}' is already stopping."
+    )
 
 
 def _too_recently_started_cloud_sql_instance_response(
@@ -279,17 +280,12 @@ def _too_recently_started_cloud_sql_instance_response(
     instance_name: str,
     response_status_code: int = status.HTTP_200_OK,
 ):
-    """
-    Response when the Cloud SQL instance has not been running long enough
-    to be uninstantiated.
-    """
-    response.status_code = (
-        response_status_code  # 403 to indicate action is not allowed yet
-    )
-    return {
-        "message": f"Cloud SQL instance '{instance_name}' "
+
+    response.status_code = response_status_code
+    return CloudSQLOutput(
+        message=f"Cloud SQL instance '{instance_name}' "
         f"has started too recently and cannot be uninstantiated yet."
-    }
+    )
 
 
 @router.post(
@@ -297,13 +293,13 @@ def _too_recently_started_cloud_sql_instance_response(
     status_code=status.HTTP_202_ACCEPTED,
 )
 def uninstantiate_cloud_sql_usage_conditioned(
-    uninstantiate_cloud_sql_input: UninstantiateCloudSqlInput,
+    uninstantiate_cloud_sql_input: CloudSQL,
     response: Response,
     config: DictConfig = Depends(use_config),
     cloud_sql_manager: CloudSQLManager = Depends(use_cloud_sql_manager),
     logging_client: LoggingClient = Depends(use_logging_client),
-) -> dict:
-    instance_name = uninstantiate_cloud_sql_input.cloud_sql_name
+):
+    instance_name = uninstantiate_cloud_sql_input.instance_name
     logging.info(
         f"Received request to uninstantiate Cloud SQL instance: {instance_name}"
     )
@@ -364,6 +360,10 @@ def uninstantiate_cloud_sql_usage_conditioned(
     )
 
     # Query logs for non-cloudsqladmin activity
+    # Using a large page_size to reduce the number of API requests.
+    # Setting page_size too small could result in multiple requests,
+    # increasing the risk of exceeding quota limits due to high request volumes.
+
     non_cloudsqladmin_queries_logs = [
         log
         for log in list(
@@ -375,7 +375,8 @@ def uninstantiate_cloud_sql_usage_conditioned(
                         timestamp >= "{instance_active_check_start_time.isoformat()}Z"
                         """,
                 order_by=logging_v2.DESCENDING,
-                # absurdly big number so that single requests yields all the logs
+                # Using a very large page_size to minimize the number of API calls.
+                # Frequent calls due to smaller page_size can trigger quota violations.
                 page_size=1_000_000_000,
             )
         )
@@ -389,7 +390,9 @@ def uninstantiate_cloud_sql_usage_conditioned(
             f" Keeping instance running."
         )
         return _too_recently_used_cloud_sql_instance_response(
-            response=response, instance_name=instance_name
+            response=response,
+            instance_name=instance_name,
+            status_code=status.HTTP_200_OK,
         )
 
     # If no recent activity is detected, proceed to stop the instance

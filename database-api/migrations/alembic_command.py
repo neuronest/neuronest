@@ -5,9 +5,8 @@ import subprocess
 def upgrade_head():
     """
     Executes Alembic migrations to upgrade the database schema to the latest revision.
-    Logs the migration status without returning any values.
+    Logs the migration status and raises appropriate errors in case of failure.
     """
-
     try:
         logging.info("Starting Alembic database migration...")
 
@@ -24,13 +23,17 @@ def upgrade_head():
             logging.info(f"Migrations Output:\n{result.stdout.strip()}")
         else:
             raise RuntimeError(
-                f"Alembic migration failed.  Details:\n{result.stderr.strip()}"
+                f"Alembic migration failed. Details:\n"
+                f"STDOUT:\n{result.stdout.strip()}\n"
+                f"STDERR:\n{result.stderr.strip()}"
             )
 
     except subprocess.SubprocessError as subprocess_error:
-        logging.critical(f"Subprocess execution error: {str(subprocess_error)}")
-    except Exception as subprocess_error:
-        logging.critical(
-            f"Unexpected error during Alembic migration: {str(subprocess_error)}"
-        )
-        raise subprocess_error
+        raise RuntimeError(
+            f"Subprocess execution error: {str(subprocess_error)}"
+        ) from subprocess_error
+
+    except Exception as unexpected_error:
+        raise RuntimeError(
+            f"Unexpected error during Alembic migration: {str(unexpected_error)}"
+        ) from unexpected_error
