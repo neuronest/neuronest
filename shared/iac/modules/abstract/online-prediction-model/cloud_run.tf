@@ -22,6 +22,11 @@ resource "google_cloud_run_v2_service" "web_serving" {
           value = env.value
         }
       }
+      env {
+        name  = "MODEL_INSTANTIATOR_HOST"
+        value = module.model_instantiator.url
+      }
+
     }
     scaling {
       min_instance_count = var.cloud_run_min_scale

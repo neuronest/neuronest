@@ -41,6 +41,9 @@ on:
       online_prediction_model_package_name:
         required: true
         type: string
+      base_image_name:
+        required: true
+        type: string
     outputs:
       web_serving_image_name:
         description: "The web serving image name"
@@ -57,6 +60,7 @@ on:
 
 env:
   REPOSITORY_NAME: ${{ inputs.online_prediction_model_repository }}
+  BASE_IMAGE_NAME: ${{ inputs.base_image_name }}
   TESTING_BASE_IMAGE: python:3.11.10-slim-bookworm
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
