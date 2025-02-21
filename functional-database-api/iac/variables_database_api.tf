@@ -8,7 +8,6 @@ variable "database_api_cloud_sql_instance_name" {
 variable "database_api_cloud_sql_db_name" {
   type = string
 }
-
 variable "database_api_cloud_sql_enable_automatic_storage_increases" {
   type = bool
 }
