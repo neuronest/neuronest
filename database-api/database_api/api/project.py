@@ -72,6 +72,22 @@ def delete(gcp_project_id: str, database: Session = Depends(get_database)):
     database.commit()
 
 
+@router.get(routes.Project.get, response_model=Project)
+def get(gcp_project_id: str, database: Session = Depends(get_database)):
+    """
+    Retrieve a project by its GCP project ID.
+    """
+    db_project = (
+        database.query(DatabaseProject)
+        .filter(DatabaseProject.gcp_project_id == gcp_project_id)
+        .first()
+    )
+    if not db_project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    return db_project
+
+
 @router.get(routes.Project.list, response_model=List[Project])
 # pylint: disable=redefined-builtin
 def list(database: Session = Depends(get_database)):
