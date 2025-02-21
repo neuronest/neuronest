@@ -36,3 +36,25 @@ def fixture_database_api_client(
     database_api_host: str,
 ):
     return DatabaseApiClient(host=database_api_host)
+
+
+@pytest.fixture(name="uninstantiate_teardown", scope="session")
+def fixture_uninstantiate_teardown(
+    request,
+    # pylint: disable=unused-argument
+    model_instantiator_client: ModelInstantiatorClient,
+    # pylint: disable=unused-argument
+    cloud_sql_instance_name: str,
+):
+    # If running in a worker (i.e. under xdist),
+    # just yield without extra setup/teardown.
+    # It allows to perform the teardown actually once per pytest run
+    if hasattr(request.config, "workerinput"):
+        yield
+    else:
+        # In the master process, yield and then perform teardown after all tests.
+        try:
+            yield
+        finally:
+            pass
+            # model_instantiator_client.uninstantiate_cloud_sql(cloud_sql_instance_name)
