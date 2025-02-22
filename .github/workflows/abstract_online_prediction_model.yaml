@@ -76,27 +76,6 @@ jobs:
       - id: run_base_terraform
         uses: ./.github/actions/run_base_terraform
 
-  upload_variables_of_called_workflows:
-    runs-on: neuronest-runner-set
-    container: google/cloud-sdk
-    outputs:
-      online_prediction_model_env_file_artifact_name: ${{ steps.upload_online_prediction_model_variables.outputs.env_file_artifact_name }}
-      model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: upload_online_prediction_model_variables
-        id: upload_online_prediction_model_variables
-        uses: ./.github/actions/upload_variables
-        with:
-          variable_prefix_to_filter_on: current_repository_variables_prefix
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - name: upload_model_instantiator_variables
-        id: upload_model_instantiator_variables
-        uses: ./.github/actions/upload_variables
-        with:
-          variable_prefix_to_filter_on: MODEL_INSTANTIATOR
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-
   build_test_push_training_and_web_serving_images:
     name: build_test_push_training_and_web_serving_images
     runs-on: neuronest-runner-set

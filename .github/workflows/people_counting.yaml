@@ -46,16 +46,31 @@ jobs:
       - id: run_base_terraform
         uses: ./.github/actions/run_base_terraform
 
+  upload_object_detection_workflow_variables:
+    runs-on: neuronest-runner-set
+    container: google/cloud-sdk
+    outputs:
+      env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: upload_object_detection_variables
+        id: upload_object_detection_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: OBJECT_DETECTION
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+
   build_object_detection:
     needs:
       - run_base_terraform
+      - upload_object_detection_workflow_variables
     uses: ./.github/workflows/object_detection.yaml
     with:
       build: true
       deploy: false
       post_deploy: false
       run_tests: false
-      env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_object_detection_workflow_variables.env_file_artifact_name }}
     secrets: inherit
 
   build_test_push:
@@ -133,6 +148,7 @@ jobs:
   post_deploy_object_detection:
     needs:
      - run_base_terraform
+     - upload_object_detection_workflow_variables
      - build_object_detection
      - deploy
     uses: ./.github/workflows/object_detection.yaml
@@ -141,7 +157,7 @@ jobs:
       deploy: false
       post_deploy: true
       run_tests: false
-      env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_object_detection_workflow_variables.env_file_artifact_name }}
       dockerhub_training_image_name: ${{ needs.build_object_detection.outputs.dockerhub_training_image_name }}
       gcp_training_image_name: ${{ needs.build_object_detection.outputs.gcp_training_image_name }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
