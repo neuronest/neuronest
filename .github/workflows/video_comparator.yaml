@@ -41,37 +41,17 @@ env:
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-  upload_variables_of_called_workflows:
-    runs-on: neuronest-runner-set
-    container: google/cloud-sdk
-    outputs:
-      env_file_artifact_name: ${{ steps.upload_variables.outputs.env_file_artifact_name }}
-      video_comparator_base_image_name: ${{ steps.set_video_comparator_base_image_name.outputs.value }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: upload_variables
-        id: upload_variables
-        uses: ./.github/actions/upload_variables
-        with:
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-      - id: set_video_comparator_base_image_name
-        run: |
-          echo value=$VIDEO_COMPARATOR_BASE_IMAGE_NAME >> $GITHUB_OUTPUT
-        shell: bash
-
   video_comparator:
-    needs: upload_variables_of_called_workflows
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
       build: ${{ inputs.build }}
       deploy: ${{ inputs.deploy }}
       post_deploy: ${{ inputs.post_deploy }}
       run_tests: ${{ inputs.run_tests }}
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.env_file_artifact_name }}
+      env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       dockerhub_training_image_name: ${{ inputs.dockerhub_training_image_name }}
       gcp_training_image_name: ${{ inputs.gcp_training_image_name }}
       base_project_builder_sa_key: ${{ inputs.base_project_builder_sa_key }}
       online_prediction_model_repository: video-comparator
       online_prediction_model_package_name: video_comparator
-      base_image_name: ${{ needs.upload_variables_of_called_workflows.outputs.video_comparator_base_image_name }}
     secrets: inherit
