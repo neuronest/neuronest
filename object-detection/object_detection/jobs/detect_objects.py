@@ -1,4 +1,5 @@
 import ast
+import logging
 import os
 from typing import List, Tuple
 
@@ -30,6 +31,9 @@ from object_detection.jobs.services import (
     create_storage_client,
 )
 
+logging.basicConfig(level="INFO")
+logger = logging.getLogger(__name__)
+
 
 def run_objects_detection(
     project_id: str,
@@ -60,6 +64,11 @@ def run_objects_detection(
         sample=InputSampleSchema(
             image=image_asset.content, sample_metadata=sample_metadata
         )
+    )
+
+    logger.info(
+        f"Image with hash='{sample_id}', sample_metadata='{sample_metadata}' "
+        f"-> output='{output.results.to_dict()}'"
     )
 
     predictions = [
