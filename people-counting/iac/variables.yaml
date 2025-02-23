@@ -4,6 +4,7 @@ repository_variables:
   - REPOSITORY_CODE=pc
   - PACKAGE_NAME=people_counting
   - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
+  - REPOSITORIES_DEPENDENCIES=object-detection
 multi_instance_resource_names:
   # docker image
   - BASE_IMAGE_NAME=people-counting
@@ -25,6 +26,9 @@ other_variables:
     - CLOUD_RUN_CPU=1000m
     - CLOUD_RUN_MIN_SCALE=0
     - CLOUD_RUN_MAX_SCALE=1
+    - CLOUD_RUN_TIMEOUT=600s
     # GCP project
     - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
     - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}
+    # vertex
+    - OBJECT_DETECTION_VERTEX_LOCATION=europe-west4

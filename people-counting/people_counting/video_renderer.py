@@ -9,6 +9,7 @@ from people_counting.common import BoundingBox, Statistics, Status
 
 
 class VideoRenderer:
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         line_placement_ratio: float,
@@ -59,6 +60,7 @@ class VideoRenderer:
 
         return frame_copy
 
+    # pylint: disable=too-many-positional-arguments
     @staticmethod
     def _draw_text(
         frame: np.ndarray,
@@ -119,6 +121,7 @@ class VideoRenderer:
 
         return frame_copy
 
+    # pylint: disable=too-many-positional-arguments
     @classmethod
     def draw_object_id(
         cls,

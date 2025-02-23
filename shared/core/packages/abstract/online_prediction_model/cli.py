@@ -91,11 +91,13 @@ class LaunchTrainingJobAction(RunnableAction):
             )
 
         models_bucket_name, _ = model_gspath.to_bucket_and_blob_names()
-        StorageClient(project_id=PROJECT_ID).create_bucket(
-            bucket_name=models_bucket_name,
-            location=vertex_ai_manager.location,
-            exist_ok=True,
-        )
+        if (
+            StorageClient(project_id=PROJECT_ID).bucket_exists(
+                bucket_name=models_bucket_name,
+            )
+            is False
+        ):
+            raise ValueError(f"The bucket '{models_bucket_name}' does not exist")
 
         # unspecified: it won't produce a Vertex Model because no
         # model_serving_container_image_uri is specified (a custom one will be created)

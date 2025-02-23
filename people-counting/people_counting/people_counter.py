@@ -4,7 +4,7 @@ import tempfile
 from typing import Dict, List, Optional
 
 import dlib
-from core.client.model_client.object_detection import ObjectDetectionModelClient
+from core.client.object_detection import ObjectDetectionClient
 from core.google.storage_client import StorageClient
 from core.path import GSPath
 from core.schemas.asset import VideoAsset
@@ -23,16 +23,17 @@ logger = logging.getLogger(__name__)
 
 
 class PeopleCounter(metaclass=TimingMeta):
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
-        object_detection_model_client: ObjectDetectionModelClient,
+        object_detection_client: ObjectDetectionClient,
         algorithm_config: DictConfig,
         image_width: int,
         confidence_threshold: float,
         video_outputs_directory: Optional[str] = None,
     ):
         self.model = Model(
-            object_detection_model_client=object_detection_model_client,
+            object_detection_client=object_detection_client,
             confidence_threshold=confidence_threshold,
         )
         self.algorithm_config = algorithm_config
@@ -76,12 +77,14 @@ class PeopleCounter(metaclass=TimingMeta):
         trackers: List[dlib.correlation_tracker] = []
 
         for frame_number, frame in enumerate(video_asset.content):
+            logger.info(f"Processing frame {frame_number}")
             time_offset = frame_number * video_asset.time_step
             frame = resize(frame, width=self.image_width)
             drawn_frame = frame.copy()
 
             if frame_number % self.algorithm_config.inference_periodicity == 0:
                 status = Status.DETECTING
+                logger.info(f"Current status: {status}")
                 bounding_boxes = self.model.predict(frame)
 
                 trackers: List[dlib.correlation_tracker] = []
@@ -104,6 +107,7 @@ class PeopleCounter(metaclass=TimingMeta):
 
             else:
                 status = Status.TRACKING
+                logger.info(f"Current status: {status}")
                 bounding_boxes: List[BoundingBox] = []
 
                 for tracker in trackers:

@@ -1,0 +1,70 @@
+name: object_detection
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      build:
+        required: false
+        type: string
+        default: 'true'
+      deploy:
+        required: false
+        type: string
+        default: 'true'
+      post_deploy:
+        required: false
+        type: string
+        default: 'true'
+      run_tests:
+        required: false
+        type: string
+        default: 'true'
+      env_file_artifact_name:
+        required: false
+        type: string
+        default: ''
+      dockerhub_training_image_name:
+        required: false
+        type: string
+        default: ''
+      gcp_training_image_name:
+        required: false
+        type: string
+        default: ''
+      base_project_builder_sa_key:
+        required: false
+        type: string
+        default: ''
+    outputs:
+      web_serving_image_name:
+        description: "The web serving image name"
+        value: ${{ jobs.object_detection.outputs.web_serving_image_name }}
+      gcp_training_image_name:
+        description: "The gcp training image name"
+        value: ${{ jobs.object_detection.outputs.gcp_training_image_name }}
+      dockerhub_training_image_name:
+        description: "The dockerhub training image name"
+        value: ${{ jobs.object_detection.outputs.dockerhub_training_image_name }}
+      model_instantiator_image_name:
+        description: "Model instantiator image name"
+        value: ${{ jobs.object_detection.outputs.model_instantiator_image_name }}
+env:
+  REPOSITORY_NAME: object-detection
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  object_detection:
+    uses: ./.github/workflows/abstract_online_prediction_model.yaml
+    with:
+      build: ${{ inputs.build }}
+      deploy: ${{ inputs.deploy }}
+      post_deploy: ${{ inputs.post_deploy }}
+      run_tests: ${{ inputs.run_tests }}
+      env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      dockerhub_training_image_name: ${{ inputs.dockerhub_training_image_name }}
+      gcp_training_image_name: ${{ inputs.gcp_training_image_name }}
+      base_project_builder_sa_key: ${{ inputs.base_project_builder_sa_key }}
+      online_prediction_model_repository: object-detection
+      online_prediction_model_package_name: object_detection
+    secrets: inherit

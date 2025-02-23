@@ -4,6 +4,9 @@ inputs:
   image_name:
     description: 'Image name'
     required: true
+  repository_name:
+    description: 'Repository name'
+    required: true
   run_unit_tests:
     description: 'run unit_tests'
     required: false
@@ -43,7 +46,7 @@ runs:
             && git config \
             --global \
             --add safe.directory ${{ steps.set_container_mono_repository_path.outputs.value }} \
-          && cd $REPOSITORY_NAME \
+          && cd ${{ inputs.REPOSITORY_NAME }} \
           && pip install poetry==$POETRY_VERSION && poetry export \
             --without-hashes \
             --with dev -f requirements.txt \
@@ -54,18 +57,18 @@ runs:
           && pre-commit install \
           && pre-commit run \
             --show-diff-on-failure \
-            --files $REPOSITORY_NAME/**/* \
+            --files ${{ inputs.REPOSITORY_NAME }}/**/* \
           "
           
           # run unit tests
           if [[ "${{ inputs.run_unit_tests }}" == "true" ]]; then
-            run_linters_tests_cmd+="&& pytest -x -n auto $REPOSITORY_NAME/tests/unit_tests -vv"
+            run_linters_tests_cmd+="&& pytest -x -n auto ${{ inputs.REPOSITORY_NAME }}/tests/unit_tests -vv"
           fi
           
           # run integration tests, parallel executing is disabled to allow model 
           # uninstantiation teardown
           if [[ "${{ inputs.run_integration_tests }}" == "true" ]]; then
-            run_linters_tests_cmd+="&& pytest -x $REPOSITORY_NAME/tests/integration_tests -vv"
+            run_linters_tests_cmd+="&& pytest -x ${{ inputs.REPOSITORY_NAME }}/tests/integration_tests -vv"
           fi
           
           docker exec \

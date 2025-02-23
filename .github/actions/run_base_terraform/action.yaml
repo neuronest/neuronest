@@ -13,7 +13,7 @@ runs:
   using: "composite"
   steps:
     - id: link_project_to_organization
-      uses: nick-fields/retry@v2.8.2
+      uses: nick-fields/retry@v3
       with:
         timeout_seconds: 60
         retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
@@ -25,7 +25,7 @@ runs:
           fi
 
     - id: link_billing_account_to_project
-      uses: nick-fields/retry@v2.8.2
+      uses: nick-fields/retry@v3
       with:
         timeout_seconds: 60
         retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
@@ -35,7 +35,7 @@ runs:
           gcloud beta billing projects link $PROJECT_ID --billing-account $BILLING_ACCOUNT
 
     - id: create_state_bucket
-      uses: nick-fields/retry@v2.8.2
+      uses: nick-fields/retry@v3
       with:
         timeout_seconds: 60
         retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}
@@ -48,7 +48,7 @@ runs:
           fi
 
     - id: add_iam_with_retry
-      uses: nick-fields/retry@v2.8.2
+      uses: nick-fields/retry@v3
       with:
         timeout_seconds: 60
         retry_wait_seconds: ${{ inputs.min_terraform_retry_wait_seconds }}

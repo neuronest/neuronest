@@ -1,5 +1,8 @@
-output "url" {
-  value = google_cloud_run_service.web_serving.status[0].url
+output "model_instantiator_url" {
+  value = module.model_instantiator.url
+}
+output "online_prediction_model_url" {
+  value = google_cloud_run_v2_service.web_serving.uri
 }
 output "model_name" {
   value = var.model_name

@@ -1,23 +1,22 @@
 from functools import lru_cache
 
-from core.client.model_client.object_detection import ObjectDetectionModelClient
-from core.client.model_instantiator import ModelInstantiatorClient
+from core.client.object_detection import ObjectDetectionClient
 from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.firestore_client import FirestoreClient
 from core.google.storage_client import StorageClient
-from core.google.vertex_ai_manager import VertexAIManager
 from fastapi import Depends
 from omegaconf import DictConfig
 
 from people_counting.config import cfg
 from people_counting.environment_variables import (
+    COUNTED_VIDEOS_BUCKET,
     FIRESTORE_JOBS_COLLECTION,
     GOOGLE_APPLICATION_CREDENTIALS,
-    MODEL_INSTANTIATOR_HOST,
-    OBJECT_DETECTION_MODEL_NAME,
+    OBJECT_DETECTION_HOST,
     PROJECT_ID,
     REGION,
-    VERTEX_LOCATION,
+    RESULTS_BUCKET,
+    SAMPLES_BUCKET,
 )
 from people_counting.people_counter import PeopleCounter
 
@@ -28,8 +27,51 @@ def use_config() -> DictConfig:
 
 
 @lru_cache
-def use_storage_client() -> StorageClient:
-    return StorageClient(key_path=GOOGLE_APPLICATION_CREDENTIALS, project_id=PROJECT_ID)
+def use_object_detection_host() -> str:
+    return OBJECT_DETECTION_HOST
+
+
+@lru_cache
+def use_firestore_jobs_collection() -> str:
+    return FIRESTORE_JOBS_COLLECTION
+
+
+@lru_cache
+def use_google_application_credentials() -> str:
+    return GOOGLE_APPLICATION_CREDENTIALS
+
+
+@lru_cache
+def use_project_id() -> str:
+    return PROJECT_ID
+
+
+@lru_cache
+def use_region() -> str:
+    return REGION
+
+
+@lru_cache()
+def use_counted_videos_bucket() -> str:
+    return COUNTED_VIDEOS_BUCKET
+
+
+@lru_cache()
+def use_results_bucket() -> str:
+    return RESULTS_BUCKET
+
+
+@lru_cache()
+def use_samples_bucket() -> str:
+    return SAMPLES_BUCKET
+
+
+@lru_cache
+def use_storage_client(
+    google_application_credentials: str = Depends(use_google_application_credentials),
+    project_id: str = Depends(use_project_id),
+) -> StorageClient:
+    return StorageClient(key_path=google_application_credentials, project_id=project_id)
 
 
 @lru_cache
@@ -40,44 +82,35 @@ def use_firestore_client() -> FirestoreClient:
 
 
 @lru_cache
-def use_firestore_jobs_collection() -> str:
-    return FIRESTORE_JOBS_COLLECTION
-
-
-@lru_cache
-def use_cloud_run_job_manager() -> CloudRunJobManager:
+def use_cloud_run_job_manager(
+    google_application_credentials: str = Depends(use_google_application_credentials),
+    project_id: str = Depends(use_project_id),
+    region: str = Depends(use_region),
+) -> CloudRunJobManager:
     return CloudRunJobManager(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS,
-        project_id=PROJECT_ID,
-        location=REGION,
+        key_path=google_application_credentials,
+        project_id=project_id,
+        location=region,
     )
 
 
 @lru_cache
-def use_object_detection_model_client() -> ObjectDetectionModelClient:
-    return ObjectDetectionModelClient(
-        vertex_ai_manager=VertexAIManager(
-            key_path=GOOGLE_APPLICATION_CREDENTIALS,
-            location=VERTEX_LOCATION,
-            project_id=PROJECT_ID,
-        ),
-        model_instantiator_client=ModelInstantiatorClient(
-            key_path=GOOGLE_APPLICATION_CREDENTIALS,
-            host=MODEL_INSTANTIATOR_HOST,
-        ),
-        model_name=OBJECT_DETECTION_MODEL_NAME,
-    )
+def use_object_detection_client(
+    object_detection_host: str = Depends(use_object_detection_host),
+    project_id: str = Depends(use_project_id),
+) -> ObjectDetectionClient:
+    return ObjectDetectionClient(host=object_detection_host, project_id=project_id)
 
 
 @lru_cache
 def use_people_counter(
     config: DictConfig = Depends(use_config),
-    object_detection_model_client: ObjectDetectionModelClient = Depends(
-        use_object_detection_model_client
+    object_detection_client: ObjectDetectionClient = Depends(
+        use_object_detection_client
     ),
 ) -> PeopleCounter:
     return PeopleCounter(
-        object_detection_model_client=object_detection_model_client,
+        object_detection_client=object_detection_client,
         confidence_threshold=config.postprocessing.confidence_threshold,
         algorithm_config=config.algorithm,
         image_width=config.preprocessing.image_width,
