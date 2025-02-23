@@ -44,7 +44,7 @@ on:
     outputs:
       web_serving_image_name:
         description: "The web serving image name"
-        value: ${{ jobs.build_test_push_online_prediction_model.outputs.gcp_web_serving_image_name }}
+        value: ${{ jobs.build_test_push_training_and_web_serving_images.outputs.gcp_web_serving_image_name }}
       gcp_training_image_name:
         description: "The gcp training image name"
         value: ${{ jobs.get_training_images.outputs.gcp_image }}

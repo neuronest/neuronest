@@ -10,6 +10,3 @@ output "model_name" {
 output "service_account" {
   value = google_service_account.online_prediction_model_sa
 }
-output "url" {
-  value = google_cloud_run_v2_service.web_serving.uri
-}
