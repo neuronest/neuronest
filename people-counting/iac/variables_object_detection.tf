@@ -38,3 +38,6 @@ variable "object_detection_cloud_run_timeout" {
 variable "object_detection_firestore_jobs_collection" {
   type = string
 }
+variable "object_detection_vertex_location" {
+  type = string
+}

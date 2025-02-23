@@ -36,8 +36,6 @@ module "people_counting" {
   region     = var.region
   timezone   = var.timezone
 
-  vertex_location = var.vertex_location
-
   image_name                = var.image_name
   service_account_name      = var.service_account_name
   results_bucket            = var.results_bucket
@@ -65,6 +63,7 @@ module "people_counting" {
   object_detection_cloud_run_max_scale       = var.object_detection_cloud_run_max_scale
   object_detection_cloud_run_timeout         = var.object_detection_cloud_run_timeout
   object_detection_firestore_jobs_collection = var.object_detection_firestore_jobs_collection
+  object_detection_vertex_location           = var.object_detection_vertex_location
 
   object_detection_model_instantiator_image_name                           = var.object_detection_model_instantiator_image_name
   object_detection_model_instantiator_webapp_service_account_name          = var.object_detection_model_instantiator_webapp_service_account_name
