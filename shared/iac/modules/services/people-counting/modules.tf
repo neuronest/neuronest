@@ -17,7 +17,7 @@ module "object_detection" {
   cloud_run_max_scale       = var.object_detection_cloud_run_max_scale
   cloud_run_timeout         = var.object_detection_cloud_run_timeout
   firestore_jobs_collection = var.object_detection_firestore_jobs_collection
-  vertex_location           = var.vertex_location
+  vertex_location           = var.object_detection_vertex_location
 
   model_instantiator_image_name                           = var.object_detection_model_instantiator_image_name
   model_instantiator_webapp_service_account_name          = var.object_detection_model_instantiator_webapp_service_account_name
