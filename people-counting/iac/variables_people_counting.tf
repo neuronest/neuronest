@@ -39,6 +39,3 @@ variable "cloud_run_max_scale" {
 variable "cloud_run_timeout" {
   type = string
 }
-variable "vertex_location" {
-  type = string
-}
