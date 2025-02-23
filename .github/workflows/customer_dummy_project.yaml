@@ -41,46 +41,46 @@ jobs:
     runs-on: neuronest-runner-set
     container: google/cloud-sdk
     outputs:
-#      object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
-#      video_comparator_env_file_artifact_name: ${{ steps.upload_video_comparator_variables.outputs.env_file_artifact_name }}
+      object_detection_env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
+      video_comparator_env_file_artifact_name: ${{ steps.upload_video_comparator_variables.outputs.env_file_artifact_name }}
       people_counting_env_file_artifact_name: ${{ steps.upload_people_counting_variables.outputs.env_file_artifact_name }}
     steps:
       - uses: actions/checkout@v4
-#      - name: upload_object_detection_variables
-#        id: upload_object_detection_variables
-#        uses: ./.github/actions/upload_variables
-#        with:
-#          variable_prefix_to_filter_on: OBJECT_DETECTION
-#      - name: upload_video_comparator_variables
-#        id: upload_video_comparator_variables
-#        uses: ./.github/actions/upload_variables
-#        with:
-#          variable_prefix_to_filter_on: VIDEO_COMPARATOR
+      - name: upload_object_detection_variables
+        id: upload_object_detection_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: OBJECT_DETECTION
+      - name: upload_video_comparator_variables
+        id: upload_video_comparator_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: VIDEO_COMPARATOR
       - name: upload_people_counting_variables
         id: upload_people_counting_variables
         uses: ./.github/actions/upload_variables
         with:
           variable_prefix_to_filter_on: PEOPLE_COUNTING
 
-#  object_detection:
-#    needs: upload_variables_of_called_workflows
-#    uses: ./.github/workflows/object_detection.yaml
-#    with:
-#      build: true
-#      deploy: true
-#      post_deploy: true
-#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
-#    secrets: inherit
-#
-#  video_comparator:
-#    needs: upload_variables_of_called_workflows
-#    uses: ./.github/workflows/video_comparator.yaml
-#    with:
-#      build: true
-#      deploy: true
-#      post_deploy: true
-#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.video_comparator_env_file_artifact_name }}
-#    secrets: inherit
+  object_detection:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/object_detection.yaml
+    with:
+      build: true
+      deploy: true
+      post_deploy: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
+    secrets: inherit
+
+  video_comparator:
+    needs: upload_variables_of_called_workflows
+    uses: ./.github/workflows/video_comparator.yaml
+    with:
+      build: true
+      deploy: true
+      post_deploy: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.video_comparator_env_file_artifact_name }}
+    secrets: inherit
 
   people_counting:
     needs: upload_variables_of_called_workflows
