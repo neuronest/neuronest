@@ -40,6 +40,12 @@ on:
       web_serving_image_name:
         description: "The web serving image name"
         value: ${{ jobs.object_detection.outputs.web_serving_image_name }}
+      gcp_training_image_name:
+        description: "The gcp training image name"
+        value: ${{ jobs.object_detection.outputs.gcp_training_image_name }}
+      dockerhub_training_image_name:
+        description: "The dockerhub training image name"
+        value: ${{ jobs.object_detection.outputs.dockerhub_training_image_name }}
       model_instantiator_image_name:
         description: "Model instantiator image name"
         value: ${{ jobs.object_detection.outputs.model_instantiator_image_name }}

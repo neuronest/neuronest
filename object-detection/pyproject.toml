@@ -28,7 +28,7 @@ uvicorn = "0.32.0"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-core = {develop = true, extras = ["dev", "torch"], path = "../shared"}
+core = {develop = true, extras = ["dev"], path = "../shared"}
 
 [tool.poetry.group.model]
 optional = true

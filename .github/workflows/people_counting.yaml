@@ -157,7 +157,7 @@ jobs:
       deploy: false
       post_deploy: true
       run_tests: false
-      env_file_artifact_name: ${{ needs.upload_object_detection_workflow_variables.env_file_artifact_name }}
+      env_file_artifact_name: ${{ needs.upload_object_detection_workflow_variables.outputs.env_file_artifact_name }}
       dockerhub_training_image_name: ${{ needs.build_object_detection.outputs.dockerhub_training_image_name }}
       gcp_training_image_name: ${{ needs.build_object_detection.outputs.gcp_training_image_name }}
       base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
