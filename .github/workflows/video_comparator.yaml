@@ -1,29 +1,7 @@
 name: video_comparator
 
 on:
-#  push:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/video_comparator.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - video-comparator/**
-#  pull_request:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/video_comparator.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - video-comparator/**
-#  workflow_dispatch:
+  workflow_dispatch:
   workflow_call:
     inputs:
       build:
@@ -34,11 +12,27 @@ on:
         required: false
         type: string
         default: 'true'
-      do_post_deployment:
+      post_deploy:
+        required: false
+        type: string
+        default: 'true'
+      run_tests:
         required: false
         type: string
         default: 'true'
       env_file_artifact_name:
+        required: false
+        type: string
+        default: ''
+      dockerhub_training_image_name:
+        required: false
+        type: string
+        default: ''
+      gcp_training_image_name:
+        required: false
+        type: string
+        default: ''
+      base_project_builder_sa_key:
         required: false
         type: string
         default: ''
@@ -50,9 +44,14 @@ jobs:
   video_comparator:
     uses: ./.github/workflows/abstract_online_prediction_model.yaml
     with:
-      build: true
-      deploy: true
-      do_post_deployment: true
-      online_prediction_model_repository: video-comparator
+      build: ${{ inputs.build }}
+      deploy: ${{ inputs.deploy }}
+      post_deploy: ${{ inputs.post_deploy }}
+      run_tests: ${{ inputs.run_tests }}
       env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      dockerhub_training_image_name: ${{ inputs.dockerhub_training_image_name }}
+      gcp_training_image_name: ${{ inputs.gcp_training_image_name }}
+      base_project_builder_sa_key: ${{ inputs.base_project_builder_sa_key }}
+      online_prediction_model_repository: video-comparator
+      online_prediction_model_package_name: video_comparator
     secrets: inherit

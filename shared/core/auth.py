@@ -45,7 +45,7 @@ def get_credentials_and_project_id(
         ) from exception
 
 
-def _get_credentials(
+def get_credentials(
     key_path: Optional[str] = None,
     auth_scope: str = "https://www.googleapis.com/auth/cloud-platform",
 ) -> Credentials:
@@ -87,9 +87,11 @@ def _generate_identity_token_credentials(
     if credentials and isinstance(credentials, ImpersonatedCredentials):
         return ImpersonatedIDTokenCredentials(
             target_credentials=credentials,
-            target_audience="https://dummy.example.com"
-            if target_audience is None
-            else target_audience,
+            target_audience=(
+                "https://dummy.example.com"
+                if target_audience is None
+                else target_audience
+            ),
         )
 
     if key_path:
@@ -132,6 +134,6 @@ def generate_access_token(
     credentials: Optional[Credentials] = None,
 ) -> str:
     if credentials is None:
-        credentials = _get_credentials(key_path=key_path)
+        credentials = get_credentials(key_path=key_path)
 
     return _generate_token_from_credentials(credentials=credentials)

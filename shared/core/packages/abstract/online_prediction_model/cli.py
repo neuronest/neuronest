@@ -19,6 +19,7 @@ from core.packages.abstract.online_prediction_model.environment_variables import
     MODEL_INSTANTIATOR_HOST,
     PROJECT_ID,
     TRAINING_IMAGE_NAME,
+    VERTEX_LOCATION,
 )
 from core.path import GSPath
 from core.schemas.vertex_ai import (
@@ -34,9 +35,6 @@ logger = logging.getLogger(__name__)
 class Action(str, Enum):
     TRAIN = "train"
     MODEL_UPLOAD = "model_upload"
-    REMOVE_LAST_MODEL_VERSION = "remove_last_model_version"
-    DEPLOY = "deploy"
-    UNDEPLOY = "undeploy"
 
 
 class RunnableAction(abc.ABC):
@@ -45,17 +43,17 @@ class RunnableAction(abc.ABC):
 
     @staticmethod
     def build_training_config(config: Config) -> TrainingConfig:
-        return TrainingConfig(**config.training.dict())
+        return TrainingConfig(**config.training.model_dump())
 
     @staticmethod
     def build_serving_model_upload_config(
         config: Config,
     ) -> ServingModelUploadConfig:
-        return ServingModelUploadConfig(**config.serving_model_upload.dict())
+        return ServingModelUploadConfig(**config.serving_model_upload.model_dump())
 
     @staticmethod
     def build_serving_deployment_config(config: Config) -> ServingDeploymentConfig:
-        return ServingDeploymentConfig(**config.serving_deployment.dict())
+        return ServingDeploymentConfig(**config.serving_deployment.model_dump())
 
     @classmethod
     @abc.abstractmethod
@@ -93,11 +91,13 @@ class LaunchTrainingJobAction(RunnableAction):
             )
 
         models_bucket_name, _ = model_gspath.to_bucket_and_blob_names()
-        StorageClient(project_id=PROJECT_ID).create_bucket(
-            bucket_name=models_bucket_name,
-            location=vertex_ai_manager.location,
-            exist_ok=True,
-        )
+        if (
+            StorageClient(project_id=PROJECT_ID).bucket_exists(
+                bucket_name=models_bucket_name,
+            )
+            is False
+        ):
+            raise ValueError(f"The bucket '{models_bucket_name}' does not exist")
 
         # unspecified: it won't produce a Vertex Model because no
         # model_serving_container_image_uri is specified (a custom one will be created)
@@ -159,46 +159,6 @@ class UploadModelAction(RunnableAction):
         )
 
 
-class DeployAction(RunnableAction):
-    action = Action.DEPLOY
-    kwargs = ("model_instantiator_client", "model_name")
-
-    @classmethod
-    # pylint: disable=arguments-differ
-    def run(
-        cls,
-        model_instantiator_client: ModelInstantiatorClient,
-        model_name: str,
-        **kwargs,
-    ):
-        model_instantiator_client.instantiate(model_name)
-
-
-class RemoveLastModelVersionAction(RunnableAction):
-    action = Action.REMOVE_LAST_MODEL_VERSION
-    kwargs = ("vertex_ai_manager", "model_name")
-
-    @classmethod
-    # pylint: disable=arguments-differ
-    def run(cls, vertex_ai_manager: VertexAIManager, model_name: str, **kwargs):
-        vertex_ai_manager.delete_last_model_by_name(name=model_name)
-
-
-class UndeployAction(RunnableAction):
-    action = Action.UNDEPLOY
-    kwargs = ("model_instantiator_client", "model_name")
-
-    @classmethod
-    # pylint: disable=arguments-differ
-    def run(
-        cls,
-        model_instantiator_client: ModelInstantiatorClient,
-        model_name: str,
-        **kwargs,
-    ):
-        model_instantiator_client.uninstantiate(model_name)
-
-
 class ActionFactory:
     _actions: Dict[Action, Type[RunnableAction]] = {}
 
@@ -236,7 +196,9 @@ def main(config: Config):
     actions = [Action(action) for action in parsed_args.actions]
 
     vertex_ai_manager = VertexAIManager(
-        key_path=GOOGLE_APPLICATION_CREDENTIALS, location=config.region
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
+        location=VERTEX_LOCATION,
+        project_id=PROJECT_ID,
     )
     if MODEL_INSTANTIATOR_HOST is not None:
         model_instantiator_client = ModelInstantiatorClient(

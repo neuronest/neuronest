@@ -59,7 +59,7 @@ class MetricsWriter:
         )
 
         self.big_query_client.load_table_from_json(
-            json_rows=[training_metrics.dict()],
+            json_rows=[training_metrics.model_dump()],
             destination=f"{self.project_id_dot_dataset_name}."
             f"{training_metrics.__bigquery_tablename__}",
             job_config=self._load_job_config_from_schema(

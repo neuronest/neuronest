@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.0","pip>=20.0.0"]
+requires = ["pip>=20.0.0", "poetry-core>=1.0.0"]
 
 [tool.isort]
 known_first_party = ["database_api", "tests"]
@@ -14,12 +14,12 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 alembic = "^1.14.0"
-core = {path="../shared", develop = true}
-fastapi = "^0.88.0"
+core = {develop = true, path = "../shared"}
+fastapi = "0.115.2"
 gunicorn = "23.0.0"
 psycopg2-binary = "^2.9.10"
-pydantic = "1.10.6"
-python = ">3.11,<3.12"  # Update the Python requirement here
+pydantic = "2.9.2"
+python = ">3.11,<3.12" # Update the Python requirement here
 sqlalchemy = "1.4.44"
 uvicorn = "0.32.0"
 
@@ -27,4 +27,4 @@ uvicorn = "0.32.0"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-core = { path="../shared", develop = true, extras = ["dev"] }
+core = {develop = true, extras = ["dev"], path = "../shared"}

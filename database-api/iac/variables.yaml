@@ -4,6 +4,7 @@ repository_variables:
   - REPOSITORY_CODE=da
   - PACKAGE_NAME=database_api
   - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
+  - REPOSITORIES_DEPENDENCIES=model-instantiator
 multi_instance_resource_names:
   # docker image
   - BASE_IMAGE_NAME=database-api
@@ -19,24 +20,13 @@ multi_instance_resource_names:
 other_variables:
   branch:
     default:
-#    # cloud run
-#    - CLOUD_RUN_MEMORY=1Gi
-#    - CLOUD_RUN_CPU=1000m
-#    - CLOUD_RUN_MIN_SCALE=0
-#    - CLOUD_RUN_MAX_SCALE=1
-#    # is one of 'PD_SSD', 'PD_HDD'
-#    - CLOUD_SQL_DISK_TYPE=PD_HDD
-#    - CLOUD_SQL_ENABLE_AUTOMATIC_STORAGE_INCREASES=false
-#    - CLOUD_SQL_ENABLE_PUBLIC_IP=true
-#    - CLOUD_SQL_DATABASE_VERSION=POSTGRES_12
-#    - CLOUD_SQL_TIER=db-f1-micro
     # cloud run
     - CLOUD_RUN_MEMORY=1Gi
     - CLOUD_RUN_CPU=1000m
     - CLOUD_RUN_MIN_SCALE=0
     - CLOUD_RUN_MAX_SCALE=1
     # is one of 'PD_SSD', 'PD_HDD'
-    - CLOUD_SQL_DISK_TYPE=PD_SSD
+    - CLOUD_SQL_DISK_TYPE=PD_HDD
     - CLOUD_SQL_ENABLE_AUTOMATIC_STORAGE_INCREASES=false
     - CLOUD_SQL_ENABLE_PUBLIC_IP=true
     - CLOUD_SQL_DATABASE_VERSION=POSTGRES_12

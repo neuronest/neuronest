@@ -72,7 +72,10 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          build_arguments: --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          base_image_name: ${{ env.BASE_IMAGE_NAME }}
+          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }}
+          dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
   deploy:
     name: deploy

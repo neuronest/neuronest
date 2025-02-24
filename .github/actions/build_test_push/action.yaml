@@ -7,6 +7,12 @@ inputs:
   dockerhub_password:
     description: 'Docker repository password'
     required: true
+  repository_name:
+    description: 'Repository name'
+    required: true
+  base_image_name:
+    description: 'Base of the name of the docker image to build'
+    required: true
   target:
     description: >
       Docker target in case of a multi-stage build
@@ -43,7 +49,7 @@ runs:
     - run: | 
         echo "IMAGE_NAME_SUFFIX"="$([[ ! -z '${{ inputs.target }}' ]] && echo '-${{ inputs.target }}' || echo '')" >> $GITHUB_ENV
       shell: bash
-    - run: echo "IMAGE_NAME"="$BASE_IMAGE_NAME$IMAGE_NAME_SUFFIX" >> $GITHUB_ENV
+    - run: echo "IMAGE_NAME"="${{ inputs.base_image_name }}$IMAGE_NAME_SUFFIX" >> $GITHUB_ENV
       shell: bash
     - run: echo "DOCKERHUB_IMAGE_NAME"="$DOCKER_REPOSITORY_NAME/$IMAGE_NAME" >> $GITHUB_ENV
       shell: bash
@@ -59,13 +65,13 @@ runs:
       shell: bash
     - run: gcloud auth configure-docker $GCP_REGISTRY
       shell: bash
-    - run: touch $REPOSITORY_NAME/.dockerignore
+    - run: touch ${{ inputs.repository_name }}/.dockerignore
       shell: bash
     - run: |
-        for to_include_line in '**/*' '!${{ env.REPOSITORY_NAME }}' '!${{ inputs.shared_repository_name }}'
+        for to_include_line in '**/*' '!${{ inputs.repository_name }}' '!${{ inputs.shared_repository_name }}'
         do
-          grep -qxF "$to_include_line" $REPOSITORY_NAME/.dockerignore || \
-          echo "$to_include_line" >> $REPOSITORY_NAME/.dockerignore
+          grep -qxF "$to_include_line" ${{ inputs.repository_name }}/.dockerignore || \
+          echo "$to_include_line" >> ${{ inputs.repository_name }}/.dockerignore
         done
       shell: bash
     - id: set_dockerfile_path
@@ -76,13 +82,13 @@ runs:
             dockerfile_path=${{ inputs.dockerfile_path }}
         else
             # the dockerfile_path is the default one, at the root of the repository
-            dockerfile_path=$REPOSITORY_NAME/Dockerfile
+            dockerfile_path=${{ inputs.repository_name }}/Dockerfile
         fi
         echo "value=$dockerfile_path" >> $GITHUB_OUTPUT
       shell: bash
     - run: |
         cp ${{ steps.set_dockerfile_path.outputs.value }} ./Dockerfile
-        cp $REPOSITORY_NAME/.dockerignore .
+        cp ${{ inputs.repository_name }}/.dockerignore .
       shell: bash
     - id: build_image
       run: |
@@ -121,6 +127,7 @@ runs:
       uses: ./.github/actions/run_linters_tests
       with:
         image_name: ${{ env.DOCKERHUB_IMAGE_NAME }}:${{ steps.build_image.outputs.sha256_digest }}
+        repository_name: ${{ inputs.repository_name }}
         run_unit_tests: true
         run_integration_tests: false
 
@@ -131,6 +138,12 @@ runs:
       shell: bash
     - run: |
         # Generate a new access token just before use, as it is only valid for 1 hour
+        ACCESS_TOKEN=$(gcloud auth print-access-token)
+        echo "::add-mask::$ACCESS_TOKEN"
+        echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV
+      shell: bash
+
+    - run: |
         ACCESS_TOKEN=$(gcloud auth print-access-token)
         echo "::add-mask::$ACCESS_TOKEN"
         echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV

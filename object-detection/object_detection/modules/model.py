@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
+import numpy as np
 import pandas as pd
 from core.packages.abstract.online_prediction_model.modules.model import (
     OnlinePredictionModel,
@@ -20,13 +21,14 @@ class ObjectDetectionModel(OnlinePredictionModel):
         self.model_name = model_name
         super().__init__(*args, **kwargs)
 
-    def __call__(self, *args, **kwargs) -> List[pd.DataFrame]:
+    # pylint: disable=arguments-differ
+    def __call__(self, data: List[np.ndarray]) -> List[pd.DataFrame]:
         # noinspection PyCallingNonCallable
-        predictions = self._model(*args, **kwargs)
+        predictions = self._model(data)
 
         return list(predictions.pandas().xyxy)
 
-    def _retrieve_remote_model(self, pretrained: bool = False):
+    def retrieve_remote_model(self, pretrained: bool = False):
         return self._load_hub_model(
             model_type=self.model_type,
             model_name=self.model_name,
@@ -35,4 +37,4 @@ class ObjectDetectionModel(OnlinePredictionModel):
 
     def fit(self, *args, **kwargs):
         # pylint: disable=attribute-defined-outside-init
-        self._model = self._retrieve_remote_model(pretrained=True)
+        self._model = self.retrieve_remote_model(pretrained=True)

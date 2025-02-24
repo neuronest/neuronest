@@ -70,7 +70,7 @@ class DeploymentStatusManager:
             )
             return new_deployment_status_document
 
-        deployment_status_snapshot = DeploymentStatusDocument.parse_obj(
+        deployment_status_snapshot = DeploymentStatusDocument.model_validate(
             raw_deployment_status_snapshot
         )
         if (
@@ -139,4 +139,4 @@ class DeploymentStatusManager:
 
             return deployment_status_document
 
-        return DeploymentStatusDocument.parse_obj(deployment_status)
+        return DeploymentStatusDocument.model_validate(deployment_status)

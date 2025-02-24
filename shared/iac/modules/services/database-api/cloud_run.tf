@@ -5,8 +5,8 @@
 # Cloud Run Service with DB password as environment variable
 
 # Retrieve the secret version to pass as an environment variable in Cloud Run
-data "google_secret_manager_secret_version" "database_api_neuronest_instance_user_data" {
-  secret  = google_secret_manager_secret.database_api_db_password_secret.name
+data "google_secret_manager_secret_version" "neuronest_instance_user_data" {
+  secret  = google_secret_manager_secret.db_password_secret.name
   version = "latest"
 }
 
@@ -34,7 +34,7 @@ resource "google_cloud_run_service" "database_api" {
         }
         env {
           name  = "DB_PASSWORD"
-          value = data.google_secret_manager_secret_version.database_api_neuronest_instance_user_data.secret_data
+          value = data.google_secret_manager_secret_version.neuronest_instance_user_data.secret_data
         }
 
         env {
@@ -51,10 +51,10 @@ resource "google_cloud_run_service" "database_api" {
         }
         env {
           name  = "MODEL_INSTANTIATOR_HOST"
-          value = var.model_instantiator_host
+          value = module.model_instantiator.url
         }
       }
-      service_account_name = google_service_account.database_api_sa.email
+      service_account_name = google_service_account.webapp_sa.email
     }
     metadata {
       annotations = {
@@ -69,11 +69,11 @@ resource "google_cloud_run_service" "database_api" {
     latest_revision = true
   }
   depends_on = [
-    google_service_account.database_api_sa,
+    google_service_account.webapp_sa,
     google_sql_database_instance.neuronest_instance,
     google_sql_database.neuronest_database,
-    google_sql_user.database_api_neuronest_instance_user,
-    google_secret_manager_secret_version.database_api_db_password_version
+    google_sql_user.neuronest_instance_user,
+    google_secret_manager_secret_version.db_password_version
   ]
 
 }

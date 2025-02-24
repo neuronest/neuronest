@@ -1,85 +1,147 @@
 from typing import List, Optional, Type
 
 import numpy as np
-import pandas as pd
-from imutils import resize
 
-from core.client.abstract.online_prediction_model import OnlinePredictionModelClient
-from core.schemas.object_detection import (
-    InputSampleSchema as ObjectDetectionInputSampleSchema,
+from core.client.abstract.prediction_api_client import PredictionAPIClient
+from core.path import LocalPath
+from core.routes.base import BaseRoutes
+from core.routes.object_detection import routes
+from core.schemas.abstract.prediction_api_client import (
+    InlineSample,
+    Input,
+    JobDocument,
+    JobResultsDocument,
+    LocalSample,
+    Output,
+    RealTimeInlineInput,
+    RealTimeOutput,
+    SampleResultsDocument,
 )
-from core.schemas.object_detection import (
-    OutputSampleSchema as ObjectDetectionOutputSampleSchema,
+from core.schemas.modules.object_detection import (
+    ObjectDetectionInput,
+    ObjectDetectionJobDocument,
+    ObjectDetectionJobResultsDocument,
+    ObjectDetectionOutput,
+    ObjectDetectionRealTimeInlineInput,
+    ObjectDetectionRealTimeOutput,
+    ObjectDetectionSampleResultsDocument,
+    SampleMetadata,
 )
+from core.serialization.image import image_to_string
 
 
-class ObjectDetectionClient(OnlinePredictionModelClient):
-    PREPROCESSING_IMAGE_TYPE = ".jpg"
-    MAX_SIZE = (640, 640)
+class ObjectDetectionClient(PredictionAPIClient):
+    InputSchema: Type[Input] = ObjectDetectionInput
+    OutputSchema: Type[Output] = ObjectDetectionOutput
+    RealTimeInputSchema: Type[RealTimeInlineInput] = ObjectDetectionRealTimeInlineInput
+    RealTimeOutputSchema: Type[RealTimeOutput] = ObjectDetectionRealTimeOutput
+    JobDocumentSchema: Type[JobDocument] = ObjectDetectionJobDocument
+    SampleResultsDocumentSchema: Type[SampleResultsDocument] = (
+        ObjectDetectionSampleResultsDocument
+    )
+    JobResultsDocumentSchema: Type[JobResultsDocument] = (
+        ObjectDetectionJobResultsDocument
+    )
+    routes: BaseRoutes = routes
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @staticmethod
-    def _are_shapes_correct(images: List[np.ndarray]) -> bool:
-        if any(
-            image.ndim not in (2, 3) or image.ndim == 3 and image.shape[2] != 3
-            for image in images
-        ):
-            return False
-
-        return True
-
-    def _resize_images(self, images: List[np.ndarray]) -> List[np.ndarray]:
-        """
-        If any dimension of an image if greater than self.MAX_SIZE (width, height),
-        then the image is going to be resized without changing the ratio,
-        with self.MAX_SIZE being the maximum.
-        """
-        return [
-            resize(
-                image=image,
-                height=self.MAX_SIZE[0]
-                if image.shape[0] > self.MAX_SIZE[0] and image.shape[0] > image.shape[1]
-                else None,
-                width=self.MAX_SIZE[1]
-                if image.shape[1] > self.MAX_SIZE[1] and image.shape[1] > image.shape[0]
-                else None,
-            )
-            for image in images
-        ]
-
-    def get_output_sample_schema_class(self) -> Type[ObjectDetectionOutputSampleSchema]:
-        return ObjectDetectionOutputSampleSchema
-
-    # pylint: disable=arguments-differ,arguments-renamed
-    def _batch_sample_to_input_sample_schema(
+    def __init__(
         self,
-        batch_sample_image: np.ndarray,
-        labels: Optional[List[str]] = None,
-        confidence_threshold: Optional[float] = None,
-    ) -> ObjectDetectionInputSampleSchema:
-        resized_batch_sample_image = self._resize_images([batch_sample_image])[0]
-
-        return ObjectDetectionInputSampleSchema(
-            image=resized_batch_sample_image,
-            labels_to_predict=labels,
-            confidence_threshold=confidence_threshold,
+        host: str,
+        key_path: Optional[str] = None,
+        project_id: Optional[str] = None,
+    ):
+        super().__init__(
+            host=host,
+            key_path=key_path,
+            project_id=project_id,
         )
 
-    # pylint: disable=arguments-differ,arguments-renamed
-    def predict_batch(
+    def get_predictions_from_job_id(
         self,
-        images: List[np.ndarray],
-        labels: Optional[List[str]] = None,
-        confidence_threshold: Optional[float] = None,
-    ) -> List[pd.DataFrame]:
-        """
-        images: List of RGB images as NumPy arrays
-        """
-        if not self._are_shapes_correct(images):
-            raise ValueError("Incorrect received shapes")
+        job_id: str,
+        wait_if_not_existing: bool = False,
+        job_timeout: int = 2700,
+    ) -> ObjectDetectionJobResultsDocument:
+        return self._get_predictions_from_job_id(
+            job_id=job_id,
+            wait_if_not_existing=wait_if_not_existing,
+            job_timeout=job_timeout,
+        )
 
-        return super().predict_batch(
-            batch=images, labels=labels, confidence_threshold=confidence_threshold
+    def detect_objects_async(
+        self,
+        images_paths: List[str],
+        labels_to_predict: Optional[List[str]] = None,
+        confidence_threshold: Optional[float] = None,
+        overridden_image_width: Optional[int] = None,
+        timeout: int = 120,
+    ) -> List[ObjectDetectionOutput]:
+        return self.predict_async(
+            samples=[
+                LocalSample(paths=(LocalPath(image_path),))
+                for image_path in images_paths
+            ],
+            resource=(
+                f"/{routes.ObjectDetection.prefix}"
+                f"{routes.ObjectDetection.detect_objects}"
+            ),
+            input_kwargs={
+                "sample_metadata": {
+                    "labels_to_predict": labels_to_predict,
+                    "confidence_threshold": confidence_threshold,
+                    "overridden_image_width": overridden_image_width,
+                }
+            },
+            timeout=timeout,
+        )
+
+    def detect_objects_sync(
+        self,
+        images_paths: List[str],
+        labels_to_predict: Optional[List[str]] = None,
+        confidence_threshold: Optional[float] = None,
+        overridden_image_width: Optional[int] = None,
+        timeout: int = 120,
+        job_timeout: int = 2700,
+    ) -> List[ObjectDetectionSampleResultsDocument]:
+        return self.predict_sync(
+            samples=[
+                LocalSample(paths=(LocalPath(image_path),))
+                for image_path in images_paths
+            ],
+            resource=(
+                f"/{routes.ObjectDetection.prefix}"
+                f"{routes.ObjectDetection.detect_objects}"
+            ),
+            input_kwargs={
+                "sample_metadata": {
+                    "labels_to_predict": labels_to_predict,
+                    "confidence_threshold": confidence_threshold,
+                    "overridden_image_width": overridden_image_width,
+                }
+            },
+            timeout=timeout,
+            job_timeout=job_timeout,
+        )
+
+    def detect_objects_real_time(
+        self,
+        image: np.ndarray,
+        labels_to_predict: Optional[List[str]] = None,
+        confidence_threshold: Optional[float] = None,
+        overridden_image_width: Optional[int] = None,
+        timeout: int = 2700,
+    ) -> ObjectDetectionRealTimeOutput:
+        return self.predict_real_time_inline(
+            sample=ObjectDetectionRealTimeInlineInput(
+                inline_sample=InlineSample(element=image_to_string(image)),
+                sample_metadata=SampleMetadata(
+                    labels_to_predict=labels_to_predict,
+                    confidence_threshold=confidence_threshold,
+                    overridden_image_width=overridden_image_width,
+                ),
+            ),
+            resource=f"/{routes.ObjectDetection.prefix}"
+            f"{routes.ObjectDetection.detect_objects_real_time}",
+            timeout=timeout,
         )

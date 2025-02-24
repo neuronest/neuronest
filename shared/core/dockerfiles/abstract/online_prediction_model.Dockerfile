@@ -31,10 +31,10 @@ RUN wget https://bootstrap.pypa.io/get-pip.py && python3.11 get-pip.py
 ARG REPOSITORY_NAME
 ARG PACKAGE_NAME
 ARG MODEL_NAME
+ARG BATCH_SIZE
 ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
 ARG POETRY_VERSION="1.8.4"
-ARG BATCH_SIZE="32"
 ARG MAX_BATCH_DELAY="50"
 
 ENV PIP_ROOT_USER_ACTION=ignore
@@ -54,6 +54,10 @@ ENV CLOUDSDK_INSTALL_DIR=/usr/local/gcloud
 RUN curl -sSL https://sdk.cloud.google.com | bash > /dev/null 2>&1  # silent logs
 ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 
+RUN mkdir -p $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
+COPY $SHARED_REPOSITORY_NAME/pyproject.toml $SHARED_REPOSITORY_NAME/poetry.lock $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME/
+COPY $SHARED_REPOSITORY_NAME/core $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME/core
+
 COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
 
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
@@ -70,11 +74,10 @@ RUN poetry env use python \
     && poetry config virtualenvs.path $ROOT_DIRECTORY/$REPOSITORY_NAME/.venv \
     && poetry config virtualenvs.create true \
     && poetry check  \
-    # && poetry install --with model \
-    && poetry install \
+    && poetry install --with model \
     && rm -rf /root/.cache/pypoetry
 
-# COPY $REPOSITORY_NAME/conf/ conf
+COPY $REPOSITORY_NAME/conf/ conf
 COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 
@@ -84,7 +87,7 @@ FROM training as serving
 ARG MODEL_PATH
 ARG LOCAL_MODEL_PATH="/model/model.pt"
 ARG MODEL_STORE_NAME="model_store"
-ARG MODEL_PACKAGE_NAME="model"
+ARG MODEL_PACKAGE_NAME="model/"
 ARG MODEL_PACKAGE_PATH=$ROOT_DIRECTORY/$REPOSITORY_NAME/$MODEL_PACKAGE_NAME
 
 ENV LOCAL_MODEL_PATH=$LOCAL_MODEL_PATH
@@ -93,7 +96,7 @@ ENV MODEL_PACKAGE_NAME=$MODEL_PACKAGE_NAME
 ENV MODEL_PACKAGE_PATH=$MODEL_PACKAGE_PATH
 
 RUN mkdir $MODEL_PACKAGE_NAME
-RUN cp -r $PACKAGE_NAME $MODEL_PACKAGE_NAME
+RUN cp -r $PACKAGE_NAME conf $MODEL_PACKAGE_NAME
 WORKDIR $MODEL_PACKAGE_PATH
 
 # create torchserve configuration file
@@ -111,9 +114,9 @@ RUN mkdir -p $MODEL_STORE_NAME
 
 COPY $MODEL_PATH $LOCAL_MODEL_PATH
 
-ENV TMP_PACKAGE_DIR=/tmp/$PACKAGE_NAME
+ENV TMP_PACKAGE_DIR=/tmp/$PACKAGE_NAME/
 RUN mkdir $TMP_PACKAGE_DIR
-RUN cp -r $PACKAGE_NAME $TMP_PACKAGE_DIR
+RUN cp -r $PACKAGE_NAME conf $TMP_PACKAGE_DIR
 
 # create model archive file packaging model artifacts and dependencies
 RUN torch-model-archiver -f \
@@ -124,14 +127,12 @@ RUN torch-model-archiver -f \
   --extra-files=$TMP_PACKAGE_DIR \
   --export-path=$MODEL_STORE_NAME
 
-# ENV TORCH_MODEL_ARCHIVER_MODEL_MAR_PATH=$MODEL_STORE_NAME/$MODEL_NAME.mar
-
 # run Torchserve HTTP serve to respond to prediction requests
 ENTRYPOINT torchserve \
     --start \
+    # see https://github.com/pytorch/serve/blob/master/docs/token_authorization_api.md
+    --disable-token-auth \
     --ts-config=config.properties \
     --models $MODEL_NAME=$MODEL_NAME.mar \
     --model-store $MODEL_STORE_NAME \
-    # see https://github.com/pytorch/serve/blob/master/docs/token_authorization_api.md
-    --disable-token-auth \
     && tail -f /dev/null  # to prevent docker exit, as torchserve runs in background

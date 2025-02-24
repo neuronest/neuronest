@@ -1,13 +1,21 @@
 import logging
+import tempfile
 from functools import partial
 from typing import List, Optional, Tuple, Union
 
-import cv2 as cv
 import numpy as np
 
 from core.google.storage_client import StorageClient
 from core.path import build_path, build_paths
-from core.schemas.asset import AssetType, ImageAsset, VideoAsset, VisualAsset
+from core.schemas.asset import (
+    IMAGE_EXTENSIONS,
+    VIDEO_EXTENSIONS,
+    AssetType,
+    ImageAsset,
+    VideoAsset,
+    VisualAsset,
+)
+from core.services.asset_resizer import resize_image
 from core.services.reader_common import (
     infer_asset_type,
     is_path_asset_type_coherent,
@@ -22,6 +30,8 @@ def make_asset(
     asset_type: Optional[AssetType] = None,
     storage_client: Optional[StorageClient] = None,
     time_step: Optional[float] = None,
+    resized_shape_or_minimal_value: Optional[Union[int, Tuple[int, int]]] = None,
+    force_delete_even_if_local: bool = False,
 ) -> Union[ImageAsset, VideoAsset]:
     """
     Read an image or a video, encode each frame as binary if specified.
@@ -34,6 +44,13 @@ def make_asset(
     :param time_step: The time step between two consecutive sampled frames, which is
     equal to the inverse of the sampled frame rate. Used in the case of video assets
     only.
+    :param resized_shape_or_minimal_value: The targeted shape (height, width) we want
+    to have for the image or each frame in case of a video. If a single value in given
+    instead, it will be considered as the desired minimum dimension while maintaining
+    the aspect ratio.
+    :param force_delete_even_if_local: If True, the local file will be removed, even if
+    the asset_path is already a local path. It's a destroying action: be sure that your
+    asset_path is a temporary file if force_delete_even_if_local is True.
 
     :return: An Asset object, containing the frame(s) of the asset along with
     the metadata.
@@ -55,8 +72,27 @@ def make_asset(
         asset_path=asset_path, storage_client=storage_client
     ) as (delete, local_asset_path):
         return asset_type.asset_builder(
-            asset_path=local_asset_path, time_step=time_step, delete=delete
+            asset_path=local_asset_path,
+            time_step=time_step,
+            resized_shape_or_minimal_value=resized_shape_or_minimal_value,
+            delete=force_delete_even_if_local or delete,
         )
+
+
+def make_asset_from_bytes(asset: bytes, extension: str, **kwargs):
+    if extension not in IMAGE_EXTENSIONS.union(VIDEO_EXTENSIONS):
+        raise ValueError(
+            f"The received extension is unknown, currently supported extensions: "
+            f"{IMAGE_EXTENSIONS.union(VIDEO_EXTENSIONS)}"
+        )
+
+    with tempfile.NamedTemporaryFile(suffix=extension, delete=False) as temporary_file:
+        asset_path = temporary_file.name
+
+        with open(asset_path, "wb") as fp:
+            fp.write(asset)
+
+    return make_asset(asset_path=asset_path, force_delete_even_if_local=True, **kwargs)
 
 
 def make_assets(
@@ -64,6 +100,7 @@ def make_assets(
     asset_type: Optional[AssetType] = None,
     storage_client: Optional[StorageClient] = None,
     time_step: Optional[float] = None,
+    resized_shape_or_minimal_value: Optional[Union[int, Tuple[int, int]]] = None,
 ) -> Union[List[ImageAsset], List[VideoAsset]]:
     return [
         make_asset(
@@ -71,32 +108,24 @@ def make_assets(
             asset_type=asset_type,
             storage_client=storage_client,
             time_step=time_step,
+            resized_shape_or_minimal_value=resized_shape_or_minimal_value,
         )
         for asset_path in build_paths(assets_paths)
     ]
 
 
 def must_be_resized(image: np.ndarray, max_allowed_size: int) -> bool:
-    buf = VisualAsset.to_binary(image)
+    buf = VisualAsset.frame_to_binary(image)
     return len(buf) > max_allowed_size
-
-
-def resize_image(image: np.ndarray, targeted_dim: Tuple[int, int]) -> np.ndarray:
-    if targeted_dim == image.shape[::-1]:
-        return image
-
-    return cv.resize(
-        image, tuple(np.maximum(targeted_dim, 1)), interpolation=cv.INTER_AREA
-    )
 
 
 def compute_image_buffer_size(
     image: np.ndarray, targeted_dim: Optional[Tuple[int, int]] = None
 ) -> int:
     if targeted_dim is None:
-        return len(VisualAsset.to_binary(image))
+        return len(VisualAsset.frame_to_binary(image))
 
-    return len(VisualAsset.to_binary(resize_image(image, targeted_dim)))
+    return len(VisualAsset.frame_to_binary(resize_image(image, targeted_dim)))
 
 
 def get_middle_point(
@@ -155,7 +184,7 @@ def reduce_image_size_to_binary_target(
 
     logger.debug(f"current interval: {current_search_interval}")
 
-    resized_image = resize_image(image, get_middle_point(current_search_interval))
+    resized_image = resize_image(image, get_middle_point(current_search_interval)[::-1])
     encoded_image_size = compute_image_buffer_size(resized_image)
 
     lower_left_interval, upper_right_interval = split_interval(current_search_interval)

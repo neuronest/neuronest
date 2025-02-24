@@ -4,18 +4,19 @@ repository_variables:
   - REPOSITORY_CODE=pc
   - PACKAGE_NAME=people_counting
   - MAIN_TERRAFORM_MODULE_NAME=${PACKAGE_NAME}
+  - REPOSITORIES_DEPENDENCIES=object-detection
 multi_instance_resource_names:
   # docker image
   - BASE_IMAGE_NAME=people-counting
   # service account names
   - SERVICE_ACCOUNT_NAME=webapp
   # firestore
-  - FIRESTORE_RESULTS_COLLECTION=counts
   - FIRESTORE_JOBS_COLLECTION=jobs
   # cloud run
   - CLOUD_RUN_NAME=webapp
   # storage
-  - VIDEOS_TO_COUNT_BUCKET=videos-to-count-${PROJECT_CODE}
+  - RESULTS_BUCKET=results-${PROJECT_CODE}
+  - SAMPLES_BUCKET=samples-${PROJECT_CODE}
   - COUNTED_VIDEOS_BUCKET=counted-videos-${PROJECT_CODE}
 other_variables:
   branch:
@@ -25,7 +26,9 @@ other_variables:
     - CLOUD_RUN_CPU=1000m
     - CLOUD_RUN_MIN_SCALE=0
     - CLOUD_RUN_MAX_SCALE=1
-    # communications between services
-    - MODEL_INSTANTIATOR_HOST=dummy_model_instantiator_host
-    - OBJECT_DETECTION_MODEL_NAME=dummy_object_detection_model_name
-
+    - CLOUD_RUN_TIMEOUT=600s
+    # GCP project
+    - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
+    - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}
+    # vertex
+    - OBJECT_DETECTION_VERTEX_LOCATION=europe-west4

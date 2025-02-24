@@ -1,28 +1,6 @@
 name: people_counting
 
 on:
-#  push:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/people_counting.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - people-counting/**
-#  pull_request:
-#    branches:
-#      - main
-#      - develop
-#    paths:
-#      - .github/workflows/people_counting.yaml
-#      - .github/actions/**
-#      - .github/variables/**
-#      - .pre-commit-config.yaml
-#      - shared/**
-#      - people-counting/**
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -34,7 +12,11 @@ on:
         required: false
         type: string
         default: 'true'
-      do_post_deployment:
+      post_deploy:
+        required: false
+        type: string
+        default: 'true'
+      run_tests:
         required: false
         type: string
         default: 'true'
@@ -42,25 +24,21 @@ on:
         required: false
         type: string
         default: ''
-    outputs:
-      gcp_image_name:
-        description: "The gcp image name"
-        value: ${{ jobs.build_test_push.outputs.gcp_image_name }}
-
 env:
   REPOSITORY_NAME: people-counting
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+  TESTING_BASE_IMAGE: python:3.11.10-slim-bookworm
 
 jobs:
   run_base_terraform:
     runs-on: neuronest-runner-set
     # If the workflow isn't called, inputs are blank and job should run
-    if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
+    if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
     container: google/cloud-sdk
     outputs:
       base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
@@ -68,22 +46,49 @@ jobs:
       - id: run_base_terraform
         uses: ./.github/actions/run_base_terraform
 
+  upload_object_detection_workflow_variables:
+    runs-on: neuronest-runner-set
+    container: google/cloud-sdk
+    outputs:
+      env_file_artifact_name: ${{ steps.upload_object_detection_variables.outputs.env_file_artifact_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: upload_object_detection_variables
+        id: upload_object_detection_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: OBJECT_DETECTION
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+
+  build_object_detection:
+    needs:
+      - run_base_terraform
+      - upload_object_detection_workflow_variables
+    uses: ./.github/workflows/object_detection.yaml
+    with:
+      build: true
+      deploy: false
+      post_deploy: false
+      run_tests: false
+      env_file_artifact_name: ${{ needs.upload_object_detection_workflow_variables.outputs.env_file_artifact_name }}
+    secrets: inherit
+
   build_test_push:
     name: build_test_push
     runs-on: neuronest-runner-set
-    needs: run_base_terraform
+    needs:
+      - run_base_terraform
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.build == 'true' || inputs.build == '') && !failure() && !cancelled() }}
     outputs:
       gcp_image_name: ${{ steps.build_test_push.outputs.gcp_image_name }}
-      dockerhub_image_name: ${{ steps.build_test_push.outputs.dockerhub_image_name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables
         with:
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
           as_root: true
-      - uses: google-github-actions/setup-gcloud@v0.2.0
+      - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
       - uses: ./.github/actions/gcloud_auth
@@ -94,20 +99,27 @@ jobs:
         with:
           dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          build_arguments: --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          base_image_name: ${{ env.BASE_IMAGE_NAME }}
+          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }}
+          dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
   deploy:
     name: deploy
     runs-on: neuronest-runner-set
     needs:
       - run_base_terraform
+      - build_object_detection
       - build_test_push
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.deploy == 'true' || inputs.deploy == '') && !failure() && !cancelled() }}
+    outputs:
+      model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
+      people_counting_url: ${{ steps.get_people_counting_url.outputs.value }}
     container:
       image: google/cloud-sdk
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/set_variables_gcloud_auth
         with:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
@@ -116,4 +128,65 @@ jobs:
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
           workspace: ${{ env.REPOSITORY_NAME }}
-          image_name: ${{ needs.build_test_push.outputs.gcp_image_name }}
+        # favor environment variables that show up clearly in github logs over
+        # var-like arguments to make it easier to reproduce errors locally
+        env:
+          TF_VAR_object_detection_image_name: ${{ needs.build_object_detection.outputs.web_serving_image_name }}
+          TF_VAR_object_detection_model_instantiator_image_name: ${{ needs.build_object_detection.outputs.model_instantiator_image_name }}
+          TF_VAR_image_name: ${{ needs.build_test_push.outputs.gcp_image_name }}
+      - id: get_model_instantiator_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: model_instantiator_url
+      - id: get_people_counting_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: people_counting_url
+
+  post_deploy_object_detection:
+    needs:
+     - run_base_terraform
+     - upload_object_detection_workflow_variables
+     - build_object_detection
+     - deploy
+    uses: ./.github/workflows/object_detection.yaml
+    with:
+      build: false
+      deploy: false
+      post_deploy: true
+      run_tests: false
+      env_file_artifact_name: ${{ needs.upload_object_detection_workflow_variables.outputs.env_file_artifact_name }}
+      dockerhub_training_image_name: ${{ needs.build_object_detection.outputs.dockerhub_training_image_name }}
+      gcp_training_image_name: ${{ needs.build_object_detection.outputs.gcp_training_image_name }}
+      base_project_builder_sa_key: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+    secrets: inherit
+
+  run_integration_tests:
+    runs-on: neuronest-runner-set
+    needs:
+      - run_base_terraform
+      - deploy
+      - post_deploy_object_detection
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.run_tests == 'true' || inputs.run_tests == '') && !failure() && !cancelled() }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+      - uses: ./.github/actions/run_linters_tests
+        with:
+          image_name: ${{ env.TESTING_BASE_IMAGE }}
+          repository_name: ${{ env.REPOSITORY_NAME }}
+          run_integration_tests: true
+          run_unit_tests: false
+          environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.deploy.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy.outputs.model_instantiator_url }}

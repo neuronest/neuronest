@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List, Tuple
 
 import pandas as pd
-from core.schemas.people_counting import Detection, Direction
+from core.schemas.modules.people_counting import Detection, Direction
 
 
 def init_logger(level: int):

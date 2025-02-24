@@ -24,6 +24,8 @@ other_variables:
     - CLOUD_RUN_CPU=1000m
     - CLOUD_RUN_MIN_SCALE=0
     - CLOUD_RUN_MAX_SCALE=1
+    - CLOUD_RUN_TIMEOUT=300s
+    # cloud scheduler
     # Vertex AI endpoint cloud scheduler
     - CLOUD_SCHEDULER_SCHEDULE='*/30 * * * *'
     - CLOUD_UNINSTANTIATE_ROUTE=/model_instantiator/api/v1/uninstantiator/uninstantiate_logs_conditioned

@@ -22,4 +22,6 @@ variable "project_builder_service_account_name" {
 variable "mono_repository_name" {
   type = string
 }
-
+variable "timezone" {
+  type = string
+}

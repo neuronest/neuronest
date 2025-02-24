@@ -6,10 +6,26 @@ from abc import ABC
 from typing import Any, List, Optional, Tuple
 from urllib import parse
 
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
+
 
 class Path(str, ABC):
     PREFIX: Optional[str] = None
     REGEX: Optional[str] = None
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        def validate_path(name: str) -> str:
+            if not cls.is_valid(name):
+                raise ValueError(f"Invalid {cls.__name__}: '{name}'")
+            return cls(name)
+
+        return core_schema.no_info_after_validator_function(
+            validate_path, core_schema.str_schema()
+        )
 
     @classmethod
     def has_valid_prefix(cls, path: str) -> bool:
@@ -63,10 +79,12 @@ class Path(str, ABC):
     def __get_validators__(cls):
         yield cls.validate
 
-    def get_file_extension(self):
+    def get_file_extension(self) -> Optional[str]:
         _, file_extension = os.path.splitext(self)
-        if file_extension:
+
+        if file_extension is not None and file_extension != "":
             return file_extension.lower()
+
         return None
 
 

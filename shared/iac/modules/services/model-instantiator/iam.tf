@@ -5,7 +5,6 @@ resource "google_service_account_iam_binding" "model_instantiator_api_sa_act_as_
 
   service_account_id = var.online_prediction_model_sa_name
   role               = "roles/iam.serviceAccountUser"
-
   members = [
     "serviceAccount:${google_service_account.model_instantiator_api_sa.email}",
   ]

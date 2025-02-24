@@ -52,26 +52,26 @@ resource "google_sql_database" "neuronest_database" {
 }
 
 # Generate and store the database password in Secret Manager
-resource "random_password" "database_api_db_password" {
+resource "random_password" "db_password" {
   length  = 16
   special = true
 }
 
-resource "google_secret_manager_secret" "database_api_db_password_secret" {
-  secret_id = "database_api_db_password"
+resource "google_secret_manager_secret" "db_password_secret" {
+  secret_id = "db_password"
   replication {
     auto {}
   }
 }
 
-resource "google_secret_manager_secret_version" "database_api_db_password_version" {
-  secret      = google_secret_manager_secret.database_api_db_password_secret.id
-  secret_data = random_password.database_api_db_password.result
+resource "google_secret_manager_secret_version" "db_password_version" {
+  secret      = google_secret_manager_secret.db_password_secret.id
+  secret_data = random_password.db_password.result
 }
 
 # Create Cloud SQL User with the generated password
-resource "google_sql_user" "database_api_neuronest_instance_user" {
+resource "google_sql_user" "neuronest_instance_user" {
   instance = google_sql_database_instance.neuronest_instance.name
   name     = var.cloud_run_cloud_sql_username
-  password = random_password.database_api_db_password.result
+  password = random_password.db_password.result
 }

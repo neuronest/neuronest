@@ -2,6 +2,8 @@ repository_variables:
   - MAIN_TERRAFORM_RESOURCES=module.${MAIN_TERRAFORM_MODULE_NAME}
   # monorepo
   - MONO_REPOSITORY_NAME=neuronest
+  - WEB_SERVING_DOCKERFILE_PATH=shared/core/dockerfiles/abstract/web_serving.Dockerfile
+  - MODEL_DOCKERFILE_PATH=shared/core/dockerfiles/abstract/online_prediction_model.Dockerfile
   # must be overriden in subsequent repositories, if exists
   # PACKAGE_NAME=
   # MAIN_TERRAFORM_MODULE_NAME=
@@ -16,10 +18,10 @@ other_variables:
       - BILLING_ACCOUNT=01F17D-FFD0ED-C23C3B
       - DEFAULT_PROJECTS_OWNERS=come.arvis@neuronest.net,guillaume.ligner@neuronest.net
       # GCP projects
-      - MAIN_GCP_PROJECT_ID=neuronest
+      - MAIN_GCP_PROJECT_ID=customer-dummy-project-staging
       - DEV_GCP_PROJECT_ID=neuronest-dev
         # Must be manually set when working on a feature branch
-      - DEFAULT_GCP_PROJECT_ID=database-api-yolo-5
+      - DEFAULT_GCP_PROJECT_ID=database-api-yolo-6
       - REGION=europe-west1
       - ZONE=europe-west1-b
       - TIMEZONE=Europe/Paris
@@ -37,3 +39,5 @@ other_variables:
       - STATE_BUCKET=${PROJECT_CODE}-tfstate
       # artifact registry
       - GCP_REGISTRY_NAME=${REGION}-docker.pkg.dev/${PROJECT_ID}
+      # vertex
+      - BATCH_SIZE=32

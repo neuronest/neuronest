@@ -6,15 +6,16 @@ import os
 import tempfile
 from abc import ABC
 from enum import Enum
-from typing import Any, Iterator, List, Optional, Type, Union
+from typing import Any, Iterator, List, Optional, Tuple, Type, Union
 
 import cv2 as cv
 import librosa
 import numpy as np
 from moviepy.audio.io.AudioFileClip import AudioFileClip
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from core.path import LocalPath
+from core.services.asset_resizer import get_targeted_shape, resize_image
 from core.tools import extract_file_extension, get_chunks_from_iterable
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
@@ -72,13 +73,12 @@ class AssetMeta(ABC, BaseModel):
     ratio: Optional[float] = None
     surface: Optional[float] = None
 
-    @root_validator
-    # pylint: disable=no-self-argument
-    def populate_ratio_and_surface(cls, values: dict) -> dict:
-        values["ratio"] = values["width"] / values["height"]
-        values["surface"] = values["width"] * values["height"]
+    @model_validator(mode="after")
+    def populate_ratio_and_surface(self) -> AssetMeta:
+        self.ratio = self.width / self.height
+        self.surface = self.width * self.height
 
-        return values
+        return self
 
 
 class ImageAssetMeta(AssetMeta):
@@ -96,15 +96,15 @@ class VideoAssetMeta(AssetMeta):
     # custom fields
     sampled_fps: float
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def populate_duration(cls, values: dict) -> dict:
         values["duration"] = values["frames_number"] / values["initial_fps"]
 
         return values
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def populate_sampled_fps(cls, values: dict) -> dict:
         values["sampled_fps"] = 1 / values["time_step"]
 
@@ -120,10 +120,10 @@ def build_asset_meta(
     asset_type = asset_meta["asset_type"]
 
     if asset_type == AssetType.VIDEO:
-        return VideoAssetMeta.parse_obj(asset_meta)
+        return VideoAssetMeta.model_validate(asset_meta)
 
     if asset_type == AssetType.IMAGE:
-        return ImageAssetMeta.parse_obj(asset_meta)
+        return ImageAssetMeta.model_validate(asset_meta)
 
     raise ValueError(f"Unknown asset type: {asset_type}")
 
@@ -132,8 +132,8 @@ class Asset(BaseModel, ABC):
     asset_path: LocalPath
     delete: bool = False
 
-    @validator("asset_path", pre=True)
-    # pylint: disable=no-self-argument
+    @field_validator("asset_path", mode="before")
+    @classmethod
     def assert_file_exists(cls, asset_path: str) -> LocalPath:
         if not os.path.exists(asset_path):
             raise ValueError(f"The following asset path is not existing: {asset_path}")
@@ -171,9 +171,16 @@ class Asset(BaseModel, ABC):
 
 class VisualAsset(Asset, ABC):
     asset_meta: AssetMeta
+    resized_shape_or_minimal_value: Optional[Union[int, Tuple[int, int]]] = None
+
+    def to_file(self, path: LocalPath, **kwargs) -> LocalPath:
+        raise NotImplementedError
+
+    def to_bytes(self, **kwargs) -> bytes:
+        raise NotImplementedError
 
     @staticmethod
-    def to_binary(frame: np.ndarray, extension: str = ".jpg") -> bytes:
+    def frame_to_binary(frame: np.ndarray, extension: str = ".jpg") -> bytes:
         """Convert the given frame to binary"""
         return cv.imencode(extension, frame)[1].tobytes()
 
@@ -183,21 +190,23 @@ class ImageAsset(VisualAsset):
     # fields filled with validators
     image: np.ndarray
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
-    def fill_image(cls, values: dict) -> dict:
-        asset_path = values["asset_path"]
+    @model_validator(mode="before")
+    @classmethod
+    def fill_image_and_metadata(cls, values: dict) -> dict:
+        asset_path, resized_shape_or_minimal_value = (
+            values["asset_path"],
+            values["resized_shape_or_minimal_value"],
+        )
+
         values["image"] = cv.imread(asset_path)
+
+        if resized_shape_or_minimal_value is not None:
+            values["image"] = resize_image(
+                values["image"], resized_shape_or_minimal_value
+            )
 
         if values["image"] is None:
             raise ValueError(f"Image could not be loaded from path: {asset_path}")
-
-        return values
-
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
-    def fill_metadata(cls, values: dict) -> dict:
-        values["extension"] = extract_file_extension(values["asset_path"])
 
         values["asset_meta"] = ImageAssetMeta(
             width=values["image"].shape[1],
@@ -206,13 +215,27 @@ class ImageAsset(VisualAsset):
 
         return values
 
+    def to_file(self, path: LocalPath, **kwargs) -> LocalPath:
+        extension = path.get_file_extension()
+
+        if extension is None:
+            raise ValueError(f"Not extension found in {path}")
+
+        with open(path, "wb") as fp:
+            fp.write(self.frame_to_binary(self.content, extension=extension))
+
+        return path
+
+    def to_bytes(self, **kwargs) -> bytes:
+        return self.binary_content
+
     @property
     def content(self) -> np.ndarray:
         return self.image
 
     @property
     def binary_content(self) -> bytes:
-        return self.to_binary(self.content)
+        return self.frame_to_binary(self.content)
 
     @property
     def as_array_content(self) -> np.ndarray:
@@ -245,7 +268,12 @@ class VideoAsset(VisualAsset):
             video_capture.release()
 
     @classmethod
-    def _read(cls, asset_path: str, to_rgb: bool = False) -> Iterator[np.ndarray]:
+    def _read(
+        cls,
+        asset_path: str,
+        to_rgb: bool = False,
+        resized_shape_or_minimal_value: Optional[Tuple[int, int]] = None,
+    ) -> Iterator[np.ndarray]:
         with cls._capture_video(asset_path) as video_capture:
             while video_capture.isOpened():
                 is_read, frame = video_capture.read()
@@ -255,19 +283,36 @@ class VideoAsset(VisualAsset):
                 if to_rgb is True:
                     frame = bgr_to_rgb(frame)
 
+                if resized_shape_or_minimal_value is not None:
+                    frame = resize_image(frame, resized_shape_or_minimal_value)
+
                 yield frame
             else:
                 raise ValueError(f"Could not open the following asset: {asset_path}")
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def fill_metadata(cls, values: dict) -> dict:
-        asset_path = values["asset_path"]
+        asset_path, resized_shape_or_minimal_value = (
+            values["asset_path"],
+            values["resized_shape_or_minimal_value"],
+        )
 
         with cls._capture_video(asset_path) as video_capture:
             initial_fps = int(video_capture.get(cv.CAP_PROP_FPS))
-            width = int(video_capture.get(cv.CAP_PROP_FRAME_WIDTH))
-            height = int(video_capture.get(cv.CAP_PROP_FRAME_HEIGHT))
+
+            if resized_shape_or_minimal_value is not None:
+                height, width = get_targeted_shape(
+                    image_shape=(
+                        int(video_capture.get(cv.CAP_PROP_FRAME_HEIGHT)),
+                        int(video_capture.get(cv.CAP_PROP_FRAME_WIDTH)),
+                    ),
+                    resized_shape_or_minimal_value=resized_shape_or_minimal_value,
+                )
+            else:
+                width = int(video_capture.get(cv.CAP_PROP_FRAME_WIDTH))
+                height = int(video_capture.get(cv.CAP_PROP_FRAME_HEIGHT))
+
             # the exact number of frames cannot be properly retrieved using
             # cv.CAP_PROP_FRAME_COUNT because it does not take into account
             # unreadable/corrupted frames, resulting in a potential small difference
@@ -305,7 +350,11 @@ class VideoAsset(VisualAsset):
         )
 
         sampled_frames_index = 0
-        for frame_number, frame in enumerate(self._read(self.asset_path, self.to_rgb)):
+        for frame_number, frame in enumerate(
+            self._read(
+                self.asset_path, self.to_rgb, self.resized_shape_or_minimal_value
+            )
+        ):
             while (
                 sampled_frames_index < len(sampled_frames_offsets)
                 and frame_number == sampled_frames_offsets[sampled_frames_index]
@@ -321,7 +370,7 @@ class VideoAsset(VisualAsset):
     @property
     def binary_content(self) -> Iterator[bytes]:
         for frame in self._get_frames():
-            yield self.to_binary(frame)
+            yield self.frame_to_binary(frame)
 
     @property
     def as_array_content(self) -> np.ndarray:
@@ -331,6 +380,36 @@ class VideoAsset(VisualAsset):
     @property
     def frame_offsets(self) -> List[int]:
         return list(range(self.asset_meta.sampled_frames_number))
+
+    def to_file(self, path: LocalPath, **kwargs):
+        codec: str = kwargs.get("codec", "mp4v")
+        forced_extension: str = kwargs.get("forced_extension", ".mp4")
+
+        if not path.endswith(forced_extension):
+            path = LocalPath(os.path.splitext(path)[0] + forced_extension)
+
+        fourcc = cv.VideoWriter_fourcc(*codec)
+
+        writer = None
+        for frame in self._get_frames():
+            if writer is None:
+                height, width = frame.shape[:2]
+                writer = cv.VideoWriter(
+                    path, fourcc, self.asset_meta.sampled_fps, (width, height), True
+                )
+
+            writer.write(frame)
+
+        return path
+
+    def to_bytes(self, **kwargs) -> bytes:
+        with tempfile.NamedTemporaryFile() as temporary_file:
+            path = self.to_file(LocalPath(temporary_file.name), **kwargs)
+
+            with open(path, "rb") as fp:
+                video_as_bytes = fp.read()
+
+        return video_as_bytes
 
     def chunks(
         self, chunk_size: int = 10, as_binary: bool = False
@@ -346,7 +425,7 @@ class VideoAsset(VisualAsset):
         for current_index, frame in enumerate(self.content):
             if current_index == index:
                 if as_binary:
-                    return self.to_binary(frame)
+                    return self.frame_to_binary(frame)
 
                 return frame
 
@@ -369,7 +448,7 @@ class VideoAsset(VisualAsset):
         for current_index, frame in enumerate(self.content):
             if current_index in indexes:
                 if as_binary:
-                    yield self.to_binary(frame)
+                    yield self.frame_to_binary(frame)
 
                 else:
                     yield frame
@@ -399,8 +478,8 @@ class AudioContent(Asset):
 
             return cls(asset_path=temporary_file.name, delete=True)
 
-    @root_validator(pre=True)
-    # pylint: disable=no-self-argument
+    @model_validator(mode="before")
+    @classmethod
     def fill_audio_clip(cls, values: dict) -> dict:
         asset_path = values["asset_path"]
 

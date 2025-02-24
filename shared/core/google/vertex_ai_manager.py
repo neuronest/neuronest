@@ -10,9 +10,10 @@ from google.cloud import aiplatform, aiplatform_v1
 from google.cloud.aiplatform import Endpoint
 from google.cloud.aiplatform_v1.types import training_pipeline
 
-from core.client.base_client import BaseClient
+from core.client.abstract.base_client import BaseClient
 from core.exceptions import AlreadyExistingError
-from core.google.utils import get_service_account_email
+from core.google.project_manager import ProjectManager
+from core.google.service_account import get_service_account_email
 from core.schemas.vertex_ai import ServingDeploymentConfig, ServingModelUploadConfig
 
 logger = logging.getLogger(__name__)
@@ -27,11 +28,13 @@ class VertexAIManager(BaseClient):
     def __init__(
         self,
         location: str,
+        project_id: str,
         key_path: Optional[str] = None,
-        project_id: Optional[str] = None,
     ):
         super().__init__(key_path=key_path, project_id=project_id)
         self.location = location
+
+        self.project_manager = ProjectManager(project_id=project_id, key_path=key_path)
 
         client_options = {"api_endpoint": f"{self.location}-aiplatform.googleapis.com"}
         # noinspection PyTypeChecker
@@ -39,12 +42,22 @@ class VertexAIManager(BaseClient):
             credentials=self.credentials, client_options=client_options
         )
 
+    @property
+    def project_number(self):
+        return self.project_manager.get_project_number()
+
     @staticmethod
     def _model_to_endpoint_name(model_name: str) -> str:
         if model_name == "":
             raise ValueError("Incorrect model_name")
 
         return f"{model_name}_endpoint"
+
+    @staticmethod
+    def calculate_prediction_payload_size(
+        instances: List[Dict], parameters: Optional[Dict] = None
+    ) -> int:
+        return len(json.dumps({"instances": instances, "parameters": parameters or {}}))
 
     def _get_all_models_by_name(self, name: str) -> List[aiplatform.Model]:
         models = aiplatform.models.Model.list(
@@ -64,7 +77,10 @@ class VertexAIManager(BaseClient):
 
         return matching_models
 
-    def _get_all_endpoints_by_name(self, name: str) -> List[aiplatform.Endpoint]:
+    def _get_all_endpoints_by_name(
+        self,
+        name: str,
+    ) -> List[aiplatform.Endpoint]:
         return aiplatform.Endpoint.list(
             location=self.location,
             credentials=self.credentials,
@@ -111,7 +127,9 @@ class VertexAIManager(BaseClient):
         self,
         name: str,
     ) -> Optional[aiplatform.Endpoint]:
-        endpoints = self._get_all_endpoints_by_name(name)
+        endpoints = self._get_all_endpoints_by_name(
+            name=name,
+        )
 
         if len(endpoints) == 0:
             return None
@@ -122,7 +140,7 @@ class VertexAIManager(BaseClient):
         raise ValueError(f"Multiple endpoints found with the same name: {name}")
 
     def undeploy_models_without_traffic_by_endpoint_name(self, name: str):
-        endpoint = self.get_endpoint_by_name(name)
+        endpoint = self.get_endpoint_by_name(name=name)
 
         if endpoint is None:
             logger.warning(f"No endpoint named '{name}' has been found")
@@ -157,17 +175,6 @@ class VertexAIManager(BaseClient):
 
         endpoint.delete(force=undeploy_models)
 
-    def calculate_prediction_payload_size(
-        self, instances: List[Dict], parameters: Optional[Dict] = None
-    ) -> int:
-        # we use the google.cloud.aiplatform.models.Endpoint.predict function to best
-        # approximate the structure passed to the endpoint and its weight in bytes
-
-        if parameters is None:
-            parameters = {}
-
-        return len(json.dumps({"instances": instances, "parameters": parameters}))
-
     def upload_model(
         self,
         name: str,
@@ -201,7 +208,7 @@ class VertexAIManager(BaseClient):
                 raise ValueError(
                     "The endpoint name should be specified if no endpoint is given"
                 )
-            endpoint = self.get_endpoint_by_name(name)
+            endpoint = self.get_endpoint_by_name(name=name)
 
         if endpoint is None:
             return False
@@ -254,7 +261,7 @@ class VertexAIManager(BaseClient):
         is_last_model_already_deployed_ok: bool = True,
         timeout: float = 3600,
     ) -> aiplatform.Endpoint:
-        endpoint = self.get_endpoint_by_name(name)
+        endpoint = self.get_endpoint_by_name(name=name)
 
         if endpoint is None:
             endpoint = Endpoint.create(
@@ -264,7 +271,7 @@ class VertexAIManager(BaseClient):
                 credentials=self.credentials,
             )
 
-        if self.is_model_deployed(name=name, model=model):
+        if self.is_model_deployed(model=model, name=name):
             if is_last_model_already_deployed_ok:
                 return endpoint
 
@@ -278,6 +285,7 @@ class VertexAIManager(BaseClient):
             )
         else:
             service_account_email = None
+
         endpoint = model.deploy(
             endpoint=endpoint,
             deployed_model_display_name=name,
@@ -295,13 +303,15 @@ class VertexAIManager(BaseClient):
         )
 
         if not self.wait_for_model_deployed(
-            endpoint=endpoint, model=model, timeout=timeout
+            endpoint=endpoint,
+            model=model,
+            timeout=timeout,
         ):
             raise TimeoutError(
                 f"Model '{name}' could not been deployed after {timeout} seconds"
             )
 
         if undeploy_previous_model:
-            self.undeploy_models_without_traffic_by_endpoint_name(name)
+            self.undeploy_models_without_traffic_by_endpoint_name(name=name)
 
         return endpoint

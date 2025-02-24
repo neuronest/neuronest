@@ -1,48 +1,52 @@
 ##############################################
 #       Deploy API to Google Cloud Run       #
 ##############################################
-# Deploy image to Cloud Run
-resource "google_cloud_run_service" "model_instantiator_api" {
-  provider                   = google-beta
-  name                       = var.cloud_run_name
-  location                   = var.region
-  autogenerate_revision_name = true
+# Deploy image to Cloud Run v2
+resource "google_cloud_run_v2_service" "model_instantiator_api" {
+  provider = google-beta
+  name     = var.cloud_run_name
+  location = var.region
+
   template {
-    spec {
-      containers {
-        image = var.image_name
-        resources {
-          limits = {
-            "memory" = var.cloud_run_memory
-            "cpu"    = var.cloud_run_cpu
-          }
-        }
-        env {
-          name  = "PROJECT_ID"
-          value = var.project_id
-        }
-        env {
-          name  = "REGION"
-          value = var.region
-        }
-        env {
-          name  = "IMAGE_NAME"
-          value = var.image_name
+    containers {
+      image = var.image_name
+      resources {
+        limits = {
+          "cpu"    = var.cloud_run_cpu
+          "memory" = var.cloud_run_memory
         }
       }
-      service_account_name = google_service_account.model_instantiator_api_sa.email
-    }
-    metadata {
-      annotations = {
-        "autoscaling.knative.dev/minScale" = var.cloud_run_min_scale
-        "autoscaling.knative.dev/maxScale" = var.cloud_run_max_scale
+      env {
+        name  = "PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "REGION"
+        value = var.region
+      }
+      env {
+        name  = "IMAGE_NAME"
+        value = var.image_name
+      }
+      env {
+        name  = "VERTEX_LOCATION"
+        value = var.vertex_location
       }
     }
+    scaling {
+      min_instance_count = var.cloud_run_min_scale
+      max_instance_count = var.cloud_run_max_scale
+    }
+
+    service_account = google_service_account.model_instantiator_api_sa.email
+    timeout         = var.cloud_run_timeout
   }
+
   traffic {
-    percent         = 100
-    latest_revision = true
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+    percent = 100
   }
+
   depends_on = [
     time_sleep.api_activation_waiting,
     google_service_account.model_instantiator_api_sa

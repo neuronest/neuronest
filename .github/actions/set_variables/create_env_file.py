@@ -15,9 +15,9 @@ from pydantic import BaseModel
 # so we modify sys.path at runtime to be able to import code from core
 # this also results in conflicts between black and flake8/pylint
 sys.path.append("shared")
+# pylint: disable=import-error
 from core.utils import string_to_boolean  # pylint: disable=C0413  # noqa: E402
 
-FUNCTIONAL_REPOSITORIES_PREFIX = "func-"
 DEPENDENT_REPOSITORY_VAR_LINE_NAME = "REPOSITORIES_DEPENDENCIES"
 ARRAY_SEPARATOR = ","
 TERRAFORM_VARIABLES_PREFIX = "TF_VAR_"
@@ -204,10 +204,10 @@ class VariableLine:
 
         Example:
             >>> var_line = VariableLine(
-            >>>                     "WEBAPP_SERVICE_ACCOUNT_EMAIL="
-            >>>                     "${WEBAPP_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam"
-            >>>                     ".gserviceaccount.com"
-            >>>                )
+            >>>     "WEBAPP_SERVICE_ACCOUNT_EMAIL="
+            >>>     "${WEBAPP_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam"
+            >>>      ".gserviceaccount.com"
+            >>> )
             >>> var_line.replace_variable_inside_value(
             ...     variable="WEBAPP_SERVICE_ACCOUNT_NAME",
             ...     other_variable="PEOPLE_COUNTING_WEBAPP_SERVICE_ACCOUNT_NAME",
@@ -296,6 +296,7 @@ class VariableLine:
 
         return var_line
 
+    # pylint: disable=too-many-positional-arguments
     def add_namespace(
         self,
         namespace: str,
@@ -365,7 +366,7 @@ class YamlEnvFile(BaseModel):
         with open(file_path, "r") as self_reader:
             yaml_data = yaml.safe_load(self_reader)
 
-        return cls.parse_obj(yaml_data)
+        return cls.model_validate(yaml_data)
 
     def get_repository_variables(self) -> List[VariableLine]:
 
@@ -493,7 +494,6 @@ class EnvFile:
 
 class Repository:
     VARIABLES_FILE_PATH = "iac/variables.yaml"
-    FUNCTIONAL_REPOSITORIES_PREFIX = FUNCTIONAL_REPOSITORIES_PREFIX
 
     def __init__(self, name: str):
         self.name = name
@@ -540,20 +540,6 @@ class Repository:
             for var_line in self.get_yaml_env_file().get_repository_variables()
             if var_line.is_a_repository_code()
         ][0].value
-
-    def get_base_code(self) -> str:
-        code = self.get_code()
-
-        # By development convention within the repo the code is always made up of the
-        # base code prefixed or not with "func-" contained in
-        # the variable FUNCTIONAL_REPOSITORIES_PREFIX.
-        # There is therefore no reason to parameterize the function
-        # with an argument which would allow passing something other than this variable,
-        # we use it directly
-        if not code.startswith(self.FUNCTIONAL_REPOSITORIES_PREFIX):
-            return code
-
-        return code[len(self.FUNCTIONAL_REPOSITORIES_PREFIX) :]
 
 
 def get_all_repository_var_lines(
@@ -605,10 +591,7 @@ def get_all_repository_var_lines(
             add_namespace_to_name_of_multi_instance_resource
             and var_line.is_a_multi_instance_resource()
         ):
-            if var_line.value.startswith(repository.get_base_code()):
-                namespace = FUNCTIONAL_REPOSITORIES_PREFIX
-            else:
-                namespace = repository.get_code()
+            namespace = repository.get_code()
 
             var_line.add_namespace(
                 namespace,
@@ -762,7 +745,12 @@ if __name__ == "__main__":
     shared_variables_lines_names = set(
         shared_var_line.name for shared_var_line in shared_variables_lines
     )
-    all_variables_lines = shared_variables_lines + repository_variables_lines
+
+    all_variables_lines = repository_variables_lines
+
+    if not args.discard_shared_variables:
+        all_variables_lines = shared_variables_lines + all_variables_lines
+
     if not args.keep_repository_variables:
         all_variables_lines = [
             var_line
@@ -770,12 +758,6 @@ if __name__ == "__main__":
             if not var_line.is_a_repository_variable()
         ]
 
-    if args.discard_shared_variables:
-        all_variables_lines = [
-            var_line
-            for var_line in all_variables_lines
-            if var_line.name not in shared_variables_lines_names
-        ]
     if args.variable_prefix_to_filter_on:
         variable_prefix = (
             main_repository.variables_prefix

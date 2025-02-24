@@ -15,7 +15,6 @@ from omegaconf import DictConfig
 
 from people_counting.centroid_tracker import CentroidTracker
 from people_counting.common import BoundingBox, Statistics, Status
-from people_counting.config import config
 from people_counting.model import Model
 from people_counting.trackable_object import TrackableObject
 from people_counting.video_renderer import VideoRenderer
@@ -24,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class PeopleCounter(metaclass=TimingMeta):
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         object_detection_client: ObjectDetectionClient,
@@ -77,12 +77,14 @@ class PeopleCounter(metaclass=TimingMeta):
         trackers: List[dlib.correlation_tracker] = []
 
         for frame_number, frame in enumerate(video_asset.content):
+            logger.info(f"Processing frame {frame_number}")
             time_offset = frame_number * video_asset.time_step
             frame = resize(frame, width=self.image_width)
             drawn_frame = frame.copy()
 
             if frame_number % self.algorithm_config.inference_periodicity == 0:
                 status = Status.DETECTING
+                logger.info(f"Current status: {status}")
                 bounding_boxes = self.model.predict(frame)
 
                 trackers: List[dlib.correlation_tracker] = []
@@ -105,6 +107,7 @@ class PeopleCounter(metaclass=TimingMeta):
 
             else:
                 status = Status.TRACKING
+                logger.info(f"Current status: {status}")
                 bounding_boxes: List[BoundingBox] = []
 
                 for tracker in trackers:
@@ -124,7 +127,7 @@ class PeopleCounter(metaclass=TimingMeta):
                         )
 
             line_vertical_position = int(
-                config.algorithm.line_placement_ratio * frame.shape[0]
+                self.algorithm_config.line_placement_ratio * frame.shape[0]
             )
 
             objects = centroid_tracker.update(bounding_boxes)

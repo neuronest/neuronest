@@ -8,19 +8,15 @@ env:
   GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-
-  functional_database_api:
-    uses: ./.github/workflows/functional_database_api.yaml
+  database_api:
+    uses: ./.github/workflows/database_api.yaml
     secrets: inherit
-
-  functional_people_counting:
-    uses: ./.github/workflows/functional_people_counting.yaml
-    secrets: inherit
-
-#  functional_object_detection:
-#    uses: ./.github/workflows/functional_object_detection.yaml
+#  functional_people_counting:
+#    uses: ./.github/workflows/people_counting.yaml
 #    secrets: inherit
-
+#  functional_object_detection:
+#    uses: ./.github/workflows/object_detection.yaml
+#    secrets: inherit
 #  functional_video_comparator:
-#    uses: ./.github/workflows/functional_video_comparator.yaml
+#    uses: ./.github/workflows/video_comparator.yaml
 #    secrets: inherit

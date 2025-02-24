@@ -1,7 +1,10 @@
 import os
 
 # Vertex AI endpoint variables
+PROJECT_ID = os.environ.get("PROJECT_ID")
 MODEL_NAME = os.environ.get("MODEL_NAME")
+REGION = os.environ.get("REGION")
+VERTEX_LOCATION = os.environ.get("VERTEX_LOCATION")
 UNDEPLOY_PREVIOUS_MODEL = os.environ.get("UNDEPLOY_PREVIOUS_MODEL")
 IS_LAST_MODEL_ALREADY_DEPLOYED_OK = os.environ.get("IS_LAST_MODEL_ALREADY_DEPLOYED_OK")
 UNDEPLOY_PREVIOUS_MODEL = (
