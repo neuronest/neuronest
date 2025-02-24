@@ -31,7 +31,7 @@ module "base" {
 }
 
 module "functional_database_api" {
-  source     = "../../shared/iac/modules/services/functional-database-api"
+  source     = "../../shared/iac/modules/services/database-api"
   project_id = var.project_id
   region     = var.region
   timezone   = var.timezone
@@ -64,4 +64,5 @@ module "functional_database_api" {
   model_instantiator_cloud_scheduler_cloud_sql_job_name   = var.model_instantiator_cloud_scheduler_cloud_sql_job_name
   model_instantiator_cloud_scheduler_cloud_sql_schedule   = var.model_instantiator_cloud_scheduler_cloud_sql_schedule
   model_instantiator_cloud_sql_uninstantiate_route        = var.model_instantiator_cloud_sql_uninstantiate_route
+  model_instantiator_cloud_run_timeout                    = var.model_instantiator_cloud_run_timeout
 }
