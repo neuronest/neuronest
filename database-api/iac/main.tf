@@ -30,7 +30,7 @@ module "base" {
   mono_repository_name                 = var.mono_repository_name
 }
 
-module "functional_database_api" {
+module "database_api" {
   source     = "../../shared/iac/modules/services/database-api"
   project_id = var.project_id
   region     = var.region
@@ -51,7 +51,6 @@ module "functional_database_api" {
   cloud_run_cpu                                = var.cloud_run_cpu
   cloud_run_min_scale                          = var.cloud_run_min_scale
   cloud_run_max_scale                          = var.cloud_run_max_scale
-
 
   model_instantiator_image_name                           = var.model_instantiator_image_name
   model_instantiator_webapp_service_account_name          = var.model_instantiator_webapp_service_account_name
