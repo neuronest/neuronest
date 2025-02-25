@@ -29,9 +29,13 @@ RUN apt -qqy update > /dev/null && DEBIAN_FRONTEND=noninteractive apt install -q
 RUN wget https://bootstrap.pypa.io/get-pip.py && python3.11 get-pip.py
 
 ARG REPOSITORY_NAME
+RUN if [ -z "$REPOSITORY_NAME" ]; then echo "REPOSITORY_NAME is not set" && exit 1; fi
 ARG PACKAGE_NAME
+RUN if [ -z "$PACKAGE_NAME" ]; then echo "PACKAGE_NAME is not set" && exit 1; fi
 ARG MODEL_NAME
+RUN if [ -z "$MODEL_NAME" ]; then echo "MODEL_NAME is not set" && exit 1; fi
 ARG BATCH_SIZE
+RUN if [ -z "$BATCH_SIZE" ]; then echo "BATCH_SIZE is not set" && exit 1; fi
 ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
 ARG POETRY_VERSION="1.8.4"
@@ -85,6 +89,7 @@ FROM training as serving
 # inspired of https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/community-content/pytorch_text_classification_using_vertex_sdk_and_gcloud/pytorch-text-classification-vertex-ai-train-tune-deploy.ipynb
 
 ARG MODEL_PATH
+RUN if [ -z "$MODEL_PATH" ]; then echo "MODEL_PATH is not set" && exit 1; fi
 ARG LOCAL_MODEL_PATH="/model/model.pt"
 ARG MODEL_STORE_NAME="model_store"
 ARG MODEL_PACKAGE_NAME="model/"
