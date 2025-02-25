@@ -75,7 +75,7 @@ jobs:
           repository_name: model-instantiator
           base_image_name: ${{ env.MODEL_INSTANTIATOR_BASE_IMAGE_NAME }}
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
-          build_arguments: --build-arg REPOSITORY_NAME=model-instantiator --build-arg PACKAGE_NAME=model_instantiator --build-arg POETRY_VERSION ${{ env.POETRY_VERSION }}
+          build_arguments: --build-arg REPOSITORY_NAME=model-instantiator --build-arg PACKAGE_NAME=model_instantiator --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }}
 
   build_test_push:
     name: build_test_push
@@ -105,7 +105,7 @@ jobs:
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           repository_name: ${{ env.REPOSITORY_NAME }}
           base_image_name: ${{ env.BASE_IMAGE_NAME }}
-          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg POETRY_VERSION ${{ env.POETRY_VERSION }}
+          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }}
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
   deploy:
