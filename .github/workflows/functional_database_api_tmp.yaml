@@ -1,0 +1,182 @@
+name: functional_database_api
+
+on:
+  workflow_call:
+    inputs:
+      build:
+        required: false
+        type: string
+        default: 'true'
+      deploy:
+        required: false
+        type: string
+        default: 'true'
+      do_post_deployment:
+        required: false
+        type: string
+        default: 'true'
+      env_file_artifact_name:
+        required: false
+        type: string
+        default: ''
+
+env:
+  REPOSITORY_NAME: functional-database-api
+  GITHUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+  TESTING_BASE_IMAGE: python:3.11.10-slim-bookworm
+
+jobs:
+  run_base_terraform:
+    runs-on: neuronest-runner-set
+    if: ${{ inputs.deploy == 'true' || inputs.deploy == '' }}
+    container: google/cloud-sdk
+    outputs:
+      base_project_builder_sa_key: ${{ steps.run_base_terraform.outputs.base_project_builder_sa_key }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ secrets.NEURONEST_INFRASTRUCTURE_BUILDER_SERVICE_ACCOUNT }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - id: run_base_terraform
+        uses: ./.github/actions/run_base_terraform
+
+  upload_variables_of_called_workflows:
+    runs-on: neuronest-runner-set
+    container: google/cloud-sdk
+    outputs:
+      database_api_env_file_artifact_name: ${{ steps.upload_database_api_variables.outputs.env_file_artifact_name }}
+      model_instantiator_env_file_artifact_name: ${{ steps.upload_model_instantiator_variables.outputs.env_file_artifact_name }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: upload_database_api_variables
+        id: upload_database_api_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: DATABASE_API
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - name: upload_model_instantiator_variables
+        id: upload_model_instantiator_variables
+        uses: ./.github/actions/upload_variables
+        with:
+          variable_prefix_to_filter_on: MODEL_INSTANTIATOR
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+
+
+  build_test_push_database_api:
+    needs: [run_base_terraform, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/database_api.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.database_api_env_file_artifact_name }}
+    secrets: inherit
+
+  build_test_push_model_instantiator:
+    needs: [run_base_terraform, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/model_instantiator.yaml
+    with:
+      build: true
+      deploy: false
+      do_post_deployment: false
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
+    secrets: inherit
+
+  deploy_functional_database_api:
+    needs:
+     - build_test_push_database_api
+     - build_test_push_model_instantiator
+     - run_base_terraform
+    outputs:
+      model_instantiator_url: ${{ steps.get_model_instantiator_url.outputs.value }}
+      cloud_sql_instance_name: ${{ steps.get_cloud_sql_instance_name.outputs.value }}
+      database_api_url: ${{ steps.get_database_api_url.outputs.value }}
+    runs-on: neuronest-runner-set
+    container:
+      image: google/cloud-sdk
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - id: run_functional_database_api
+        uses: ./.github/actions/run_terraform
+        with:
+          targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
+          workspace: ${{ env.REPOSITORY_NAME }}
+        # favor environment variables that show up clearly in github logs over
+        # var-like arguments to make it easier to reproduce errors locally
+        env:
+          TF_VAR_model_instantiator_image_name: ${{ needs.build_test_push_model_instantiator.outputs.gcp_image_name }}
+          TF_VAR_database_api_image_name: ${{ needs.build_test_push_database_api.outputs.gcp_image_name }}
+      - id: get_model_instantiator_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: model_instantiator_url
+      # database_api_url/cloud_sql_instance_name/model_instantiator_url
+      - id: get_cloud_sql_instance_name
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: cloud_sql_instance_name
+      - id: get_database_api_url
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: database_api_url
+
+
+  post_deploy_database_api:
+    # the job in the needs section is necessary to recover its output
+    needs:
+      - deploy_functional_database_api
+      - upload_variables_of_called_workflows
+    uses: ./.github/workflows/database_api.yaml
+    with:
+      build: false
+      deploy: false
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.upload_database_api_variables }}
+    secrets: inherit
+
+  post_deploy_model_instantiator:
+    needs: [deploy_functional_database_api, upload_variables_of_called_workflows]
+    uses: ./.github/workflows/model_instantiator.yaml
+    with:
+      build: false
+      deploy: false
+      do_post_deployment: true
+      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.model_instantiator_env_file_artifact_name }}
+    secrets: inherit
+
+  run_integration_tests:
+    runs-on: neuronest-runner-set
+    needs:
+      - run_base_terraform
+      - deploy_functional_database_api
+      - post_deploy_database_api
+      - post_deploy_model_instantiator
+    # If the workflow isn't called, inputs are blank and job should run
+    if: ${{ (inputs.do_post_deployment == 'true' || inputs.do_post_deployment == '') && !failure() && !cancelled() }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/set_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
+      - id: test_integration
+        uses: ./.github/actions/run_linters_tests
+        with:
+          image_name: ${{ env.TESTING_BASE_IMAGE }}
+          run_integration_tests: true
+          run_unit_tests: false
+          environment_variables: -e DATABASE_API_HOST=${{ needs.deploy_functional_database_api.outputs.database_api_url }} -e CLOUD_SQL_INSTANCE_NAME=${{ needs.deploy_functional_database_api.outputs.cloud_sql_instance_name }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_functional_database_api.outputs.model_instantiator_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}
