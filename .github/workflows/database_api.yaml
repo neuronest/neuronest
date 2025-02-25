@@ -126,7 +126,7 @@ jobs:
         with:
           credentials_json: ${{ needs.run_base_terraform.outputs.base_project_builder_sa_key }}
           env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
-       - uses: ./.github/actions/run_terraform
+      - uses: ./.github/actions/run_terraform
         with:
           targets: ${{ env.MAIN_TERRAFORM_RESOURCES }}
           workspace: ${{ env.REPOSITORY_NAME }}
