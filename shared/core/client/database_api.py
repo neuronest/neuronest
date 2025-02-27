@@ -2,9 +2,9 @@ from typing import List, Optional
 
 import requests
 
-from core.client.api_client import APIClient
+from core.client.abstract.api_client import APIClient
 from core.routes.database_api import routes
-from core.schemas.database_api import Project, ProjectCreate
+from core.schemas.modules.database_api import Project, ProjectCreate
 
 
 class DatabaseApiClient(APIClient):
