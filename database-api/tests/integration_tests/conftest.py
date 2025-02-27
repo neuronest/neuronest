@@ -1,7 +1,6 @@
 import pytest
 from core.client.database_api import DatabaseApiClient
 from core.client.model_instantiator import ModelInstantiatorClient
-
 from tests.environment_variables import (
     CLOUD_SQL_INSTANCE_NAME,
     DATABASE_API_HOST,

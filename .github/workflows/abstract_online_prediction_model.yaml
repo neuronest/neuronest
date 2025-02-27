@@ -386,5 +386,6 @@ jobs:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           repository_name: ${{ env.REPOSITORY_NAME }}
           run_integration_tests: true
+          lint_target: tests
           run_unit_tests: false
           environment_variables: -e ${{ steps.get_package_url_variable_name.outputs.value }}=${{ needs.deploy_online_prediction_model.outputs.online_prediction_model_url }} -e MODEL_NAME=${{ steps.get_model_name.outputs.value }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy_online_prediction_model.outputs.model_instantiator_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e REGION=${{ env.REGION }}

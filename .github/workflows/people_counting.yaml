@@ -188,5 +188,6 @@ jobs:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           repository_name: ${{ env.REPOSITORY_NAME }}
           run_integration_tests: true
+          lint_target: tests
           run_unit_tests: false
           environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.deploy.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy.outputs.model_instantiator_url }}

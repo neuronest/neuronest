@@ -19,6 +19,10 @@ inputs:
     description: 'environment variables'
     required: false
     default: ''
+  lint_target:
+    description: 'Target for linters (repository or tests)'
+    required: false
+    default: 'repository'
 runs:
   using: "composite"
   steps:
@@ -38,6 +42,14 @@ runs:
       - run: docker cp ./. ${{ steps.run_background_container.outputs.container_id }}:${{ steps.set_container_mono_repository_path.outputs.value }}
         shell: bash
       - run: |
+          if [[ "${{ inputs.lint_target }}" == "repository" ]]; then
+            lint_path="${{ inputs.REPOSITORY_NAME }}"
+          elif [[ "${{ inputs.lint_target }}" == "tests" ]]; then
+            lint_path="${{ inputs.REPOSITORY_NAME }}/tests"
+          else
+            echo "Error: Invalid lint_target value. Must be 'repository' or 'tests'." >&2
+            exit 1
+          fi
           # handle detected dubious ownership git issue
           run_linters_tests_cmd="
             apt -qqy update > /dev/null \
@@ -57,7 +69,7 @@ runs:
           && pre-commit install \
           && pre-commit run \
             --show-diff-on-failure \
-            --files ${{ inputs.REPOSITORY_NAME }}/**/* \
+            --files "$lint_path/**/*" \
           "
           
           # run unit tests
