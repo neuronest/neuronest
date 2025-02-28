@@ -320,7 +320,7 @@ jobs:
           repository_name: ${{ env.REPOSITORY_NAME }}
           base_image_name: ${{ env.BASE_IMAGE_NAME }}
           target: serving
-          build_arguments: --build-arg MODEL_PATH=$MODEL_PATH --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }} --build-arg BATCH_SIZE=${{ env.BATCH_SIZE }}
+          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg MODEL_PATH=${{ env.MODEL_PATH }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg BATCH_SIZE=${{ env.BATCH_SIZE }} --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }}
           dockerfile_path: ${{ env.MODEL_DOCKERFILE_PATH }}
 
   model_upload:
