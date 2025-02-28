@@ -101,7 +101,7 @@ def _test_count_people_async(
         )
     ],
 )
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,too-many-positional-arguments
 def test_count_people_sync(
     people_counting_client: PeopleCountingClient,
     storage_client: StorageClient,
