@@ -11,12 +11,18 @@ def upgrade_head():
         logging.info("Starting Alembic database migration...")
 
         result = subprocess.run(
-            ["alembic", "upgrade", "head"],
+            [
+                "alembic",
+                "-c",
+                "database_api/alembic/alembic.ini",
+                "upgrade",
+                "head",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             check=False,  # Allow capturing errors without raising exceptions
-            cwd="database_api/alembic",  # Set the working directory
+            # cwd="database_api",  # Set the working directory to "database_api"
         )
 
         if result.returncode == 0:
