@@ -5,13 +5,13 @@ from starlette.responses import JSONResponse
 from starlette.status import HTTP_503_SERVICE_UNAVAILABLE
 
 from database_api.alembic.migrations.alembic_command import upgrade_head
-from database_api.api.dependencies import get_database, handle_potential_cloud_sql_error
-from database_api.api.exceptions import (
+from database_api.app.dependencies import get_database, handle_potential_cloud_sql_error
+from database_api.app.exceptions import (
     DatabaseStartingError,
     DatabaseStoppedError,
     DatabaseStoppingError,
 )
-from database_api.api.routes import router
+from database_api.app.routes import router
 
 
 def create_app() -> FastAPI:

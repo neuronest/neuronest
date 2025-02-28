@@ -5,7 +5,7 @@ from core.client.model_instantiator import ModelInstantiatorClient
 from core.google.cloud_sql_manager import CloudSQLManager
 from sqlalchemy.exc import SQLAlchemyError
 
-from database_api.api.exceptions import (
+from database_api.app.exceptions import (
     DatabaseStartingError,
     DatabaseStoppedError,
     DatabaseStoppingError,

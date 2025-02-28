@@ -5,7 +5,7 @@ from core.schemas.modules.database_api import Project, ProjectCreate
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from database_api.api.dependencies import get_database
+from database_api.app.dependencies import get_database
 from database_api.models.project import Project as DatabaseProject
 
 router = APIRouter(prefix=f"/{routes.Project.prefix}", tags=[routes.Project.prefix])
