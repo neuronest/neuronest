@@ -115,7 +115,7 @@ jobs:
           # REPOSITORY_NAME and PACKAGE_NAME during all docker builds. It would make
           # things less verbose, with almost only advantages: either the dockerfile
           # uses them, or docker ignores them
-          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }}
+          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg MODEL_NAME=${{ env.MODEL_NAME }} --build-arg BATCH_SIZE=${{ env.BATCH_SIZE }} --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }}
           dockerfile_path: ${{ env.MODEL_DOCKERFILE_PATH }}
       - id: build_test_push_web_serving_image
         uses: ./.github/actions/build_test_push
@@ -156,7 +156,7 @@ jobs:
           repository_name: model-instantiator
           base_image_name: ${{ env.MODEL_INSTANTIATOR_BASE_IMAGE_NAME }}
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
-          build_arguments: --build-arg REPOSITORY_NAME=model-instantiator --build-arg PACKAGE_NAME=model_instantiator
+          build_arguments: --build-arg REPOSITORY_NAME=model-instantiator --build-arg PACKAGE_NAME=model_instantiator --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }}
 
   deploy_online_prediction_model:
     needs:

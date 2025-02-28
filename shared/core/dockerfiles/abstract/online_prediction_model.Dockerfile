@@ -36,9 +36,10 @@ ARG MODEL_NAME
 RUN if [ -z "$MODEL_NAME" ]; then echo "MODEL_NAME is not set" && exit 1; fi
 ARG BATCH_SIZE
 RUN if [ -z "$BATCH_SIZE" ]; then echo "BATCH_SIZE is not set" && exit 1; fi
+ARG POETRY_VERSION
+RUN if [ -z "$POETRY_VERSION" ]; then echo "POETRY_VERSION is not set" && exit 1; fi
 ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
-ARG POETRY_VERSION="1.8.4"
 ARG MAX_BATCH_DELAY="50"
 
 ENV PIP_ROOT_USER_ACTION=ignore
