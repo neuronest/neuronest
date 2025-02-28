@@ -1,7 +1,7 @@
 from typing import List
 
 from core.routes.database_api import routes
-from core.schemas.database_api import Project, ProjectCreate
+from core.schemas.modules.database_api import Project, ProjectCreate
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
@@ -19,16 +19,17 @@ def _modify_response_status_return_message(
     return {"message": message}
 
 
-def _project_already_exists_response(
+def _raise_project_already_exists_error(
     response: Response,
     project_id: str,
     status_code: int = status.HTTP_409_CONFLICT,
 ):
-    return _modify_response_status_return_message(
+    message_details = _modify_response_status_return_message(
         response=response,
         message=f"Project {project_id} already exists",
         status_code=status_code,
     )
+    raise HTTPException(status_code=response.status_code, detail=message_details)
 
 
 @router.post(routes.Project.create, response_model=Project)
@@ -43,7 +44,10 @@ def create(
         .first()
     )
     if db_project:
-        return _project_already_exists_response(
+        # Returning a dict here would not match the Project response model,
+        # causing a Pydantic validation error. Raising an HTTPException lets
+        # FastAPI generate a proper error response that respects the API contract.
+        return _raise_project_already_exists_error(
             response=response, project_id=project.gcp_project_id
         )
 

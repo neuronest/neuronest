@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from migrations.alembic_command import upgrade_head
 from sqlalchemy import text
 from starlette.responses import JSONResponse
 from starlette.status import HTTP_503_SERVICE_UNAVAILABLE
 
+from database_api.alembic.migrations.alembic_command import upgrade_head
 from database_api.api.dependencies import get_database, handle_potential_cloud_sql_error
 from database_api.api.exceptions import (
     DatabaseStartingError,

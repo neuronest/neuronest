@@ -16,6 +16,7 @@ def upgrade_head():
             stderr=subprocess.PIPE,
             text=True,
             check=False,  # Allow capturing errors without raising exceptions
+            cwd="database_api/alembic",  # Set the working directory
         )
 
         if result.returncode == 0:

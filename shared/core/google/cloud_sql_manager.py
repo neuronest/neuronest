@@ -8,7 +8,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from pydantic import BaseModel, validator
 
-from core.client.base_client import BaseClient
+from core.client.abstract.base_client import BaseClient
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +245,9 @@ class CloudSQLManager(BaseClient):
                 current_policy == ActivationPolicy.ALWAYS
                 and last_update_status == OperationStatus.DONE
             ):
+                return InstanceStatus.STARTED
+            # first time instance is created and started
+            if current_policy == ActivationPolicy.ALWAYS and last_update_status is None:
                 return InstanceStatus.STARTED
             if (
                 current_policy == ActivationPolicy.ALWAYS
