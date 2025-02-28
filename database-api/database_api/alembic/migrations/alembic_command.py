@@ -22,7 +22,6 @@ def upgrade_head():
             stderr=subprocess.PIPE,
             text=True,
             check=False,  # Allow capturing errors without raising exceptions
-            # cwd="database_api",  # Set the working directory to "database_api"
         )
 
         if result.returncode == 0:
