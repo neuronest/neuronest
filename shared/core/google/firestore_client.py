@@ -1,6 +1,8 @@
 import logging
+import time
 from typing import Any, List, Optional, Union
 
+from google.api_core.exceptions import Conflict, GoogleAPICallError, NotFound
 from google.cloud import firestore
 from google.cloud.firestore_v1 import DocumentReference, Transaction
 
@@ -96,3 +98,29 @@ class FirestoreClient(BaseClient):
         document.delete()
 
         logger.info(f"Document '{document_id}' deleted in collection '{collection}'")
+
+    def acquire_lock(self, lock_name: str, timeout: int) -> bool:
+        doc_ref = self.client.collection("locks").document(lock_name)
+        try:
+            with self.client.transaction() as txn:
+                doc = doc_ref.get(transaction=txn)
+                now = time.time()
+                if not doc.exists or now - doc.get("timestamp", 0) > timeout:
+                    txn.set(doc_ref, {"timestamp": now})
+                    return True  # Lock acquired
+        except NotFound:
+            print(f"Lock document '{lock_name}' not found. Creating a new lock.")
+            self.client.collection("locks").document(lock_name).set(
+                {"timestamp": time.time()}
+            )
+            return True
+        except Conflict:
+            print(
+                f"Lock acquisition conflict on '{lock_name}'. Another process holds it."
+            )
+        except GoogleAPICallError as e:
+            print(f"Firestore API error while acquiring lock '{lock_name}': {e}")
+        return False  # Lock not acquired
+
+    def release_lock(self, lock_name: str):
+        self.delete_document(collection="locks", document_id=lock_name)

@@ -2,6 +2,7 @@ import logging
 
 from core.google.cloud_run_job_manager import CloudRunJobManager
 from core.google.cloud_sql_manager import CloudSQLManager
+from core.google.firestore_client import FirestoreClient
 from core.google.service_account import fetch_active_service_account_email
 from core.google.vertex_ai_manager import VertexAIManager
 from core.routes.model_instantiator import routes
@@ -22,6 +23,7 @@ from model_instantiator.app.dependencies import (
     use_cloud_run_job_manager,
     use_cloud_sql_manager,
     use_config,
+    use_firestore_client,
     use_vertex_ai_manager,
 )
 from model_instantiator.environment_variables import PROJECT_ID, REGION, VERTEX_LOCATION
@@ -71,12 +73,14 @@ def _no_model_response(response: Response, model_name: str) -> InstantiateModelO
 
 
 @router.post(routes.Instantiator.instantiate, status_code=status.HTTP_201_CREATED)
+# pylint: disable=too-many-positional-arguments
 def instantiate_model(
     instantiate_model_input: InstantiateModelInput,
     response: Response,
     config: DictConfig = Depends(use_config),
     vertex_ai_manager: VertexAIManager = Depends(use_vertex_ai_manager),
     cloud_run_job_manager: CloudRunJobManager = Depends(use_cloud_run_job_manager),
+    firestore_client: FirestoreClient = Depends(use_firestore_client),
 ):
     model_name = instantiate_model_input.trained_model_name
 
@@ -97,6 +101,10 @@ def instantiate_model(
         f"instantiate-model-"
         f"{underscore_to_hyphen(instantiate_model_input.trained_model_name)}"
     )
+
+    if not firestore_client.acquire_lock(lock_name=job_name, timeout=20):
+        return _already_running_job_response(response=response, job_name=job_name)
+
     execution = cloud_run_job_manager.list_executions(job_name, exclude_terminated=True)
 
     if len(execution) > 0:
@@ -126,7 +134,8 @@ def instantiate_model(
         cloud_run_job_manager.run_job(job_name=job_name)
     except AlreadyExists:
         return _already_running_job_response(response=response, job_name=model_name)
-
+    finally:
+        firestore_client.release_lock(lock_name=job_name)
     return _deploying_endpoint_response(response=response, model_name=model_name)
 
 
