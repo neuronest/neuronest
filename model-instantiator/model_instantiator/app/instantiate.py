@@ -94,7 +94,8 @@ def instantiate_model(
         )
 
     job_name = (
-        f"instantiate-model-{underscore_to_hyphen(instantiate_model_input.model_name)}"
+        f"instantiate-model-"
+        f"{underscore_to_hyphen(instantiate_model_input.trained_model_name)}"
     )
     execution = cloud_run_job_manager.list_executions(job_name, exclude_terminated=True)
 
