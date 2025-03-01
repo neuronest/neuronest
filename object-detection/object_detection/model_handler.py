@@ -45,7 +45,8 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
     ) -> List[pd.DataFrame]:
         filtered_predictions = raw_predictions
 
-        logger.info(f"filtered_predictions: {raw_predictions}")
+        debug = [raw_prediction.to_dict() for raw_prediction in raw_predictions]
+        logger.info(f"raw_predictions: {debug}")
         logger.info(f"batch_labels_to_predict: {batch_labels_to_predict}")
 
         filtered_predictions = [
@@ -59,7 +60,11 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
             )
         ]
 
-        logger.info(f"filtered_predictions: {filtered_predictions}")
+        debug = [
+            filtered_prediction.to_dict()
+            for filtered_prediction in filtered_predictions
+        ]
+        logger.info(f"filtered_predictions: {debug}")
 
         filtered_predictions = [
             (
@@ -90,7 +95,13 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
             for sample in data
         ]
 
+        logger.info(
+            f"before inference, images shapes: {[image.shape for image in images]}"
+        )
+
         raw_predictions = super().inference(data=images)
+
+        logger.info(f"after inference, raw_predictions: {raw_predictions}")
 
         return self._filter_predictions(
             raw_predictions=raw_predictions,
