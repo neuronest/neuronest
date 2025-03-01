@@ -45,6 +45,9 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
     ) -> List[pd.DataFrame]:
         filtered_predictions = raw_predictions
 
+        logger.info(f"filtered_predictions: {raw_predictions}")
+        logger.info(f"batch_labels_to_predict: {batch_labels_to_predict}")
+
         filtered_predictions = [
             (
                 filtered_prediction[filtered_prediction.name.isin(labels_to_predict)]
@@ -55,6 +58,8 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
                 filtered_predictions, batch_labels_to_predict
             )
         ]
+
+        logger.info(f"filtered_predictions: {filtered_predictions}")
 
         filtered_predictions = [
             (
