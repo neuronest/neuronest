@@ -111,7 +111,7 @@ class FirestoreClient(BaseClient):
             now = time.time()
 
             # Lock acquisition logic
-            if not doc.exists or now - doc.get("timestamp", 0) > timeout:
+            if not doc.exists or now - doc.get("timestamp") > timeout:
                 txn.set(doc_ref, {"timestamp": now})  # Write inside transaction
                 return True  # Lock acquired
             return False  # Lock not acquired
