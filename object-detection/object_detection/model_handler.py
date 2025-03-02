@@ -102,6 +102,8 @@ class ObjectDetectionModelHandler(OnlinePredictionModelHandler):
         raw_predictions = super().inference(data=images)
 
         logger.info(f"after inference, raw_predictions: {raw_predictions}")
+        if any(df.empty for df in raw_predictions):
+            logger.info(f"HERE, data={data}")
 
         return self._filter_predictions(
             raw_predictions=raw_predictions,
