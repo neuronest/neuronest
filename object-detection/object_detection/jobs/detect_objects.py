@@ -31,7 +31,6 @@ from object_detection.jobs.services import (
     create_storage_client,
 )
 
-logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 
@@ -45,6 +44,8 @@ def run_objects_detection(
     image_storage_path: GSPath,
     sample_metadata: SampleMetadata,
 ):
+    logging.basicConfig(level="INFO")
+
     storage_client = create_storage_client(project_id=project_id)
     object_detection_model_client = create_object_detection_model_client(
         project_id=project_id,
