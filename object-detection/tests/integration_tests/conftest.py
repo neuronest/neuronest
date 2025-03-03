@@ -12,7 +12,6 @@ from tests.environment_variables import (
     MODEL_NAME,
     OBJECT_DETECTION_URL,
     PROJECT_ID,
-    REGION,
 )
 
 
