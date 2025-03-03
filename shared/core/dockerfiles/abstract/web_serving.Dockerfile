@@ -50,10 +50,11 @@ COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 EXPOSE $PORT
 
+# todo: remove comment
 # No timeout at Gunicorn level since Cloud Run already enforces a max request timeout
 CMD gunicorn \
     --workers $WORKERS \
-    --timeout 0 \
+    --timeout $TIMEOUT \
     --access-logfile - \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:$PORT \

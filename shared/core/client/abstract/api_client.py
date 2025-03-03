@@ -125,7 +125,8 @@ class APIClient(BaseClient, ABC):
         params: Optional[Dict[str, Any]] = None,
         timeout: Optional[int] = None,
         target_audience: str = None,
-        retry_attempts: Optional[int] = 0,
+        http_retry_attempts: Optional[int] = 0,
+        connection_retry_attempts: Optional[int] = 1,
         verbose_on_exception: bool = True,
     ) -> requests.Response:
         request = self._request(
@@ -133,14 +134,22 @@ class APIClient(BaseClient, ABC):
         ).prepare()
 
         # Wrap the send action with backoff if needed.
-        _call = (
-            backoff.on_exception(backoff.expo, HTTPError, max_tries=retry_attempts)(
-                self._send_request
-            )
+        _call = self._send_request
+
+        if http_retry_attempts != 0:
             # backoff.on_exception is used. Rule is that if max_tries is None then
             # unlimited number of retries
-            if retry_attempts != 0
-            else self._send_request
-        )
+            _call = backoff.on_exception(
+                backoff.expo,
+                (requests.exceptions.HTTPError, requests.exceptions.ConnectionError),
+                max_tries=http_retry_attempts,
+            )(self._send_request)
+
+        if connection_retry_attempts != 0:
+            _call = backoff.on_exception(
+                backoff.expo,
+                (requests.exceptions.HTTPError, requests.exceptions.ConnectionError),
+                max_tries=connection_retry_attempts,
+            )(self._send_request)
 
         return _call(request, timeout, verbose_on_exception)

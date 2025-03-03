@@ -25,7 +25,7 @@ class ModelInstantiatorClient(APIClient):
             payload=InstantiateModelInput(
                 trained_model_name=model_name,
             ).model_dump(),
-            retry_attempts=retry_attempts,
+            http_retry_attempts=retry_attempts,
         )
 
     def uninstantiate(
