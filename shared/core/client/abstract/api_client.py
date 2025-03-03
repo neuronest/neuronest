@@ -126,7 +126,7 @@ class APIClient(BaseClient, ABC):
         timeout: Optional[int] = None,
         target_audience: str = None,
         http_retry_attempts: Optional[int] = 0,
-        connection_retry_attempts: Optional[int] = 1,
+        connection_retry_attempts: Optional[int] = 2,
         verbose_on_exception: bool = True,
     ) -> requests.Response:
         request = self._request(
@@ -141,14 +141,14 @@ class APIClient(BaseClient, ABC):
             # unlimited number of retries
             _call = backoff.on_exception(
                 backoff.expo,
-                (requests.exceptions.HTTPError, requests.exceptions.ConnectionError),
+                requests.exceptions.HTTPError,
                 max_tries=http_retry_attempts,
             )(self._send_request)
 
         if connection_retry_attempts != 0:
             _call = backoff.on_exception(
                 backoff.expo,
-                (requests.exceptions.HTTPError, requests.exceptions.ConnectionError),
+                requests.exceptions.ConnectionError,
                 max_tries=connection_retry_attempts,
             )(self._send_request)
 
