@@ -4,7 +4,6 @@ from abc import ABC
 from typing import List, Optional, Type
 
 import requests
-from cachetools.func import ttl_cache
 from google.api_core.exceptions import ServiceUnavailable
 from google.cloud import aiplatform
 
@@ -24,6 +23,7 @@ class OnlinePredictionModelClient(BaseClient, ABC):
     OUTPUT_SAMPLE_SCHEMA: Type[OutputSampleSchema]
     MAX_BYTES = 1e8
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         vertex_ai_manager: VertexAIManager,
@@ -50,7 +50,6 @@ class OnlinePredictionModelClient(BaseClient, ABC):
     def _create_endpoint(self) -> Optional[requests.Response]:
         return self.model_instantiator_client.instantiate(self.model_name)
 
-    @ttl_cache(ttl=600)
     def _try_get_or_create_latest_model_endpoint(self) -> aiplatform.Endpoint:
         total_waited_time = 0
 
@@ -125,6 +124,7 @@ class OnlinePredictionModelClient(BaseClient, ABC):
 
         return current_chunks
 
+    # pylint: disable=too-many-positional-arguments
     def _predict_batch(
         self,
         samples: List[InputSampleSchema],
