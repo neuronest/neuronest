@@ -12,7 +12,7 @@ RUN if [ -z "$POETRY_VERSION" ]; then echo "POETRY_VERSION is not set" && exit 1
 ARG ROOT_DIRECTORY="/app"
 ARG SHARED_REPOSITORY_NAME="shared"
 ARG PORT=80
-ARG WORKERS=1
+ARG WORKERS=4
 ARG TIMEOUT=300
 
 ENV PIP_ROOT_USER_ACTION=ignore
@@ -50,9 +50,10 @@ COPY $REPOSITORY_NAME/$PACKAGE_NAME $PACKAGE_NAME
 
 EXPOSE $PORT
 
+# No timeout at Gunicorn level since Cloud Run already enforces a max request timeout
 CMD gunicorn \
     --workers $WORKERS \
-    --timeout 0 \  # No timeout at Gunicorn level since Cloud Run already enforces a max request timeout
+    --timeout 0 \
     --access-logfile - \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:$PORT \
