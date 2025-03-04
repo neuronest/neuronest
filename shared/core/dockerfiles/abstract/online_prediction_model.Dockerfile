@@ -128,7 +128,6 @@ RUN torch-model-archiver -f \
 # run Torchserve HTTP serve to respond to prediction requests
 ENTRYPOINT torchserve \
     --start \
-    --disable-token-auth \
     --ts-config=config.properties \
     --models $MODEL_NAME=$MODEL_NAME.mar \
     --model-store $MODEL_STORE_NAME \
