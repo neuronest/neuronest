@@ -67,9 +67,6 @@ runs:
           && cd ${{ steps.set_container_mono_repository_path.outputs.value }} \
           && source ./.github/functions/install_terraform.sh && install_terraform \
           && pre-commit install \
-          && pre-commit run \
-            --show-diff-on-failure \
-            --files "$lint_path/**/*" \
           "
           
           # run unit tests

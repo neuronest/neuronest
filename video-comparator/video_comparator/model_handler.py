@@ -90,7 +90,9 @@ class VideoComparatorModelHandler(OnlinePredictionModelHandler):
                 other_video_asset_id,
                 other_video_asset_existing_embedding,
             ) = self._init_asset(sample.other_video_path, sample.embedding_bucket_name)
-
+            # pylint: disable=protected-access
+            model_device = next(self.model._model.parameters()).device
+            logger.info(f"Model is running on: {model_device}")
             prediction = super().inference(
                 data=[
                     ModelInput(

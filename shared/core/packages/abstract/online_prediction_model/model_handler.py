@@ -90,7 +90,7 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
             self.model.eval()
             # pylint: disable=protected-access
             model_device = next(self.model._model.parameters()).device
-            logging.info(f"Model is running on: {model_device}")
+            logger.info(f"Model is running on: {model_device}")
             model_inferences = self.model(data=data, **kwargs)
         return model_inferences
 
@@ -111,11 +111,28 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
             return []
 
         preprocessed_data = self.preprocess(data)
+        logger.info(f"preprocessed_data 1 {preprocessed_data}")
 
         self._validate_all_instance_of(preprocessed_data, self.INPUT_SAMPLE_SCHEMA)
 
         predictions = self.inference(preprocessed_data)
+        logger.info(f"predictions 1 {predictions}")
         postprocessed_predictions = self.postprocess(predictions)
+        logger.info(f"postprocessed_predictions 1 {postprocessed_predictions}")
+
+        self._validate_all_instance_of(
+            postprocessed_predictions, self.OUTPUT_SAMPLE_SCHEMA
+        )
+
+        preprocessed_data = self.preprocess(data)
+        logger.info(f"preprocessed_data 2 {preprocessed_data}")
+
+        self._validate_all_instance_of(preprocessed_data, self.INPUT_SAMPLE_SCHEMA)
+
+        predictions = self.inference(preprocessed_data)
+        logger.info(f"predictions 2 {predictions}")
+        postprocessed_predictions = self.postprocess(predictions)
+        logger.info(f"postprocessed_predictions 2 {postprocessed_predictions}")
 
         self._validate_all_instance_of(
             postprocessed_predictions, self.OUTPUT_SAMPLE_SCHEMA

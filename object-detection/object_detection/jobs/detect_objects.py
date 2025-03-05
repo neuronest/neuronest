@@ -1,4 +1,5 @@
 import ast
+import logging
 import os
 from typing import List, Tuple
 
@@ -30,6 +31,8 @@ from object_detection.jobs.services import (
     create_storage_client,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def run_objects_detection(
     project_id: str,
@@ -41,19 +44,23 @@ def run_objects_detection(
     image_storage_path: GSPath,
     sample_metadata: SampleMetadata,
 ):
+    logging.basicConfig(level="INFO")
     storage_client = create_storage_client(project_id=project_id)
+    logger.info(f"storage_client: {storage_client}")
     object_detection_model_client = create_object_detection_model_client(
         project_id=project_id,
         vertex_location=vertex_location,
         model_instantiator_host=model_instantiator_host,
         model_name=model_name,
     )
+    logger.info(f"object_detection_model_client: {object_detection_model_client}")
 
     image_asset = make_asset(
         asset_path=image_storage_path,
         storage_client=storage_client,
         asset_type=AssetType.IMAGE,
     )
+    logger.info(f"image_asset: {object_detection_model_client}")
     sample_id = image_asset.get_hash()
 
     output: OutputSampleSchema = object_detection_model_client.predict_single(
