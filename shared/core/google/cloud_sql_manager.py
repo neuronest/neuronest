@@ -214,7 +214,7 @@ class CloudSQLManager(BaseClient):
             return None
 
         # Return the status of the most recent update operation
-        return datetime.datetime.strptime(update_operations[0].end_time_datetime)
+        return update_operations[0].end_time_datetime
 
     def get_instance_status(self, instance_name: str) -> InstanceStatus:
         """

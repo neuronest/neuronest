@@ -35,7 +35,7 @@ resource "google_cloud_scheduler_job" "uninstantiate_cloud_sql_job" {
   http_target {
     http_method = "POST"
     uri         = format("%s%s", google_cloud_run_v2_service.model_instantiator_api.uri, var.cloud_sql_uninstantiate_route)
-    body        = base64encode("{\"cloud_sql_name\": \"${var.cloud_scheduler_cloud_sql_instance_name}\"}")
+    body        = base64encode("{\"instance_name\": \"${var.cloud_scheduler_cloud_sql_instance_name}\"}")
     headers = {
       "Content-Type" : "application/json; charset=utf-8"
       "User-Agent" : "Google-Cloud-Scheduler"

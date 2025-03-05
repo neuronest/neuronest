@@ -132,17 +132,27 @@ class OnlinePredictionModelClient(BaseClient, ABC):
         base_retry_delay: float = 1.0,
         max_retry_delay: float = 32.0,
         current_try: int = 0,
+        # absurdly long, we do not want to handle custom value for each model
+        timeout: Optional[float] = 3600,
     ) -> List[OutputSampleSchema]:
         if len(samples) == 0:
             return []
 
+        # todo: trouver un moyen de remove les interactions reseau type get endpoint
+        # pendant online prediction où le but c'est la latence minimum
         endpoint = self._try_get_or_create_latest_model_endpoint()
 
         try:
+            # todo: un peu bancal pour le futur, on est sur une fonction sans limite de
+            # nombre de samples mais avec les mêmes default values max_tries etc
+            # pour tous les scénarios
+            # la logique ServiceUnavailable devrait opérer au niveau du sample, pas du
+            # batch, pour représenter une charge de travail bornée pour laquelle
+            # les default values ont du sens
             return [
                 self.OUTPUT_SAMPLE_SCHEMA.deserialize(prediction)
                 for prediction in endpoint.predict(
-                    [sample.serialize() for sample in samples]
+                    [sample.serialize() for sample in samples], timeout=timeout
                 ).predictions
             ]
         except ServiceUnavailable as service_unavailable:

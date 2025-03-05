@@ -88,6 +88,9 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
     def inference(self, data: List[Any], *args, **kwargs) -> List[Any]:
         with torch.no_grad():
             self.model.eval()
+            # pylint: disable=protected-access
+            model_device = next(self.model._model.parameters()).device
+            logging.info(f"Model is running on: {model_device}")
             model_inferences = self.model(data=data, **kwargs)
         return model_inferences
 
