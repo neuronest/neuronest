@@ -113,31 +113,60 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
             return []
 
         preprocessed_data = self.preprocess(data)
-        logger.info(f"preprocessed_data 1 {preprocessed_data}")
 
         self._validate_all_instance_of(preprocessed_data, self.INPUT_SAMPLE_SCHEMA)
 
         predictions = self.inference(preprocessed_data)
-        logger.info(f"predictions 1 {predictions}")
         postprocessed_predictions = self.postprocess(predictions)
-        logger.info(f"postprocessed_predictions 1 {postprocessed_predictions}")
-
-        self._validate_all_instance_of(
-            postprocessed_predictions, self.OUTPUT_SAMPLE_SCHEMA
-        )
-
-        preprocessed_data = self.preprocess(data)
-        logger.info(f"preprocessed_data 2 {preprocessed_data}")
-
-        self._validate_all_instance_of(preprocessed_data, self.INPUT_SAMPLE_SCHEMA)
-
-        predictions = self.inference(preprocessed_data)
-        logger.info(f"predictions 2 {predictions}")
-        postprocessed_predictions = self.postprocess(predictions)
-        logger.info(f"postprocessed_predictions 2 {postprocessed_predictions}")
 
         self._validate_all_instance_of(
             postprocessed_predictions, self.OUTPUT_SAMPLE_SCHEMA
         )
 
         return [sample.serialize() for sample in postprocessed_predictions]
+
+
+    # def handle(self, data: List[Dict], context: Context) -> List[Dict[str, str]]:
+    #     """
+    #     Invoke by TorchServe for prediction request.
+    #     Do pre-processing of data, prediction using model and postprocessing of
+    #     prediction output.
+    #
+    #     :param data: Input data for prediction
+    #     :param context: Initial context contains model server system properties.
+    #     :return: prediction output
+    #     """
+    #     if len(data) == 0:
+    #         return []
+    #
+    #     preprocessed_data_1 = self.preprocess(data)
+    #     logger.info(f"preprocessed_data 1 {preprocessed_data_1}")
+    #
+    #     self._validate_all_instance_of(preprocessed_data_1, self.INPUT_SAMPLE_SCHEMA)
+    #
+    #     predictions_1 = self.inference(preprocessed_data_1)
+    #     logger.info(f"predictions 1 {predictions_1}")
+    #     postprocessed_predictions_1 = self.postprocess(predictions_1)
+    #     logger.info(f"postprocessed_predictions 1 {postprocessed_predictions_1}")
+    #
+    #     self._validate_all_instance_of(
+    #         postprocessed_predictions_1, self.OUTPUT_SAMPLE_SCHEMA
+    #     )
+    #
+    #     preprocessed_data = self.preprocess(data)
+    #     logger.info(f"preprocessed_data 2 {preprocessed_data}")
+    #
+    #     self._validate_all_instance_of(preprocessed_data, self.INPUT_SAMPLE_SCHEMA)
+    #
+    #     predictions = self.inference(preprocessed_data)
+    #     logger.info(f"predictions 2 {predictions}")
+    #     postprocessed_predictions = self.postprocess(predictions)
+    #     logger.info(f"postprocessed_predictions 2 {postprocessed_predictions}")
+    #
+    #     self._validate_all_instance_of(
+    #         postprocessed_predictions, self.OUTPUT_SAMPLE_SCHEMA
+    #     )
+    #
+    #     # return [sample.serialize() for sample in postprocessed_predictions]
+    #
+    #     return [sample.serialize() for sample in postprocessed_predictions_1]
