@@ -20,4 +20,3 @@ jobs:
   video_comparator:
     uses: ./.github/workflows/video_comparator.yaml
     secrets: inherit
-
