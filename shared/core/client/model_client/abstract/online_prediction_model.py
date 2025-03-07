@@ -142,8 +142,8 @@ class OnlinePredictionModelClient(BaseClient, ABC):
         # pendant online prediction où le but c'est la latence minimum
         endpoint = self._try_get_or_create_latest_model_endpoint()
         from datetime import datetime
-        if (datetime.now(endpoint.update_time.tzinfo) - endpoint.update_time).total_seconds() < 1*60:
-            time.sleep(1*60)
+        if (datetime.now(endpoint.update_time.tzinfo) - endpoint.update_time).total_seconds() < 2*60:
+            time.sleep(2*60)
 
 
         try:
