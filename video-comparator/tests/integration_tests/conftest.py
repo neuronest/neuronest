@@ -71,5 +71,4 @@ def fixture_uninstantiate_teardown(
         yield
 
     finally:
-        pass
-        # model_instantiator_client.uninstantiate(model_name)
+        model_instantiator_client.uninstantiate(model_name)
