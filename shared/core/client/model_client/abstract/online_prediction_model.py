@@ -142,9 +142,9 @@ class OnlinePredictionModelClient(BaseClient, ABC):
         # pendant online prediction où le but c'est la latence minimum
         endpoint = self._try_get_or_create_latest_model_endpoint()
         from datetime import datetime
-        if (datetime.now(endpoint.update_time.tzinfo) - endpoint.update_time).total_seconds() < 5*60:
-            # time.sleep(5*60)
-            pass
+        # if (datetime.now(endpoint.update_time.tzinfo) - endpoint.update_time).total_seconds() < 5*60:
+        #     # time.sleep(5*60)
+        #     pass
 
 
         try:
@@ -157,7 +157,7 @@ class OnlinePredictionModelClient(BaseClient, ABC):
             return [
                 self.OUTPUT_SAMPLE_SCHEMA.deserialize(prediction)
                 for prediction in endpoint.predict(
-                    [sample.serialize() for sample in samples], timeout=timeout
+                    [sample.serialize() for sample in samples], timeout=None
                 ).predictions
             ]
         except ServiceUnavailable as service_unavailable:
