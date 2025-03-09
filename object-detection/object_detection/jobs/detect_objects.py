@@ -84,6 +84,10 @@ def run_objects_detection(
     )
 
 
+from joblib import Parallel, delayed
+import os
+from typing import List, Tuple
+
 def main(
     project_id: str,
     vertex_location: str,
@@ -94,10 +98,13 @@ def main(
     images_storage_paths: List[Tuple[str, str]],
     sample_metadata: SampleMetadata,
 ):
-    if len(images_storage_paths) == 0:
+    if not images_storage_paths:
         raise ValueError("The received list of images paths is empty")
 
-    return Parallel(n_jobs=os.cpu_count())(
+    # Ensure at least 2 threads for some parallelism, even if CPU count is low
+    n_jobs = max(2, os.cpu_count() or 1)
+
+    return Parallel(n_jobs=n_jobs, prefer="threads")(
         delayed(run_objects_detection)(
             project_id=project_id,
             vertex_location=vertex_location,
@@ -110,6 +117,7 @@ def main(
         )
         for image_storage_path in images_storage_paths
     )
+
 
 
 if __name__ == "__main__":
