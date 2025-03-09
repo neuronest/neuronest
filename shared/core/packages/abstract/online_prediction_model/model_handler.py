@@ -89,10 +89,25 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         with torch.no_grad():
             self.model.eval()
             model_device = next(self.model._model.parameters()).device
-            logger.info(f"Model is running on: {model_device}")
-            logger.info(f"Running inference on data: {data}")
+            logger.info(f"Inference model is running on: {model_device}")
+            logger.info(f"Inference data samples: {len(data)}")
+
+            # Check and log the device of the input data
+            if isinstance(data, torch.Tensor):
+                data_device = data.device
+                logger.info(f"Inference data is on device: {data_device}")
+            elif isinstance(data, list) and isinstance(data[0], torch.Tensor):
+                data_devices = {tensor.device for tensor in data}
+                logger.info(f"Inference data is on devices: {data_devices}")
+            else:
+                logger.warning(
+                    "Inference data is not a tensor or a list of tensors; device info unavailable.")
+
+            # Run inference
             model_inferences = self.model(data=data, **kwargs)
+
             logger.info(f"Inference results: {model_inferences}")
+
         return model_inferences
 
     def postprocess(self, data: List[Any]) -> List[OutputSampleSchema]:
@@ -112,12 +127,20 @@ class OnlinePredictionModelHandler(BaseHandler, ABC):
         if len(data) == 0:
             return []
 
+        logger.info(f"handle data: {data}")
+        logger.info(f"handle data samples: {len(data)}")
         preprocessed_data = self.preprocess(data)
+        logger.info(f"handle preprocessed_data: {preprocessed_data}")
+        logger.info(f"handle preprocessed_data samples: {len(preprocessed_data)}")
 
         self._validate_all_instance_of(preprocessed_data, self.INPUT_SAMPLE_SCHEMA)
 
         predictions = self.inference(preprocessed_data)
+        logger.info(f"predictions data: {predictions}")
+        logger.info(f"predictions data samples: {len(predictions)}")
         postprocessed_predictions = self.postprocess(predictions)
+        logger.info(f"postprocessed_predictions data: {postprocessed_predictions}")
+        logger.info(f"postprocessed_predictions data samples: {len(postprocessed_predictions)}")
 
         self._validate_all_instance_of(
             postprocessed_predictions, self.OUTPUT_SAMPLE_SCHEMA
