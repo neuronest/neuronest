@@ -154,12 +154,15 @@ class OnlinePredictionModelClient(BaseClient, ABC):
             # la logique ServiceUnavailable devrait opérer au niveau du sample, pas du
             # batch, pour représenter une charge de travail bornée pour laquelle
             # les default values ont du sens
-            return [
+            preds = [
                 self.OUTPUT_SAMPLE_SCHEMA.deserialize(prediction)
                 for prediction in endpoint.predict(
-                    [sample.serialize() for sample in samples]*10, timeout=None
+                    [sample.serialize() for sample in samples]*1, timeout=None
                 ).predictions
             ]
+            # if len(preds[0].results) != 2:
+            #     raise Exception
+            return preds
         except ServiceUnavailable as service_unavailable:
             current_try += 1
             if current_try > max_tries:
