@@ -17,6 +17,6 @@ jobs:
   object_detection:
     uses: ./.github/workflows/object_detection.yaml
     secrets: inherit
-  video_comparator:
-    uses: ./.github/workflows/video_comparator.yaml
-    secrets: inherit
+#  video_comparator:
+#    uses: ./.github/workflows/video_comparator.yaml
+#    secrets: inherit

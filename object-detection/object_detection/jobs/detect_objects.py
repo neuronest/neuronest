@@ -88,6 +88,10 @@ from joblib import Parallel, delayed
 import os
 from typing import List, Tuple
 
+from joblib import Parallel, delayed
+import os
+from typing import List, Tuple
+
 def main(
     project_id: str,
     vertex_location: str,
@@ -101,10 +105,8 @@ def main(
     if not images_storage_paths:
         raise ValueError("The received list of images paths is empty")
 
-    # Ensure at least 2 threads for some parallelism, even if CPU count is low
-    n_jobs = max(2, os.cpu_count() or 1)
-
-    return Parallel(n_jobs=n_jobs, prefer="threads")(
+    # Unlimited threads using `n_jobs=-1`
+    return Parallel(n_jobs=-1, prefer="threads")(
         delayed(run_objects_detection)(
             project_id=project_id,
             vertex_location=vertex_location,
@@ -115,7 +117,7 @@ def main(
             image_storage_path=GSPath(image_storage_path),
             sample_metadata=sample_metadata,
         )
-        for image_storage_path in images_storage_paths
+        for image_storage_path in images_storage_paths[:1]
     )
 
 
