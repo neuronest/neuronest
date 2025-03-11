@@ -36,5 +36,5 @@ other_variables:
     - VERTEX_LOCATION=europe-west1
     - SERVING_ACCELERATOR_TYPE=NVIDIA_TESLA_T4
     - SERVING_ACCELERATOR_COUNT=1
-    - BATCH_SIZE=32
+    - BATCH_SIZE=1  # dangerous for now to increase the batch size
     - MAX_BATCH_DELAY=50
