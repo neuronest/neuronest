@@ -1,3 +1,4 @@
+from core.google.cloud_scheduler import CloudSchedulerManager
 from core.google.firestore_client import FirestoreClient
 from core.google.vertex_ai_manager import VertexAIManager
 from core.services.deployment_status_manager import DeploymentStatusManager
@@ -24,4 +25,11 @@ def create_deployment_status_manager(
         firestore_client=firestore_client,
         collection_name=config.firestore.deployment_status_collection_name,
         max_deploying_age=config.max_deploying_age,
+    )
+
+
+def create_cloud_scheduler_manager(config: DictConfig) -> CloudSchedulerManager:
+    return CloudSchedulerManager(
+        project_id=PROJECT_ID,
+        location=config.region,
     )

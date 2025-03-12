@@ -32,6 +32,10 @@ resource "google_cloud_run_v2_service" "model_instantiator_api" {
         name  = "VERTEX_LOCATION"
         value = var.vertex_location
       }
+      env {
+        name = "CLOUD_SCHEDULER_JOB_NAME"
+        value = var.cloud_scheduler_job_name
+      }
     }
     scaling {
       min_instance_count = var.cloud_run_min_scale

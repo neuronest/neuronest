@@ -1,5 +1,6 @@
 from typing import Optional
 
+from core.google.cloud_scheduler import CloudSchedulerManager
 from core.google.vertex_ai_manager import VertexAIManager
 from core.schemas.vertex_ai import ServingDeploymentConfig
 from core.services.deployment_status_manager import (
@@ -10,11 +11,13 @@ from google.cloud import aiplatform
 
 from model_instantiator.config import cfg
 from model_instantiator.jobs.environment_variables import (
+    CLOUD_SCHEDULER_JOB_NAME,
     IS_LAST_MODEL_ALREADY_DEPLOYED_OK,
     MODEL_NAME,
     UNDEPLOY_PREVIOUS_MODEL,
 )
 from model_instantiator.jobs.services import (
+    create_cloud_scheduler_manager,
     create_deployment_status_manager,
     create_firestore_client,
     create_vertex_ai_manager,
@@ -25,6 +28,8 @@ def deploy_model(
     model_name: str,
     deployment_status_manager: DeploymentStatusManager,
     vertex_ai_manager: VertexAIManager,
+    cloud_scheduler_manager: CloudSchedulerManager,
+    cloud_scheduler_job_name: str,
     undeploy_previous_model: bool,
     is_last_model_already_deployed_ok: bool,
 ) -> Optional[aiplatform.Endpoint]:
@@ -52,6 +57,7 @@ def deploy_model(
         endpoint=endpoint,
         model=model,
     ):
+        cloud_scheduler_manager.resume_job(job_name=cloud_scheduler_job_name)
         deployment_status_manager.set_status(
             deployment_status=DeploymentStatus.DEPLOYED, deployment_name=model_name
         )
@@ -74,6 +80,8 @@ if __name__ == "__main__":
             config=cfg, firestore_client=firestore_client
         ),
         vertex_ai_manager=create_vertex_ai_manager(),
+        cloud_scheduler_manager=create_cloud_scheduler_manager(),
+        cloud_scheduler_job_name=CLOUD_SCHEDULER_JOB_NAME,
         undeploy_previous_model=UNDEPLOY_PREVIOUS_MODEL,
         is_last_model_already_deployed_ok=IS_LAST_MODEL_ALREADY_DEPLOYED_OK,
     )

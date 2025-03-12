@@ -11,7 +11,7 @@ import pandas as pd
 from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import storage
 from google.cloud.storage import Bucket
-from tenacity import retry, retry_if_exception_type, wait_exponential
+from tenacity import retry, wait_exponential
 from tqdm import tqdm
 
 from core.client.abstract.base_client import BaseClient
