@@ -80,7 +80,7 @@ if __name__ == "__main__":
             config=cfg, firestore_client=firestore_client
         ),
         vertex_ai_manager=create_vertex_ai_manager(),
-        cloud_scheduler_manager=create_cloud_scheduler_manager(),
+        cloud_scheduler_manager=create_cloud_scheduler_manager(config=cfg),
         cloud_scheduler_job_name=CLOUD_SCHEDULER_JOB_NAME,
         undeploy_previous_model=UNDEPLOY_PREVIOUS_MODEL,
         is_last_model_already_deployed_ok=IS_LAST_MODEL_ALREADY_DEPLOYED_OK,
