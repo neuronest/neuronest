@@ -14,9 +14,9 @@ jobs:
 #  people_counting:
 #    uses: ./.github/workflows/people_counting.yaml
 #    secrets: inherit
-  object_detection:
-    uses: ./.github/workflows/object_detection.yaml
-    secrets: inherit
+#  object_detection:
+#    uses: ./.github/workflows/object_detection.yaml
+#    secrets: inherit
   video_comparator:
     uses: ./.github/workflows/video_comparator.yaml
     secrets: inherit
