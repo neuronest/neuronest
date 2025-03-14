@@ -161,10 +161,12 @@ class OnlinePredictionModelClient(BaseClient, ABC):
                 ).predictions
             ]
             # if len(preds[0].results) != 2:
+            #     print("Dataframe empty")
             #     raise Exception
             return preds
         except ServiceUnavailable as service_unavailable:
             current_try += 1
+            print("ServiceUnavailable")
             if current_try > max_tries:
                 raise service_unavailable
 
