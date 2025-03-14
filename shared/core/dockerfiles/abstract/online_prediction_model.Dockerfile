@@ -38,9 +38,12 @@ ARG BATCH_SIZE
 RUN if [ -z "$BATCH_SIZE" ]; then echo "BATCH_SIZE is not set" && exit 1; fi
 ARG POETRY_VERSION
 RUN if [ -z "$POETRY_VERSION" ]; then echo "POETRY_VERSION is not set" && exit 1; fi
-ARG ROOT_DIRECTORY="/app"
-ARG SHARED_REPOSITORY_NAME="shared"
-ARG MAX_BATCH_DELAY="50"
+ARG MAX_BATCH_DELAY
+RUN if [ -z "$MAX_BATCH_DELAY" ]; then MAX_BATCH_DELAY=50; fi
+ARG ROOT_DIRECTORY
+RUN if [ -z "$ROOT_DIRECTORY" ]; then ROOT_DIRECTORY="/app"; fi
+ARG SHARED_REPOSITORY_NAME
+RUN if [ -z "$SHARED_REPOSITORY_NAME" ]; then SHARED_REPOSITORY_NAME="shared"; fi
 
 ENV PIP_ROOT_USER_ACTION=ignore
 ENV REPOSITORY_NAME=$REPOSITORY_NAME
@@ -110,9 +113,9 @@ RUN printf "\nservice_envelope=json" >> config.properties
 RUN printf "\ninference_address=http://0.0.0.0:7080" >> config.properties
 RUN printf "\nmanagement_address=http://0.0.0.0:7081" >> config.properties
 RUN printf '\nmodels={"%s": {"1.0": {"batchSize": %s,"maxBatchDelay": %s}}}' "$MODEL_NAME" "1" "$MAX_BATCH_DELAY" >> config.properties
-RUN printf "\nmin_worker=1" >> config.properties
-RUN printf "\ninitial_workers=1" >> config.properties
-RUN printf "\nmax_worker=1" >> config.properties
+#RUN printf "\nmin_worker=1" >> config.properties
+#RUN printf "\ninitial_workers=1" >> config.properties
+#RUN printf "\nmax_worker=1" >> config.properties
 
 # expose health and prediction listener ports from the image
 EXPOSE 7080
