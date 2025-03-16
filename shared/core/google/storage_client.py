@@ -11,7 +11,7 @@ import pandas as pd
 from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import storage
 from google.cloud.storage import Bucket
-from tenacity import retry, retry_if_exception_type, wait_exponential
+from tenacity import retry, wait_exponential
 from tqdm import tqdm
 
 from core.client.abstract.base_client import BaseClient
@@ -20,7 +20,7 @@ from core.path import GSPath
 from core.serialization.encoding import NumpyEncoder
 from core.serialization.image import image_from_binary
 
-QUERY_EXPONENTIAL_BACKOFF = dict(multiplier=1, min=4, max=60)
+QUERY_EXPONENTIAL_BACKOFF = {"multiplier": 1, "min": 4, "max": 60}
 
 logger = logging.getLogger(__name__)
 
@@ -30,12 +30,8 @@ class StorageClient(BaseClient):
         self, key_path: Optional[str] = None, project_id: Optional[str] = None
     ):
         super().__init__(key_path=key_path, project_id=project_id)
-        self.client = (
-            storage.Client(project=project_id)
-            if key_path is None
-            else storage.Client.from_service_account_json(
-                json_credentials_path=key_path, project=project_id
-            )
+        self.client = storage.Client(
+            project=self.project_id, credentials=self.credentials
         )
 
     @staticmethod
@@ -363,7 +359,7 @@ class StorageClient(BaseClient):
 
         return image
 
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals,too-many-positional-arguments
     def download_multiple_blobs(
         self,
         bucket_name: str,
@@ -466,6 +462,7 @@ class StorageClient(BaseClient):
 
         return contents
 
+    # pylint: disable=too-many-positional-arguments
     def download_last_blob_with_prefix(
         self,
         bucket_name: str,

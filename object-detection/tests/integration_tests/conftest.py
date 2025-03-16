@@ -12,7 +12,6 @@ from tests.environment_variables import (
     MODEL_NAME,
     OBJECT_DETECTION_URL,
     PROJECT_ID,
-    REGION,
 )
 
 
@@ -90,4 +89,6 @@ def fixture_uninstantiate_teardown(
         yield
 
     finally:
+        import time
+        time.sleep(120)  # give endpoint time to register logs
         model_instantiator_client.uninstantiate(model_name)

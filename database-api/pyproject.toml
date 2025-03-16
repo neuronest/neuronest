@@ -1,0 +1,33 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["pip>=20.0.0", "poetry-core>=1.0.0"]
+
+[tool.isort]
+known_first_party = ["database_api"]
+profile = "black"
+
+[tool.poetry]
+authors = ["Côme Arvis <come.arvis@neuronest.net>", "Guillaume Ligner <guillaume.ligner@neuronest.net>"]
+description = "Database api project"
+name = "database-api"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+core = {develop = true, path = "../shared"}
+python = ">3.11,<3.12"
+
+[tool.poetry.group.app]
+optional = true
+
+[tool.poetry.group.app.dependencies]
+alembic = "^1.14.0"
+fastapi = "0.115.2"
+gunicorn = "23.0.0"
+psycopg2-binary = "^2.9.10"
+pydantic = "2.9.2"
+python = ">3.11,<3.12" # Update the Python requirement here
+sqlalchemy = "1.4.44"
+uvicorn = "0.32.0"
+
+[tool.poetry.group.dev.dependencies]
+core = {develop = true, extras = ["dev"], path = "../shared"}

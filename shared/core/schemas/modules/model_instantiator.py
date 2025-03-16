@@ -23,3 +23,11 @@ class UninstantiateModelOutput(BaseModel):
 
 class InstantiateModelOutput(BaseModel):
     message: str
+
+
+class CloudSQLOutput(BaseModel):
+    message: str
+
+
+class CloudSQL(BaseModel):
+    instance_name: str

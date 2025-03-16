@@ -251,7 +251,7 @@ class PredictionAPIClient(APIClient, ABC):
         job_time_delta = max(
             (
                 job_timeout
-                - (datetime.datetime.utcnow() - job_document.job_date).seconds
+                # - (datetime.datetime.utcnow() - job_document.job_date).seconds
             ),
             0,
         )

@@ -1,4 +1,5 @@
 import ast
+import logging
 import os
 from typing import List, Tuple
 
@@ -30,6 +31,8 @@ from object_detection.jobs.services import (
     create_storage_client,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def run_objects_detection(
     project_id: str,
@@ -41,19 +44,23 @@ def run_objects_detection(
     image_storage_path: GSPath,
     sample_metadata: SampleMetadata,
 ):
+    logging.basicConfig(level="INFO")
     storage_client = create_storage_client(project_id=project_id)
+    logger.info(f"storage_client: {storage_client}")
     object_detection_model_client = create_object_detection_model_client(
         project_id=project_id,
         vertex_location=vertex_location,
         model_instantiator_host=model_instantiator_host,
         model_name=model_name,
     )
+    logger.info(f"object_detection_model_client: {object_detection_model_client}")
 
     image_asset = make_asset(
         asset_path=image_storage_path,
         storage_client=storage_client,
         asset_type=AssetType.IMAGE,
     )
+    logger.info(f"image_asset: {object_detection_model_client}")
     sample_id = image_asset.get_hash()
 
     output: OutputSampleSchema = object_detection_model_client.predict_single(
@@ -77,6 +84,14 @@ def run_objects_detection(
     )
 
 
+from joblib import Parallel, delayed
+import os
+from typing import List, Tuple
+
+from joblib import Parallel, delayed
+import os
+from typing import List, Tuple
+
 def main(
     project_id: str,
     vertex_location: str,
@@ -87,10 +102,11 @@ def main(
     images_storage_paths: List[Tuple[str, str]],
     sample_metadata: SampleMetadata,
 ):
-    if len(images_storage_paths) == 0:
+    if not images_storage_paths:
         raise ValueError("The received list of images paths is empty")
 
-    return Parallel(n_jobs=os.cpu_count())(
+    # Unlimited threads using `n_jobs=-1`
+    return Parallel(n_jobs=-1, prefer="threads")(
         delayed(run_objects_detection)(
             project_id=project_id,
             vertex_location=vertex_location,
@@ -101,8 +117,9 @@ def main(
             image_storage_path=GSPath(image_storage_path),
             sample_metadata=sample_metadata,
         )
-        for image_storage_path in images_storage_paths
+        for image_storage_path in images_storage_paths[:1]
     )
+
 
 
 if __name__ == "__main__":

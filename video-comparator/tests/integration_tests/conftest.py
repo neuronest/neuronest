@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.video_comparator import VideoComparatorClient
@@ -10,7 +8,6 @@ from tests.environment_variables import (
     MODEL_INSTANTIATOR_HOST,
     MODEL_NAME,
     PROJECT_ID,
-    REGION,
     VIDEO_COMPARATOR_URL,
 )
 
@@ -74,4 +71,8 @@ def fixture_uninstantiate_teardown(
         yield
 
     finally:
+        import time
+        time.sleep(120)  # give endpoint time to register logs
         model_instantiator_client.uninstantiate(model_name)
+
+        

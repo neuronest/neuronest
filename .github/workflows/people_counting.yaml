@@ -101,7 +101,7 @@ jobs:
           dockerhub_password: ${{ secrets.DOCKERHUB_PASSWORD }}
           repository_name: ${{ env.REPOSITORY_NAME }}
           base_image_name: ${{ env.BASE_IMAGE_NAME }}
-          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }}
+          build_arguments: --build-arg REPOSITORY_NAME=${{ env.REPOSITORY_NAME }} --build-arg PACKAGE_NAME=${{ env.PACKAGE_NAME }} --build-arg POETRY_VERSION=${{ env.POETRY_VERSION }}
           dockerfile_path: ${{ env.WEB_SERVING_DOCKERFILE_PATH }}
 
   deploy:
@@ -188,5 +188,6 @@ jobs:
           image_name: ${{ env.TESTING_BASE_IMAGE }}
           repository_name: ${{ env.REPOSITORY_NAME }}
           run_integration_tests: true
+          lint_target: tests
           run_unit_tests: false
           environment_variables: -e MODEL_NAME=${{ env.OBJECT_DETECTION_MODEL_NAME }} -e PEOPLE_COUNTING_URL=${{ needs.deploy.outputs.people_counting_url }} -e PROJECT_ID=${{ env.PROJECT_ID }} -e MODEL_INSTANTIATOR_HOST=${{ needs.deploy.outputs.model_instantiator_url }}

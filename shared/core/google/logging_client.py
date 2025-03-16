@@ -20,7 +20,7 @@ class LoggingClient(BaseClient):
             logging.Client(project=self.project_id)
             if key_path is None
             else logging.Client.from_service_account_json(
-                json_credentials_path=key_path, project=project_id
+                json_credentials_path=key_path, project=self.project_id
             )
         )
 

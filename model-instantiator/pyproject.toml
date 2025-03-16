@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.0","pip>=20.0.0"]
+requires = ["pip>=20.0.0", "poetry-core>=1.0.0"]
 
 [tool.isort]
 known_first_party = ["model_instantiator"]
@@ -13,7 +13,7 @@ name = "model-instantiator"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
-core = {path="../shared", develop = true}
+core = {develop = true, path = "../shared"}
 python = ">3.11,<3.12"
 python-json-logger = "2.0.7"
 
@@ -29,4 +29,4 @@ uvicorn = "0.32.0"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-core = { path="../shared", develop = true, extras = ["dev"] }
+core = {develop = true, extras = ["dev"], path = "../shared"}

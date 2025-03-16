@@ -4,7 +4,6 @@ from abc import ABC
 from typing import List, Optional, Type
 
 import requests
-from cachetools.func import ttl_cache
 from google.api_core.exceptions import ServiceUnavailable
 from google.cloud import aiplatform
 
@@ -24,6 +23,7 @@ class OnlinePredictionModelClient(BaseClient, ABC):
     OUTPUT_SAMPLE_SCHEMA: Type[OutputSampleSchema]
     MAX_BYTES = 1e8
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         vertex_ai_manager: VertexAIManager,
@@ -50,7 +50,6 @@ class OnlinePredictionModelClient(BaseClient, ABC):
     def _create_endpoint(self) -> Optional[requests.Response]:
         return self.model_instantiator_client.instantiate(self.model_name)
 
-    @ttl_cache(ttl=600)
     def _try_get_or_create_latest_model_endpoint(self) -> aiplatform.Endpoint:
         total_waited_time = 0
 
@@ -125,6 +124,7 @@ class OnlinePredictionModelClient(BaseClient, ABC):
 
         return current_chunks
 
+    # pylint: disable=too-many-positional-arguments
     def _predict_batch(
         self,
         samples: List[InputSampleSchema],
@@ -132,21 +132,41 @@ class OnlinePredictionModelClient(BaseClient, ABC):
         base_retry_delay: float = 1.0,
         max_retry_delay: float = 32.0,
         current_try: int = 0,
+        # absurdly long, we do not want to handle custom value for each model
+        timeout: Optional[float] = 3600,
     ) -> List[OutputSampleSchema]:
         if len(samples) == 0:
             return []
 
+        # todo: trouver un moyen de remove les interactions reseau type get endpoint
+        # pendant online prediction où le but c'est la latence minimum
         endpoint = self._try_get_or_create_latest_model_endpoint()
+        # from datetime import datetime
+        # if (datetime.now(endpoint.update_time.tzinfo) - endpoint.update_time).total_seconds() < 5*60:
+        #     time.sleep(5*60)
+            # pass
+
 
         try:
-            return [
+            # todo: un peu bancal pour le futur, on est sur une fonction sans limite de
+            # nombre de samples mais avec les mêmes default values max_tries etc
+            # pour tous les scénarios
+            # la logique ServiceUnavailable devrait opérer au niveau du sample, pas du
+            # batch, pour représenter une charge de travail bornée pour laquelle
+            # les default values ont du sens
+            preds = [
                 self.OUTPUT_SAMPLE_SCHEMA.deserialize(prediction)
                 for prediction in endpoint.predict(
-                    [sample.serialize() for sample in samples]
+                    [sample.serialize() for sample in samples]*1, timeout=None
                 ).predictions
             ]
+            # if len(preds[0].results) != 2:
+            #     print("Dataframe empty")
+            #     raise Exception
+            return preds
         except ServiceUnavailable as service_unavailable:
             current_try += 1
+            print("ServiceUnavailable")
             if current_try > max_tries:
                 raise service_unavailable
 

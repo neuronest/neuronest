@@ -29,23 +29,28 @@ RUN apt -qqy update > /dev/null && DEBIAN_FRONTEND=noninteractive apt install -q
 RUN wget https://bootstrap.pypa.io/get-pip.py && python3.11 get-pip.py
 
 ARG REPOSITORY_NAME
+RUN if [ -z "$REPOSITORY_NAME" ]; then echo "REPOSITORY_NAME is not set" && exit 1; fi
 ARG PACKAGE_NAME
+RUN if [ -z "$PACKAGE_NAME" ]; then echo "PACKAGE_NAME is not set" && exit 1; fi
 ARG MODEL_NAME
+RUN if [ -z "$MODEL_NAME" ]; then echo "MODEL_NAME is not set" && exit 1; fi
 ARG BATCH_SIZE
-ARG ROOT_DIRECTORY="/app"
-ARG SHARED_REPOSITORY_NAME="shared"
-ARG POETRY_VERSION="1.8.4"
-ARG MAX_BATCH_DELAY="50"
+RUN if [ -z "$BATCH_SIZE" ]; then echo "BATCH_SIZE is not set" && exit 1; fi
+ARG POETRY_VERSION
+RUN if [ -z "$POETRY_VERSION" ]; then echo "POETRY_VERSION is not set" && exit 1; fi
+ARG MAX_BATCH_DELAY
+ARG ROOT_DIRECTORY
+ARG SHARED_REPOSITORY_NAME
 
 ENV PIP_ROOT_USER_ACTION=ignore
 ENV REPOSITORY_NAME=$REPOSITORY_NAME
 ENV PACKAGE_NAME=$PACKAGE_NAME
 ENV MODEL_NAME=$MODEL_NAME
-ENV ROOT_DIRECTORY=$ROOT_DIRECTORY
-ENV SHARED_REPOSITORY_NAME=$SHARED_REPOSITORY_NAME
 ENV POETRY_VERSION=$POETRY_VERSION
 ENV BATCH_SIZE=$BATCH_SIZE
-ENV MAX_BATCH_DELAY=$MAX_BATCH_DELAY
+ENV MAX_BATCH_DELAY=${MAX_BATCH_DELAY:-50}
+ENV ROOT_DIRECTORY=${ROOT_DIRECTORY:-/app}
+ENV SHARED_REPOSITORY_NAME=${SHARED_REPOSITORY_NAME:-shared}
 
 ENV POETRY_HOME="/opt/poetry"
 ENV PATH="$POETRY_HOME/bin:$ROOT_DIRECTORY/$REPOSITORY_NAME/.venv/bin:$PATH"
@@ -57,6 +62,8 @@ ENV PATH=$PATH:$CLOUDSDK_INSTALL_DIR/google-cloud-sdk/bin
 RUN mkdir -p $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
 COPY $SHARED_REPOSITORY_NAME/pyproject.toml $SHARED_REPOSITORY_NAME/poetry.lock $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME/
 COPY $SHARED_REPOSITORY_NAME/core $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME/core
+
+COPY $SHARED_REPOSITORY_NAME $ROOT_DIRECTORY/$SHARED_REPOSITORY_NAME
 
 WORKDIR $ROOT_DIRECTORY/$REPOSITORY_NAME
 
@@ -83,6 +90,7 @@ FROM training as serving
 # inspired of https://github.com/GoogleCloudPlatform/vertex-ai-samples/blob/main/community-content/pytorch_text_classification_using_vertex_sdk_and_gcloud/pytorch-text-classification-vertex-ai-train-tune-deploy.ipynb
 
 ARG MODEL_PATH
+RUN if [ -z "$MODEL_PATH" ]; then echo "MODEL_PATH is not set" && exit 1; fi
 ARG LOCAL_MODEL_PATH="/model/model.pt"
 ARG MODEL_STORE_NAME="model_store"
 ARG MODEL_PACKAGE_NAME="model/"
@@ -101,8 +109,10 @@ WORKDIR $MODEL_PACKAGE_PATH
 RUN printf "\nservice_envelope=json" >> config.properties
 RUN printf "\ninference_address=http://0.0.0.0:7080" >> config.properties
 RUN printf "\nmanagement_address=http://0.0.0.0:7081" >> config.properties
-RUN printf '\nmodels={"%s": {"1.0": {"batchSize": %s,"maxBatchDelay": %s}}}' "$MODEL_NAME" "$BATCH_SIZE" "$MAX_BATCH_DELAY" >> config.properties
-
+RUN printf '\nmodels={"%s": {"1.0": {"batchSize": %s,"maxBatchDelay": %s}}}' "$MODEL_NAME" "1" "$MAX_BATCH_DELAY" >> config.properties
+#RUN printf "\nmin_worker=1" >> config.properties
+#RUN printf "\ninitial_workers=1" >> config.properties
+#RUN printf "\nmax_worker=1" >> config.properties
 
 # expose health and prediction listener ports from the image
 EXPOSE 7080
@@ -128,6 +138,7 @@ RUN torch-model-archiver -f \
 # run Torchserve HTTP serve to respond to prediction requests
 ENTRYPOINT torchserve \
     --start \
+    # see https://github.com/pytorch/serve/blob/master/docs/token_authorization_api.md
     --disable-token-auth \
     --ts-config=config.properties \
     --models $MODEL_NAME=$MODEL_NAME.mar \

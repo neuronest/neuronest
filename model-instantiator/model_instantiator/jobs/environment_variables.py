@@ -1,12 +1,12 @@
 import os
 
-PROJECT_ID = os.environ["PROJECT_ID"]
-REGION = os.environ["REGION"]
-MODEL_NAME = os.environ["MODEL_NAME"]
-VERTEX_LOCATION = os.environ["VERTEX_LOCATION"]
+# Vertex AI endpoint variables
+PROJECT_ID = os.environ.get("PROJECT_ID")
+MODEL_NAME = os.environ.get("MODEL_NAME")
+REGION = os.environ.get("REGION")
+VERTEX_LOCATION = os.environ.get("VERTEX_LOCATION")
 UNDEPLOY_PREVIOUS_MODEL = os.environ.get("UNDEPLOY_PREVIOUS_MODEL")
 IS_LAST_MODEL_ALREADY_DEPLOYED_OK = os.environ.get("IS_LAST_MODEL_ALREADY_DEPLOYED_OK")
-
 UNDEPLOY_PREVIOUS_MODEL = (
     bool(UNDEPLOY_PREVIOUS_MODEL) if UNDEPLOY_PREVIOUS_MODEL is not None else True
 )
@@ -15,3 +15,6 @@ IS_LAST_MODEL_ALREADY_DEPLOYED_OK = (
     if IS_LAST_MODEL_ALREADY_DEPLOYED_OK is not None
     else True
 )
+
+# Cloud SQL variables
+CLOUD_SQL_INSTANCE_NAME = os.environ.get("CLOUD_SQL_INSTANCE_NAME")

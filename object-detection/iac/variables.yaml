@@ -23,9 +23,6 @@ multi_instance_resource_names:
 other_variables:
   branch:
     default:
-    # GCP project
-    - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
-    - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}
     # cloud run
     - CLOUD_RUN_MEMORY=4Gi
     - CLOUD_RUN_CPU=1000m
@@ -37,4 +34,4 @@ other_variables:
     - SERVING_ACCELERATOR_TYPE=NVIDIA_TESLA_T4
     - SERVING_ACCELERATOR_COUNT=1
     - BATCH_SIZE=32
-    - MAX_BATCH_DELAY=50
+    - MAX_BATCH_DELAY=10000

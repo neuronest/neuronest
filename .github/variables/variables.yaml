@@ -18,10 +18,10 @@ other_variables:
       - BILLING_ACCOUNT=01F17D-FFD0ED-C23C3B
       - DEFAULT_PROJECTS_OWNERS=come.arvis@neuronest.net,guillaume.ligner@neuronest.net
       # GCP projects
-      - PROJECT_ID=dummy-project-id
-      - PROJECT_CODE=dpi
-      - FUNCTIONAL_SERVICES_PROJECT_CODE=fs
-      - NON_FUNCTIONAL_SERVICES_PROJECT_CODE=nfs
+      - MAIN_GCP_PROJECT_ID=customer-dummy-project-staging
+      - DEV_GCP_PROJECT_ID=neuronest-dev
+        # Must be manually set when working on a feature branch
+      - DEFAULT_GCP_PROJECT_ID=database-api-yolo-6
       - REGION=europe-west1
       - ZONE=europe-west1-b
       - TIMEZONE=Europe/Paris

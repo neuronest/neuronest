@@ -1,6 +1,7 @@
 from threading import Thread
 from typing import List, Optional, Union
 
+from google.api_core.exceptions import AlreadyExists
 from google.cloud.exceptions import NotFound
 from google.cloud.run_v2 import (
     CreateJobRequest,
@@ -24,7 +25,7 @@ from core.utils import hyphen_to_underscore
 class CloudRunJobManager(BaseClient):
     def __init__(self, project_id: str, location: str, key_path: Optional[str] = None):
         super().__init__(key_path=key_path, project_id=project_id)
-        self._parent = f"projects/{project_id}/locations/{location}"
+        self._parent = f"projects/{self.project_id}/locations/{location}"
         self.jobs_client = JobsClient(credentials=self.credentials)
         self.executions_client = ExecutionsClient(credentials=self.credentials)
         self.location = location
@@ -122,9 +123,8 @@ class CloudRunJobManager(BaseClient):
         job_name: str,
         job_config: JobConfig,
         override_if_existing: bool = False,
+        service_account: Optional[str] = None,
     ) -> JobSchema:
-        if override_if_existing is True:
-            self.delete_job(job_name=job_name, is_missing_ok=True)
 
         # noinspection PyTypeChecker
         request = CreateJobRequest(
@@ -156,6 +156,7 @@ class CloudRunJobManager(BaseClient):
                         ],
                         max_retries=job_config.max_retries,
                         timeout=job_config.timeout,
+                        service_account=service_account,
                     ),
                     task_count=job_config.task_count,
                     parallelism=job_config.parallelism,
@@ -166,7 +167,15 @@ class CloudRunJobManager(BaseClient):
             job_id=job_name,
         )
 
-        operation = self.jobs_client.create_job(request=request)
-        response = operation.result()
+        try:
+            operation = self.jobs_client.create_job(request=request)
+            response = operation.result()
+        except AlreadyExists:
+            if override_if_existing:
+                self.delete_job(job_name=job_name, is_missing_ok=True)
+                operation = self.jobs_client.create_job(request=request)
+                response = operation.result()
+            else:
+                raise
 
         return JobSchema.model_validate(protobuf_to_dict(response))

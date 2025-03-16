@@ -32,6 +32,10 @@ inputs:
   dockerfile_path:
     description: 'Dockerfile path'
     default: ''
+  use_cache:
+    description: 'Whether to use cache or not'
+    required: false
+    default: 'false'
 outputs:
   dockerhub_image_name:
     description: 'Built and pushed image name to DockerHub'
@@ -90,10 +94,16 @@ runs:
       run: |
         export DOCKER_BUILDKIT=0
         export IMAGE_ID_FILE=image_id.txt
-        docker pull $DOCKERHUB_IMAGE_NAME:latest || true
+        if [ "${{ inputs.use_cache }}" == "true" ]; then
+          docker pull $DOCKERHUB_IMAGE_NAME:latest || true
+          CACHE_FROM="--cache-from $DOCKERHUB_IMAGE_NAME:latest"
+        else
+          CACHE_FROM=""
+        fi
+        
         docker build \
           --iidfile=$IMAGE_ID_FILE \
-          --cache-from $DOCKERHUB_IMAGE_NAME:latest \
+          $CACHE_FROM \
           -t $DOCKERHUB_IMAGE_NAME:$GITHUB_RUN_ID \
           -t $DOCKERHUB_IMAGE_NAME:latest \
           -t $GCP_IMAGE_NAME:$GITHUB_RUN_ID \
@@ -126,6 +136,12 @@ runs:
         docker push $GCP_IMAGE_NAME:latest
         docker push $GCP_IMAGE_NAME:${{ steps.build_image.outputs.sha256_digest }}
       shell: bash
+    - run: |
+        # Generate a new access token just before use, as it is only valid for 1 hour
+        ACCESS_TOKEN=$(gcloud auth print-access-token)
+        echo "::add-mask::$ACCESS_TOKEN"
+        echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV
+      shell: bash
 
     - run: |
         ACCESS_TOKEN=$(gcloud auth print-access-token)
@@ -141,6 +157,7 @@ runs:
           -tag-filter-all="\d+" \
           -keep=${{ inputs.maximum_number_images_to_keep }}
       shell: bash
+
 
     - id: dockerhub_output_step
       # we prefer the sha256 to identify the image. The workflow id as identifier is

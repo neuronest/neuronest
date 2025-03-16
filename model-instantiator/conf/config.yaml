@@ -1,5 +1,5 @@
-name: 'model-instantiator'
-package_name: 'model_instantiator'
+name: '${oc.env:REPOSITORY_NAME,null}'
+package_name: '${oc.env:PACKAGE_NAME,null}'
 project_id: '${oc.env:PROJECT_ID,null}'
 region: '${oc.env:REGION,null}'
 
@@ -12,4 +12,5 @@ job:
   memory: '1Gi'
 
 max_deploying_age: 2700  # in seconds
-uninstantiate_time_delta: 1800  # in seconds
+uninstantiate_time_delta: 7200  # in seconds
+uninstantiate_cloud_sql_time_delta: 7200  # in seconds

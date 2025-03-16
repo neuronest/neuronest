@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 
 import pytest
@@ -61,12 +60,15 @@ def fixture_storage_client() -> StorageClient:
 
 
 @pytest.fixture(name="uninstantiate_teardown", scope="session")
-def fixture_uninstantiate_teardown(
-    model_instantiator_client: ModelInstantiatorClient,
-    model_name: str,
-):
-    try:
+def fixture_uninstantiate_teardown(request, model_instantiator_client, model_name):
+    # If running in a worker (i.e. under xdist),
+    # just yield without extra setup/teardown.
+    # It allows to perform the teardown actually once per pytest run
+    if hasattr(request.config, "workerinput"):
         yield
-
-    finally:
-        model_instantiator_client.uninstantiate(model_name)
+    else:
+        # In the master process, yield and then perform teardown after all tests.
+        try:
+            yield
+        finally:
+            model_instantiator_client.uninstantiate(model_name)

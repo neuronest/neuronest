@@ -1,0 +1,37 @@
+variable "model_instantiator_image_name" {
+  type    = string
+  default = "model_instantiator_image_name_dummy"
+}
+variable "model_instantiator_webapp_service_account_name" {
+  type = string
+}
+variable "model_instantiator_cloud_scheduler_service_account_name" {
+  type = string
+}
+variable "model_instantiator_cloud_run_name" {
+  type = string
+}
+variable "model_instantiator_cloud_run_memory" {
+  type = string
+}
+variable "model_instantiator_cloud_run_cpu" {
+  type = string
+}
+variable "model_instantiator_cloud_run_min_scale" {
+  type = string
+}
+variable "model_instantiator_cloud_run_max_scale" {
+  type = string
+}
+variable "model_instantiator_cloud_run_timeout" {
+  type = string
+}
+variable "model_instantiator_cloud_scheduler_cloud_sql_job_name" {
+  type = string
+}
+variable "model_instantiator_cloud_scheduler_cloud_sql_schedule" {
+  type = string
+}
+variable "model_instantiator_cloud_sql_uninstantiate_route" {
+  type = string
+}
