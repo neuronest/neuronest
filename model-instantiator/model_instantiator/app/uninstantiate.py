@@ -1,6 +1,7 @@
 import datetime
 import logging
 
+from core.google.cloud_scheduler import CloudSchedulerManager
 from core.google.logging_client import LoggerName, LoggingClient
 from core.google.vertex_ai_manager import VertexAIManager
 from core.routes.model_instantiator import routes
@@ -18,11 +19,13 @@ from omegaconf import DictConfig
 from starlette import status
 
 from model_instantiator.app.dependencies import (
+    use_cloud_scheduler_manager,
     use_config,
     use_deployment_status_manager,
     use_logging_client,
     use_vertex_ai_manager,
 )
+from model_instantiator.environment_variables import CLOUD_SCHEDULER_JOB_NAME
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -99,6 +102,9 @@ def uninstantiate_model(
     deployment_status_manager: DeploymentStatusManager = Depends(
         use_deployment_status_manager
     ),
+    cloud_scheduler_manager: CloudSchedulerManager = Depends(
+        use_cloud_scheduler_manager
+    ),
 ):
     model_name = uninstantiate_model_input.trained_model_name
 
@@ -114,6 +120,8 @@ def uninstantiate_model(
     deployment_status_manager.maybe_set_status(
         deployment_status=DeploymentStatus.UNDEPLOYED, deployment_name=model_name
     )
+
+    cloud_scheduler_manager.pause_job(job_name=CLOUD_SCHEDULER_JOB_NAME)
 
     return _correctly_undeployed_endpoint_response(
         response=response, endpoint_id=endpoint.resource_name, model_name=model_name
@@ -132,6 +140,9 @@ def uninstantiate_model_logs_conditioned(
     vertex_ai_manager: VertexAIManager = Depends(use_vertex_ai_manager),
     deployment_status_manager: DeploymentStatusManager = Depends(
         use_deployment_status_manager
+    ),
+    cloud_scheduler_manager: CloudSchedulerManager = Depends(
+        use_cloud_scheduler_manager
     ),
     logging_client: LoggingClient = Depends(use_logging_client),
 ) -> UninstantiateModelOutput:
@@ -168,6 +179,8 @@ def uninstantiate_model_logs_conditioned(
     deployment_status_manager.set_status(
         deployment_status=DeploymentStatus.UNDEPLOYED, deployment_name=model_name
     )
+
+    cloud_scheduler_manager.pause_job(job_name=CLOUD_SCHEDULER_JOB_NAME)
 
     return _correctly_undeployed_endpoint_response(
         response=response,

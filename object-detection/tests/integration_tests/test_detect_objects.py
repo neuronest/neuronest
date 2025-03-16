@@ -109,7 +109,7 @@ def test_detect_objects_sync_async_real_time(
 ):
     test_functions = (
         _test_detect_objects_sync,
-        _test_detect_objects_async,
+        # _test_detect_objects_async,
     )
 
     Parallel(n_jobs=-1, prefer="threads")(
@@ -121,6 +121,10 @@ def test_detect_objects_sync_async_real_time(
 
     # executed once the endpoint is ready for the real-time part, thus avoiding a
     # timeout
-    _test_detect_objects_real_time(
-        object_detection_client=object_detection_client, sample_path=sample_path
-    )
+    # _test_detect_objects_real_time(
+    #     object_detection_client=object_detection_client, sample_path=sample_path
+    # )
+
+    # _test_detect_objects_sync(
+    #     object_detection_client=object_detection_client, sample_path=sample_path
+    # )

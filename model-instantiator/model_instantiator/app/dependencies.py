@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from core.google.cloud_run_job_manager import CloudRunJobManager
+from core.google.cloud_scheduler import CloudSchedulerManager
 from core.google.firestore_client import FirestoreClient
 from core.google.logging_client import LoggingClient
 from core.google.vertex_ai_manager import VertexAIManager
@@ -64,3 +65,14 @@ def use_deployment_status_manager(
 @lru_cache
 def use_logging_client() -> LoggingClient:
     return LoggingClient(key_path=GOOGLE_APPLICATION_CREDENTIALS, project_id=PROJECT_ID)
+
+
+@lru_cache
+def use_cloud_scheduler_manager(
+    config: DictConfig = Depends(use_config),
+) -> CloudSchedulerManager:
+    return CloudSchedulerManager(
+        key_path=GOOGLE_APPLICATION_CREDENTIALS,
+        project_id=PROJECT_ID,
+        location=config.region,
+    )

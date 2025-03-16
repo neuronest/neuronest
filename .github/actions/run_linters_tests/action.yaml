@@ -38,10 +38,12 @@ runs:
       - run: docker cp ./. ${{ steps.run_background_container.outputs.container_id }}:${{ steps.set_container_mono_repository_path.outputs.value }}
         shell: bash
       - run: |
-          # handle detected dubious ownership git issue
+          # handle detected dubious ownership git issue, 
+          # install libgl1-mesa-glx libglib2.0-0 for OpenCV
           run_linters_tests_cmd="
             apt -qqy update > /dev/null \
             && apt install -qqy git > /dev/null \
+            && apt install -qqy libgl1-mesa-glx libglib2.0-0 > /dev/null \
             && ([ ! -d \".git\" ] && git init || echo \".git directory already exists. Skipping git init.\") \
             && git config \
             --global \

@@ -17,7 +17,12 @@ from model_instantiator.app.dependencies import (
     use_config,
     use_vertex_ai_manager,
 )
-from model_instantiator.environment_variables import PROJECT_ID, REGION, VERTEX_LOCATION
+from model_instantiator.environment_variables import (
+    CLOUD_SCHEDULER_JOB_NAME,
+    PROJECT_ID,
+    REGION,
+    VERTEX_LOCATION,
+)
 
 router = APIRouter(
     prefix=f"/{routes.Instantiator.prefix}", tags=[routes.Instantiator.prefix]
@@ -109,6 +114,7 @@ def instantiate_model(
                     "REGION": REGION,
                     "MODEL_NAME": model_name,
                     "VERTEX_LOCATION": VERTEX_LOCATION,
+                    "CLOUD_SCHEDULER_JOB_NAME": CLOUD_SCHEDULER_JOB_NAME,
                 },
             ),
             override_if_existing=True,

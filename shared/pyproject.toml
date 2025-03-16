@@ -23,6 +23,7 @@ google-cloud-bigquery = "3.26.0"
 google-cloud-firestore = "2.19.0"
 google-cloud-logging = "3.11.3"
 google-cloud-run = "0.10.9"
+google-cloud-scheduler = "^2.16.0"
 google-cloud-storage = "2.18.2"
 imutils = "0.5.4"
 isort = {optional = true, version = "5.13.2"}
@@ -32,7 +33,7 @@ moviepy = "1.0.3"
 numpy = "<2.1" # https://github.com/numba/numba/issues/9708
 nvgpu = {optional = true, version = "0.10.0"}
 omegaconf = "2.3.0"
-opencv-contrib-python-headless = "4.10.0.84"
+opencv-python = "4.11.0.86"
 pandas = "2.2.3"
 pre-commit = {optional = true, version = "4.0.1"}
 pydantic = "2.9.2"
