@@ -255,7 +255,6 @@ jobs:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
     env:
-    env:
       # todo: sans doute changer le model/model.pt hardcodé, on n'a pas de raison de
       # penser que cette valeur sera toujours la bonne. Le directory model est obtenu
       # via une variable d'environnement dans un environnement vertex et qui pourra
