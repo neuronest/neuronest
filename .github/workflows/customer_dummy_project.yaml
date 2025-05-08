@@ -72,15 +72,15 @@ jobs:
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.object_detection_env_file_artifact_name }}
     secrets: inherit
 
-  video_comparator:
-    needs: upload_variables_of_called_workflows
-    uses: ./.github/workflows/video_comparator.yaml
-    with:
-      build: true
-      deploy: true
-      post_deploy: true
-      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.video_comparator_env_file_artifact_name }}
-    secrets: inherit
+#  video_comparator:
+#    needs: upload_variables_of_called_workflows
+#    uses: ./.github/workflows/video_comparator.yaml
+#    with:
+#      build: true
+#      deploy: true
+#      post_deploy: true
+#      env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.video_comparator_env_file_artifact_name }}
+#    secrets: inherit
 
   people_counting:
     needs: upload_variables_of_called_workflows
@@ -91,4 +91,3 @@ jobs:
       post_deploy: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
     secrets: inherit
-

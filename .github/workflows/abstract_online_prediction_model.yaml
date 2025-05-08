@@ -191,6 +191,11 @@ jobs:
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: model_instantiator_url
+      - id: get_model_instantiator_cloud_scheduler_job_name
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: model_instantiator_cloud_scheduler_job_name
       - id: get_online_prediction_model_url
         uses: ./.github/actions/get_terraform_output
         with:
@@ -249,6 +254,7 @@ jobs:
       credentials:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
+    env:
     env:
       # todo: sans doute changer le model/model.pt hardcodé, on n'a pas de raison de
       # penser que cette valeur sera toujours la bonne. Le directory model est obtenu
@@ -351,11 +357,30 @@ jobs:
         env:
           SERVING_IMAGE_NAME: ${{ needs.build_test_push_model_serving_image.outputs.gcp_image_name }}
 
+
+  deploy_model:
+    name: model_upload
+    needs:
+      - model_upload
+      - get_base_project_builder_sa_key
+    runs-on: neuronest-runner-set
+    if: ${{ inputs.post_deploy == 'true' && !failure() && !cancelled() }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set_variables_gcloud_auth
+        with:
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+      - uses: ./.github/actions/model-instantiator-cli
+        with:
+          cmd: model-instantiator deploy model --model_name $MODEL_NAME --cloud_scheduler_job_name $MODEL_INSTANTIATOR_CLOUD_SCHEDULER_JOB_NAME
+
+
   run_integration_tests:
     runs-on: neuronest-runner-set
     needs:
       - run_base_terraform
-      - model_upload
+      - deploy_model
       - deploy_online_prediction_model
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.run_tests == 'true' || inputs.run_tests == '') && !failure() && !cancelled() }}

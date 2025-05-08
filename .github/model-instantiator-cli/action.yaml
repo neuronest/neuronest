@@ -1,0 +1,42 @@
+name: 'model-instantiator-cli'
+description: 'Checkout and run a model-instantiator CLI command'
+
+inputs:
+  cmd:
+    description: 'The model-instantiator command to run'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get paths
+      id: get_paths
+      run: |
+        UUID=$(uuidgen)
+        echo "working_dir=$(pwd)" >> $GITHUB_OUTPUT
+        echo "mono_repo_path=$(pwd)/tmp/$UUID" >> $GITHUB_OUTPUT
+        echo "model_instantiator_repo_path=${mono_repo_path}/model-instantiator" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - uses: actions/checkout@v4
+      with:
+        path: ${{ steps.get_paths.outputs.mono_repo_path }}
+
+    - uses: ./.github/actions/set_up_poetry
+
+    - name: Install model-instantiator dependencies
+      run: |
+        cd ${{ steps.get_paths.outputs.model_instantiator_repo_path }}
+        poetry install
+      shell: bash
+
+    - name: Run the model-instantiator CLI command
+      run: |
+        cd ${{ steps.get_paths.outputs.model_instantiator_repo_path }}
+        poetry run ${{ inputs.cmd }}
+      shell: bash
+
+    - name: Return to original working directory
+      run: |
+        cd ${{ steps.get_paths.outputs.working_dir }}
+      shell: bash
