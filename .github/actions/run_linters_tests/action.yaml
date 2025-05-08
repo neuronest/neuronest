@@ -51,15 +51,18 @@ runs:
           && cd ${{ inputs.REPOSITORY_NAME }} \
           && pip install poetry==$POETRY_VERSION && poetry export \
             --without-hashes \
-            --with dev -f requirements.txt \
+            --with dev --with app -f requirements.txt \
             --output requirements.txt \
           && pip install -r requirements.txt \
           && cd ${{ steps.set_container_mono_repository_path.outputs.value }} \
           && source ./.github/functions/install_terraform.sh && install_terraform \
           && pre-commit install \
+          && cd ${{ inputs.REPOSITORY_NAME }} \
+          && export PYTHONPATH=$PYTHONPATH:$(pwd) \
           && pre-commit run \
             --show-diff-on-failure \
-            --files ${{ inputs.REPOSITORY_NAME }}/**/* \
+            --files ./**/* \
+          && cd ${{ steps.set_container_mono_repository_path.outputs.value }} \
           "
           
           # run unit tests
