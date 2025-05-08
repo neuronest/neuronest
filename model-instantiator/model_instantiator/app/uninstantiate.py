@@ -133,6 +133,7 @@ def uninstantiate_model(
     response_model=UninstantiateModelOutput,
     status_code=status.HTTP_202_ACCEPTED,
 )
+# pylint: disable=too-many-positional-arguments
 def uninstantiate_model_logs_conditioned(
     uninstantiate_model_input: UninstantiateModelLogsConditionedInput,
     response: Response,
