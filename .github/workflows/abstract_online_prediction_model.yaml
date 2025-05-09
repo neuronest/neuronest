@@ -358,7 +358,7 @@ jobs:
 
 
   deploy_model:
-    name: model_upload
+    name: deploy_model
     needs:
       - model_upload
       - get_base_project_builder_sa_key
@@ -366,10 +366,16 @@ jobs:
     if: ${{ inputs.post_deploy == 'true' && !failure() && !cancelled() }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/set_variables_gcloud_auth
+      - uses: ./.github/actions/set_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
       - uses: ./.github/actions/model-instantiator-cli
         with:
           cmd: model-instantiator deploy model --model_name $MODEL_NAME --cloud_scheduler_job_name $MODEL_INSTANTIATOR_CLOUD_SCHEDULER_JOB_NAME
