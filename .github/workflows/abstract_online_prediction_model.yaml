@@ -376,7 +376,7 @@ jobs:
       - uses: ./.github/actions/gcloud_auth
         with:
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
-      - uses: ./.github/actions/model-instantiator-cli
+      - uses: ./.github/actions/model_instantiator_cli
         with:
           cmd: model-instantiator deploy model --model_name $MODEL_NAME --cloud_scheduler_job_name $MODEL_INSTANTIATOR_CLOUD_SCHEDULER_JOB_NAME
 

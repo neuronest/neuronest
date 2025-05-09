@@ -1,4 +1,4 @@
-name: 'model-instantiator-cli'
+name: 'model_instantiator_cli'
 description: 'Checkout and run a model-instantiator CLI command'
 
 inputs:
