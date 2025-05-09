@@ -7,8 +7,8 @@ other_variables:
   branch:
     default:
     # GCP project
-    - PROJECT_ID=optim-vertex-cloudrun-finops-1
-    - PROJECT_CODE=ovcf1
+    - PROJECT_ID=optim-vertex-cloudrun-finops-2
+    - PROJECT_CODE=ovcf2
     main:
     # GCP project
     - PROJECT_ID=customer-dummy-project-staging
