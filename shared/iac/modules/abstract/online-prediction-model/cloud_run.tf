@@ -13,6 +13,7 @@ resource "google_cloud_run_v2_service" "web_serving" {
           "cpu"    = var.cloud_run_cpu
           "memory" = var.cloud_run_memory
         }
+        cpu_idle = true # Ensures CPU is allocated only during request processing
       }
       dynamic "env" {
         for_each = var.cloud_run_env_vars
