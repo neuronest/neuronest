@@ -49,7 +49,7 @@ runs:
       shell: bash
     - run: echo "DOCKERHUB_IMAGE_NAME"="$DOCKER_REPOSITORY_NAME/$IMAGE_NAME" >> $GITHUB_ENV
       shell: bash
-    - run: echo "GCP_IMAGE_NAME"="$GCP_REGISTRY_NAME/$MONO_REPOSITORY_NAME/$IMAGE_NAME" >> $GITHUB_ENV
+    - run: echo "GCP_IMAGE_NAME"="$GCP_REGISTRY_NAME/$GCP_REGISTRY_REPOSITORY_NAME/$IMAGE_NAME" >> $GITHUB_ENV
       shell: bash
     - run: echo "GCP_REGISTRY"="$(echo $GCP_REGISTRY_NAME | cut -d "/" -f1)" >> $GITHUB_ENV
       shell: bash

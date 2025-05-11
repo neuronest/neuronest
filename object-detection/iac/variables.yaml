@@ -38,3 +38,5 @@ other_variables:
     - SERVING_ACCELERATOR_COUNT=1
     - BATCH_SIZE=1  # dangerous for now to increase the batch size
     - MAX_BATCH_DELAY=50
+    # artifact registry
+    - GCP_REGISTRY_LOCATION=${VERTEX_LOCATION}
