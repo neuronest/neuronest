@@ -21,10 +21,6 @@ inputs:
     description: 'An environment variable file to load'
     required: false
     default: ''
-  as_root:
-    description: 'Whether to execute apt commands as root'
-    required: false
-    default: 'false'
 outputs:
   created_env_file_path:
     description: 'The environment variables file to load'
@@ -45,7 +41,6 @@ runs:
     - uses: ./.github/actions/set_up_poetry
       with:
         python_environment_location: ${{ env.NEW_PYTHON_ENVIRONMENT_LOCATION }}
-        as_root: ${{ inputs.as_root }}
     - name: install python dependencies
       run: |
         working_dir=$(pwd)
