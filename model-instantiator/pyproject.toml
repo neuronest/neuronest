@@ -17,7 +17,7 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 core = {develop = true, path = "../shared"}
-python = ">3.11,<3.12"
+python = ">=3.10,<3.12"
 python-json-logger = "2.0.7"
 
 [tool.poetry.group.app]

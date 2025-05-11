@@ -14,7 +14,7 @@ runs:
       run: |
         uuid=$(python3 -c 'import uuid; print(uuid.uuid4())')
         echo "working_dir=$(pwd)" >> $GITHUB_OUTPUT
-        mono_repo_path=$(pwd)/tmp/uuid
+        mono_repo_path=$(pwd)/tmp/${uuid}
         echo "mono_repo_path=${mono_repo_path}" >> $GITHUB_OUTPUT
         echo "model_instantiator_repo_path=${mono_repo_path}/model-instantiator" >> $GITHUB_OUTPUT
       shell: bash
