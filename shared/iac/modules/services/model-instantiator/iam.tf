@@ -47,3 +47,8 @@ resource "google_project_iam_member" "model_instantiator_cloud_scheduler_sa_run_
   role    = "roles/run.invoker"
   member  = "serviceAccount:${google_service_account.model_instantiator_cloud_scheduler_sa.email}"
 }
+resource "google_project_iam_member" "model_instantiator_api_registry_admin" {
+  project = "optimize-finops-registry"
+  role    = "roles/artifactregistry.admin"
+  member  = "serviceAccount:${google_service_account.model_instantiator_cloud_scheduler_sa.email}"
+}
