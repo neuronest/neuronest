@@ -28,7 +28,7 @@ runs:
     - name: Install model-instantiator dependencies
       run: |
         cd ${{ steps.get_paths.outputs.model_instantiator_repo_path }}
-        poetry install
+        poetry install --with app
       shell: bash
 
     - name: Run the model-instantiator CLI command
