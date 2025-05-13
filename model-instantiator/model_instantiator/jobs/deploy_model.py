@@ -67,10 +67,7 @@ def deploy_model(
     return None
 
 
-def main(
-    model_name: str,
-    cloud_scheduler_job_name: str,
-):
+def main():
     firestore_client = create_firestore_client()
 
     deployment_status_manager = create_deployment_status_manager(
@@ -80,16 +77,13 @@ def main(
     cloud_scheduler_manager = create_cloud_scheduler_manager(config=cfg)
 
     deploy_model(
-        model_name=model_name,
+        model_name=MODEL_NAME,
         deployment_status_manager=deployment_status_manager,
         vertex_ai_manager=vertex_ai_manager,
         cloud_scheduler_manager=cloud_scheduler_manager,
-        cloud_scheduler_job_name=cloud_scheduler_job_name,
+        cloud_scheduler_job_name=CLOUD_SCHEDULER_JOB_NAME,
     )
 
 
 if __name__ == "__main__":
-    main(
-        model_name=MODEL_NAME,
-        cloud_scheduler_job_name=CLOUD_SCHEDULER_JOB_NAME,
-    )
+    main()

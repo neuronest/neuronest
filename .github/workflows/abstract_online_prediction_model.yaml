@@ -378,7 +378,12 @@ jobs:
           credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
       - uses: ./.github/actions/model_instantiator_cli
         with:
-          cmd: model-instantiator deploy model --model_name $MODEL_NAME --cloud_scheduler_job_name $MODEL_INSTANTIATOR_CLOUD_SCHEDULER_JOB_NAME
+          cmd: model-instantiator deploy model
+          project_id: ${{ env.PROJECT_ID }}
+          region: ${{ env.REGION }}
+          model_name: ${{ env.MODEL_NAME }}
+          vertex_location: ${{ env.VERTEX_LOCATION }}
+          cloud_scheduler_job_name: ${{ env.MODEL_INSTANTIATOR_CLOUD_SCHEDULER_JOB_NAME }}
 
 
   run_integration_tests:

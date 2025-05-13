@@ -25,23 +25,12 @@ def main(
 @deploy_app.command("model")
 def deploy_model_cli(
     ctx: typer.Context,
-    model_name: str = typer.Option(
-        ..., "--model_name", help="Name of the model to deploy."
-    ),
-    cloud_scheduler_job_name: str = typer.Option(
-        ..., "--cloud_scheduler_job_name", help="Cloud Scheduler job name."
-    ),
 ):
     """Deploy a model to Vertex AI."""
     if ctx.obj.verbose:
-        typer.echo(
-            f"Deploying model '{model_name}' with job '{cloud_scheduler_job_name}'"
-        )
+        typer.echo("Dummy echo")
 
-    deploy_model_main(
-        model_name=model_name,
-        cloud_scheduler_job_name=cloud_scheduler_job_name,
-    )
+    deploy_model_main()
 
 
 app.add_typer(deploy_app, name="deploy")
