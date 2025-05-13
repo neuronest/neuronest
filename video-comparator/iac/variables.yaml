@@ -24,6 +24,8 @@ multi_instance_resource_names:
 other_variables:
   branch:
     default:
+      # shared
+      - REGION=${VERTEX_LOCATION}
       # GCP project
       - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
       # cloud run

@@ -21,6 +21,8 @@ multi_instance_resource_names:
 other_variables:
   branch:
     default:
+    # shared
+    - REGION=${OBJECT_DETECTION_VERTEX_LOCATION}
     # cloud run
     - CLOUD_RUN_MEMORY=4Gi
     - CLOUD_RUN_CPU=1000m
