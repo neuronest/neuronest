@@ -1,7 +1,8 @@
 resource "google_cloud_run_v2_service" "people_counting_api" {
-  provider = google-beta
-  name     = var.cloud_run_name
-  location = var.region
+  provider            = google-beta
+  name                = var.cloud_run_name
+  location            = var.region
+  deletion_protection = false
 
   template {
     containers {

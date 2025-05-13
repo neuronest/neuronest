@@ -2,8 +2,9 @@
 #  Deploy API to Google Cloud Run (v2)       #
 ##############################################
 resource "google_cloud_run_v2_service" "web_serving" {
-  name     = var.cloud_run_name
-  location = var.region
+  name                = var.cloud_run_name
+  location            = var.region
+  deletion_protection = false
 
   template {
     containers {
