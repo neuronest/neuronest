@@ -152,6 +152,7 @@ def uninstantiate_model_logs_conditioned(
 
     endpoint = vertex_ai_manager.get_endpoint_by_name(name=model_name)
     if endpoint is None:
+        cloud_scheduler_manager.pause_job(job_name=CLOUD_SCHEDULER_JOB_NAME)
         return _no_endpoint_response(response=response, model_name=model_name)
 
     time_delta = (
