@@ -19,4 +19,15 @@ resource "google_artifact_registry_repository" "repository" {
   location      = each.key
   repository_id = "${var.mono_repository_name}-${each.key}"
   format        = "DOCKER"
+
+  cleanup_policies = [
+    {
+      id     = "keep-latest-version"
+      action = "KEEP"
+      most_recent_versions = {
+        keep_count = 1
+      }
+    }
+  ]
+
 }
