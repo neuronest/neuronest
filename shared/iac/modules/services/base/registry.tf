@@ -8,7 +8,8 @@ variable "locations" {
   default = [
     "europe-west1",
     "europe-west2",
-    "europe-west4"
+    "europe-west4",
+    "asia-northeast1"
   ]
 }
 
