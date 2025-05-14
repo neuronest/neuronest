@@ -26,9 +26,9 @@ inputs:
   shared_repository_name:
     description: 'Shared repository name'
     default: shared
-#  maximum_number_images_to_keep:
-#    description: 'Maximum number of most recent docker images to keep in the registry'
-#    default: 1
+  maximum_number_images_to_keep:
+    description: 'Maximum number of most recent docker images to keep in the registry'
+    default: 0
   dockerfile_path:
     description: 'Dockerfile path'
     default: ''
@@ -133,14 +133,14 @@ runs:
         echo ACCESS_TOKEN=$ACCESS_TOKEN >> $GITHUB_ENV
       shell: bash
 
-#    - name: Clean old docker images
-#      run: |
-#        docker run europe-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli \
-#          -token ${{ env.ACCESS_TOKEN }} \
-#          -repo=${{ env.GCP_IMAGE_NAME }} \
-#          -tag-filter-all="\d+" \
-#          -keep=${{ inputs.maximum_number_images_to_keep }}
-#      shell: bash
+    - name: Clean old docker images
+      run: |
+        docker run europe-docker.pkg.dev/gcr-cleaner/gcr-cleaner/gcr-cleaner-cli \
+          -token ${{ env.ACCESS_TOKEN }} \
+          -repo=${{ env.GCP_IMAGE_NAME }} \
+          -tag-filter-all="\d+" \
+          -keep=${{ inputs.maximum_number_images_to_keep }}
+      shell: bash
 
     - id: dockerhub_output_step
       # we prefer the sha256 to identify the image. The workflow id as identifier is

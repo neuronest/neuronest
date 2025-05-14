@@ -29,4 +29,3 @@ resource "google_artifact_registry_repository" "repository" {
     }
   }
 }
-
