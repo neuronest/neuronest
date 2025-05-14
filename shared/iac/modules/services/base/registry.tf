@@ -27,5 +27,4 @@ resource "google_artifact_registry_repository" "repository" {
       keep_count = 1
     }
   }
-
 }
