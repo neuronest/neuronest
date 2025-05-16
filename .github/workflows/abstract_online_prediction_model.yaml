@@ -390,7 +390,7 @@ jobs:
     runs-on: neuronest-runner-set
     needs:
       - run_base_terraform
-      - deploy_model
+      - deploy_vertex_ai_endpoint
       - deploy_online_prediction_model
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.run_tests == 'true' || inputs.run_tests == '') && !failure() && !cancelled() }}
