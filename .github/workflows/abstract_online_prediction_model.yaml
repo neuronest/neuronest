@@ -357,7 +357,7 @@ jobs:
           SERVING_IMAGE_NAME: ${{ needs.build_test_push_model_serving_image.outputs.gcp_image_name }}
 
 
-  deploy_model:
+  deploy_vertex_ai_endpoint:
     name: deploy_model
     needs:
       - model_upload
