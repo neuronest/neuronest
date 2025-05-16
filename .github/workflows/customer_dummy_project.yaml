@@ -91,3 +91,4 @@ jobs:
       post_deploy: true
       env_file_artifact_name: ${{ needs.upload_variables_of_called_workflows.outputs.people_counting_env_file_artifact_name }}
     secrets: inherit
+
