@@ -1,0 +1,68 @@
+name: 'model_instantiator_cli'
+description: 'Checkout and run a model-instantiator CLI command'
+
+inputs:
+  cmd:
+    description: 'The model-instantiator command to run'
+    required: true
+  project_id:
+    description: 'Google Cloud project ID'
+    required: false
+    default: ''
+  region:
+    description: 'Google Cloud region'
+    required: false
+    default: ''
+  model_name:
+    description: 'Name of the model'
+    required: false
+    default: ''
+  vertex_location:
+    description: 'Vertex AI model location'
+    required: false
+    default: ''
+  cloud_scheduler_job_name:
+    description: 'Cloud Scheduler job name'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get paths
+      id: get_paths
+      run: |
+        uuid=$(python3 -c 'import uuid; print(uuid.uuid4())')
+        echo "working_dir=$(pwd)" >> $GITHUB_OUTPUT
+        mono_repo_path=$(pwd)/tmp/${uuid}
+        echo "mono_repo_path=${mono_repo_path}" >> $GITHUB_OUTPUT
+        echo "model_instantiator_repo_path=${mono_repo_path}/model-instantiator" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - uses: actions/checkout@v4
+      with:
+        path: ${{ steps.get_paths.outputs.mono_repo_path }}
+
+    - uses: ./.github/actions/set_up_poetry
+
+    - name: Install model-instantiator dependencies
+      run: |
+        cd ${{ steps.get_paths.outputs.model_instantiator_repo_path }}
+        poetry install --with app
+      shell: bash
+
+    - name: Run the model-instantiator CLI command
+      run: |
+        cd ${{ steps.get_paths.outputs.model_instantiator_repo_path }}
+        export PROJECT_ID="${{ inputs.project_id }}"
+        export REGION="${{ inputs.region }}"
+        export MODEL_NAME="${{ inputs.model_name }}"
+        export VERTEX_LOCATION="${{ inputs.vertex_location }}"
+        export CLOUD_SCHEDULER_JOB_NAME="${{ inputs.cloud_scheduler_job_name }}"
+        poetry run ${{ inputs.cmd }}
+      shell: bash
+
+    - name: Return to original working directory
+      run: |
+        cd ${{ steps.get_paths.outputs.working_dir }}
+      shell: bash

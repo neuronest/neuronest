@@ -42,8 +42,14 @@ resource "google_project_iam_member" "model_instantiator_api_sa_cloud_scheduler_
   role    = "roles/cloudscheduler.admin"
   member  = "serviceAccount:${google_service_account.model_instantiator_api_sa.email}"
 }
+resource "google_project_iam_member" "model_instantiator_api_registry_admin" {
+  project = var.project_id
+  role    = "roles/artifactregistry.admin"
+  member  = "serviceAccount:${google_service_account.model_instantiator_api_sa.email}"
+}
 resource "google_project_iam_member" "model_instantiator_cloud_scheduler_sa_run_invoker" {
   project = var.project_id
   role    = "roles/run.invoker"
   member  = "serviceAccount:${google_service_account.model_instantiator_cloud_scheduler_sa.email}"
 }
+

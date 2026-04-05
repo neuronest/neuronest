@@ -40,7 +40,7 @@ pydantic = "2.9.2"
 pylint = {optional = true, version = "3.3.1"}
 pytest = {optional = true, version = "8.3.3"}
 pytest-xdist = {optional = true, version = "3.6.1"}
-python = ">3.11,<3.12"
+python = ">=3.10,<3.12"
 tenacity = "^9.0.0"
 toml-sort = {optional = true, version = "0.23.1"}
 torch = {optional = true, version = "2.5.0"}

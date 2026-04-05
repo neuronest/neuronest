@@ -1,6 +1,9 @@
 output "model_instantiator_url" {
   value = module.model_instantiator.url
 }
+output "model_instantiator_cloud_scheduler_job_name" {
+  value = module.model_instantiator.cloud_scheduler_job_name
+}
 output "online_prediction_model_url" {
   value = google_cloud_run_v2_service.web_serving.uri
 }

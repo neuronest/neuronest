@@ -14,7 +14,7 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 core = {develop = true, path = "../shared"}
-python = ">3.11,<3.12"
+python = ">=3.10,<3.12"
 
 [tool.poetry.group.app]
 optional = true
@@ -38,7 +38,7 @@ PyYAML = "6.0.2" # implicit torchhub ultralytics dependency
 core = {develop = true, extras = ["torch"], path = "../shared"}
 imutils = "0.5.4"
 ipython = "8.28.0" # implicit torchhub ultralytics dependency
-python = ">3.11,<3.12"
+python = ">=3.10,<3.12"
 scipy = "1.14.1" # implicit torchhub ultralytics dependency
 seaborn = "0.13.2" # implicit torchhub ultralytics dependency
 torchvision = "0.20.0"

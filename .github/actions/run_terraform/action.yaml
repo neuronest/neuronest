@@ -72,7 +72,9 @@ runs:
                 terraform_targets="$terraform_targets -target $input_target"
             done
           fi
-
+          
+          # 
+          # bash -c "terraform apply -refresh-only -auto-approve"
           # run terraform plan
           bash -c "terraform plan $terraform_targets -input=false -out=tfplan"
   

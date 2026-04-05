@@ -191,6 +191,11 @@ jobs:
         with:
           workspace: ${{ env.REPOSITORY_NAME }}
           terraform_output_name: model_instantiator_url
+      - id: get_model_instantiator_cloud_scheduler_job_name
+        uses: ./.github/actions/get_terraform_output
+        with:
+          workspace: ${{ env.REPOSITORY_NAME }}
+          terraform_output_name: model_instantiator_cloud_scheduler_job_name
       - id: get_online_prediction_model_url
         uses: ./.github/actions/get_terraform_output
         with:
@@ -351,11 +356,41 @@ jobs:
         env:
           SERVING_IMAGE_NAME: ${{ needs.build_test_push_model_serving_image.outputs.gcp_image_name }}
 
+
+  deploy_vertex_ai_endpoint:
+    name: deploy_model
+    needs:
+      - model_upload
+      - get_base_project_builder_sa_key
+    runs-on: neuronest-runner-set
+    if: ${{ inputs.post_deploy == 'true' && !failure() && !cancelled() }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set_variables
+        with:
+          env_file_artifact_name: ${{ inputs.env_file_artifact_name }}
+          as_root: true
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      - uses: ./.github/actions/gcloud_auth
+        with:
+          credentials_json: ${{ needs.get_base_project_builder_sa_key.outputs.value }}
+      - uses: ./.github/actions/model_instantiator_cli
+        with:
+          cmd: model-instantiator deploy model
+          project_id: ${{ env.PROJECT_ID }}
+          region: ${{ env.REGION }}
+          model_name: ${{ env.MODEL_NAME }}
+          vertex_location: ${{ env.VERTEX_LOCATION }}
+          cloud_scheduler_job_name: ${{ env.MODEL_INSTANTIATOR_CLOUD_SCHEDULER_JOB_NAME }}
+
+
   run_integration_tests:
     runs-on: neuronest-runner-set
     needs:
       - run_base_terraform
-      - model_upload
+      - deploy_vertex_ai_endpoint
       - deploy_online_prediction_model
     # If the workflow isn't called, inputs are blank and job should run
     if: ${{ (inputs.run_tests == 'true' || inputs.run_tests == '') && !failure() && !cancelled() }}
