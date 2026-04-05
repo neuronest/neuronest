@@ -37,7 +37,11 @@ other_variables:
       # terraform
       - BASE_TERRAFORM_RESOURCES=module.base
       - STATE_BUCKET=${PROJECT_CODE}-tfstate
-      # artifact registry
-      - GCP_REGISTRY_NAME=${REGION}-docker.pkg.dev/${PROJECT_ID}
+      # artifact registry.tf
+      - GCP_REGISTRY_LOCATION=${REGION}
+      - GCP_REGISTRY_NAME=${GCP_REGISTRY_LOCATION}-docker.pkg.dev/${PROJECT_ID}
+        # REPOSITORY_NAME is intentionally undefined here;
+        # it is expected to be defined in service-specific repositories.
+      - GCP_REGISTRY_REPOSITORY_NAME=neuronest-${GCP_REGISTRY_LOCATION}
       # vertex
       - BATCH_SIZE=32

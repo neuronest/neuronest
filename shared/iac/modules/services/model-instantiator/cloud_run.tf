@@ -3,9 +3,10 @@
 ##############################################
 # Deploy image to Cloud Run v2
 resource "google_cloud_run_v2_service" "model_instantiator_api" {
-  provider = google-beta
-  name     = var.cloud_run_name
-  location = var.region
+  provider            = google-beta
+  name                = var.cloud_run_name
+  location            = var.region
+  deletion_protection = false
 
   template {
     containers {
@@ -33,7 +34,7 @@ resource "google_cloud_run_v2_service" "model_instantiator_api" {
         value = var.vertex_location
       }
       env {
-        name = "CLOUD_SCHEDULER_JOB_NAME"
+        name  = "CLOUD_SCHEDULER_JOB_NAME"
         value = var.cloud_scheduler_job_name
       }
     }

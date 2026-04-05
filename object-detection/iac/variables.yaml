@@ -23,6 +23,8 @@ multi_instance_resource_names:
 other_variables:
   branch:
     default:
+    # shared
+    - REGION=${VERTEX_LOCATION}
     # GCP project
     - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
     - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}
@@ -38,3 +40,5 @@ other_variables:
     - SERVING_ACCELERATOR_COUNT=1
     - BATCH_SIZE=1  # dangerous for now to increase the batch size
     - MAX_BATCH_DELAY=50
+    # artifact registry
+    - GCP_REGISTRY_LOCATION=${VERTEX_LOCATION}

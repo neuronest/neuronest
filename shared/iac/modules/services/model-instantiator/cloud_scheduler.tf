@@ -3,6 +3,7 @@ resource "google_cloud_scheduler_job" "uninstantiate_job" {
   name      = var.cloud_scheduler_job_name
   schedule  = var.cloud_scheduler_schedule
   time_zone = var.timezone
+  region    = var.region
 
   http_target {
     http_method = "POST"

@@ -1,5 +1,4 @@
-import os
-
+# pylint: disable=duplicate-code
 import pytest
 from core.client.model_instantiator import ModelInstantiatorClient
 from core.client.video_comparator import VideoComparatorClient
@@ -10,7 +9,6 @@ from tests.environment_variables import (
     MODEL_INSTANTIATOR_HOST,
     MODEL_NAME,
     PROJECT_ID,
-    REGION,
     VIDEO_COMPARATOR_URL,
 )
 

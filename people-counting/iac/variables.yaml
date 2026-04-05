@@ -21,6 +21,8 @@ multi_instance_resource_names:
 other_variables:
   branch:
     default:
+    # shared
+    - REGION=${OBJECT_DETECTION_VERTEX_LOCATION}
     # cloud run
     - CLOUD_RUN_MEMORY=4Gi
     - CLOUD_RUN_CPU=1000m
@@ -31,4 +33,6 @@ other_variables:
     - PROJECT_ID=${NON_FUNCTIONAL_SERVICES_PROJECT_ID}
     - PROJECT_CODE=${NON_FUNCTIONAL_SERVICES_PROJECT_CODE}
     # vertex
-    - OBJECT_DETECTION_VERTEX_LOCATION=europe-west4
+    - OBJECT_DETECTION_VERTEX_LOCATION=asia-northeast1
+    # artifact registry
+    - GCP_REGISTRY_LOCATION=${OBJECT_DETECTION_VERTEX_LOCATION}
