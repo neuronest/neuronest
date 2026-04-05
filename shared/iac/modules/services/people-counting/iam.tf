@@ -28,3 +28,8 @@ resource "google_project_iam_member" "people_counting_api_sa_is_cloud_run_invoke
   role    = "roles/run.invoker"
   member  = "serviceAccount:${google_service_account.people_counting_api_sa.email}"
 }
+resource "google_project_iam_member" "people_counting_api_registry_admin" {
+  project = var.project_id
+  role    = "roles/artifactregistry.admin"
+  member  = "serviceAccount:${google_service_account.people_counting_api_sa.email}"
+}

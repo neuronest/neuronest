@@ -11,6 +11,7 @@ resource "google_cloud_run_v2_service" "people_counting_api" {
           "cpu"    = var.cloud_run_cpu
           "memory" = var.cloud_run_memory
         }
+        cpu_idle = true # Ensures CPU is allocated only during request processing
       }
       env {
         name  = "PROJECT_ID"
